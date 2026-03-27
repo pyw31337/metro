@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
-import { BusPosition } from "@/hooks/useRealtimeBuses";
+import { BusPosition } from "@/hooks/useBusPositions";
 
 interface BusRealtimeLayerProps {
     buses: BusPosition[];
