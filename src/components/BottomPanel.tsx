@@ -1,12 +1,12 @@
-"use client";
-
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Train, Bus, Map as MapIcon, Bath, X, Navigation2, Moon, Sun, ChevronUp, ChevronDown } from "lucide-react";
+import { Search, Train, Bus, Map as MapIcon, Bath, X, Navigation2, Moon, Sun, ChevronUp, ChevronDown, Plus, MapPin, Navigation } from "lucide-react";
 import type { ActiveTab } from "./MapBackground";
 import type { PathResult } from "@/utils/pathfinding";
 import type { BusStop } from "./BusStopLayer";
 import type { WCItem } from "./WCLayer";
+import { chosungIncludes } from "@/utils/chosung";
+import { SUBWAY_LINES } from "@/data/subway-lines";
 
 interface BottomPanelProps {
     activeTab: ActiveTab;
@@ -14,6 +14,8 @@ interface BottomPanelProps {
     pathResult: PathResult | null;
     startStation: string | null;
     endStation: string | null;
+    waypoints: string[];
+    onSearch: (start: string, waypoints: string[], end: string) => void;
     onResetPath: () => void;
     isDarkMode: boolean;
     onToggleDarkMode: () => void;
@@ -25,21 +27,30 @@ interface BottomPanelProps {
     onWCSelect: (item: WCItem | null) => void;
 }
 
+const ALL_STATIONS = Array.from(new Set(SUBWAY_LINES.flatMap(line => line.stations.map(s => s.name))));
+
 export default function BottomPanel({
-    activeTab, onTabChange, pathResult, startStation, endStation, onResetPath,
+    activeTab, onTabChange, pathResult, startStation, endStation, waypoints, onSearch, onResetPath,
     isDarkMode, onToggleDarkMode, busStops, wcItems, selectedBusStop, selectedWC,
     onBusStopSelect, onWCSelect
 }: BottomPanelProps) {
     const [sheetState, setSheetState] = useState<"peek" | "half" | "full">("peek");
+    const [localStart, setLocalStart] = useState(startStation || "");
+    const [localEnd, setLocalEnd] = useState(endStation || "");
+    const [localWaypoints, setLocalWaypoints] = useState<string[]>(waypoints || []);
+    const [activeInput, setActiveInput] = useState<"start" | "end" | number | null>(null);
 
-    // Snap points (percentages of viewport height)
+    // Sync local state when props change (from map clicks)
+    useEffect(() => { setLocalStart(startStation || ""); }, [startStation]);
+    useEffect(() => { setLocalEnd(endStation || ""); }, [endStation]);
+    useEffect(() => { setLocalWaypoints(waypoints || []); }, [waypoints]);
+
     const snapPoints = {
         peek: "80px",
         half: "45vh",
         full: "90vh"
     };
     
-    // Auto expand to half when something is selected or path found
     useEffect(() => {
         if (pathResult || selectedBusStop || selectedWC) {
             setSheetState("half");
@@ -47,11 +58,27 @@ export default function BottomPanel({
     }, [pathResult, selectedBusStop, selectedWC]);
 
     const tabs: { id: ActiveTab; label: string; icon: any; colorClass: string }[] = [
-        { id: "subway", label: "Metro", icon: Train, colorClass: "bg-blue-600" },
-        { id: "bus", label: "Bus", icon: Bus, colorClass: "bg-orange-600" },
-        { id: "subway+bus", label: "MaaS+", icon: MapIcon, colorClass: "bg-zinc-800" },
-        { id: "wc", label: "WC", icon: Bath, colorClass: "bg-emerald-600" },
+        { id: "subway", label: "지하철", icon: Train, colorClass: "bg-blue-600" },
+        { id: "bus", label: "버스", icon: Bus, colorClass: "bg-orange-600" },
+        { id: "subway+bus", label: "지하철+버스", icon: MapIcon, colorClass: "bg-zinc-800" },
+        { id: "wc", label: "화장실", icon: Bath, colorClass: "bg-emerald-600" },
     ];
+
+    const filteredStations = (query: string) => {
+        if (!query) return [];
+        return ALL_STATIONS.filter(name => chosungIncludes(name, query)).slice(0, 5);
+    };
+
+    const handleSelectStation = (name: string) => {
+        if (activeInput === "start") setLocalStart(name);
+        else if (activeInput === "end") setLocalEnd(name);
+        else if (typeof activeInput === "number") {
+            const newWps = [...localWaypoints];
+            newWps[activeInput] = name;
+            setLocalWaypoints(newWps);
+        }
+        setActiveInput(null);
+    };
 
     return (
         <div className="fixed bottom-0 left-0 right-0 z-[6000] flex flex-col items-center pointer-events-none px-4 pb-4 md:pb-8">
@@ -72,7 +99,7 @@ export default function BottomPanel({
                             className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl transition-all whitespace-nowrap ${
                                 isActive 
                                 ? `${tab.colorClass} text-white shadow-xl scale-[1.05] z-10` 
-                                : "text-gray-500 hover:text-gray-900"
+                                : "text-gray-500 hover:text-zinc-900 dark:hover:text-white"
                             }`}
                         >
                             <Icon size={18} />
@@ -80,10 +107,10 @@ export default function BottomPanel({
                         </button>
                     );
                 })}
-                <div className="w-px h-6 bg-gray-200 mx-1" />
+                <div className="w-px h-6 bg-gray-200 dark:bg-zinc-800 mx-1" />
                 <button 
                     onClick={onToggleDarkMode}
-                    className="p-2.5 rounded-xl text-gray-500 hover:text-gray-800 hover:bg-white/50 transition-all"
+                    className="p-2.5 rounded-xl text-gray-500 hover:text-zinc-900 dark:hover:text-white hover:bg-white/50 dark:hover:bg-zinc-800 transition-all"
                 >
                     {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
@@ -95,6 +122,9 @@ export default function BottomPanel({
                     drag="y"
                     dragConstraints={{ top: 0, bottom: 0 }}
                     dragElastic={0.2}
+                    onDragStart={() => {
+                        if (sheetState === "peek") setSheetState("half");
+                    }}
                     onDragEnd={(_, info) => {
                         if (info.offset.y < -50) setSheetState(sheetState === "peek" ? "half" : "full");
                         else if (info.offset.y > 50) setSheetState(sheetState === "full" ? "half" : "peek");
@@ -104,27 +134,124 @@ export default function BottomPanel({
                     className="pointer-events-auto glass-dark bg-zinc-950/90 backdrop-blur-3xl w-full max-w-2xl rounded-t-[40px] overflow-hidden bottom-sheet-shadow border-t border-white/5"
                 >
                     {/* Control Handle */}
-                    <div className="flex flex-col items-center py-4 cursor-grab active:cursor-grabbing">
-                        <div className="w-10 h-1.5 rounded-full bg-white/10 mb-2" />
+                    <div className="flex flex-col items-center py-4 cursor-grab active:cursor-grabbing border-b border-white/5">
+                        <div className="w-10 h-1.5 rounded-full bg-white/10" />
                     </div>
 
-                        <div className="px-6 pb-10 overflow-y-auto no-scrollbar" style={{ maxHeight: "calc(80vh - 60px)" }}>
-                            {/* 1. Subway/Route Result */}
-                            {activeTab.includes("subway") && pathResult && (
+                    <div className="px-6 py-6 overflow-y-auto no-scrollbar scroll-smooth" style={{ maxHeight: "calc(90vh - 60px)" }}>
+                        
+                        {/* ─── Premium Integrated Search (Uber Style) ─────────────────── */}
+                        {(activeTab === "subway" || activeTab === "subway+bus") && !pathResult && (
+                            <div className="flex flex-col gap-4 mb-8">
+                                <div className="text-white/40 text-[12px] font-black tracking-widest uppercase mb-2">경로 탐색</div>
+                                <div className="relative flex flex-col gap-3 bg-white/5 p-5 rounded-[32px] border border-white/5">
+                                    {/* Vertical Connect Line */}
+                                    <div className="absolute left-[33px] top-[40px] bottom-[40px] w-0.5 bg-zinc-700/50" />
+                                    
+                                    {/* Start Input */}
+                                    <div className="flex items-center gap-4 relative z-10">
+                                        <div className="w-3 h-3 rounded-full border-2 border-blue-500 bg-black" />
+                                        <input 
+                                            placeholder="출발지"
+                                            value={localStart}
+                                            onChange={(e) => setLocalStart(e.target.value)}
+                                            onFocus={() => { setActiveInput("start"); setSheetState("half"); }}
+                                            className="flex-1 bg-transparent border-none outline-none text-white text-[16px] font-bold placeholder:text-white/20"
+                                        />
+                                    </div>
+
+                                    {/* Waypoints */}
+                                    {localWaypoints.map((wp, i) => (
+                                        <div key={i} className="flex items-center gap-4 relative z-10">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-white/20" />
+                                            <input 
+                                                placeholder={`경유지 ${i+1}`}
+                                                value={wp}
+                                                onChange={(e) => {
+                                                    const newWps = [...localWaypoints];
+                                                    newWps[i] = e.target.value;
+                                                    setLocalWaypoints(newWps);
+                                                }}
+                                                onFocus={() => setActiveInput(i)}
+                                                className="flex-1 bg-transparent border-none outline-none text-white text-[16px] font-bold placeholder:text-white/20"
+                                            />
+                                            <button onClick={() => setLocalWaypoints(localWaypoints.filter((_, idx) => idx !== i))} className="p-1 text-white/20 hover:text-rose-500"><X size={16}/></button>
+                                        </div>
+                                    ))}
+
+                                    {/* Waypoint Add Button */}
+                                    {localWaypoints.length < 2 && (
+                                        <button 
+                                            onClick={() => setLocalWaypoints([...localWaypoints, ""])}
+                                            className="ml-7 text-[13px] font-bold text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1.5"
+                                        >
+                                            <Plus size={14} /> 경유지 추가
+                                        </button>
+                                    )}
+
+                                    {/* End Input */}
+                                    <div className="flex items-center gap-4 relative z-10">
+                                        <MapPin size={14} className="text-rose-500" />
+                                        <input 
+                                            placeholder="도착지"
+                                            value={localEnd}
+                                            onChange={(e) => setLocalEnd(e.target.value)}
+                                            onFocus={() => { setActiveInput("end"); setSheetState("half"); }}
+                                            className="flex-1 bg-transparent border-none outline-none text-white text-[16px] font-bold placeholder:text-white/20"
+                                        />
+                                    </div>
+
+                                    {/* Search Button */}
+                                    <button 
+                                        onClick={() => onSearch(localStart, localWaypoints, localEnd)}
+                                        className="mt-2 w-full h-14 bg-white text-black rounded-2xl font-black text-[15px] hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
+                                    >
+                                        <Navigation size={18} fill="black" /> 경로 찾기
+                                    </button>
+                                </div>
+
+                                {/* Active Input Suggestions */}
+                                <AnimatePresence>
+                                    {activeInput !== null && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, y: 5 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            className="flex flex-wrap gap-2 mt-2"
+                                        >
+                                            {filteredStations(
+                                                activeInput === "start" ? localStart : 
+                                                activeInput === "end" ? localEnd : 
+                                                localWaypoints[activeInput as number] || ""
+                                            ).map(name => (
+                                                <button
+                                                    key={name}
+                                                    onClick={() => handleSelectStation(name)}
+                                                    className="px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[14px] font-bold text-white hover:bg-white hover:text-black transition-all"
+                                                >
+                                                    {name}
+                                                </button>
+                                            ))}
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        )}
+                        {/* 1. Subway/Route Result */}
+                        {(activeTab.includes("subway") && pathResult) && (
                                 <div className="flex flex-col gap-6">
                                     <div className="flex items-end justify-between border-b border-white/10 pb-6">
                                         <div className="flex flex-col">
                                             <div className="text-[14px] font-bold text-blue-400 mb-1">최단 시간 경로</div>
                                             <div className="flex items-baseline gap-2">
                                                 <span className="text-[42px] font-black text-white leading-none tracking-tight">
-                                                    {pathResult.totalWeight}
+                                                    {pathResult?.totalWeight}
                                                 </span>
                                                 <span className="text-[20px] font-bold text-white/70">분</span>
                                             </div>
                                         </div>
                                         <div className="flex flex-col items-end text-[13px] text-white/50">
                                             <div className="flex items-center gap-2">
-                                                <span>환승 {pathResult.transferCount}회</span>
+                                                <span>환승 {pathResult?.transferCount}회</span>
                                                 <span className="w-1 h-1 rounded-full bg-white/20" />
                                                 <span>약 1,550원</span>
                                             </div>
@@ -149,8 +276,8 @@ export default function BottomPanel({
                                                 <Train size={20} className="text-blue-400" />
                                             </div>
                                             <div className="flex flex-col">
-                                                <span className="text-[14px] text-white/80 font-medium">{pathResult.totalWeight}분 이동</span>
-                                                <span className="text-[12px] text-white/40">{pathResult.path.length}개 역 이동</span>
+                                                <span className="text-[14px] text-white/80 font-medium">{pathResult?.totalWeight}분 이동</span>
+                                                <span className="text-[12px] text-white/40">{pathResult?.path?.length}개 역 이동</span>
                                             </div>
                                         </div>
 
@@ -246,20 +373,20 @@ export default function BottomPanel({
                                 </div>
                             )}
 
-                            {/* Empty/Welcome State */}
-                            {!pathResult && !selectedBusStop && !selectedWC && (
-                                <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
-                                    <div className="w-20 h-20 rounded-3xl bg-white/10 flex items-center justify-center">
-                                        <Search size={32} className="text-white" />
-                                    </div>
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-white font-bold text-lg">지도를 클릭하여 시작하세요</span>
-                                        <span className="text-white/40 text-[14px]">역사나 정류장을 눌러 경로를 탐색할 수 있습니다</span>
-                                    </div>
+                        {/* Empty/Welcome State */}
+                        {!pathResult && !selectedBusStop && !selectedWC && (
+                            <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+                                <div className="w-20 h-20 rounded-3xl bg-white/10 flex items-center justify-center">
+                                    <Search size={32} className="text-white" />
                                 </div>
-                            )}
-                        </div>
-                    </motion.div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-white font-bold text-lg">지도를 클릭하여 시작하세요</span>
+                                    <span className="text-white/40 text-[14px]">역사나 정류장을 눌러 경로를 탐색할 수 있습니다</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
             </AnimatePresence>
         </div>
     );

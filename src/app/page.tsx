@@ -11,7 +11,6 @@ import type { BusStop } from "@/components/BusStopLayer";
 import { fetchWCDataClient } from "@/services/wcApi";
 import StationPopup from "@/components/StationPopup";
 import busData from "@/data/bus-stops.json";
-import SearchOverlay from "@/components/SearchOverlay";
 
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
 const BottomPanel = dynamic(() => import("@/components/BottomPanel"), { ssr: false });
@@ -86,37 +85,38 @@ export default function Home() {
                     isDarkMode={isDarkMode}
                     wcItems={wcItems}
                     busStops={busStops}
-                    selectedBusStopId={selectedBusStop?.id ?? null}
-                    onWCClick={setSelectedWC}
-                    onBusStopClick={(stop) => {
-                        setSelectedBusStop(stop);
-                    }}
-                    onStationClick={(name) => {
-                        // Managed via automated popup
-                    }}
-                />
+                selectedBusStopId={selectedBusStop?.id ?? null}
+                onWCClick={setSelectedWC}
+                onBusStopClick={(stop) => {
+                    setSelectedBusStop(stop);
+                }}
+                onStationClick={(name) => {
+                    // Managed via automated popup
+                }}
+                onSetStart={setStartStation}
+                onSetEnd={setEndStation}
+                onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
+            />
             </div>
 
-            {/* Top Floating UI: Search & Navigation */}
-            <SearchOverlay 
-                isDarkMode={isDarkMode}
-                onSearch={(s, wp, e) => {
-                    setStartStation(s);
-                    setWaypoints(wp);
-                    setEndStation(e);
-                }}
-            />
 
-            {/* Bottom Floating UI: Results & Tabs */}
+            {/* Bottom Floating UI: Results & Tabs & Search */}
             <BottomPanel
                 activeTab={activeTab}
                 onTabChange={setActiveTab}
                 pathResult={pathResult}
                 startStation={startStation}
                 endStation={endStation}
+                waypoints={waypoints}
+                onSearch={(s, wp, e) => {
+                    setStartStation(s);
+                    setWaypoints(wp);
+                    setEndStation(e);
+                }}
                 onResetPath={() => {
                     setStartStation(null);
                     setEndStation(null);
+                    setWaypoints([]);
                     setPathResult(null);
                 }}
                 isDarkMode={isDarkMode}

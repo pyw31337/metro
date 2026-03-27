@@ -1,57 +1,119 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useState } from "react";
 import L from "leaflet";
 import { createRoot } from "react-dom/client";
+import { useArrivalInfo, ArrivalInfo } from "@/hooks/useArrivalInfo";
+import { Train, MapPin, Navigation, Clock, Search } from "lucide-react";
 
 interface StationPopupProps {
     name: string;
     type: "subway" | "bus";
     onSetStart: (name: string) => void;
     onSetEnd: (name: string) => void;
+    onSetWaypoint?: (name: string) => void;
     isDarkMode: boolean;
 }
 
-export default function StationPopup({ name, type, onSetStart, onSetEnd, isDarkMode }: StationPopupProps) {
-    const bg = isDarkMode ? "#18191c" : "#ffffff";
-    const text = isDarkMode ? "#f1f1f1" : "#111827";
-    const border = isDarkMode ? "#2f3033" : "#f3f4f6";
+export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWaypoint, isDarkMode }: StationPopupProps) {
+    const { arrivals, schedules, loading } = useArrivalInfo(type === "subway" ? name : null);
 
     return (
-        <div className="flex flex-col p-2 min-w-[160px]" style={{ color: text }}>
-            <div className="text-[16px] font-black mb-3 tracking-tight border-b pb-2" style={{ borderColor: border }}>
-                <span className="mr-2">{type === "subway" ? "🚇" : "🚌"}</span>
-                {name}
+        <div className="flex flex-col min-w-[300px] max-w-[340px] p-0 overflow-hidden rounded-[24px] bg-white/80 dark:bg-zinc-900/90 backdrop-blur-3xl shadow-2xl border border-white/20 dark:border-white/5 transition-all animate-in fade-in zoom-in duration-200">
+            {/* Header: Station Name & Type Badge */}
+            <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                <div className="flex flex-col">
+                    <span className="text-[12px] font-black uppercase tracking-widest text-[#2563eb] dark:text-blue-400 mb-0.5">
+                        {type === "subway" ? "METRO STATION" : "BUS STATION"}
+                    </span>
+                    <h2 className="text-[24px] font-black tracking-tight text-zinc-900 dark:text-white leading-tight">
+                        {name}
+                    </h2>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center shadow-inner">
+                    {type === "subway" ? (
+                        <Train size={24} className="text-zinc-900 dark:text-blue-400" />
+                    ) : (
+                        <Navigation size={24} className="text-zinc-900 dark:text-orange-400" />
+                    )}
+                </div>
             </div>
-            
-            <div className="flex flex-col gap-1.5">
+
+            {/* Arrivals Section (Subway focus) */}
+            {type === "subway" && arrivals.length > 0 && (
+                <div className="px-5 py-3 border-y border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-black/20">
+                    <div className="flex flex-col gap-2.5">
+                        {arrivals.slice(0, 3).map((a, i) => (
+                            <div key={i} className="flex items-center justify-between group">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-7 h-7 rounded-lg bg-blue-600/10 dark:bg-blue-500/20 flex items-center justify-center text-[11px] font-black text-blue-600 dark:text-blue-400">
+                                        {a.lineName.replace("호선", "")}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">
+                                            {a.direction}
+                                        </span>
+                                        <span className="text-[11px] text-zinc-500 font-medium">실시간 도착 정보</span>
+                                    </div>
+                                </div>
+                                <span className={`text-[13px] font-black ${a.arrivalMsg.includes('전') ? 'text-rose-500 animate-pulse' : 'text-zinc-800 dark:text-white'}`}>
+                                    {a.arrivalMsg}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* First/Last Train Info */}
+            {type === "subway" && (
+                <div className="px-5 py-3 border-b border-zinc-100 dark:border-white/5 flex items-center justify-between bg-zinc-50/30 dark:bg-white/[0.02]">
+                    <div className="flex items-center gap-1.5 opacity-60">
+                        <Clock size={12} className="text-zinc-900 dark:text-white" />
+                        <span className="text-[12px] font-bold">첫차 05:30</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 opacity-60">
+                        <Clock size={12} className="text-zinc-900 dark:text-white" />
+                        <span className="text-[12px] font-bold">막차 24:15</span>
+                    </div>
+                </div>
+            )}
+
+            {/* Action Buttons: The "BMW Live" Triad */}
+            <div className="grid grid-cols-3 gap-2 p-4">
                 <button 
                     onClick={() => onSetStart(name)}
-                    className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-green-500 hover:bg-green-600 text-white text-[13px] font-bold transition-all active:scale-95"
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-[20px] bg-blue-600 hover:bg-blue-700 text-white transition-all active:scale-[0.92] shadow-lg shadow-blue-500/20"
                 >
-                    <span>출발지로 설정</span>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
-                    </svg>
+                    <Search size={18} strokeWidth={3} />
+                    <span className="text-[12px] font-black">출발</span>
                 </button>
-                
+                <button 
+                    onClick={() => onSetWaypoint?.(name)}
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-[20px] bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-800 dark:text-white transition-all active:scale-[0.92]"
+                >
+                    <Navigation size={18} strokeWidth={3} className="text-zinc-400" />
+                    <span className="text-[12px] font-black">경유</span>
+                </button>
                 <button 
                     onClick={() => onSetEnd(name)}
-                    className="flex items-center justify-between w-full px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white text-[13px] font-bold transition-all active:scale-95"
+                    className="flex flex-col items-center justify-center gap-2 p-3 rounded-[20px] bg-rose-500 hover:bg-rose-600 text-white transition-all active:scale-[0.92] shadow-lg shadow-rose-500/20"
                 >
-                    <span>도착지로 설정</span>
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
+                    <MapPin size={18} strokeWidth={3} />
+                    <span className="text-[12px] font-black">도착</span>
                 </button>
             </div>
         </div>
     );
 }
 
-// Helper to create a Leaflet-compatible popup content string OR use a React portal
+// Helper to create a Leaflet-compatible popup content using createRoot
 export function createStationPopup(props: StationPopupProps) {
     const container = document.createElement("div");
+    // Remove default Leaflet popup styles to match our premium look
+    container.style.padding = "0";
+    container.style.margin = "0";
+    
     const root = createRoot(container);
     root.render(<StationPopup {...props} />);
     return container;

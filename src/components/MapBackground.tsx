@@ -6,8 +6,8 @@ import { createRoot } from "react-dom/client";
 import { getAllStations, Station } from "@/data/subway-lines";
 import { PathResult } from "@/utils/pathfinding";
 import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
-import { useRealtimeBuses } from "@/hooks/useRealtimeBuses";
 import StationPopup, { createStationPopup } from "./StationPopup";
+import { useBusPositions, BusPosition } from "@/hooks/useBusPositions";
 import L from "leaflet";
 import type { WCItem } from "./WCLayer";
 import type { BusStop } from "./BusStopLayer";
@@ -44,6 +44,9 @@ interface MapBackgroundProps {
     startStation: string | null;
     endStation: string | null;
     onStationClick?: (name: string, latlng?: [number, number]) => void;
+    onSetStart: (name: string) => void;
+    onSetEnd: (name: string) => void;
+    onSetWaypoint: (name: string) => void;
     activeTab: ActiveTab;
     isDarkMode: boolean;
     wcItems: WCItem[];
@@ -55,6 +58,7 @@ interface MapBackgroundProps {
 
 function MapBackground({
     pathResult, startStation, endStation, onStationClick,
+    onSetStart, onSetEnd, onSetWaypoint,
     activeTab, isDarkMode, wcItems, busStops, selectedBusStopId,
     onWCClick, onBusStopClick
 }: MapBackgroundProps) {
@@ -64,7 +68,7 @@ function MapBackground({
     const mapRef = useRef<L.Map | null>(null);
 
     const trains = useRealtimeTrains();
-    const buses = useRealtimeBuses(activeTab === "bus" || activeTab === "subway+bus");
+    const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus");
 
     useEffect(() => {
         setIsClient(true);
@@ -137,8 +141,9 @@ function MapBackground({
                                 const popupContent = createStationPopup({
                                     name,
                                     type: "subway",
-                                    onSetStart: (n) => { onStationClick?.(n); mapRef.current?.closePopup(); },
-                                    onSetEnd: (n) => { onStationClick?.(n); mapRef.current?.closePopup(); }, 
+                                    onSetStart: (n) => { onSetStart(n); mapRef.current?.closePopup(); },
+                                    onSetEnd: (n) => { onSetEnd(n); mapRef.current?.closePopup(); }, 
+                                    onSetWaypoint: (n) => { onSetWaypoint(n); mapRef.current?.closePopup(); },
                                     isDarkMode
                                 });
                                 L.popup({
@@ -171,8 +176,9 @@ function MapBackground({
                                     const popupContent = createStationPopup({
                                         name: stop.name,
                                         type: "bus",
-                                        onSetStart: (n) => { onBusStopClick?.(stop); mapRef.current?.closePopup(); },
-                                        onSetEnd: (n) => { onBusStopClick?.(stop); mapRef.current?.closePopup(); },
+                                        onSetStart: (n) => { onSetStart(n); mapRef.current?.closePopup(); },
+                                        onSetEnd: (n) => { onSetEnd(n); mapRef.current?.closePopup(); },
+                                        onSetWaypoint: (n) => { onSetWaypoint(n); mapRef.current?.closePopup(); },
                                         isDarkMode
                                     });
                                     L.popup().setLatLng(latlng).setContent(popupContent).openOn(mapRef.current);

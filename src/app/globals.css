@@ -4,15 +4,15 @@
 
 @layer theme {
     :root {
-        --background: #ffffff;
-        --foreground: #111111;
-        --surface: rgba(255, 255, 255, 0.9);
+        --background: #fdfdfd;
+        --foreground: #09090b;
+        --surface: rgba(255, 255, 255, 0.75);
         --surface-border: rgba(0, 0, 0, 0.08);
-        --edge-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        --edge-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
         --primary: #000000;
         --accent: #2563eb;
         
-        /* Brand Colors */
+        /* Transit Brand Colors - Refined */
         --subway-blue: #0052A4;
         --bus-orange: #f59e0b;
         --maas-purple: #7c3aed;
@@ -145,6 +145,12 @@ body {
     left: 0;
     border-radius: 50%;
     animation: live-pulse 2s infinite;
+}
+
+/* ─── Typography Reset ─────────────────────────────────────────────────────── */
+* {
+    font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
+    letter-spacing: -0.02em;
 }
 
 /* ─── Custom Marker Styling ────────────────────────────────────────────────── */
