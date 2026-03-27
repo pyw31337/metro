@@ -214,7 +214,7 @@ export default function SubwayCanvasLayer({
                 }));
             }
         });
-    }, [zoomLevel, stations, pathResult, activeLineNames, isDarkMode, hoveredStation, startStation, endStation, selectedStationName]);
+    }, [zoomLevel, stations, pathResult, activeLineNames, isDarkMode, hoveredStation, startStation, endStation, selectedStationName, map, onStationClick]);
 
     // 2. Highlight Layer: Active Route Segments
     useEffect(() => {
