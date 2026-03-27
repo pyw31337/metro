@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import L from "leaflet";
 import { Train, Bus, Bath } from "lucide-react";
 import { createRoot } from "react-dom/client";
+import { SUBWAY_LINES, Station } from "@/data/subway-lines";
 import { PathResult, findShortestPath } from "@/utils/pathfinding";
 import type { ActiveTab } from "@/components/MapBackground";
 import type { WCItem } from "@/components/WCLayer";
@@ -13,8 +14,7 @@ import { fetchWCDataClient } from "@/services/wcApi";
 import busData from "@/data/bus-stops.json";
 
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
-const FloatingSearchBar = dynamic(() => import("@/components/FloatingSearchBar"), { ssr: false });
-const DraggableBottomSheet = dynamic(() => import("@/components/DraggableBottomSheet"), { ssr: false });
+const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
 const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
 
 export default function Home() {
@@ -31,8 +31,20 @@ export default function Home() {
     const [wcLoading, setWcLoading] = useState(false);
     const [wcFilters, setWcFilters] = useState({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
     const busStops = busData as BusStop[];
     
+    // Memoized stations list for search
+    const stations = useMemo(() => {
+        const unique = new Map<string, Station>();
+        SUBWAY_LINES.forEach(line => {
+            line.stations.forEach(s => {
+                if(!unique.has(s.name)) unique.set(s.name, s);
+            });
+        });
+        return Array.from(unique.values());
+    }, []);
+
     // Map instance ref for popups
     const mapRef = useRef<L.Map | null>(null);
 
@@ -87,12 +99,9 @@ export default function Home() {
     };
 
     const handleStationClick = (name: string, latlng: [number, number], type: "subway" | "bus") => {
-        // This function is called when a station is clicked on the map.
-        // For now, we'll just log it. Further implementation might involve
-        // setting a selected station state to display info in the bottom sheet.
+        // Update selection state for high-contrast labeling
+        setSelectedStationName(name);
         console.log(`Station clicked: ${name} (${type}) at ${latlng}`);
-        // If you want to show a popup, you'd typically use mapRef.current.openPopup() here
-        // or pass this info to a component that manages popups.
     };
 
     const setStart = (name: string) => {
@@ -121,14 +130,17 @@ export default function Home() {
                     onWCClick={setSelectedWC}
                     onBusStopClick={setSelectedBusStop}
                     onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number], "subway")}
+                    selectedStationName={selectedStationName}
+                    selectedWC={selectedWC}
+                    selectedBusStop={selectedBusStop}
                     onSetStart={setStartStation}
                     onSetEnd={setEndStation}
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
                 />
             </div>
 
-            {/* Layer 2: Floating Search Panel & Navigation */}
-            <FloatingSearchBar 
+            {/* Unified Bottom UI */}
+            <UnifiedBottomPanel 
                 activeTab={activeTab}
                 onTabChange={(tab) => setActiveTab(tab as ActiveTab)}
                 onSearch={(start, end) => {
@@ -138,15 +150,10 @@ export default function Home() {
                 startStation={startStation}
                 endStation={endStation}
                 isDarkMode={isDarkMode}
-            />
-
-            {/* Layer 3: Draggable Bottom Sheet (Info & Navigation) */}
-            <DraggableBottomSheet 
-                isOpen={true} 
-                onClose={() => {}}
-                snapPoints={[100, 450, 800]}
+                stations={stations}
+                busStops={busStops}
             >
-                {/* ─── Bottom Sheet Contents ───────────────────────────── */}
+                {/* ─── Bottom Sheet Contents (Simplified: No legacy details) ───────────── */}
                 {pathResult ? (
                     <div className="flex flex-col gap-6">
                         <div className="text-[20px] font-black tracking-tight flex items-center gap-2">
@@ -154,82 +161,29 @@ export default function Home() {
                         </div>
                     </div>
                 ) : activeTab === "wc" ? (
-                    <div className="flex flex-col gap-6 pb-20">
-                        {/* WC Filter Pills */}
-                        <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar py-1">
-                            {[
-                                { id: "accessible", label: "♿ 장애인", flag: wcFilters.accessible },
-                                { id: "diapers", label: "🍼 기저귀", flag: wcFilters.diapers },
-                                { id: "emergencyBell", label: "🔔 비상벨", flag: wcFilters.emergencyBell }
-                            ].map((filter) => (
-                                <button
-                                    key={filter.id}
-                                    onClick={() => setWcFilters({ ...wcFilters, [filter.id]: !filter.flag })}
-                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all shrink-0 ${filter.flag ? "bg-blue-500 border-blue-500 text-white" : "bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 text-zinc-500"}`}
+                    <div className="flex flex-col gap-6 pb-10">
+                        <div className="text-xl font-black">📍 가까운 화장실</div>
+                        <div className="flex flex-col gap-3">
+                            {nearestWCs.map((wc) => (
+                                <button 
+                                    key={wc.id}
+                                    onClick={() => setSelectedWC(wc)}
+                                    className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-left hover:border-blue-500 transition-all"
                                 >
-                                    {filter.label}
+                                    <div className="font-bold">{wc.name}</div>
+                                    <div className="text-xs text-zinc-400 mt-1">{wc.address}</div>
                                 </button>
                             ))}
                         </div>
-                        <div className="text-xl font-black">📍 가까운 화장실</div>
-                        {selectedWC ? (
-                            <div className="p-5 rounded-3xl bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
-                                <div className="flex justify-between items-start mb-3">
-                                    <div>
-                                        <div className="text-lg font-black">{selectedWC.name}</div>
-                                        <div className="text-sm text-zinc-500">{selectedWC.address}</div>
-                                    </div>
-                                    <div className="px-3 py-1 bg-blue-500 text-white text-[10px] font-bold rounded-full uppercase">Selected</div>
-                                </div>
-                                <div className="flex gap-2 mb-4">
-                                    {selectedWC.accessible && <span className="px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-[10px] border border-zinc-100 dark:border-zinc-700 font-bold">♿ 장애인</span>}
-                                    {selectedWC.diapers && <span className="px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-[10px] border border-zinc-100 dark:border-zinc-700 font-bold">🍼 기저귀</span>}
-                                    {selectedWC.emergencyBell && <span className="px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-[10px] border border-zinc-100 dark:border-zinc-700 font-bold">🔔 비상벨</span>}
-                                </div>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <a href={`https://map.naver.com/v5/search/${encodeURIComponent(selectedWC.address)}`} target="_blank" className="flex items-center justify-center h-12 bg-[#03C75A] text-white rounded-xl font-bold text-sm">네이버 길찾기</a>
-                                    <a href={`https://map.kakao.com/link/search/${encodeURIComponent(selectedWC.address)}`} target="_blank" className="flex items-center justify-center h-12 bg-[#FEE500] text-[#3c1e1e] rounded-xl font-bold text-sm">카카오 길찾기</a>
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="flex flex-col gap-3">
-                                {nearestWCs.map((wc) => (
-                                    <button 
-                                        key={wc.id}
-                                        onClick={() => setSelectedWC(wc)}
-                                        className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-left hover:border-blue-500 transition-all"
-                                    >
-                                        <div className="font-bold">{wc.name}</div>
-                                        <div className="text-xs text-zinc-400 mt-1">{wc.address}</div>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        {selectedBusStop && (
-                            <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <div className="text-lg font-black">{selectedBusStop.name}</div>
-                                        <div className="text-[11px] text-zinc-400 font-bold uppercase tracking-widest">{selectedBusStop.id}</div>
-                                    </div>
-                                    <div className="px-3 py-1 bg-orange-500 text-white text-[10px] font-bold rounded-full uppercase">Bus Stop</div>
-                                </div>
-                                <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-100 dark:border-white/5">
-                                    {selectedBusStop.routes?.map((r, i) => (
-                                        <span key={i} className="px-3 py-1 rounded-lg bg-orange-100/50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400 text-[11px] font-black">{r}</span>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
                         <div className="text-zinc-400 text-center py-10">
                             지도의 역이나 정류장을 눌러보세요
                         </div>
                     </div>
                 )}
-            </DraggableBottomSheet>
+            </UnifiedBottomPanel>
 
             {/* Hidden Utils */}
             <div className="fixed top-6 right-6 z-[2001]">

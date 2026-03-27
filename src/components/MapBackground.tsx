@@ -56,13 +56,16 @@ interface MapBackgroundProps {
     selectedBusStopId: string | null;
     onWCClick: (item: WCItem) => void;
     onBusStopClick: (stop: BusStop, latlng?: [number, number]) => void;
+    selectedWC: WCItem | null;
+    selectedBusStop: BusStop | null;
+    selectedStationName: string | null;
 }
 
 function MapBackground({
     pathResult, startStation, endStation, onStationClick,
     onSetStart, onSetEnd, onSetWaypoint,
     activeTab, isDarkMode, wcItems, wcFilters, busStops, selectedBusStopId,
-    onWCClick, onBusStopClick
+    onWCClick, onBusStopClick, selectedWC, selectedBusStop, selectedStationName
 }: MapBackgroundProps) {
     const [isClient, setIsClient] = useState(false);
     const [stations, setStations] = useState<Station[]>([]);
@@ -81,6 +84,42 @@ function MapBackground({
     const handleStationClick = (name: string) => {
         if (onStationClick) onStationClick(name);
     };
+
+    // Auto-open popups for selected items
+    useEffect(() => {
+        if (!mapRef.current) return;
+
+        if (selectedWC) {
+            const popupContent = createStationPopup({
+                name: selectedWC.name,
+                type: "bus", // Generic info popup
+                onSetStart: (n) => { onSetStart(n); mapRef.current?.closePopup(); },
+                onSetEnd: (n) => { onSetEnd(n); mapRef.current?.closePopup(); },
+                onSetWaypoint: (n) => { onSetWaypoint(n); mapRef.current?.closePopup(); },
+                isDarkMode
+            });
+            L.popup({ className: "premium-popup", offset: [0, -10], closeButton: false })
+                .setLatLng([selectedWC.lat, selectedWC.lng])
+                .setContent(popupContent)
+                .openOn(mapRef.current);
+            mapRef.current.flyTo([selectedWC.lat, selectedWC.lng], 16, { duration: 0.7 });
+        } else if (selectedBusStop) {
+            const popupContent = createStationPopup({
+                name: selectedBusStop.name,
+                type: "bus",
+                onSetStart: (n) => { onSetStart(n); mapRef.current?.closePopup(); },
+                onSetEnd: (n) => { onSetEnd(n); mapRef.current?.closePopup(); },
+                onSetWaypoint: (n) => { onSetWaypoint(n); mapRef.current?.closePopup(); },
+                routes: selectedBusStop.routes,
+                isDarkMode
+            });
+            L.popup({ className: "premium-popup", offset: [0, -10], closeButton: false })
+                .setLatLng([selectedBusStop.lat, selectedBusStop.lng])
+                .setContent(popupContent)
+                .openOn(mapRef.current);
+            mapRef.current.flyTo([selectedBusStop.lat, selectedBusStop.lng], 16, { duration: 0.7 });
+        }
+    }, [selectedWC, selectedBusStop, isDarkMode, onSetStart, onSetEnd, onSetWaypoint]);
 
     if (!isClient) {
         return (
@@ -140,9 +179,10 @@ function MapBackground({
                         trains={trains}
                         onStationClick={(name, latlng) => {
                             if (mapRef.current && latlng) {
-                                // Uber-style: Smooth FlyTo on click
-                                mapRef.current.flyTo(latlng, 15, { duration: 1.5 });
-
+                                // Uber-style: Smooth FlyTo on click (Speed up: 1.5s -> 0.7s)
+                                mapRef.current.flyTo(latlng, 15, { duration: 0.7 });
+                                if (onStationClick) onStationClick(name, latlng); // Trigger parent selection
+                                
                                 const popupContent = createStationPopup({
                                     name,
                                     type: "subway",
@@ -161,6 +201,7 @@ function MapBackground({
                                 .openOn(mapRef.current);
                             }
                         }}
+                        selectedStationName={selectedStationName}
                         isDarkMode={isDarkMode}
                     />
                 )}

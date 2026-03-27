@@ -14,6 +14,7 @@ interface SubwayCanvasLayerProps {
     pathResult: { path: string[]; totalWeight: number; transferCount: number } | null;
     trains: Train[];
     onStationClick: (name: string, latlng: [number, number]) => void;
+    selectedStationName: string | null;
     isDarkMode?: boolean;
 }
 
@@ -25,6 +26,7 @@ export default function SubwayCanvasLayer({
     pathResult,
     trains,
     onStationClick,
+    selectedStationName,
     isDarkMode = false
 }: SubwayCanvasLayerProps) {
     const map = useMap();
@@ -224,18 +226,48 @@ export default function SubwayCanvasLayer({
                 onStationClick(station.name, [station.lat, station.lng]);
             });
 
-            if (zoomLevel >= zoomThreshold && (!isRouteActive || isPathStation)) {
-                const labelIcon = L.divIcon({
-                    className: "bg-transparent",
-                    html: `<div class="station-name-label" style="color: white; -webkit-text-stroke: 1.2px ${baseColor}; font-weight: 800; font-size: 14px; text-shadow: 0 0 4px rgba(0,0,0,0.3); white-space: nowrap; transform: translateY(-20px); text-align: center; width: 100px; margin-left: -50px;">${station.name}</div>`,
-                    iconSize: [0, 0]
-                });
-                const labelMarker = L.marker([station.lat, station.lng], {
-                    icon: labelIcon,
-                    interactive: false,
-                    zIndexOffset: 100
-                });
-                layerGroup.addLayer(labelMarker);
+            if (zoomLevel >= zoomThreshold) {
+                // Determine if this station should use the "Selected" style
+                const isSelected = isPathStation || 
+                                 station.name === startStation || 
+                                 station.name === endStation ||
+                                 station.name === selectedStationName;
+                
+                let labelStyle = "";
+                if (isSelected) {
+                    // [Selected Style]: White fill, Bold Stroke (Line Color), 800 Weight
+                    labelStyle = `
+                        color: #FFFFFF;
+                        -webkit-text-stroke: 3px ${baseColor};
+                        paint-order: stroke fill;
+                        font-weight: 900;
+                        font-size: 14px;
+                        text-shadow: 0 0 10px rgba(255,255,255,0.4);
+                    `;
+                } else if (!isRouteActive) {
+                    // [Normal Style]: Black fill, Normal Weight
+                    labelStyle = `
+                        color: #000000;
+                        font-weight: 500;
+                        font-size: 13px;
+                        -webkit-text-stroke: 0.5px white;
+                        paint-order: stroke fill;
+                    `;
+                }
+
+                if (labelStyle) {
+                    const labelIcon = L.divIcon({
+                        className: "bg-transparent",
+                        html: `<div class="station-name-label" style="${labelStyle} white-space: nowrap; transform: translateY(-22px); text-align: center; width: 120px; margin-left: -60px; pointer-events: none;">${station.name}</div>`,
+                        iconSize: [0, 0]
+                    });
+                    const labelMarker = L.marker([station.lat, station.lng], {
+                        icon: labelIcon,
+                        interactive: false,
+                        zIndexOffset: isSelected ? 2000 : 100
+                    });
+                    layerGroup.addLayer(labelMarker);
+                }
             }
 
             layerGroup.addLayer(marker);
@@ -342,7 +374,8 @@ export default function SubwayCanvasLayer({
             // Name Style: Enhanced (User Request: +2pt, Bolder)
             // text-sm (14px) -> text-lg (18px)
             // font-boldEx -> font-extrabold (800)
-            const nameHtml = `<span class="text-black font-extrabold text-lg leading-none" style="-webkit-text-stroke: 1px white; paint-order: stroke fill;">${name}</span>`;
+            // Name Style: Enhanced (User Request: White fill, Bold Stroke, 800+)
+            const nameHtml = `<span class="font-black text-lg leading-none" style="color: #FFFFFF; -webkit-text-stroke: 3px ${color}; paint-order: stroke fill; text-shadow: 0 0 10px rgba(0,0,0,0.2);">${name}</span>`;
 
             // HTML Content
             const labelHtml = `
@@ -441,33 +474,45 @@ export default function SubwayCanvasLayer({
                 }
 
                 let marker = currentMarkers.get(train.id);
-                // ... (Marker creation logic same as before)
+                const segment = activeLineDetails.get(train.lineId);
+                const min = segment ? Math.min(segment.startIdx, segment.endIdx) : 0;
+                const max = segment ? Math.max(segment.startIdx, segment.endIdx) : 0;
+                const isOnPath = segment && train.stationIndex >= min && train.stationIndex <= max;
+
                 if (!marker) {
                     const line = SUBWAY_LINES.find(l => l.id === train.lineId);
                     const color = line?.color || "#000";
-                    const svgIcon = `
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 6V17H20V6C20 6 20 4 12 4C4 4 4 6 4 6ZM4 17V19H20V17M6 10H9V13H6V10ZM15 10H18V13H15V10ZM6 19L5 21H7L8 19H16L17 21H19L18 19" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-                        </svg>
-                    `;
                     const icon = L.divIcon({
-                        className: `train-marker-container ${train.isRealtime ? "live-indicator" : ""}`,
-                        html: `<div class="train-marker">${svgIcon}</div>`,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12]
+                        className: `train-marker-container transition-all duration-150 ${train.isRealtime ? "live-indicator" : ""}`,
+                        html: `
+                            <div class="train-marker relative ${isOnPath ? "scale-110" : ""}">
+                                <div class="absolute inset-0 animate-pulse rounded-full opacity-40" style="background: ${color}; filter: blur(${isOnPath ? "8px" : "4px"})"></div>
+                                <div class="bg-white rounded-lg p-1.5 shadow-2xl border-2" style="border-color: ${color}; transform: scale(${isOnPath ? '1.2' : '1'})">
+                                    <svg width="${isOnPath ? '22' : '18'}" height="${isOnPath ? '22' : '18'}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M4 6V17H20V6C20 6 20 4 12 4C4 4 4 6 4 6ZM4 17V19H20V17M6 10H9V13H6V10ZM15 10H18V13H15V10ZM6 19L5 21H7L8 19H16L17 21H19L18 19" fill="${color}" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
+                                    </svg>
+                                </div>
+                            </div>
+                        `,
+                        iconSize: [40, 40],
+                        iconAnchor: [20, 20]
                     });
                     marker = L.marker([train.lat, train.lng], {
                         icon: icon,
-                        interactive: false
+                        interactive: false,
+                        zIndexOffset: isOnPath ? 5000 : 3000
                     });
                     marker.bindTooltip(`${train.lineName} (${train.headingTo})`, {
-                        direction: 'top', offset: [0, -10], className: 'train-label', permanent: false
+                        direction: 'top', offset: [0, -15], className: 'train-label font-black', permanent: false
                     });
                     marker.addTo(layerGroup);
                     currentMarkers.set(train.id, marker);
                 } else {
                     marker.setLatLng([train.lat, train.lng]);
                     if (!layerGroup.hasLayer(marker)) marker.addTo(layerGroup);
+                    marker.setZIndexOffset(isOnPath ? 5000 : 3000);
+                    
+                    // Force re-render icon if path status changed subtly (using simple heading check for now)
                     marker.getTooltip()?.setContent(`${train.lineName} (${train.headingTo})`);
                 }
             });
