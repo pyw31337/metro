@@ -47,22 +47,54 @@ export interface PathResult {
     transferCount: number;
 }
 
-export const findShortestPath = (startName: string, endName: string): PathResult | null => {
-    const graph = buildGraph();
+/**
+ * Calculates the shortest path between a sequence of station names (Start, Waypoints, End).
+ */
+export const findShortestPath = (points: string[]): PathResult | null => {
+    if (points.length < 2) return null;
 
-    // Priority Queue implementation (simplified as simple array sort)
+    const graph = buildGraph();
+    let finalPath: string[] = [points[0]];
+    let totalWeight = 0;
+    let totalTransferCount = 0;
+
+    for (let i = 0; i < points.length - 1; i++) {
+        const start = points[i];
+        const end = points[i+1];
+
+        if (start === end) continue;
+
+        const segment = dijkstra(start, end, graph);
+        if (!segment) return null; // Unreachable segment
+
+        // Skip the first station of the next segment (duplicated from previous end)
+        finalPath = [...finalPath, ...segment.path.slice(1)];
+        totalWeight += segment.totalWeight;
+        totalTransferCount += segment.transferCount;
+    }
+
+    return { 
+        path: finalPath, 
+        totalWeight, 
+        transferCount: totalTransferCount 
+    };
+};
+
+/**
+ * Standard Dijkstra for a single pair.
+ */
+function dijkstra(startName: string, endName: string, graph: Map<string, GraphNode>): PathResult | null {
     const pq: { nodeId: string; weight: number; path: string[]; lines: string[] }[] = [];
-    const visited = new Set<string>();
+    const distances = new Map<string, number>();
 
     pq.push({ nodeId: startName, weight: 0, path: [startName], lines: [] });
+    distances.set(startName, 0);
 
     while (pq.length > 0) {
-        // Sort by weight (min-heap simulation)
         pq.sort((a, b) => a.weight - b.weight);
         const { nodeId, weight, path, lines } = pq.shift()!;
 
         if (nodeId === endName) {
-            // Calculate transfers
             let transfers = 0;
             for (let i = 0; i < lines.length - 1; i++) {
                 if (lines[i] !== lines[i + 1]) transfers++;
@@ -70,19 +102,18 @@ export const findShortestPath = (startName: string, endName: string): PathResult
             return { path, totalWeight: weight, transferCount: transfers };
         }
 
-        if (visited.has(nodeId)) continue;
-        visited.add(nodeId);
+        if (weight > (distances.get(nodeId) ?? Infinity)) continue;
 
         const node = graph.get(nodeId);
         if (!node) continue;
 
         for (const conn of node.connections) {
-            if (!visited.has(conn.nodeId)) {
-                // Transfer penalty logic could be added here to weight
-                // For now, raw shortest path
+            const newWeight = weight + conn.weight;
+            if (newWeight < (distances.get(conn.nodeId) ?? Infinity)) {
+                distances.set(conn.nodeId, newWeight);
                 pq.push({
                     nodeId: conn.nodeId,
-                    weight: weight + conn.weight,
+                    weight: newWeight,
                     path: [...path, conn.nodeId],
                     lines: [...lines, conn.lineId]
                 });
@@ -91,4 +122,4 @@ export const findShortestPath = (startName: string, endName: string): PathResult
     }
 
     return null;
-};
+}

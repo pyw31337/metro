@@ -13,7 +13,7 @@ interface SubwayCanvasLayerProps {
     endStation: string | null;
     pathResult: { path: string[]; totalWeight: number; transferCount: number } | null;
     trains: Train[];
-    onStationClick: (name: string) => void;
+    onStationClick: (name: string, latlng: [number, number]) => void;
     isDarkMode?: boolean;
 }
 
@@ -141,34 +141,36 @@ export default function SubwayCanvasLayer({
         const layerGroup = staticLayerRef.current;
         layerGroup.clearLayers();
 
+        // Add Glow Filter for Lines (SVG Filter)
+        const svgElement = document.querySelector(".leaflet-zoom-animated") as HTMLElement;
+        if (svgElement) {
+            svgElement.style.filter = isDarkMode 
+                ? "drop-shadow(0 0 8px rgba(255,255,255,0.15))"
+                : "drop-shadow(0 0 6px rgba(0,0,0,0.1))";
+        }
+
         const isRouteActive = !!pathResult;
 
         // Draw Lines
         SUBWAY_LINES.forEach((line) => {
             const latlngs = line.stations.map(s => [s.lat, s.lng] as [number, number]);
 
-            // Optimization: If route active, gray out unused lines
-            // UPDATED: Use Line NAME for styling context. 
-            // If "1호선" is active, ALL "1호선" segments (Soyosan, Incheon, etc.) will be Dark Gray.
-            const color = isRouteActive ? "#e5e7eb" : line.color;
-            const opacity = isRouteActive ? 0.3 : 0.85;
-            const weight = isRouteActive ? 2 : 4; // Thinner inactive lines
-
-            let drawColor = color;
-            let drawOpacity = opacity;
-            let drawWeight = weight;
+            // Default Style
+            let drawColor = line.color;
+            let drawOpacity = 0.8;
+            let drawWeight = 4;
 
             if (isRouteActive) {
                 if (activeLineNames.has(line.name)) {
-                    // It's part of an active line (Broad Context) -> Dark Gray
-                    drawColor = "#374151"; // Dark Gray (gray-700)
-                    drawOpacity = 0.6;
-                    drawWeight = 1.5;
-                } else {
-                    // Completely irrelevant line -> Light Gray (Background)
-                    drawColor = "#e5e7eb"; // Gray-200
-                    drawOpacity = 0.2;
+                    // Part of an active line (Broad Context) -> Dimmed but visible
+                    drawColor = isDarkMode ? "#374151" : "#9ca3af";
+                    drawOpacity = 0.4;
                     drawWeight = 2;
+                } else {
+                    // Irrelevant line -> Very Light Gray
+                    drawColor = isDarkMode ? "#1f2937" : "#f1f5f9";
+                    drawOpacity = 0.1;
+                    drawWeight = 1.5;
                 }
             }
 
@@ -178,6 +180,7 @@ export default function SubwayCanvasLayer({
                 opacity: drawOpacity,
                 lineCap: "round",
                 lineJoin: "round",
+                bubblingMouseEvents: true
             });
 
             layerGroup.addLayer(polyline);
@@ -185,45 +188,47 @@ export default function SubwayCanvasLayer({
 
         // Draw Stations
         const isZoomOut = zoomLevel < 12;
-        const zoomThreshold = 13;
+        const zoomThreshold = 12;
 
         stations.forEach((station) => {
-            // Find if this station is on an active line
-            // ... (Logic kept simple: dim all non-path stations)
-
+            const isPathStation = pathResult?.path.includes(station.name);
             const primaryLine = SUBWAY_LINES.find(l => l.name === station.lines[0]);
 
             let baseColor = primaryLine?.color || "#888";
+            let opacity = 1;
+
             if (isRouteActive) {
-                // Dim stations not on path
-                baseColor = "#d1d5db";
+                if (isPathStation) {
+                    baseColor = primaryLine?.color || "#888";
+                    opacity = 1;
+                } else {
+                    baseColor = isDarkMode ? "#333" : "#e5e7eb";
+                    opacity = 0.2;
+                }
             }
 
-            // ... (Rest of station sizing logic)
-            let radius = isZoomOut ? (station.lines.length > 1 ? 4 : 2) : (station.lines.length > 1 ? 6 : 4);
-            let weight = isZoomOut ? (station.lines.length > 1 ? 2 : 1) : (station.lines.length > 1 ? 3 : 2);
-            if (isRouteActive) {
-                radius = Math.max(2, radius - 1);
-                weight = 1;
-            }
-
+            const markerSize = station.lines.length > 1 ? (isZoomOut ? 4 : 6) : (isZoomOut ? 2.5 : 4);
+            
             const marker = L.circleMarker([station.lat, station.lng], {
-                radius: radius,
-                color: baseColor,
+                radius: markerSize,
+                color: isPathStation ? baseColor : (isDarkMode ? "#444" : "#ccc"),
                 fillColor: "#fff",
-                fillOpacity: isRouteActive ? 0.5 : 1,
-                weight: weight,
+                fillOpacity: opacity,
+                weight: isPathStation ? 3 : 1.5,
                 bubblingMouseEvents: false
             });
 
-            marker.on('click', () => onStationClick(station.name));
+            marker.on('click', (e) => {
+                L.DomEvent.stopPropagation(e);
+                onStationClick(station.name, [station.lat, station.lng]);
+            });
 
-            if (zoomLevel >= zoomThreshold && !isRouteActive) {
+            if (zoomLevel >= zoomThreshold && (!isRouteActive || isPathStation)) {
                 marker.bindTooltip(station.name, {
                     permanent: true,
                     direction: "top",
                     offset: [0, -8],
-                    className: "station-label",
+                    className: `station-label ${isRouteActive && !isPathStation ? "opacity-20" : ""}`,
                 });
             }
 

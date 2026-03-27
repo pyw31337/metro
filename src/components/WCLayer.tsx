@@ -15,6 +15,9 @@ export interface WCItem {
   floor: string;
   gender: string;
   accessible: boolean;
+  hours?: string;
+  diapers?: boolean;
+  emergencyBell?: boolean;
 }
 
 interface WCLayerProps {
@@ -38,15 +41,16 @@ export default function WCLayer({ items, onWCClick }: WCLayerProps) {
 
     items.forEach((item) => {
       const svgHtml = `
-        <div style="
+        <div class="wc-marker-inner" style="
           width: 28px; height: 28px;
           background: #fff;
           border-radius: 50%;
-          border: 2.5px solid #3b82f6;
+          border: 2.5px solid #10b981;
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 2px 8px rgba(59,130,246,0.25);
+          box-shadow: 0 4px 12px rgba(16,185,129,0.3);
           font-size: 14px;
           cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         ">🚻</div>
       `;
       const icon = L.divIcon({

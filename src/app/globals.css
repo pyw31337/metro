@@ -1,19 +1,32 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-    --background: #ffffff;
-    --foreground: #111827;
-    --surface: #f9fafb;
-    --border: #e5e7eb;
-    --primary: #2563eb;
+@layer theme {
+    :root {
+        --background: #fdfdfd;
+        --foreground: #121212;
+        --surface: rgba(255, 255, 255, 0.85);
+        --surface-border: rgba(0, 0, 0, 0.05);
+        --edge-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.12);
+        --primary: #000000;
+        --accent: #2563eb;
+    }
+
+    .dark {
+        --background: #0a0a0a;
+        --foreground: #ffffff;
+        --surface: rgba(18, 18, 18, 0.85);
+        --surface-border: rgba(255, 255, 255, 0.08);
+        --edge-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.5);
+    }
 }
 
 * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
@@ -21,17 +34,31 @@ html, body {
     padding: 0;
     overflow: hidden;
     height: 100%;
+    font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
 body {
     color: var(--foreground);
     background: var(--background);
-    font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── Custom Scrollbar ─────────────────────────────────────────────────────── */
+/* ─── Glassmorphism (Premium Apple Style) ──────────────────────────────────── */
+.glass {
+    background: var(--surface);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid var(--surface-border);
+    box-shadow: var(--edge-shadow);
+}
+
+.glass-dark {
+    background: rgba(12, 12, 12, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
     width: 4px;
 }
@@ -39,122 +66,55 @@ body {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: #d1d5db;
+    background: rgba(156, 163, 175, 0.5);
     border-radius: 99px;
 }
-::-webkit-scrollbar-thumb:hover {
-    background: #9ca3af;
+
+/* ─── Leaflet Premium Monotone Filter ────────────────────────────────────── */
+.leaflet-container {
+    background: var(--background) !important;
+    filter: grayscale(100%) brightness(1.05) contrast(1.1);
 }
 
-/* ─── Leaflet Station Label ─────────────────────────────────────────────────── */
+.dark .leaflet-container {
+    filter: grayscale(100%) invert(100%) contrast(0.9) brightness(0.9);
+}
+
 .station-label {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
 }
-.station-label::before,
+
 .leaflet-tooltip.station-label::before {
     display: none !important;
 }
-.leaflet-tooltip.station-label {
-    background: transparent !important;
-    border: none !important;
-    box-shadow: none !important;
+
+/* ─── App UI Components ────────────────────────────────────────────────────── */
+.bottom-sheet-shadow {
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.15);
 }
 
-/* ─── Train Markers ─────────────────────────────────────────────────────────── */
-.train-label {
-    background: rgba(255, 255, 255, 0.92) !important;
-    border: 1px solid #e5e7eb !important;
-    border-radius: 6px !important;
-    font-size: 10px !important;
-    font-family: 'Inter', sans-serif !important;
-    padding: 1px 5px !important;
-    white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
-    backdrop-filter: blur(4px);
-}
-.train-marker {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: transparent;
-    border: none;
-    font-size: 16px;
-    transition: transform 0.08s linear;
-}
-.train-marker-container {
-    background: transparent !important;
-    border: none !important;
-    transition: transform 1s linear;
+.nav-tab-active {
+    @apply bg-white text-black;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* ─── WC Markers ─────────────────────────────────────────────────────────────── */
-.wc-marker-container {
-    background: transparent !important;
-    border: none !important;
-}
-.wc-tooltip {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1px solid #bfdbfe !important;
-    border-radius: 8px !important;
-    color: #1d4ed8 !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    padding: 3px 8px !important;
-    box-shadow: 0 2px 8px rgba(59,130,246,0.2) !important;
-}
-.wc-tooltip::before {
-    display: none !important;
+.dark .nav-tab-active {
+    @apply bg-zinc-800 text-white;
 }
 
-/* ─── Bus Stop Markers ───────────────────────────────────────────────────────── */
-.bus-stop-marker {
-    background: transparent !important;
-    border: none !important;
-}
-.bus-stop-tooltip {
-    background: rgba(255, 255, 255, 0.95) !important;
-    border: 1px solid #fed7aa !important;
-    border-radius: 8px !important;
-    color: #c2410c !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    padding: 3px 8px !important;
-    box-shadow: 0 2px 8px rgba(249,115,22,0.2) !important;
-}
-.bus-stop-tooltip::before {
-    display: none !important;
+/* ─── Animations ────────────────────────────────────────────────────────────── */
+@keyframes pulse-soft {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.05); opacity: 1; }
 }
 
-/* ─── Leaflet Reset ──────────────────────────────────────────────────────────── */
-.leaflet-container {
-    font-family: 'Inter', 'Noto Sans KR', sans-serif !important;
-}
-.leaflet-control-attribution {
-    display: none !important;
+.animate-pulse-soft {
+    animation: pulse-soft 2s infinite ease-in-out;
 }
 
-/* ─── Mobile safe-area support ───────────────────────────────────────────────── */
-@supports (padding-bottom: env(safe-area-inset-bottom)) {
-    .pb-safe-bottom {
-        padding-bottom: env(safe-area-inset-bottom);
-    }
-}
-
-/* ─── Smooth transitions ─────────────────────────────────────────────────────── */
-button {
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-}
-
-input {
-    -webkit-tap-highlight-color: transparent;
-}
-
-/* ─── Pulse Animation for Live Trains ────────────────────────────────────────── */
+/* ─── Live Train Effects ───────────────────────────────────────────────────── */
 @keyframes live-pulse {
     0% {
         box-shadow: 0 0 0 0 rgba(0, 224, 198, 0.4);
@@ -167,11 +127,6 @@ input {
     }
 }
 
-.live-indicator {
-    position: relative;
-    border-radius: 50%;
-}
-
 .live-indicator::after {
     content: '';
     position: absolute;
@@ -181,4 +136,17 @@ input {
     left: 0;
     border-radius: 50%;
     animation: live-pulse 2s infinite;
+}
+
+/* ─── Custom Marker Styling ────────────────────────────────────────────────── */
+.custom-marker {
+    background: white;
+    border-radius: 50%;
+    border: 2px solid #ccc;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.dark .custom-marker {
+    background: #111;
+    border-color: #333;
 }

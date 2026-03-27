@@ -115,50 +115,97 @@ function getMockData(): WCItem[] {
   return mockData as WCItem[];
 }
 
-// ─── 메인 함수 (자동 fallback 포함) ──────────────────────────────────────────
+/**
+ * 공공데이터포털 (data.go.kr) - 전국공중화장실표준데이터
+ * 2000건 이상의 전국 화장실 데이터를 수집합니다.
+ */
+async function fetchNationalWC(apiKey: string): Promise<WCItem[]> {
+  // 전국공중화장실표준데이터 API (data.go.kr)
+  // uddi:9893d932-b677-4b18-b26a-986a4225e365
+  const SERVICE_ID = "15013116"; 
+  const UUID = "9893d932-b677-4b18-b26a-986a4225e365";
+  const url = `https://api.odcloud.kr/api/${SERVICE_ID}/v1/uddi:${UUID}?page=1&perPage=2000&serviceKey=${apiKey}`;
+
+  const res = await fetch(url, { next: { revalidate: 86400 } });
+  if (!res.ok) throw new Error(`National WC API Error: ${res.status}`);
+
+  const json = await res.json();
+  const rows = json?.data || [];
+
+  return rows
+    .filter((r: any) => r.위도 && r.경도)
+    .map((r: any, i: number) => ({
+      id: `national-wc-${i}`,
+      name: r.화장실명 || "공중화장실",
+      station: r.화장실명.includes("역") ? r.화장실명.split(" ")[0] : "",
+      line: "", 
+      lat: parseFloat(r.위도),
+      lng: parseFloat(r.경도),
+      address: r.소재지도로명주소 || r.소재지지번주소 || "",
+      floor: "",
+      gender: r.남녀공용화장실여부 === "Y" ? "mixed" : "separated",
+      accessible: r.장애인용남성대변기수 > 0 || r.장애인용여성대변기수 > 0,
+      hours: r.개방시간명 || "정보없음",
+      diapers: r.기저귀교환대지정여부 === "Y" || r.기저귀교환대장소?.length > 0,
+      emergencyBell: r.비상벨설치여부 === "Y" || r.비상벨설치장소?.length > 0,
+    }))
+    .filter((item: WCItem) => item.lat !== 0 && item.lng !== 0);
+}
+
+// ─── 메인 함수 (전국 데이터 우선) ──────────────────────────────────────────
 export async function fetchWCData(): Promise<WCItem[]> {
   const wcKey = process.env.NEXT_PUBLIC_WC_API_KEY;
   const seoulKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
 
-  // 1순위: data.go.kr WC API
+  let allItems: WCItem[] = [];
+
+  // 1순위: 전국 공중화장실 데이터 (가장 방대함)
+  if (wcKey && wcKey.length > 10) {
+    try {
+      const nationalData = await fetchNationalWC(wcKey);
+      if (nationalData.length > 0) {
+        allItems = [...allItems, ...nationalData];
+      }
+    } catch (err) {
+      console.warn("[WC] National API failed:", err);
+    }
+  }
+
+  // 2순위: 데이터포털 내 서울교통공사 전용 데이터 (중복 제거 필요)
   if (wcKey && wcKey.length > 10) {
     try {
       const data = await fetchFromDataGoKr(wcKey);
-      if (data.length > 0) {
-        console.log(`[WC] Loaded ${data.length} items from data.go.kr`);
-        return data;
-      }
+      // 중복 체크 로직 (간단히 주소/이름 기준)
+      const existingNames = new Set(allItems.map(i => i.name));
+      const filtered = data.filter(i => !existingNames.has(i.name));
+      allItems = [...allItems, ...filtered];
     } catch (err) {
-      console.warn("[WC] data.go.kr API failed, trying Seoul Open Data:", err);
+      console.warn("[WC] Data.go.kr local API failed:", err);
     }
   }
 
-  // 2순위: 서울 열린데이터광장
+  // 3순위: 서울 열린데이터광장 (보조용)
   if (seoulKey && seoulKey.length > 10) {
     try {
       const data = await fetchFromSeoulOpenData(seoulKey);
-      if (data.length > 0) {
-        console.log(`[WC] Loaded ${data.length} items from Seoul Open Data`);
-        return data;
-      }
+      const existingNames = new Set(allItems.map(i => i.name));
+      const filtered = data.filter(i => !existingNames.has(i.name));
+      allItems = [...allItems, ...filtered];
     } catch (err) {
-      console.warn("[WC] Seoul Open Data API failed, using mock:", err);
+      console.warn("[WC] Seoul Open Data API failed:", err);
     }
   }
 
-  // 3순위: Mock 데이터
+  if (allItems.length > 0) {
+    console.log(`[WC] Total integrated items: ${allItems.length}`);
+    return allItems;
+  }
+
+  // 최종 fallback: Mock 데이터
   console.info("[WC] Using mock data (no API key configured)");
   return getMockData();
 }
 
-/**
- * 클라이언트 사이드용 — 이미 빌드된 정적 데이터
- * GitHub Pages는 서버리스이므로 빌드 타임에 데이터를 fetch하거나
- * 클라이언트에서 직접 API를 호출합니다.
- *
- * GitHub Pages 환경에서는 CORS 우회를 위해 Next.js API Route 대신
- * 클라이언트에서 직접 호출하거나 NEXT_PUBLIC_ 키를 사용합니다.
- */
 export async function fetchWCDataClient(): Promise<WCItem[]> {
   return fetchWCData();
 }
