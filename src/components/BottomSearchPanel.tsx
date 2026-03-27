@@ -12,16 +12,28 @@ interface BottomSearchPanelProps {
     isDarkMode: boolean;
 }
 
-// Chosung matching helper
-const getChosung = (str: string) => {
-    const cho = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
-    let result = "";
-    for(let i=0; i<str.length; i++) {
-        const code = str.charCodeAt(i) - 44032;
-        if(code > -1 && code < 11172) result += cho[Math.floor(code / 588)];
-        else result += str.charAt(i);
+import * as Hangul from "hangul-js";
+
+// Chosung matching helper using hangul-js
+const matchChosung = (query: string, target: string) => {
+    const disassembledQuery = Hangul.disassemble(query).join("");
+    const disassembledTarget = Hangul.disassemble(target).join("");
+    
+    // Check if query is all chosung
+    const isAllChosung = query.split("").every(char => {
+        const code = char.charCodeAt(0);
+        return code >= 0x3131 && code <= 0x314E; //ㄱ ~ ㅎ
+    });
+
+    if (isAllChosung) {
+        // Match only chosung
+        const targetChosung = Hangul.disassemble(target, true)
+            .map(j => j[0])
+            .join("");
+        return targetChosung.includes(query);
     }
-    return result;
+
+    return disassembledTarget.includes(disassembledQuery);
 };
 
 export default function BottomSearchPanel({ onSearch, startStation, endStation, isDarkMode }: BottomSearchPanelProps) {
@@ -61,13 +73,8 @@ export default function BottomSearchPanel({ onSearch, startStation, endStation, 
             return;
         }
 
-        const query = val.toLowerCase();
-        const queryCho = getChosung(query);
-
         const filtered = allStations.current.filter(s => {
-            const name = s.name.toLowerCase();
-            const nameCho = getChosung(name);
-            return name.includes(query) || nameCho.includes(queryCho);
+            return matchChosung(val, s.name);
         }).slice(0, 10);
 
         setSearchResults(filtered);

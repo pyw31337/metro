@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
+import "leaflet.markercluster";
 
 export interface BusStop {
   id: string;
@@ -21,12 +22,28 @@ interface BusStopLayerProps {
 
 export default function BusStopLayer({ stops, selectedId, onStopClick }: BusStopLayerProps) {
   const map = useMap();
-  const layerRef = useRef<L.LayerGroup | null>(null);
+  const layerRef = useRef<any>(null);
 
   useEffect(() => {
-    const layer = L.layerGroup().addTo(map);
-    layerRef.current = layer;
-    return () => { layer.remove(); };
+    // @ts-ignore
+    const clusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 40,
+      disableClusteringAtZoom: 15,
+      // Premium look for clusters
+      iconCreateFunction: function(cluster: any) {
+        const count = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div class="bus-cluster-inner" style="width: 36px; height: 36px; background: #f97316; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 12px rgba(249,115,22,0.5); border: 2px solid white;">${count}</div>`,
+          className: 'bus-marker-cluster',
+          iconSize: L.point(36, 36)
+        });
+      }
+    }).addTo(map);
+    layerRef.current = clusterGroup;
+    return () => { clusterGroup.remove(); };
   }, [map]);
 
   useEffect(() => {

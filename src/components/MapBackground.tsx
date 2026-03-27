@@ -96,6 +96,8 @@ function MapBackground({
     return (
         <div className="absolute inset-0 w-full h-full z-0">
             <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossOrigin="" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+            <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
             <MapContainer
                 center={[37.5665, 126.9780]}
                 zoom={12}

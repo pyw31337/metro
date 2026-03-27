@@ -14,6 +14,7 @@ import busData from "@/data/bus-stops.json";
 
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
 const BottomSearchPanel = dynamic(() => import("@/components/BottomSearchPanel"), { ssr: false });
+const BottomNavigationBar = dynamic(() => import("@/components/BottomNavigationBar"), { ssr: false });
 const DraggableBottomSheet = dynamic(() => import("@/components/DraggableBottomSheet"), { ssr: false });
 const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
 
@@ -117,20 +118,10 @@ export default function Home() {
                 isDarkMode={isDarkMode}
             />
 
-            {/* Category Tabs (Relocated to bottom-left for accessibility) */}
-            <div className="fixed bottom-32 left-6 z-[3000] flex flex-col gap-3 pointer-events-auto">
-                {["subway", "bus", "wc"].map((tab) => (
-                    <button
-                        key={tab}
-                        onClick={() => setActiveTab(tab as ActiveTab)}
-                        className={`w-12 h-12 rounded-2xl glass-premium flex items-center justify-center transition-all ${activeTab === tab ? "bg-zinc-900 text-white scale-110 shadow-lg" : "text-zinc-500"}`}
-                    >
-                        {tab === "subway" && <Train size={20} />}
-                        {tab === "bus" && <Bus size={20} />}
-                        {tab === "wc" && <Bath size={20} />}
-                    </button>
-                ))}
-            </div>
+            <BottomNavigationBar 
+                activeTab={activeTab} 
+                onTabChange={(tab) => setActiveTab(tab as ActiveTab)} 
+            />
 
             {/* Layer 3: Draggable Bottom Sheet (Info & Navigation) */}
             <DraggableBottomSheet 

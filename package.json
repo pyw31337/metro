@@ -10,9 +10,12 @@
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",
+    "@types/leaflet.markercluster": "^1.5.6",
     "clsx": "^2.1.1",
     "framer-motion": "^12.23.26",
+    "hangul-js": "^0.2.6",
     "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "react": "19.2.3",
