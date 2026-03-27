@@ -62,7 +62,7 @@ export function useRealtimeTrains() {
                 // Fetching in parallel for speed
                 await Promise.all(lineNames.map(async (name) => {
                     try {
-                        const url = `https://openapi.seoul.go.kr:8088/${apiKey}/json/realtimeSubwayPosition/1/100/${encodeURIComponent(name)}`;
+                        const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeSubwayPosition/1/100/${encodeURIComponent(name)}`;
                         const res = await fetch(url);
                         const json = await res.json();
                         const list: RealtimePosition[] = json?.realtimeSubwayPosition?.row || [];
