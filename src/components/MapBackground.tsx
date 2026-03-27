@@ -2,12 +2,11 @@
 
 import { useEffect, useState, memo, useRef } from "react";
 import dynamic from "next/dynamic";
-import { createRoot } from "react-dom/client";
 import { getAllStations, Station } from "@/data/subway-lines";
 import { PathResult } from "@/utils/pathfinding";
 import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
-import StationPopup, { createStationPopup } from "./StationPopup";
-import { useBusPositions, BusPosition } from "@/hooks/useBusPositions";
+import { createStationPopup } from "./StationPopup";
+import { useBusPositions } from "@/hooks/useBusPositions";
 import L from "leaflet";
 import type { WCItem } from "./WCLayer";
 import type { BusStop } from "./BusStopLayer";
@@ -29,17 +28,6 @@ const BusRouteLayer = dynamic(() => import("./BusRouteLayer"), { ssr: false });
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
-interface SubwayCanvasLayerProps {
-    stations: Station[];
-    zoomLevel: number;
-    startStation: string | null;
-    endStation: string | null;
-    pathResult: PathResult | null;
-    trains: any[];
-    onStationClick: (name: string, latlng: [number, number]) => void;
-    isDarkMode: boolean;
-}
-
 interface MapBackgroundProps {
     pathResult: PathResult | null;
     startStation: string | null;
@@ -59,13 +47,15 @@ interface MapBackgroundProps {
     selectedWC: WCItem | null;
     selectedBusStop: BusStop | null;
     selectedStationName: string | null;
+    onMapReady?: (map: L.Map) => void;
 }
 
 function MapBackground({
     pathResult, startStation, endStation, onStationClick,
     onSetStart, onSetEnd, onSetWaypoint,
     activeTab, isDarkMode, wcItems, wcFilters, busStops, selectedBusStopId,
-    onWCClick, onBusStopClick, selectedWC, selectedBusStop, selectedStationName
+    onWCClick, onBusStopClick, selectedWC, selectedBusStop, selectedStationName,
+    onMapReady
 }: MapBackgroundProps) {
     const [isClient, setIsClient] = useState(false);
     const [stations, setStations] = useState<Station[]>([]);
@@ -81,10 +71,6 @@ function MapBackground({
         setStations(getAllStations());
     }, []);
 
-    const handleStationClick = (name: string) => {
-        if (onStationClick) onStationClick(name);
-    };
-
     // Auto-open popups for selected items
     useEffect(() => {
         if (!mapRef.current) return;
@@ -92,7 +78,7 @@ function MapBackground({
         if (selectedWC) {
             const popupContent = createStationPopup({
                 name: selectedWC.name,
-                type: "bus", // Generic info popup
+                type: "bus",
                 onSetStart: (n) => { onSetStart(n); mapRef.current?.closePopup(); },
                 onSetEnd: (n) => { onSetEnd(n); mapRef.current?.closePopup(); },
                 onSetWaypoint: (n) => { onSetWaypoint(n); mapRef.current?.closePopup(); },
@@ -149,12 +135,16 @@ function MapBackground({
                 maxBounds={[[36.5, 125.5], [38.5, 128.5]]}
                 maxBoundsViscosity={1.0}
                 style={{ height: "100%", width: "100%", background: isDarkMode ? "#000000" : "#f8f9fa", position: "fixed" }}
-                ref={mapRef}
+                ref={(map) => {
+                    if (map) {
+                        mapRef.current = map;
+                        if (onMapReady) onMapReady(map);
+                    }
+                }}
             >
                 <ZoomHandler onZoomChange={setZoomLevel} />
                 <TileLayer url={tileUrl} />
 
-                {/* 지하철 레이어 */}
                 {(activeTab === "subway" || activeTab === "subway+bus") && (
                     <SubwayCanvasLayer
                         stations={stations}
@@ -162,26 +152,11 @@ function MapBackground({
                         startStation={startStation}
                         endStation={endStation}
                         pathResult={pathResult}
-                        // Add Glow Filter for Lines
-                        // This code block is syntactically incorrect as a prop.
-                        // It appears to be intended for the SubwayCanvasLayer component's internal logic.
-                        // For now, it's commented out to maintain syntactical correctness.
-                        /*
-                        const svgElement = document.querySelector(".leaflet-zoom-animated") as HTMLElement;
-                        if (svgElement) {
-                            // Apply a subtle drop-shadow to the entire SVG layer for line glowing
-                            svgElement.style.filter = isDarkMode
-                                ? "drop-shadow(0 0 8px rgba(255,255,255,0.1))"
-                                : "drop-shadow(0 0 4px rgba(0,0,0,0.05))";
-                        }
-                        // Draw Lines
-                        */
                         trains={trains}
                         onStationClick={(name, latlng) => {
                             if (mapRef.current && latlng) {
-                                // Uber-style: Smooth FlyTo on click (Speed up: 1.5s -> 0.7s)
                                 mapRef.current.flyTo(latlng, 15, { duration: 0.7 });
-                                if (onStationClick) onStationClick(name, latlng); // Trigger parent selection
+                                if (onStationClick) onStationClick(name, latlng);
                                 
                                 const popupContent = createStationPopup({
                                     name,
@@ -206,7 +181,6 @@ function MapBackground({
                     />
                 )}
 
-                {/* WC 레이어 */}
                 {activeTab === "wc" && (
                     <WCLayer 
                         items={wcItems} 
@@ -216,7 +190,6 @@ function MapBackground({
                     />
                 )}
 
-                {/* 버스 레이어 */}
                 {(activeTab === "bus" || activeTab === "subway+bus") && (
                     <>
                         <BusStopLayer

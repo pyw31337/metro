@@ -16,6 +16,7 @@ import busData from "@/data/bus-stops.json";
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
 const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
+const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: false });
 
 export default function Home() {
     const [pathResult, setPathResult] = useState<PathResult | null>(null);
@@ -142,6 +143,28 @@ export default function Home() {
         setSelectedBusStop(null);
     };
 
+    // ─── Map Controls ────────────────────────────────────────────────────────
+    const handleZoomIn = () => {
+        mapRef.current?.zoomIn();
+    };
+
+    const handleZoomOut = () => {
+        mapRef.current?.zoomOut();
+    };
+
+    const handleLocate = () => {
+        if (navigator.geolocation && mapRef.current) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                const { latitude, longitude } = pos.coords;
+                mapRef.current?.flyTo([latitude, longitude], 15, { duration: 1.5 });
+                setUserLocation([latitude, longitude]);
+            }, (err) => {
+                console.error("Geolocation failed:", err);
+                alert("현재 위치를 가져오는데 실패했습니다.");
+            });
+        }
+    };
+
     return (
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
             {/* Layer 1: Full-screen Map Background */}
@@ -165,6 +188,7 @@ export default function Home() {
                     onSetStart={setStartStation}
                     onSetEnd={setEndStation}
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
+                    onMapReady={(map) => { mapRef.current = map; }}
                 />
             </div>
 
@@ -249,13 +273,21 @@ export default function Home() {
             </UnifiedBottomPanel>
 
             {/* Hidden Utils */}
-            <div className="fixed top-6 right-6 z-[2001]">
+            {/* Floating Utils Group (Right Side) */}
+            <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
                 <button 
                     onClick={() => setIsDarkMode(!isDarkMode)}
-                    className="w-12 h-12 rounded-full glass-premium flex items-center justify-center text-zinc-600 dark:text-zinc-200"
+                    className="w-12 h-12 rounded-full glass-premium flex items-center justify-center text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-xl transition-all hover:scale-105 active:scale-95"
                 >
                     {isDarkMode ? "☀️" : "🌙"}
                 </button>
+
+                <MapControls 
+                    onZoomIn={handleZoomIn}
+                    onZoomOut={handleZoomOut}
+                    onLocate={handleLocate}
+                    isDarkMode={isDarkMode}
+                />
             </div>
         </main>
     );
