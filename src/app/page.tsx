@@ -2,22 +2,24 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import MapBackground from "@/components/MapBackground";
-import Logo from "@/components/Logo";
 import { PathResult } from "@/utils/pathfinding";
+import type { ActiveTab } from "@/components/MapBackground";
+import type { WCItem } from "@/components/WCLayer";
+import type { BusStop } from "@/components/BusStopLayer";
+import wcData from "@/data/wc.json";
+import busData from "@/data/bus-stops.json";
 
-// Import RoutePlanner dynamically to match previous behavior, 
-// though regular import is likely fine given the 'use client' directive in RoutePlanner.
-const RoutePlanner = dynamic(
-    () => import("@/components/RoutePlanner"),
-    { ssr: false }
-);
+const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
+const RoutePlanner = dynamic(() => import("@/components/RoutePlanner"), { ssr: false });
 
 export default function Home() {
-    // State lifted from MapBackground
     const [pathResult, setPathResult] = useState<PathResult | null>(null);
     const [startStation, setStartStation] = useState<string | null>(null);
     const [endStation, setEndStation] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<ActiveTab>("subway");
+    const [isDarkMode, setIsDarkMode] = useState(false);
+    const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
+    const [selectedBusStop, setSelectedBusStop] = useState<BusStop | null>(null);
 
     const handlePathFound = (result: PathResult | null) => {
         setPathResult(result);
@@ -30,22 +32,36 @@ export default function Home() {
         }
     };
 
+    const wcItems = wcData as WCItem[];
+    const busStops = busData as BusStop[];
+
     return (
         <main className="relative w-full h-screen overflow-hidden">
-            {/* Map Layer (Background) */}
             <MapBackground
                 pathResult={pathResult}
                 startStation={startStation}
                 endStation={endStation}
+                activeTab={activeTab}
+                isDarkMode={isDarkMode}
+                wcItems={wcItems}
+                busStops={activeTab === "bus" ? busStops : []}
+                selectedBusStopId={selectedBusStop?.id ?? null}
+                onWCClick={setSelectedWC}
+                onBusStopClick={setSelectedBusStop}
             />
-
-            {/* UI Layer (Foreground) */}
-            {/* Z-index 5000 is defined in RoutePlanner for the panels, 
-                but basic sibling order here helps too. */}
-            <RoutePlanner onPathFound={handlePathFound} />
-
-            {/* Logo Layer */}
-            <Logo />
+            <RoutePlanner
+                onPathFound={handlePathFound}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
+                isDarkMode={isDarkMode}
+                onDarkModeToggle={() => setIsDarkMode((d) => !d)}
+                wcItems={wcItems}
+                busStops={busStops}
+                selectedBusStop={selectedBusStop}
+                selectedWC={selectedWC}
+                onBusStopSelect={setSelectedBusStop}
+                onWCSelect={setSelectedWC}
+            />
         </main>
     );
 }

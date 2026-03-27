@@ -1,23 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
     --background: #ffffff;
-    --foreground: #171717;
+    --foreground: #111827;
+    --surface: #f9fafb;
+    --border: #e5e7eb;
+    --primary: #2563eb;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
 }
 
 body {
     color: var(--foreground);
     background: var(--background);
-    font-family: Arial, Helvetica, sans-serif;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    /* Prevent 8px margin scroll */
+    font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-/* Leaflet Station Label Styles */
+/* ─── Custom Scrollbar ─────────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+    width: 4px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* ─── Leaflet Station Label ─────────────────────────────────────────────────── */
 .station-label {
     background: transparent !important;
     border: none !important;
@@ -25,29 +54,28 @@ body {
     padding: 0 !important;
     margin: 0 !important;
 }
-
-.station-label::before {
+.station-label::before,
+.leaflet-tooltip.station-label::before {
     display: none !important;
 }
-
 .leaflet-tooltip.station-label {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
 }
 
-/* Train Label Styles */
+/* ─── Train Markers ─────────────────────────────────────────────────────────── */
 .train-label {
-    background: rgba(255, 255, 255, 0.9) !important;
-    border: 1px solid #ccc !important;
-    border-radius: 4px !important;
+    background: rgba(255, 255, 255, 0.92) !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 6px !important;
     font-size: 10px !important;
-    padding: 0 4px !important;
+    font-family: 'Inter', sans-serif !important;
+    padding: 1px 5px !important;
     white-space: nowrap;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+    backdrop-filter: blur(4px);
 }
-
-/* Custom Train Marker */
 .train-marker {
     display: flex;
     align-items: center;
@@ -55,15 +83,73 @@ body {
     background: transparent;
     border: none;
     font-size: 16px;
-    /* Removed drop-shadow for performance optimization */
-    transition: transform 0.1s linear;
-    /* Smooth movement if we want CSS interpolation */
+    transition: transform 0.08s linear;
 }
-
-/* Leaflet Marker Container for Trains */
 .train-marker-container {
     background: transparent !important;
     border: none !important;
     transition: transform 1s linear;
-    /* Smooth interpolation of Leaflet movement */
+}
+
+/* ─── WC Markers ─────────────────────────────────────────────────────────────── */
+.wc-marker-container {
+    background: transparent !important;
+    border: none !important;
+}
+.wc-tooltip {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid #bfdbfe !important;
+    border-radius: 8px !important;
+    color: #1d4ed8 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    box-shadow: 0 2px 8px rgba(59,130,246,0.2) !important;
+}
+.wc-tooltip::before {
+    display: none !important;
+}
+
+/* ─── Bus Stop Markers ───────────────────────────────────────────────────────── */
+.bus-stop-marker {
+    background: transparent !important;
+    border: none !important;
+}
+.bus-stop-tooltip {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border: 1px solid #fed7aa !important;
+    border-radius: 8px !important;
+    color: #c2410c !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    padding: 3px 8px !important;
+    box-shadow: 0 2px 8px rgba(249,115,22,0.2) !important;
+}
+.bus-stop-tooltip::before {
+    display: none !important;
+}
+
+/* ─── Leaflet Reset ──────────────────────────────────────────────────────────── */
+.leaflet-container {
+    font-family: 'Inter', 'Noto Sans KR', sans-serif !important;
+}
+.leaflet-control-attribution {
+    display: none !important;
+}
+
+/* ─── Mobile safe-area support ───────────────────────────────────────────────── */
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+    .pb-safe-bottom {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* ─── Smooth transitions ─────────────────────────────────────────────────────── */
+button {
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+}
+
+input {
+    -webkit-tap-highlight-color: transparent;
 }
