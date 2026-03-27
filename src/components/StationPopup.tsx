@@ -12,10 +12,12 @@ interface StationPopupProps {
     onSetStart: (name: string) => void;
     onSetEnd: (name: string) => void;
     onSetWaypoint?: (name: string) => void;
+    onSelectRoute?: (routeName: string) => void;
     isDarkMode: boolean;
+    routes?: string[];
 }
 
-export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWaypoint, isDarkMode }: StationPopupProps) {
+export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWaypoint, onSelectRoute, isDarkMode, routes = [] }: StationPopupProps) {
     const { arrivals, schedules, loading } = useArrivalInfo(type === "subway" ? name : null);
 
     return (
@@ -60,6 +62,23 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                                     {a.arrivalMsg}
                                 </span>
                             </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {/* Bus Routes Section */}
+            {type === "bus" && routes.length > 0 && (
+                <div className="px-5 py-3 border-y border-zinc-100 dark:border-white/5 bg-zinc-50/50 dark:bg-black/20">
+                    <div className="text-[11px] font-black text-zinc-400 uppercase tracking-widest mb-2">Passing Routes</div>
+                    <div className="flex flex-wrap gap-2">
+                        {routes.map((r, i) => (
+                            <button
+                                key={i}
+                                onClick={() => onSelectRoute?.(r)}
+                                className="px-3 py-1.5 rounded-xl bg-orange-500/10 dark:bg-orange-500/20 border border-orange-500/20 text-orange-600 dark:text-orange-400 text-[12px] font-black hover:bg-orange-500 hover:text-white transition-all active:scale-95"
+                            >
+                                {r}
+                            </button>
                         ))}
                     </div>
                 </div>

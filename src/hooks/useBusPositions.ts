@@ -9,7 +9,7 @@ export interface BusPosition {
     lastUpdate: number;
 }
 
-export function useBusPositions(enabled: boolean) {
+export function useBusPositions(enabled: boolean, filterRoute?: string | null) {
     const [buses, setBuses] = useState<BusPosition[]>([]);
 
     useEffect(() => {
@@ -21,13 +21,14 @@ export function useBusPositions(enabled: boolean) {
         const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
 
         const fetchPositions = async () => {
+            const now = Date.now();
             if (!apiKey || apiKey.length < 10) {
-                // Mock generator for "Premium Feel" always-on experience
+                // Mock generator with smooth coordinate updates
                 const mockBuses: BusPosition[] = [
-                    { id: "bus-100", routeName: "100", lat: 37.5665 + (Math.random()-0.5)*0.01, lng: 126.9780 + (Math.random()-0.5)*0.01, lastUpdate: Date.now() },
-                    { id: "bus-740", routeName: "740", lat: 37.5412 + (Math.random()-0.5)*0.01, lng: 127.0567 + (Math.random()-0.5)*0.01, lastUpdate: Date.now() },
-                    { id: "bus-9401", routeName: "9401", lat: 37.3947 + (Math.random()-0.5)*0.01, lng: 127.1112 + (Math.random()-0.5)*0.01, lastUpdate: Date.now() },
-                ];
+                    { id: "bus-100", routeName: "100", lat: 37.5716 + (Math.sin(now/5000)*0.005), lng: 126.9769 + (Math.cos(now/5000)*0.005), lastUpdate: now },
+                    { id: "bus-143", routeName: "143", lat: 37.5706 + (Math.sin(now/4000)*0.008), lng: 126.9918 + (Math.cos(now/4000)*0.008), lastUpdate: now },
+                    { id: "bus-150", routeName: "150", lat: 37.4979 + (Math.sin(now/6000)*0.01), lng: 127.0276 + (Math.cos(now/6000)*0.01), lastUpdate: now },
+                ].filter(b => !filterRoute || b.routeName === filterRoute);
                 setBuses(mockBuses);
                 return;
             }

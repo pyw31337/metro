@@ -25,6 +25,7 @@ const ZoomHandler = dynamic(() => import("./ZoomHandler"), { ssr: false });
 const SubwayCanvasLayer = dynamic(() => import("./SubwayCanvasLayer"), { ssr: false });
 const WCLayer = dynamic(() => import("./WCLayer"), { ssr: false });
 const BusStopLayer = dynamic(() => import("./BusStopLayer"), { ssr: false });
+const BusRouteLayer = dynamic(() => import("./BusRouteLayer"), { ssr: false });
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
@@ -67,8 +68,9 @@ function MapBackground({
     const [zoomLevel, setZoomLevel] = useState(12);
     const mapRef = useRef<L.Map | null>(null);
 
+    const [selectedBusRoute, setSelectedBusRoute] = useState<string | null>(null);
     const trains = useRealtimeTrains();
-    const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus");
+    const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute);
 
     useEffect(() => {
         setIsClient(true);
@@ -183,13 +185,20 @@ function MapBackground({
                                         onSetStart: (n) => { onSetStart(n); mapRef.current?.closePopup(); },
                                         onSetEnd: (n) => { onSetEnd(n); mapRef.current?.closePopup(); },
                                         onSetWaypoint: (n) => { onSetWaypoint(n); mapRef.current?.closePopup(); },
+                                        onSelectRoute: (r) => { setSelectedBusRoute(r); },
+                                        routes: stop.routes,
                                         isDarkMode
                                     });
-                                    L.popup().setLatLng(latlng).setContent(popupContent).openOn(mapRef.current);
+                                    L.popup({
+                                        className: "premium-popup",
+                                        offset: [0, -10],
+                                        closeButton: false
+                                    }).setLatLng(latlng).setContent(popupContent).openOn(mapRef.current);
                                     onBusStopClick(stop);
                                 }
                             }}
                         />
+                        <BusRouteLayer routeName={selectedBusRoute} isDarkMode={isDarkMode} />
                         <BusRealtimeLayer buses={buses} />
                     </>
                 )}
