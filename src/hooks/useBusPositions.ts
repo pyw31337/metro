@@ -37,7 +37,7 @@ export function useBusPositions(enabled: boolean, filterRoute?: string | null) {
                 // Example route: Seoul 143 (Route ID example)
                 // In production, we'd fetch this dynamically based on map bounds
                 const routeId = "100100022"; // 143 Bus
-                const url = `http://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteBusLocationList?serviceKey=${apiKey}&cityCode=11&routeId=${routeId}&_type=json`;
+                const url = `https://apis.data.go.kr/1613000/BusLcInfoInqireService/getRouteBusLocationList?serviceKey=${apiKey}&cityCode=11&routeId=${routeId}&_type=json`;
                 
                 const data = await fetchWithCache<any>(url);
                 if (data?.response?.body?.items?.item) {

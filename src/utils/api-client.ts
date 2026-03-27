@@ -47,5 +47,5 @@ export const API_ENDPOINTS = {
         `https://swopenapi.seoul.go.kr/api/subway/${key}/json/SearchSTNTimeTableByIDService/1/500/${stationCode}/${dayTag}/${direction}`,
 
     TAGO_BUS_ARRIVAL: (key: string, cityCode: string, nodeId: string) =>
-        `http://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearnBusList?serviceKey=${key}&cityCode=${cityCode}&nodeId=${nodeId}&_type=json`
+        `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearnBusList?serviceKey=${key}&cityCode=${cityCode}&nodeId=${nodeId}&_type=json`
 };
