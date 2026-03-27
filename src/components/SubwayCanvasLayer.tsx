@@ -440,7 +440,7 @@ export default function SubwayCanvasLayer({
                         </svg>
                     `;
                     const icon = L.divIcon({
-                        className: 'train-marker-container',
+                        className: `train-marker-container ${train.isRealtime ? "live-indicator" : ""}`,
                         html: `<div class="train-marker">${svgIcon}</div>`,
                         iconSize: [24, 24],
                         iconAnchor: [12, 12]
