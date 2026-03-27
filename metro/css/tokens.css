@@ -1,0 +1,59 @@
+:root {
+  /* Core Colors */
+  --bg-base: #0E1117;
+  --bg-surface: rgba(255,255,255,0.05);
+  --bg-surface-hover: rgba(255,255,255,0.09);
+  --border-card: rgba(255,255,255,0.10);
+  
+  /* Text Colors */
+  --text-primary: #FFFFFF;
+  --text-secondary: rgba(255,255,255,0.65);
+  --text-tertiary: rgba(255,255,255,0.35);
+  
+  /* Status Colors */
+  --arrival-urgent: #FF4F4F;
+  --arrival-soon: #FF9500;
+  --arrival-normal: #4F8EF7;
+  
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 100px;
+  
+  /* Subway Line Colors (Seoul/Metropolitan) */
+  --line-1: #003499;
+  --line-2: #00A84D;
+  --line-3: #EF7C1C;
+  --line-4: #00A5DE;
+  --line-5: #996CAC;
+  --line-6: #CD7C2F;
+  --line-7: #747F00;
+  --line-8: #E6186C;
+  --line-9: #BDB092;
+  --line-gyeongui: #77C4A3;
+  --line-suinbundang: #F5A200;
+  --line-sinbundang: #D4003B;
+  --line-gyeongchun: #0C8E72;
+  --line-uijeongbu: #FDA600;
+  --line-ui: #B7C452;
+  --line-gimpo: #9B26AF;
+  --line-incheon1: #7CA8D5;
+  --line-incheon2: #ED8B00;
+  --line-gtx-a: #8B0000;
+  --line-gtx-b: #004B84;
+  --line-gtx-c: #00623B;
+  
+  /* Bus Colors */
+  --bus-blue: #3B5998;    /* Blue (Branch) */
+  --bus-green: #3A833A;   /* Green (Main) */
+  --bus-red: #B03030;     /* Red (Express) */
+  --bus-yellow: #C8930A;  /* Yellow (Village) */
+  
+  /* Utility Colors */
+  --restroom-color: #7C4FC4;
+  
+  /* Transitions */
+  --trans-fast: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --trans-normal: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

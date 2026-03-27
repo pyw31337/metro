@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Metro Live | 수도권 실시간 교통정보</title>
+    
+    <!-- Fonts: Pretendard VR -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css">
+    
+    <!-- Hangul JS (Chosung Search) -->
+    <script src="https://unpkg.com/hangul-js@0.2.6/hangul.min.js"></script>
+    
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0E1117">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Metro Live">
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/tokens.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    
+    <style>
+        /* Inline SVG Icon Helper Class */
+        .icon { width: 24px; height: 24px; fill: currentColor; }
+        /* Bus Marker & Pos */
+.bus-station-marker {
+    width: 10px;
+    height: 10px;
+    background: var(--bus-blue);
+    border: 2px solid white;
+    border-radius: 50%;
+    box-shadow: 0 0 6px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.bus-station-marker:hover {
+    transform: scale(1.3);
+}
+
+.bus-pos-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Animation placeholder */
+}
+
+.bus-pos-body {
+    padding: 3px 6px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    white-space: nowrap;
+}
+
+.bus-pos-tail {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #fff; /* color updated via JS style injection */
+    margin-top: -1px;
+}
+
+/* Bus Badge UI (Bottom Sheet) */
+.bus-badge-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+.bus-badge {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    color: white;
+    cursor: pointer;
+    transition: var(--trans-fast);
+}
+
+.bus-badge:active {
+    transform: scale(0.95);
+    opacity: 0.8;
+}
+
+/* Subway Custom Markers */
+.subway-marker-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    z-index: 100 !important;
+}
+
+.station-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    z-index: 2;
+}
+
+.station-label {
+    margin-top: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 2px 4px;
+    background: transparent;
+}
+
+/* Train Marker Style */
+.train-marker {
+    background: #111;
+    border: 2px solid var(--primary);
+    border-radius: 12px;
+    padding: 6px 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 10px var(--primary);
+    transform: translateY(-5px);
+    animation: trainPulse 2s infinite ease-in-out;
+}
+
+@keyframes trainPulse {
+    0% { box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 0px var(--primary); }
+    50% { box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 15px var(--primary); }
+    100% { box-shadow: 0 4px 15px rgba(0,0,0,0.4), 0 0 0px var(--primary); }
+}
+
+.train-bubble {
+    display: flex;
+    flex-direction: column;
+}
+
+.train-bubble .dest { font-size: 10px; font-weight: 800; }
+.train-bubble .no { font-size: 8px; opacity: 0.6; }
+
+/* Highlight / Dimming */
+.dimmed-station { opacity: 0.2; transform: scale(0.8); }
+.highlighted-station { z-index: 1000 !important; }
+.highlighted-station .station-label { font-size: 16px !important; }
+    </style>
+</head>
+<body>
+
+    <div id="app">
+        <!-- Main Content Area -->
+        <main class="main-container">
+            <!-- Map Container -->
+            <div id="map"></div>
+
+            <!-- Floating Search Bar (Top Layer) -->
+            <div id="floating-search" class="absolute top-[12px] left-[12px] right-[12px] h-[48px] rounded-[14px] bg-[#0E1117]/88 backdrop-blur-[12px] border-[0.5px] border-white/15 z-[6000] flex items-center px-4 gap-3 shadow-2xl overflow-hidden">
+                <span class="text-zinc-400 text-sm">🔍</span>
+                <input type="text" id="global-search-input" class="bg-transparent border-none outline-none w-full text-sm font-medium text-white" placeholder="역 이름 검색..." autocomplete="off">
+                <button id="search-clear-btn" class="hidden text-zinc-500 text-lg">×</button>
+                
+                <!-- Autocomplete Dropdown -->
+                <div id="search-autocomplete" class="absolute top-[52px] left-0 right-0 bg-[#0E1117]/95 backdrop-blur-xl border border-white/10 rounded-2xl overflow-hidden shadow-2xl opacity-0 pointer-events-none transition-all duration-200">
+                    <!-- Results will be injected here -->
+                </div>
+            </div>
+
+            <!-- Floating Filter Bar (Restroom Only) -->
+        <div id="restroom-filter-bar" class="absolute top-[100px] left-0 right-0 flex justify-center gap-2 z-[4000] px-4 pointer-events-none transition-opacity duration-300 opacity-0">
+            <button class="filter-chip pointer-events-auto" data-filter="is24h">24시간</button>
+            <button class="filter-chip pointer-events-auto" data-filter="hasHandicap">장애인</button>
+            <button class="filter-chip pointer-events-auto" data-filter="hasDiaper">기저귀</button>
+        </div>
+
+        <!-- Map Controls -->
+        <div class="absolute right-4 bottom-[180px] flex flex-col gap-3 z-[5000]">
+            <button id="btn-my-location" class="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-xl border border-white/10 flex items-center justify-center shadow-2xl active:scale-90 transition-transform">
+                <span class="text-xl">🎯</span>
+            </button>
+        </div>
+
+        <div id="bottomSheet" class="bottom-sheet">
+                <div class="bottom-sheet__handle"></div>
+                <div id="bottom-sheet__content" class="bottom-sheet__content">
+                    <!-- Dynamic Content -->
+                </div>
+            </div>
+            
+            <!-- Bottom Tab Bar -->
+            <nav class="tab-bar">
+                <button class="tab-item active" data-tab="subway">
+                    <span class="tab-icon">🚇</span>
+                    <span class="tab-label">지하철</span>
+                </button>
+                <button class="tab-item" data-tab="bus">
+                    <span class="tab-icon">🚌</span>
+                    <span class="tab-label">버스</span>
+                </button>
+                <button class="tab-item" data-tab="combined">
+                    <span class="tab-icon">🔄</span>
+                    <span class="tab-label">통합</span>
+                </button>
+                <button class="tab-item" data-tab="restroom">
+                    <span class="tab-icon">🚻</span>
+                    <span class="tab-label">화장실</span>
+                </button>
+            </nav>
+        </main>
+    </div>
+
+    <!-- JS -->
+    <script src="js/config.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/subway.js"></script>
+    <script src="js/bus.js"></script>
+    <script src="js/wc-api.js"></script>
+    <script src="js/wc.js"></script>
+    <script src="js/search.js"></script>
+    <script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=YOUR_KAKAO_API_KEY&libraries=services,clusterer"></script>
+    <script src="js/map.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
