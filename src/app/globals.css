@@ -74,14 +74,17 @@ body {
     border-radius: 99px;
 }
 
-/* ─── Leaflet Premium Monotone Filter (Rich Contrast) ───────────────────────── */
-.leaflet-container {
-    background: #eeeeee !important;
+/* ─── Leaflet Premium Monotone Filter (Background Only) ─────────────────────── */
+.leaflet-tile-pane {
     filter: grayscale(100%) brightness(0.9) contrast(1.2);
 }
 
-.dark .leaflet-container {
+.dark .leaflet-tile-pane {
     filter: grayscale(100%) invert(100%) contrast(0.9) brightness(0.7);
+}
+
+.leaflet-container {
+    background: #eeeeee !important;
 }
 
 .station-label {

@@ -6,10 +6,12 @@ import { createRoot } from "react-dom/client";
 import { getAllStations, Station } from "@/data/subway-lines";
 import { PathResult } from "@/utils/pathfinding";
 import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
+import { useRealtimeBuses } from "@/hooks/useRealtimeBuses";
 import StationPopup, { createStationPopup } from "./StationPopup";
 import L from "leaflet";
 import type { WCItem } from "./WCLayer";
 import type { BusStop } from "./BusStopLayer";
+import BusRealtimeLayer from "./BusRealtimeLayer";
 
 const MapContainer = dynamic(
     () => import("react-leaflet").then((mod) => mod.MapContainer),
@@ -62,6 +64,7 @@ function MapBackground({
     const mapRef = useRef<L.Map | null>(null);
 
     const trains = useRealtimeTrains();
+    const buses = useRealtimeBuses(activeTab === "bus" || activeTab === "subway+bus");
 
     useEffect(() => {
         setIsClient(true);
@@ -159,23 +162,26 @@ function MapBackground({
 
                 {/* 버스 레이어 */}
                 {(activeTab === "bus" || activeTab === "subway+bus") && (
-                    <BusStopLayer
-                        stops={busStops}
-                        selectedId={selectedBusStopId}
-                        onStopClick={(stop, latlng) => {
-                            if (mapRef.current && latlng) {
-                                const popupContent = createStationPopup({
-                                    name: stop.name,
-                                    type: "bus",
-                                    onSetStart: (n) => { onBusStopClick?.(stop); mapRef.current?.closePopup(); },
-                                    onSetEnd: (n) => { onBusStopClick?.(stop); mapRef.current?.closePopup(); },
-                                    isDarkMode
-                                });
-                                L.popup().setLatLng(latlng).setContent(popupContent).openOn(mapRef.current);
-                                onBusStopClick(stop);
-                            }
-                        }}
-                    />
+                    <>
+                        <BusStopLayer
+                            stops={busStops}
+                            selectedId={selectedBusStopId}
+                            onStopClick={(stop, latlng) => {
+                                if (mapRef.current && latlng) {
+                                    const popupContent = createStationPopup({
+                                        name: stop.name,
+                                        type: "bus",
+                                        onSetStart: (n) => { onBusStopClick?.(stop); mapRef.current?.closePopup(); },
+                                        onSetEnd: (n) => { onBusStopClick?.(stop); mapRef.current?.closePopup(); },
+                                        isDarkMode
+                                    });
+                                    L.popup().setLatLng(latlng).setContent(popupContent).openOn(mapRef.current);
+                                    onBusStopClick(stop);
+                                }
+                            }}
+                        />
+                        <BusRealtimeLayer buses={buses} />
+                    </>
                 )}
             </MapContainer>
         </div>
