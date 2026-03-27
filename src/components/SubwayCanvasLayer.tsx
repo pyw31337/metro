@@ -225,12 +225,17 @@ export default function SubwayCanvasLayer({
             });
 
             if (zoomLevel >= zoomThreshold && (!isRouteActive || isPathStation)) {
-                marker.bindTooltip(station.name, {
-                    permanent: true,
-                    direction: "top",
-                    offset: [0, -8],
-                    className: `station-label ${isRouteActive && !isPathStation ? "opacity-20" : ""}`,
+                const labelIcon = L.divIcon({
+                    className: "bg-transparent",
+                    html: `<div class="station-name-label" style="color: white; -webkit-text-stroke: 1.2px ${baseColor}; font-weight: 800; font-size: 14px; text-shadow: 0 0 4px rgba(0,0,0,0.3); white-space: nowrap; transform: translateY(-20px); text-align: center; width: 100px; margin-left: -50px;">${station.name}</div>`,
+                    iconSize: [0, 0]
                 });
+                const labelMarker = L.marker([station.lat, station.lng], {
+                    icon: labelIcon,
+                    interactive: false,
+                    zIndexOffset: 100
+                });
+                layerGroup.addLayer(labelMarker);
             }
 
             layerGroup.addLayer(marker);

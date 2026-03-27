@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import L from "leaflet";
+import { Train, Bus, Bath } from "lucide-react";
 import { createRoot } from "react-dom/client";
 import { PathResult, findShortestPath } from "@/utils/pathfinding";
 import type { ActiveTab } from "@/components/MapBackground";
@@ -12,7 +13,7 @@ import { fetchWCDataClient } from "@/services/wcApi";
 import busData from "@/data/bus-stops.json";
 
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
-const FloatingSearchBar = dynamic(() => import("@/components/FloatingSearchBar"), { ssr: false });
+const BottomSearchPanel = dynamic(() => import("@/components/BottomSearchPanel"), { ssr: false });
 const DraggableBottomSheet = dynamic(() => import("@/components/DraggableBottomSheet"), { ssr: false });
 const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
 
@@ -105,12 +106,31 @@ export default function Home() {
                 />
             </div>
 
-            {/* Layer 2: Floating Search Bar & Category Tabs */}
-            <FloatingSearchBar 
-                activeTab={activeTab}
-                onTabChange={(tab) => setActiveTab(tab as ActiveTab)}
+            {/* Layer 2: Bottom Navigation & Search Panel */}
+            <BottomSearchPanel 
+                onSearch={(start, end) => {
+                    setStartStation(start);
+                    setEndStation(end);
+                }}
+                startStation={startStation}
+                endStation={endStation}
                 isDarkMode={isDarkMode}
             />
+
+            {/* Category Tabs (Relocated to bottom-left for accessibility) */}
+            <div className="fixed bottom-32 left-6 z-[3000] flex flex-col gap-3 pointer-events-auto">
+                {["subway", "bus", "wc"].map((tab) => (
+                    <button
+                        key={tab}
+                        onClick={() => setActiveTab(tab as ActiveTab)}
+                        className={`w-12 h-12 rounded-2xl glass-premium flex items-center justify-center transition-all ${activeTab === tab ? "bg-zinc-900 text-white scale-110 shadow-lg" : "text-zinc-500"}`}
+                    >
+                        {tab === "subway" && <Train size={20} />}
+                        {tab === "bus" && <Bus size={20} />}
+                        {tab === "wc" && <Bath size={20} />}
+                    </button>
+                ))}
+            </div>
 
             {/* Layer 3: Draggable Bottom Sheet (Info & Navigation) */}
             <DraggableBottomSheet 
