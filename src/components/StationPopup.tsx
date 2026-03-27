@@ -21,22 +21,26 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
     const { arrivals, schedules, loading } = useArrivalInfo(type === "subway" ? name : null);
 
     return (
-        <div className="flex flex-col min-w-[300px] max-w-[340px] p-0 overflow-hidden rounded-[24px] bg-white/80 dark:bg-zinc-900/90 backdrop-blur-3xl shadow-2xl border border-white/20 dark:border-white/5 transition-all animate-in fade-in zoom-in duration-200">
+        <div className="flex flex-col min-w-[280px] max-w-[320px] p-0 overflow-hidden rounded-[24px] bg-white dark:bg-[#1c1c1e] transition-all">
             {/* Header: Station Name & Type Badge */}
             <div className="flex items-center justify-between px-5 pt-5 pb-3">
                 <div className="flex flex-col">
-                    <span className="text-[12px] font-black uppercase tracking-widest text-[#2563eb] dark:text-blue-400 mb-0.5">
+                    <span className={`text-[11px] font-black uppercase tracking-widest mb-0.5 ${
+                        type === "subway" ? "text-blue-600 dark:text-blue-400" : "text-orange-600 dark:text-orange-400"
+                    }`}>
                         {type === "subway" ? "METRO STATION" : "BUS STATION"}
                     </span>
                     <h2 className="text-[24px] font-black tracking-tight text-zinc-900 dark:text-white leading-tight">
                         {name}
                     </h2>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-zinc-100 dark:bg-white/5 flex items-center justify-center shadow-inner">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${
+                    type === "subway" ? "bg-blue-50 dark:bg-blue-500/10" : "bg-orange-50 dark:bg-orange-500/10"
+                }`}>
                     {type === "subway" ? (
-                        <Train size={24} className="text-zinc-900 dark:text-blue-400" />
+                        <Train size={24} className="text-blue-600 dark:text-blue-400" />
                     ) : (
-                        <Navigation size={24} className="text-zinc-900 dark:text-orange-400" />
+                        <Navigation size={24} className="text-orange-600 dark:text-orange-400" />
                     )}
                 </div>
             </div>

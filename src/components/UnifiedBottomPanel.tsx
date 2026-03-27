@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { Search, Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, ChevronUp, ChevronDown } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
-import { SUBWAY_LINES, Station } from "@/data/subway-lines";
+import { Station } from "@/data/subway-lines";
+import { THEME } from "@/theme/design-system";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
     onTabChange: (tab: string) => void;
     onSearch: (start: string, end: string) => void;
+    onReset?: () => void;
     startStation: string | null;
     endStation: string | null;
     isDarkMode: boolean;
@@ -19,6 +21,7 @@ interface UnifiedBottomPanelProps {
 }
 
 const matchChosung = (query: string, target: string) => {
+    if (!query) return false;
     const disassembledQuery = Hangul.disassemble(query).join("");
     const disassembledTarget = Hangul.disassemble(target).join("");
     const isAllChosung = query.split("").every(char => {
@@ -36,6 +39,7 @@ export default function UnifiedBottomPanel({
     activeTab,
     onTabChange,
     onSearch,
+    onReset,
     startStation,
     endStation,
     isDarkMode,
@@ -50,8 +54,8 @@ export default function UnifiedBottomPanel({
     const [isExpanded, setIsExpanded] = useState(false);
 
     useEffect(() => {
-        if (endStation) setDestination(endStation);
-        if (startStation) setSource(startStation);
+        setDestination(endStation || "");
+        setSource(startStation || "");
     }, [startStation, endStation]);
 
     const handleSearch = (val: string, type: "source" | "dest") => {
@@ -63,8 +67,34 @@ export default function UnifiedBottomPanel({
             return;
         }
 
-        const filteredSubway = stations.filter(s => matchChosung(val, s.name)).map(s => ({ ...s, type: 'subway' }));
-        const filteredBus = busStops.filter(s => matchChosung(val, s.name)).map(s => ({ ...s, type: 'bus' }));
+        const q = val.toLowerCase();
+        const filteredSubway = stations
+            .filter(s => matchChosung(val, s.name))
+            .map(s => ({ ...s, type: 'subway' }))
+            .sort((a, b) => {
+                const aExact = a.name.toLowerCase() === q;
+                const bExact = b.name.toLowerCase() === q;
+                if (aExact !== bExact) return aExact ? -1 : 1;
+                
+                const aStarts = a.name.toLowerCase().startsWith(q);
+                const bStarts = b.name.toLowerCase().startsWith(q);
+                if (aStarts !== bStarts) return aStarts ? -1 : 1;
+
+                const aLines = (a as any).lines?.length || 0;
+                const bLines = (b as any).lines?.length || 0;
+                return bLines - aLines;
+            });
+
+        const filteredBus = busStops
+            .filter(s => matchChosung(val, s.name))
+            .map(s => ({ ...s, type: 'bus' }))
+            .sort((a, b) => {
+                const aExact = a.name.toLowerCase() === q;
+                const bExact = b.name.toLowerCase() === q;
+                if (aExact !== bExact) return aExact ? -1 : 1;
+                return 0;
+            });
+
         setSearchResults([...filteredSubway, ...filteredBus].slice(0, 10));
     };
 
@@ -72,7 +102,6 @@ export default function UnifiedBottomPanel({
         if (activeField === "dest") {
             setDestination(name);
             setActiveField(null);
-            if (!source) findNearest();
         } else {
             setSource(name);
             setActiveField(null);
@@ -80,177 +109,145 @@ export default function UnifiedBottomPanel({
         setSearchResults([]);
     };
 
-    const findNearest = useCallback(() => {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition((pos) => {
-            const { latitude, longitude } = pos.coords;
-            let nearestName = "";
-            let minDist = Infinity;
-            stations.forEach(s => {
-                const d = Math.sqrt(Math.pow(s.lat - latitude, 2) + Math.pow(s.lng - longitude, 2));
-                if (d < minDist) { minDist = d; nearestName = s.name; }
-            });
-            busStops.forEach(s => {
-                const d = Math.sqrt(Math.pow(s.lat - latitude, 2) + Math.pow(s.lng - longitude, 2));
-                if (d < minDist) { minDist = d; nearestName = s.name; }
-            });
-            setSource(nearestName);
-        });
-    }, [stations, busStops]);
-
     const tabs = [
-        { id: "subway", label: "지하철", icon: <Train size={18} /> },
-        { id: "bus", label: "버스", icon: <Bus size={18} /> },
-        { id: "subway+bus", label: "통합", icon: <MapIcon size={18} /> },
-        { id: "wc", label: "화장실", icon: <Bath size={18} /> },
+        { id: "subway", label: "지하철", icon: <Train size={16} /> },
+        { id: "bus", label: "버스", icon: <Bus size={16} /> },
+        { id: "subway+bus", label: "통합", icon: <MapIcon size={16} /> },
+        { id: "wc", label: "화장실", icon: <Bath size={16} /> },
     ];
 
-    const fastTransition: any = { type: "spring", stiffness: 450, damping: 35, duration: 0.15 };
+    const handleResetAction = () => {
+        setDestination("");
+        setSource("");
+        if (onReset) onReset();
+    };
 
     return (
-        <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center">
+        <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center pb-6 px-4">
             <motion.div 
                 layout
-                className="max-w-xl w-full mx-auto glass-premium rounded-t-[40px] p-4 pointer-events-auto border-t border-x border-white/20 shadow-[0_-20px_80px_rgba(0,0,0,0.2)] overflow-hidden bg-white/80 dark:bg-zinc-900/90 backdrop-blur-3xl"
-                initial={{ y: "100%" }}
-                animate={{ y: 0 }}
-                transition={fastTransition}
+                className="max-w-lg w-full glass-premium rounded-[32px] p-4 pointer-events-auto border border-white/20 shadow-2xl overflow-hidden relative bg-white/70 dark:bg-zinc-900/80"
+                style={{ 
+                    backdropFilter: "blur(20px) saturate(180%)", 
+                    WebkitBackdropFilter: "blur(20px) saturate(180%)" 
+                }}
+                initial={{ y: 100, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={THEME.transitions.spring}
             >
-                {/* ─── Drag Handle / Expand Toggle ────────────────────────── */}
-                <div className="flex justify-center -mt-1 mb-3 cursor-pointer group" onClick={() => setIsExpanded(!isExpanded)}>
-                    <div className="w-12 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700/50 group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 transition-colors" />
-                </div>
-
                 <div className="flex flex-col gap-4">
-                    {/* ─── 4. Details (Scrollable Content at the top when expanded) ───────────── */}
+                    {/* ─── 1. Thin Iconic Tabs ────────────────────────── */}
+                    <div className="flex items-center justify-between gap-1 p-1 bg-zinc-800/5 dark:bg-white/5 rounded-2xl border border-white/5">
+                        {tabs.map((tab) => (
+                            <button
+                                key={tab.id}
+                                onClick={() => onTabChange(tab.id)}
+                                className={`
+                                    flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all
+                                    ${activeTab === tab.id 
+                                        ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5" 
+                                        : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
+                                    }
+                                `}
+                            >
+                                {tab.icon}
+                                <span className="text-[12px] font-bold">{tab.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* ─── 2. Expanded Content (Optional Detail View) ───── */}
                     <AnimatePresence>
-                        {isExpanded && (
+                        {isExpanded && children && (
                             <motion.div
                                 initial={{ height: 0, opacity: 0 }}
                                 animate={{ height: "auto", opacity: 1 }}
                                 exit={{ height: 0, opacity: 0 }}
-                                transition={fastTransition}
-                                className="max-h-[350px] overflow-y-auto no-scrollbar pt-2 border-b border-white/5 order-1"
+                                className="max-h-[250px] overflow-y-auto no-scrollbar border-b border-black/5 dark:border-white/5 pb-2"
                             >
                                 {children}
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    {/* ─── 1. Tabs (Positioned ABOVE the search bar) ───────────────────── */}
-                    <div className="flex justify-between gap-1 p-1 bg-zinc-100/50 dark:bg-white/5 rounded-2xl border border-white/5 order-2">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => onTabChange(tab.id)}
-                                className={`
-                                    flex-1 flex flex-col items-center justify-center gap-1.5 py-3 rounded-xl transition-all
-                                    ${activeTab === tab.id 
-                                        ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xl scale-[1.02] border border-white/10" 
-                                        : "text-zinc-500 hover:bg-white/30 dark:hover:bg-white/10"
-                                    }
-                                `}
-                            >
-                                {tab.icon}
-                                <span className="text-[11px] font-black uppercase tracking-widest">{tab.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* ─── 2. Search Section (Bottom-most inputs) ───────────────────────── */}
-                    <div className="flex flex-col gap-2 order-3">
-                        <div className="relative flex items-center px-4 h-14 bg-zinc-100/80 dark:bg-white/10 rounded-2xl border border-transparent focus-within:border-teal-500/50 transition-all shadow-inner group">
-                            <MapPin size={20} className="text-rose-500 shrink-0 group-focus-within:animate-bounce" />
+                    {/* ─── 3. Functional Inputs ─────────────────────────── */}
+                    <div className="flex flex-col gap-2">
+                        {/* Destination Input */}
+                        <div className="relative flex items-center px-4 h-12 bg-white/50 dark:bg-black/20 rounded-2xl border border-black/5 dark:border-white/5 focus-within:ring-2 focus-within:ring-teal-500/50 transition-all">
+                            <MapPin size={18} className="text-teal-500 shrink-0" />
                             <input 
                                 type="text"
-                                placeholder="어디로 가시나요?"
+                                placeholder="(도착역) 어디로 가시나요?"
                                 value={destination}
                                 onFocus={() => { setActiveField("dest"); setIsExpanded(true); }}
                                 onChange={(e) => handleSearch(e.target.value, "dest")}
-                                className="flex-1 bg-transparent border-none outline-none font-black text-[16px] px-3 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
+                                className="flex-1 bg-transparent border-none outline-none font-bold text-[15px] px-3 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
                             />
                             {destination && (
-                                <button onClick={() => setDestination("")} className="p-1.5 hover:bg-zinc-200 dark:hover:bg-white/20 rounded-full transition-colors">
-                                    <X size={16} />
+                                <button onClick={() => setDestination("")} className="p-1 hover:bg-black/5 rounded-full transition-colors">
+                                    <X size={14} />
                                 </button>
                             )}
                         </div>
 
-                        <AnimatePresence>
-                            {(activeField === "source" || source || destination) && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
-                                    animate={{ height: "auto", opacity: 1, marginTop: 8 }}
-                                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
-                                    transition={fastTransition}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="relative flex items-center px-4 h-14 bg-zinc-100/80 dark:bg-white/10 rounded-2xl border border-transparent focus-within:border-blue-500/50 transition-all shadow-inner">
-                                        <Locate size={20} className="text-blue-500 shrink-0" />
-                                        <input 
-                                            type="text"
-                                            placeholder="출발지: 입력 또는 내 주변"
-                                            value={source}
-                                            onFocus={() => { setActiveField("source"); setIsExpanded(true); }}
-                                            onChange={(e) => handleSearch(e.target.value, "source")}
-                                            className="flex-1 bg-transparent border-none outline-none font-black text-[16px] px-3 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
-                                        />
-                                        <button 
-                                            onClick={findNearest}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-blue-500 text-white rounded-xl text-[12px] font-black shadow-lg shadow-blue-500/30 hover:bg-blue-600 active:scale-95 transition-all"
-                                        >
-                                            <Navigation size={14} fill="currentColor" />
-                                            <span>주변</span>
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                        {/* Source Input */}
+                        <div className="relative flex items-center px-4 h-12 bg-white/50 dark:bg-black/20 rounded-2xl border border-black/5 dark:border-white/5 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                            <Locate size={18} className="text-blue-500 shrink-0" />
+                            <input 
+                                type="text"
+                                placeholder="(출발지) 어디서 출발하시나요?"
+                                value={source}
+                                onFocus={() => { setActiveField("source"); setIsExpanded(true); }}
+                                onChange={(e) => handleSearch(e.target.value, "source")}
+                                className="flex-1 bg-transparent border-none outline-none font-bold text-[15px] px-3 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
+                            />
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2 order-4">
+                    {/* ─── 4. Action Buttons ────────────────────────────── */}
+                    <div className="grid grid-cols-5 gap-2">
                         <button 
-                            className="col-span-3 h-16 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-[24px] font-black text-xl shadow-2xl active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-3 overflow-hidden group"
-                            onClick={() => onSearch(source || "내 주변", destination)}
+                            className="col-span-4 h-12 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 rounded-2xl font-bold text-[16px] shadow-lg active:scale-[0.98] transition-all disabled:opacity-40"
+                            onClick={() => {
+                                onSearch(source, destination);
+                                setIsExpanded(false);
+                            }}
                             disabled={!destination}
                         >
-                            <span className="relative z-10 font-black">경로 확인하기</span>
-                            <div className="w-10 h-10 bg-white/20 dark:bg-zinc-900/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Search size={20} strokeWidth={3} />
-                            </div>
+                            경로 확인하기
                         </button>
                         <button 
-                            onClick={() => setIsExpanded(!isExpanded)}
-                            className="h-16 flex items-center justify-center rounded-[24px] bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-400 transition-all"
+                            onClick={handleResetAction}
+                            className="h-12 flex items-center justify-center rounded-2xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-400 dark:text-zinc-500 transition-all"
+                            title="초기화"
                         >
-                            {isExpanded ? <ChevronDown size={28} /> : <ChevronUp size={28} />}
+                            <RotateCcw size={20} />
                         </button>
                     </div>
                 </div>
 
-                {/* ─── Search Results Tooltip ─────────────────────────── */}
+                {/* ─── Search Results Contextual Layer ───────────────── */}
                 <AnimatePresence>
                     {searchResults.length > 0 && activeField && (
                         <motion.div 
-                            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                            animate={{ opacity: 1, y: 0, scale: 1 }}
-                            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                            transition={fastTransition}
-                            className="absolute bottom-full left-0 right-0 mb-4 mx-4 glass-premium rounded-[32px] p-2 pointer-events-auto border border-white/20 shadow-[0_-20px_80px_rgba(0,0,0,0.3)] bg-white/90 dark:bg-zinc-900/95 backdrop-blur-3xl overflow-hidden"
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            className="absolute bottom-full left-0 right-0 mb-4 mx-2 glass-premium rounded-[24px] p-2 border border-white/20 shadow-xl bg-white/95 dark:bg-zinc-900/95 overflow-hidden z-[5001] pointer-events-auto"
                         >
-                            <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+                            <div className="max-h-[220px] overflow-y-auto no-scrollbar">
                                 {searchResults.map((s, i) => (
                                     <button
                                         key={i}
                                         onClick={() => selectLocation(s.name)}
-                                        className="w-full flex items-center gap-4 px-4 py-4 hover:bg-zinc-100 dark:hover:bg-white/10 rounded-[20px] transition-all text-left group"
+                                        className="w-full flex items-center gap-3 px-3 py-3 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-all text-left"
                                     >
-                                        <div className="w-12 h-12 rounded-2xl bg-zinc-50 dark:bg-white/5 flex items-center justify-center shrink-0 group-hover:bg-teal-500/10 transition-colors">
-                                            {s.type === 'subway' ? <Train size={20} className="text-zinc-400 group-hover:text-teal-500" /> : <Bus size={20} className="text-zinc-400 group-hover:text-orange-500" />}
+                                        <div className="w-10 h-10 rounded-xl bg-zinc-50 dark:bg-white/5 flex items-center justify-center shrink-0">
+                                            {s.type === 'subway' ? <Train size={18} className="text-zinc-400" /> : <Bus size={18} className="text-zinc-400" />}
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="font-extrabold text-zinc-900 dark:text-white text-[16px] leading-tight">{s.name}</span>
-                                            <span className="text-[11px] text-zinc-400 uppercase font-black tracking-widest leading-none mt-1 group-hover:text-zinc-900 dark:group-hover:text-zinc-200 transition-colors">
+                                            <span className="font-bold text-zinc-900 dark:text-white text-[15px]">{s.name}</span>
+                                            <span className="text-[10px] text-zinc-400 uppercase font-bold tracking-tight">
                                                 {s.type === 'subway' ? s.lines?.join(" • ") : s.id}
                                             </span>
                                         </div>

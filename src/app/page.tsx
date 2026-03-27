@@ -58,10 +58,29 @@ export default function Home() {
 
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition((pos) => {
-                setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+                const { latitude, longitude } = pos.coords;
+                setUserLocation([latitude, longitude]);
+                
+                // Auto-fill nearest station on first load
+                if (!startStation && stations.length > 0) {
+                    let nearestName = "";
+                    let minDist = Infinity;
+                    let nearestLine = "";
+                    stations.forEach(s => {
+                        const d = Math.sqrt(Math.pow(s.lat - latitude, 2) + Math.pow(s.lng - longitude, 2));
+                        if (d < minDist) { 
+                            minDist = d; 
+                            nearestName = s.name;
+                            nearestLine = s.lines ? s.lines[0] : "";
+                        }
+                    });
+                    if (nearestName) {
+                        setStartStation(`내 위치 : ${nearestName} ${nearestLine}`);
+                    }
+                }
             });
         }
-    }, []);
+    }, [stations, startStation]);
 
     useEffect(() => {
         if (activeTab === "wc" && userLocation && wcItems.length > 0) {
@@ -113,6 +132,16 @@ export default function Home() {
         setEndStation(name);
     };
 
+    const handleReset = () => {
+        setStartStation(null);
+        setEndStation(null);
+        setWaypoints([]);
+        setPathResult(null);
+        setSelectedStationName(null);
+        setSelectedWC(null);
+        setSelectedBusStop(null);
+    };
+
     return (
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
             {/* Layer 1: Full-screen Map Background */}
@@ -147,6 +176,7 @@ export default function Home() {
                     setStartStation(start);
                     setEndStation(end);
                 }}
+                onReset={handleReset}
                 startStation={startStation}
                 endStation={endStation}
                 isDarkMode={isDarkMode}
@@ -155,9 +185,42 @@ export default function Home() {
             >
                 {/* ─── Bottom Sheet Contents (Simplified: No legacy details) ───────────── */}
                 {pathResult ? (
-                    <div className="flex flex-col gap-6">
-                        <div className="text-[20px] font-black tracking-tight flex items-center gap-2">
-                             최적 경로 <span className="text-zinc-400 text-sm font-normal">| {pathResult.path.length}개 역</span>
+                    <div className="flex flex-col gap-6 animate-in slide-in-from-bottom duration-500">
+                        <div className="flex items-center justify-between">
+                            <div className="text-[20px] font-black tracking-tight flex flex-col">
+                                <span className="text-blue-600 dark:text-blue-400 text-sm font-black uppercase tracking-widest leading-none mb-1">RECOMMENDED ROUTE</span>
+                                <div className="flex items-center gap-2">
+                                    약 {Math.round(pathResult.totalWeight * 1.5)}분
+                                    <span className="text-zinc-300 dark:text-zinc-600 text-sm font-normal">| {pathResult.path.length}개 역</span>
+                                </div>
+                            </div>
+                            <div className="px-4 py-2 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[13px] font-black">
+                                환승 {pathResult.transferCount}회
+                            </div>
+                        </div>
+
+                        {/* Display filtered path nodes to avoid duplication */}
+                        <div className="flex flex-col gap-2 relative pl-4">
+                            {/* Vertical Line Connector */}
+                            <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-zinc-200 dark:bg-zinc-800"></div>
+                            
+                            {pathResult.path.map((name, idx) => {
+                                const isStart = idx === 0;
+                                const isEnd = idx === pathResult.path.length - 1;
+                                
+                                return (
+                                    <div key={idx} className="flex items-center gap-5 relative group">
+                                        <div className={`w-3 h-3 rounded-full border-2 z-10 ${
+                                            isStart ? 'bg-blue-600 border-blue-200' : 
+                                            isEnd ? 'bg-rose-500 border-rose-200' : 
+                                            'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
+                                        }`}></div>
+                                        <div className={`font-extrabold text-[15px] ${isStart || isEnd ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>
+                                            {name}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 ) : activeTab === "wc" ? (
