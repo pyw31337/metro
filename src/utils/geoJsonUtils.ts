@@ -2,7 +2,12 @@ import { SUBWAY_LINES, Station, SubwayLine } from "@/data/subway-lines";
 import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";
 
-export const convertSubwayToGeoJSON = () => {
+export interface GeoJsonFeatureCollection {
+  type: "FeatureCollection";
+  features: any[];
+}
+
+export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
   const stationMap = new Map<string, any>();
@@ -11,8 +16,8 @@ export const convertSubwayToGeoJSON = () => {
     // 1. LineString Feature
     const coordinates = line.stations.map(s => [s.lng, s.lat]);
     lineFeatures.push({
-      type: "Feature",
-      geometry: { type: "LineString", coordinates },
+      type: "Feature" as const,
+      geometry: { type: "LineString" as const, coordinates },
       properties: {
         id: line.id,
         name: line.name,
@@ -30,8 +35,8 @@ export const convertSubwayToGeoJSON = () => {
         }
       } else {
         const feature = {
-          type: "Feature",
-          geometry: { type: "Point", coordinates: [s.lng, s.lat] },
+          type: "Feature" as const,
+          geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] },
           properties: {
             name: s.name,
             lines: [...s.lines],
@@ -46,17 +51,17 @@ export const convertSubwayToGeoJSON = () => {
   });
 
   return {
-    lines: { type: "FeatureCollection", features: lineFeatures },
-    stations: { type: "FeatureCollection", features: stationFeatures }
+    lines: { type: "FeatureCollection" as const, features: lineFeatures },
+    stations: { type: "FeatureCollection" as const, features: stationFeatures }
   };
 };
 
-export const convertBusStopsToGeoJSON = (stops: BusStop[]) => {
+export const convertBusStopsToGeoJSON = (stops: BusStop[]): GeoJsonFeatureCollection => {
   return {
-    type: "FeatureCollection",
+    type: "FeatureCollection" as const,
     features: stops.map(s => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [s.lng, s.lat] },
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] },
       properties: {
         id: s.id,
         name: s.name,
@@ -68,12 +73,12 @@ export const convertBusStopsToGeoJSON = (stops: BusStop[]) => {
   };
 };
 
-export const convertWCToGeoJSON = (items: WCItem[]) => {
+export const convertWCToGeoJSON = (items: WCItem[]): GeoJsonFeatureCollection => {
   return {
-    type: "FeatureCollection",
+    type: "FeatureCollection" as const,
     features: items.map(item => ({
-      type: "Feature",
-      geometry: { type: "Point", coordinates: [item.lng, item.lat] },
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [item.lng, item.lat] },
       properties: {
         ...item,
         type: "wc"

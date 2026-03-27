@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
-import Map, { Source, Layer, NavigationControl, GeolocateControl } from "react-map-gl/maplibre";
+import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { Station, getAllStations } from "@/data/subway-lines";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
-import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, GeoJsonFeatureCollection } from "@/utils/geoJsonUtils";
-import { MapRef } from "react-map-gl/maplibre";
+import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON } from "@/utils/geoJsonUtils";
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
@@ -54,7 +53,7 @@ function MapLibreBackground({
         if (wcFilters.accessible) features = features.filter(f => f.properties.accessible);
         if (wcFilters.diapers) features = features.filter(f => f.properties.diapers);
         if (wcFilters.emergencyBell) features = features.filter(f => f.properties.emergencyBell);
-        return { type: "FeatureCollection", features };
+        return { type: "FeatureCollection" as const, features };
     }, [wcData, wcFilters]);
 
     // Memoized Path Data
@@ -66,8 +65,8 @@ function MapLibreBackground({
             if (station) coords.push([station.lng, station.lat]);
         });
         return {
-            type: "Feature",
-            geometry: { type: "LineString", coordinates: coords },
+            type: "Feature" as const,
+            geometry: { type: "LineString" as const, coordinates: coords },
             properties: {}
         };
     }, [pathResult]);
@@ -76,11 +75,12 @@ function MapLibreBackground({
     useEffect(() => {
         if (!pathResult || !mapRef.current) return;
         let step = 0;
+        const map = mapRef.current.getMap();
         const animate = () => {
             step = (step + 1) % 200;
-            if (mapRef.current.getLayer("path-line-dash")) {
-                mapRef.current.setPaintProperty("path-line-dash", "line-dasharray", [1, 2]);
-                mapRef.current.setPaintProperty("path-line-dash", "line-dasharray-offset", step / 20);
+            if (map.getLayer("path-line-dash")) {
+                map.setPaintProperty("path-line-dash", "line-dasharray", [1, 2]);
+                map.setPaintProperty("path-line-dash", "line-dasharray-offset", step / 20);
             }
             requestAnimationFrame(animate);
         };
@@ -110,11 +110,11 @@ function MapLibreBackground({
         } else if ((layer.id === "wc-clusters" || layer.id === "bus-clusters") && mapRef.current) {
             const clusterId = properties.cluster_id;
             const sourceId = layer.id === "wc-clusters" ? "wc-source" : "bus-source";
-            const source: any = mapRef.current.getSource(sourceId);
+            const source: any = mapRef.current.getMap().getSource(sourceId);
             source.getClusterExpansionZoom(clusterId, (err: any, zoom: number) => {
                 if (err) return;
-                mapRef.current.easeTo({
-                    center: coords,
+                mapRef.current?.getMap().easeTo({
+                    center: coords as [number, number],
                     zoom: zoom,
                     duration: 500
                 });
@@ -139,7 +139,7 @@ function MapLibreBackground({
                 interactiveLayerIds={["subway-station-circle", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
                 ref={(r) => {
                     if (r) {
-                        mapRef.current = r.getMap();
+                        mapRef.current = r;
                         if (onMapReady) onMapReady(r.getMap());
                     }
                 }}
@@ -197,26 +197,11 @@ function MapLibreBackground({
                             "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]]
                         }}
                     />
-                    <Layer
-                        id="subway-station-label"
-                        type="symbol"
-                        layout={{
-                            "text-field": ["get", "name"],
-                            "text-size": 12,
-                            "text-offset": [0, 1.2],
-                            "text-anchor": "top"
-                        }}
-                        paint={{
-                            "text-color": isDarkMode ? "white" : "black",
-                            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
-                            "text-halo-width": 1.5
-                        }}
-                    />
                 </Source>
 
                 {/* 3. Bus Stop Markers (with Clustering) */}
                 {(activeTab === "bus" || activeTab === "subway+bus") && (
-                    <Source id="bus-source" type="geojson" data={busData} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
+                    <Source id="bus-source" type="geojson" data={busData as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
                         <Layer
                             id="bus-clusters"
                             type="circle"
@@ -252,7 +237,7 @@ function MapLibreBackground({
 
                 {/* 4. WC Markers (with Clustering) */}
                 {activeTab === "wc" && (
-                    <Source id="wc-source" type="geojson" data={filteredWCs} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
+                    <Source id="wc-source" type="geojson" data={filteredWCs as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
                         <Layer
                             id="wc-clusters"
                             type="circle"
