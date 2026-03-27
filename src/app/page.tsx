@@ -13,8 +13,7 @@ import { fetchWCDataClient } from "@/services/wcApi";
 import busData from "@/data/bus-stops.json";
 
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
-const BottomSearchPanel = dynamic(() => import("@/components/BottomSearchPanel"), { ssr: false });
-const BottomNavigationBar = dynamic(() => import("@/components/BottomNavigationBar"), { ssr: false });
+const FloatingSearchBar = dynamic(() => import("@/components/FloatingSearchBar"), { ssr: false });
 const DraggableBottomSheet = dynamic(() => import("@/components/DraggableBottomSheet"), { ssr: false });
 const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
 
@@ -30,6 +29,7 @@ export default function Home() {
     const [wcItems, setWcItems] = useState<WCItem[]>([]);
     const [nearestWCs, setNearestWCs] = useState<WCItem[]>([]);
     const [wcLoading, setWcLoading] = useState(false);
+    const [wcFilters, setWcFilters] = useState({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const busStops = busData as BusStop[];
     
@@ -114,6 +114,7 @@ export default function Home() {
                     endStation={endStation}
                     isDarkMode={isDarkMode}
                     wcItems={wcItems}
+                    wcFilters={wcFilters}
                     busStops={busStops}
                     activeTab={activeTab}
                     selectedBusStopId={selectedBusStop?.id ?? null}
@@ -126,8 +127,10 @@ export default function Home() {
                 />
             </div>
 
-            {/* Layer 2: Bottom Navigation & Search Panel */}
-            <BottomSearchPanel 
+            {/* Layer 2: Floating Search Panel & Navigation */}
+            <FloatingSearchBar 
+                activeTab={activeTab}
+                onTabChange={(tab) => setActiveTab(tab as ActiveTab)}
                 onSearch={(start, end) => {
                     setStartStation(start);
                     setEndStation(end);
@@ -135,11 +138,6 @@ export default function Home() {
                 startStation={startStation}
                 endStation={endStation}
                 isDarkMode={isDarkMode}
-            />
-
-            <BottomNavigationBar 
-                activeTab={activeTab} 
-                onTabChange={(tab) => setActiveTab(tab as ActiveTab)} 
             />
 
             {/* Layer 3: Draggable Bottom Sheet (Info & Navigation) */}
@@ -156,7 +154,23 @@ export default function Home() {
                         </div>
                     </div>
                 ) : activeTab === "wc" ? (
-                    <div className="flex flex-col gap-6">
+                    <div className="flex flex-col gap-6 pb-20">
+                        {/* WC Filter Pills */}
+                        <div className="flex gap-2 mb-2 overflow-x-auto no-scrollbar py-1">
+                            {[
+                                { id: "accessible", label: "♿ 장애인", flag: wcFilters.accessible },
+                                { id: "diapers", label: "🍼 기저귀", flag: wcFilters.diapers },
+                                { id: "emergencyBell", label: "🔔 비상벨", flag: wcFilters.emergencyBell }
+                            ].map((filter) => (
+                                <button
+                                    key={filter.id}
+                                    onClick={() => setWcFilters({ ...wcFilters, [filter.id]: !filter.flag })}
+                                    className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition-all shrink-0 ${filter.flag ? "bg-blue-500 border-blue-500 text-white" : "bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 text-zinc-500"}`}
+                                >
+                                    {filter.label}
+                                </button>
+                            ))}
+                        </div>
                         <div className="text-xl font-black">📍 가까운 화장실</div>
                         {selectedWC ? (
                             <div className="p-5 rounded-3xl bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
@@ -196,8 +210,18 @@ export default function Home() {
                     <div className="flex flex-col gap-6">
                         {selectedBusStop && (
                             <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
-                                <div className="text-lg font-black mb-1">{selectedBusStop.name}</div>
-                                <div className="text-sm text-zinc-500 uppercase tracking-widest">{selectedBusStop.id}</div>
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <div className="text-lg font-black">{selectedBusStop.name}</div>
+                                        <div className="text-[11px] text-zinc-400 font-bold uppercase tracking-widest">{selectedBusStop.id}</div>
+                                    </div>
+                                    <div className="px-3 py-1 bg-orange-500 text-white text-[10px] font-bold rounded-full uppercase">Bus Stop</div>
+                                </div>
+                                <div className="flex flex-wrap gap-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                                    {selectedBusStop.routes?.map((r, i) => (
+                                        <span key={i} className="px-3 py-1 rounded-lg bg-orange-100/50 dark:bg-orange-500/10 border border-orange-200 dark:border-orange-500/20 text-orange-600 dark:text-orange-400 text-[11px] font-black">{r}</span>
+                                    ))}
+                                </div>
                             </div>
                         )}
                         <div className="text-zinc-400 text-center py-10">

@@ -51,6 +51,7 @@ interface MapBackgroundProps {
     activeTab: ActiveTab;
     isDarkMode: boolean;
     wcItems: WCItem[];
+    wcFilters: { accessible: boolean; diapers: boolean; emergencyBell: boolean };
     busStops: BusStop[];
     selectedBusStopId: string | null;
     onWCClick: (item: WCItem) => void;
@@ -60,7 +61,7 @@ interface MapBackgroundProps {
 function MapBackground({
     pathResult, startStation, endStation, onStationClick,
     onSetStart, onSetEnd, onSetWaypoint,
-    activeTab, isDarkMode, wcItems, busStops, selectedBusStopId,
+    activeTab, isDarkMode, wcItems, wcFilters, busStops, selectedBusStopId,
     onWCClick, onBusStopClick
 }: MapBackgroundProps) {
     const [isClient, setIsClient] = useState(false);
@@ -168,6 +169,7 @@ function MapBackground({
                 {activeTab === "wc" && (
                     <WCLayer 
                         items={wcItems} 
+                        filters={wcFilters}
                         onWCClick={onWCClick} 
                         isDimmed={!!pathResult} 
                     />

@@ -25,9 +25,14 @@ interface WCLayerProps {
   items: WCItem[];
   onWCClick: (item: WCItem) => void;
   isDimmed: boolean;
+  filters: {
+    accessible: boolean;
+    diapers: boolean;
+    emergencyBell: boolean;
+  };
 }
 
-export default function WCLayer({ items, onWCClick, isDimmed }: WCLayerProps) {
+export default function WCLayer({ items, onWCClick, isDimmed, filters }: WCLayerProps) {
   const map = useMap();
   const layerRef = useRef<any>(null);
 
@@ -56,7 +61,14 @@ export default function WCLayer({ items, onWCClick, isDimmed }: WCLayerProps) {
     if (!layerRef.current) return;
     layerRef.current.clearLayers();
 
-    items.forEach((item) => {
+    const filteredItems = items.filter(item => {
+      if (filters.accessible && !item.accessible) return false;
+      if (filters.diapers && !item.diapers) return false;
+      if (filters.emergencyBell && !item.emergencyBell) return false;
+      return true;
+    });
+
+    filteredItems.forEach((item) => {
       const opacity = isDimmed ? 0.3 : 1;
       const filter = isDimmed ? "grayscale(100%)" : "none";
       
