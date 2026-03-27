@@ -162,7 +162,11 @@ function MapBackground({
 
                 {/* WC 레이어 */}
                 {activeTab === "wc" && (
-                    <WCLayer items={wcItems} onWCClick={onWCClick} />
+                    <WCLayer 
+                        items={wcItems} 
+                        onWCClick={onWCClick} 
+                        isDimmed={!!pathResult} 
+                    />
                 )}
 
                 {/* 버스 레이어 */}

@@ -12,6 +12,7 @@ export interface Train {
     direction: 1 | -1;
     stationIndex: number;
     isRealtime?: boolean;
+    lineColor: string;
 }
 
 // ─── API Types ───────────────────────────────────────────────────────────────
@@ -106,43 +107,44 @@ export function useRealtimeTrains() {
         fetchRealtime();
         const apiInterval = setInterval(fetchRealtime, 15000); // Update every 15s
 
-        // Interpolation animation loop
+        // Interpolation animation loop (60fps feel)
         const animInterval = setInterval(() => {
             const now = Date.now();
             const updated = trainsRef.current.map(t => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId)!;
+                if (!line) return null;
                 const stations = line.stations;
 
-                // Simple movement simulation between API pulses
-                t.progress += 0.005; 
-                if (t.progress > 0.95) t.progress = 0.95; // Wait for API to advance station
+                // Time-based smooth interpolation (0-1 range between stations)
+                // Assuming ~2 mins (120s) per station on average if no API update
+                const elapsed = (now - t.lastUpdate) / 1000; 
+                let progress = t.progress + (elapsed * 0.005); // Smooth crawl
+                if (progress > 0.98) progress = 0.98; // Stay near station target
 
                 const currentStation = stations[t.stationIndex];
                 const nextStation = stations[t.stationIndex + t.direction] || currentStation;
 
-                const pos = interpolate(currentStation, nextStation, t.progress);
+                const pos = interpolate(currentStation, nextStation, progress);
 
-                return {
-                    id: t.id,
-                    lineId: t.lineId,
-                    lineName: t.lineName,
-                    status: t.status,
+                const res: Train = {
+                    id: t.id as string,
+                    lineId: t.lineId as string,
+                    lineName: t.lineName as string,
+                    lineColor: line.color,
+                    status: t.status as 'RUNNING' | 'STOPPED',
                     lat: pos.lat,
                     lng: pos.lng,
-                    headingTo: t.headingTo,
-                    direction: t.direction,
-                    stationIndex: t.stationIndex,
+                    headingTo: t.headingTo as string,
+                    direction: t.direction as 1 | -1,
+                    stationIndex: t.stationIndex as number,
                     isRealtime: true
                 };
-            });
-
-            // If no realtime data yet or key missing, fallback to mock (only if no data ever loaded)
-            if (updated.length === 0 && (!apiKey || apiKey.length < 10)) {
-                // Fallback logic could go here, but for now we expect real data or empty
-            }
+                return res;
+            })
+            .filter((t): t is Train => t !== null);
 
             setTrains(updated);
-        }, 1000);
+        }, 100); // 10fps for smooth movement, set to 100ms for browser performance
 
         return () => {
             clearInterval(apiInterval);

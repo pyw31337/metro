@@ -144,10 +144,10 @@ async function fetchNationalWC(apiKey: string): Promise<WCItem[]> {
       address: r.소재지도로명주소 || r.소재지지번주소 || "",
       floor: "",
       gender: r.남녀공용화장실여부 === "Y" ? "mixed" : "separated",
-      accessible: r.장애인용남성대변기수 > 0 || r.장애인용여성대변기수 > 0,
       hours: r.개방시간명 || "정보없음",
       diapers: r.기저귀교환대지정여부 === "Y" || r.기저귀교환대장소?.length > 0,
       emergencyBell: r.비상벨설치여부 === "Y" || r.비상벨설치장소?.length > 0,
+      accessible: r.장애인용남성대변기수 > 0 || r.장애인용여성대변기수 > 0,
     }))
     .filter((item: WCItem) => item.lat !== 0 && item.lng !== 0);
 }

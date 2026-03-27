@@ -23,9 +23,10 @@ export interface WCItem {
 interface WCLayerProps {
   items: WCItem[];
   onWCClick: (item: WCItem) => void;
+  isDimmed: boolean;
 }
 
-export default function WCLayer({ items, onWCClick }: WCLayerProps) {
+export default function WCLayer({ items, onWCClick, isDimmed }: WCLayerProps) {
   const map = useMap();
   const layerRef = useRef<L.LayerGroup | null>(null);
 
@@ -40,6 +41,9 @@ export default function WCLayer({ items, onWCClick }: WCLayerProps) {
     layerRef.current.clearLayers();
 
     items.forEach((item) => {
+      const opacity = isDimmed ? 0.3 : 1;
+      const filter = isDimmed ? "grayscale(100%)" : "none";
+      
       const svgHtml = `
         <div class="wc-marker-inner" style="
           width: 28px; height: 28px;
@@ -50,7 +54,9 @@ export default function WCLayer({ items, onWCClick }: WCLayerProps) {
           box-shadow: 0 4px 12px rgba(16,185,129,0.3);
           font-size: 14px;
           cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          opacity: ${opacity};
+          filter: ${filter};
+          transition: all 0.3s ease;
         ">🚻</div>
       `;
       const icon = L.divIcon({
@@ -68,7 +74,7 @@ export default function WCLayer({ items, onWCClick }: WCLayerProps) {
       marker.on("click", () => onWCClick(item));
       layerRef.current!.addLayer(marker);
     });
-  }, [items, onWCClick]);
+  }, [items, onWCClick, isDimmed]);
 
   return null;
 }
