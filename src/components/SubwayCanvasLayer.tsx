@@ -144,9 +144,10 @@ export default function SubwayCanvasLayer({
         // Add Glow Filter for Lines (SVG Filter)
         const svgElement = document.querySelector(".leaflet-zoom-animated") as HTMLElement;
         if (svgElement) {
+            // Uber-style Glow Effect for the active route
             svgElement.style.filter = isDarkMode 
-                ? "drop-shadow(0 0 8px rgba(255,255,255,0.15))"
-                : "drop-shadow(0 0 6px rgba(0,0,0,0.1))";
+                ? "drop-shadow(0 0 12px rgba(255,255,255,0.2))"
+                : "drop-shadow(0 0 8px rgba(0,0,0,0.15))";
         }
 
         const isRouteActive = !!pathResult;
@@ -163,13 +164,13 @@ export default function SubwayCanvasLayer({
             if (isRouteActive) {
                 if (activeLineNames.has(line.name)) {
                     // Part of an active line (Broad Context) -> Dimmed but visible
-                    drawColor = isDarkMode ? "#374151" : "#9ca3af";
-                    drawOpacity = 0.4;
-                    drawWeight = 2;
+                    drawColor = isDarkMode ? "#3f3f46" : "#d1d5db";
+                    drawOpacity = 0.3;
+                    drawWeight = 2.5;
                 } else {
-                    // Irrelevant line -> Very Light Gray
-                    drawColor = isDarkMode ? "#1f2937" : "#f1f5f9";
-                    drawOpacity = 0.1;
+                    // Irrelevant line -> Extreme Dim (0.2 per request)
+                    drawColor = isDarkMode ? "#18181b" : "#f1f5f9";
+                    drawOpacity = 0.2;
                     drawWeight = 1.5;
                 }
             }

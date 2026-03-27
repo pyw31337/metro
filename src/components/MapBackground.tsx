@@ -104,7 +104,7 @@ function MapBackground({
                 minZoom={9}
                 maxBounds={[[36.5, 125.5], [38.5, 128.5]]}
                 maxBoundsViscosity={1.0}
-                style={{ height: "100%", width: "100%", background: isDarkMode ? "#0a0a0a" : "#f8f9fa" }}
+                style={{ height: "100%", width: "100%", background: isDarkMode ? "#000000" : "#f8f9fa", position: "fixed" }}
                 ref={mapRef}
             >
                 <ZoomHandler onZoomChange={setZoomLevel} />

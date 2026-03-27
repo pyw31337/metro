@@ -9,11 +9,12 @@ import type { ActiveTab } from "@/components/MapBackground";
 import type { WCItem } from "@/components/WCLayer";
 import type { BusStop } from "@/components/BusStopLayer";
 import { fetchWCDataClient } from "@/services/wcApi";
-import StationPopup from "@/components/StationPopup";
 import busData from "@/data/bus-stops.json";
 
 const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
-const BottomPanel = dynamic(() => import("@/components/BottomPanel"), { ssr: false });
+const FloatingSearchBar = dynamic(() => import("@/components/FloatingSearchBar"), { ssr: false });
+const DraggableBottomSheet = dynamic(() => import("@/components/DraggableBottomSheet"), { ssr: false });
+const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
 
 export default function Home() {
     const [pathResult, setPathResult] = useState<PathResult | null>(null);
@@ -64,6 +65,15 @@ export default function Home() {
         // For now, let's assume MapBackground handles the popup creation.
     };
 
+    const handleStationClick = (name: string, latlng: [number, number], type: "subway" | "bus") => {
+        // This function is called when a station is clicked on the map.
+        // For now, we'll just log it. Further implementation might involve
+        // setting a selected station state to display info in the bottom sheet.
+        console.log(`Station clicked: ${name} (${type}) at ${latlng}`);
+        // If you want to show a popup, you'd typically use mapRef.current.openPopup() here
+        // or pass this info to a component that manages popups.
+    };
+
     const setStart = (name: string) => {
         setStartStation(name);
         // MapBackground should automatically close popups when map is clicked elsewhere
@@ -74,63 +84,72 @@ export default function Home() {
     };
 
     return (
-        <main className="relative w-full h-screen overflow-hidden bg-zinc-950 font-sans">
-            {/* Background Map Layer */}
-            <div className="absolute inset-0 z-0">
+        <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
+            {/* Layer 1: Full-screen Map Background */}
+            <div className="absolute inset-0 z-10">
                 <MapBackground
                     pathResult={pathResult}
                     startStation={startStation}
                     endStation={endStation}
-                    activeTab={activeTab}
                     isDarkMode={isDarkMode}
                     wcItems={wcItems}
                     busStops={busStops}
-                selectedBusStopId={selectedBusStop?.id ?? null}
-                onWCClick={setSelectedWC}
-                onBusStopClick={(stop) => {
-                    setSelectedBusStop(stop);
-                }}
-                onStationClick={(name) => {
-                    // Managed via automated popup
-                }}
-                onSetStart={setStartStation}
-                onSetEnd={setEndStation}
-                onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
-            />
+                    activeTab={activeTab}
+                    selectedBusStopId={selectedBusStop?.id ?? null}
+                    onWCClick={setSelectedWC}
+                    onBusStopClick={setSelectedBusStop}
+                    onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number], "subway")}
+                    onSetStart={setStartStation}
+                    onSetEnd={setEndStation}
+                    onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
+                />
             </div>
 
-
-            {/* Bottom Floating UI: Results & Tabs & Search */}
-            <BottomPanel
+            {/* Layer 2: Floating Search Bar & Category Tabs */}
+            <FloatingSearchBar 
                 activeTab={activeTab}
-                onTabChange={setActiveTab}
-                pathResult={pathResult}
-                startStation={startStation}
-                endStation={endStation}
-                waypoints={waypoints}
-                onSearch={(s, wp, e) => {
-                    setStartStation(s);
-                    setWaypoints(wp);
-                    setEndStation(e);
-                }}
-                onResetPath={() => {
-                    setStartStation(null);
-                    setEndStation(null);
-                    setWaypoints([]);
-                    setPathResult(null);
-                }}
+                onTabChange={(tab) => setActiveTab(tab as ActiveTab)}
                 isDarkMode={isDarkMode}
-                onToggleDarkMode={() => setIsDarkMode(!isDarkMode)}
-                busStops={busStops}
-                wcItems={wcItems}
-                selectedBusStop={selectedBusStop}
-                selectedWC={selectedWC}
-                onBusStopSelect={setSelectedBusStop}
-                onWCSelect={setSelectedWC}
             />
 
-            {/* SEO & Accessibility */}
-            <h1 className="sr-only">BMW Live - Premium Metro & Bus Transit Dashboard</h1>
+            {/* Layer 3: Draggable Bottom Sheet (Info & Navigation) */}
+            <DraggableBottomSheet 
+                isOpen={true} 
+                onClose={() => {}}
+                snapPoints={[100, 450, 800]}
+            >
+                {/* ─── Bottom Sheet Contents ───────────────────────────── */}
+                {pathResult ? (
+                    <div className="flex flex-col gap-6">
+                        <div className="text-[20px] font-black tracking-tight flex items-center gap-2">
+                             최적 경로 <span className="text-zinc-400 text-sm font-normal">| {pathResult.path.length}개 역</span>
+                        </div>
+                        {/* Rendering steps/info here */}
+                    </div>
+                ) : (
+                    <div className="flex flex-col gap-6">
+                        {selectedBusStop && (
+                            <div className="p-5 rounded-3xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800">
+                                <div className="text-lg font-black mb-1">{selectedBusStop.name}</div>
+                                <div className="text-sm text-zinc-500 uppercase tracking-widest">{selectedBusStop.id}</div>
+                            </div>
+                        )}
+                        <div className="text-zinc-400 text-center py-10">
+                            지도의 역이나 정류장을 눌러보세요
+                        </div>
+                    </div>
+                )}
+            </DraggableBottomSheet>
+
+            {/* Hidden Utils */}
+            <div className="fixed top-6 right-6 z-[2001]">
+                <button 
+                    onClick={() => setIsDarkMode(!isDarkMode)}
+                    className="w-12 h-12 rounded-full glass-premium flex items-center justify-center text-zinc-600 dark:text-zinc-200"
+                >
+                    {isDarkMode ? "☀️" : "🌙"}
+                </button>
+            </div>
         </main>
     );
 }
