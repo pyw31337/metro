@@ -1,8 +1,6 @@
 @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css');
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer theme {
     :root {
@@ -96,12 +94,14 @@ body {
 }
 
 .nav-tab-active {
-    @apply bg-white text-black;
+    background-color: white;
+    color: black;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .dark .nav-tab-active {
-    @apply bg-zinc-800 text-white;
+    background-color: #27272a; /* zinc-800 */
+    color: white;
 }
 
 /* ─── Animations ────────────────────────────────────────────────────────────── */
