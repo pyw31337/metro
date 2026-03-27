@@ -4,21 +4,22 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
 import L from "leaflet";
 import { Train, Bus, Bath } from "lucide-react";
-import { createRoot } from "react-dom/client";
 import { SUBWAY_LINES, Station } from "@/data/subway-lines";
-import { PathResult, findShortestPath } from "@/utils/pathfinding";
+import type { PathResult } from "@/utils/pathfinding";
 import type { ActiveTab } from "@/components/MapBackground";
 import type { WCItem } from "@/components/WCLayer";
 import type { BusStop } from "@/components/BusStopLayer";
 import { fetchWCDataClient } from "@/services/wcApi";
+import { useDataWorker } from "@/hooks/useDataWorker";
 import busData from "@/data/bus-stops.json";
 
-const MapBackground = dynamic(() => import("@/components/MapBackground"), { ssr: false });
+const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
-const StationPopup = dynamic(() => import("@/components/StationPopup"), { ssr: false });
 const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: false });
 
 export default function Home() {
+    const { findPath, findNearestStation, sortWCs } = useDataWorker();
+    
     const [pathResult, setPathResult] = useState<PathResult | null>(null);
     const [startStation, setStartStation] = useState<string | null>(null);
     const [endStation, setEndStation] = useState<string | null>(null);
@@ -30,12 +31,12 @@ export default function Home() {
     const [wcItems, setWcItems] = useState<WCItem[]>([]);
     const [nearestWCs, setNearestWCs] = useState<WCItem[]>([]);
     const [wcLoading, setWcLoading] = useState(false);
+    const [isCalculating, setIsCalculating] = useState(false);
     const [wcFilters, setWcFilters] = useState({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
     const busStops = busData as BusStop[];
     
-    // Memoized stations list for search
     const stations = useMemo(() => {
         const unique = new Map<string, Station>();
         SUBWAY_LINES.forEach(line => {
@@ -46,10 +47,9 @@ export default function Home() {
         return Array.from(unique.values());
     }, []);
 
-    // Map instance ref for popups
-    const mapRef = useRef<L.Map | null>(null);
+    const mapRef = useRef<any>(null);
 
-    // ─── Data Loading ──────────────────────────────────────────────────────────
+    // ─── Data Loading & Off-thread sorting ──────────────────────────────────────
     useEffect(() => {
         setWcLoading(true);
         fetchWCDataClient().then(data => {
@@ -58,79 +58,51 @@ export default function Home() {
         });
 
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition((pos) => {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
                 setUserLocation([latitude, longitude]);
                 
-                // Auto-fill nearest station on first load
+                // Auto-fill nearest station (Off-thread)
                 if (!startStation && stations.length > 0) {
-                    let nearestName = "";
-                    let minDist = Infinity;
-                    let nearestLine = "";
-                    stations.forEach(s => {
-                        const d = Math.sqrt(Math.pow(s.lat - latitude, 2) + Math.pow(s.lng - longitude, 2));
-                        if (d < minDist) { 
-                            minDist = d; 
-                            nearestName = s.name;
-                            nearestLine = s.lines ? s.lines[0] : "";
-                        }
-                    });
-                    if (nearestName) {
-                        setStartStation(`내 위치 : ${nearestName} ${nearestLine}`);
+                    const nearest = await findNearestStation(latitude, longitude, stations) as any;
+                    if (nearest?.name) {
+                        setStartStation(`내 위치 : ${nearest.name} ${nearest.line}`);
                     }
                 }
             });
         }
-    }, [stations, startStation]);
+    }, [stations, startStation, findNearestStation]);
 
     useEffect(() => {
-        if (activeTab === "wc" && userLocation && wcItems.length > 0) {
-            const sorted = [...wcItems].sort((a, b) => {
-                const distA = Math.sqrt(Math.pow(a.lat - userLocation[0], 2) + Math.pow(a.lng - userLocation[1], 2));
-                const distB = Math.sqrt(Math.pow(b.lat - userLocation[0], 2) + Math.pow(b.lng - userLocation[1], 2));
-                return distA - distB;
-            }).slice(0, 3);
-            setNearestWCs(sorted);
-        }
-    }, [activeTab, userLocation, wcItems]);
+        const updateWCs = async () => {
+            if (activeTab === "wc" && userLocation && wcItems.length > 0) {
+                const sorted = await sortWCs(wcItems, userLocation[0], userLocation[1]) as WCItem[];
+                setNearestWCs(sorted);
+            }
+        };
+        updateWCs();
+    }, [activeTab, userLocation, wcItems, sortWCs]);
 
-    // ─── Pathfinding Logic ─────────────────────────────────────────────────────
-    const calculatePath = useCallback((start: string | null, waypoints: string[], end: string | null) => {
+    // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
+    const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
         if (!start || !end) {
             setPathResult(null);
             return;
         }
+        setIsCalculating(true);
         const points = [start, ...waypoints.filter(w => w.trim() !== ""), end];
-        const res = findShortestPath(points);
+        const res = await findPath(points) as PathResult;
         setPathResult(res);
-    }, []);
+        setIsCalculating(false);
+    }, [findPath]);
 
     useEffect(() => {
         calculatePath(startStation, waypoints, endStation);
     }, [startStation, waypoints, endStation, calculatePath]);
 
-    // ─── Map Interactions (Popups) ─────────────────────────────────────────────
-    const handleMapClick = (name: string, latlng: [number, number], type: "subway" | "bus") => {
-        // We need the Leaflet map object to open a popup
-        // Instead of a ref, we can find the map from the DOM if needed, 
-        // but it's better to pass a 'triggerPopup' to MapBackground.
-        // Actually, easiest is to use a global event or a simpler state-based approach.
-        // For now, let's assume MapBackground handles the popup creation.
-    };
-
-    const handleStationClick = (name: string, latlng: [number, number], type: "subway" | "bus") => {
-        // Update selection state for high-contrast labeling
+    // ─── Event Handlers ────────────────────────────────────────────────────────
+    const handleStationClick = (name: string, latlng: [number, number]) => {
         setSelectedStationName(name);
-        console.log(`Station clicked: ${name} (${type}) at ${latlng}`);
-    };
-
-    const setStart = (name: string) => {
-        setStartStation(name);
-        // MapBackground should automatically close popups when map is clicked elsewhere
-    };
-
-    const setEnd = (name: string) => {
-        setEndStation(name);
     };
 
     const handleReset = () => {
@@ -143,33 +115,22 @@ export default function Home() {
         setSelectedBusStop(null);
     };
 
-    // ─── Map Controls ────────────────────────────────────────────────────────
-    const handleZoomIn = () => {
-        mapRef.current?.zoomIn();
-    };
-
-    const handleZoomOut = () => {
-        mapRef.current?.zoomOut();
-    };
-
+    const handleZoomIn = () => mapRef.current?.zoomIn();
+    const handleZoomOut = () => mapRef.current?.zoomOut();
     const handleLocate = () => {
         if (navigator.geolocation && mapRef.current) {
             navigator.geolocation.getCurrentPosition((pos) => {
                 const { latitude, longitude } = pos.coords;
-                mapRef.current?.flyTo([latitude, longitude], 15, { duration: 1.5 });
+                mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
                 setUserLocation([latitude, longitude]);
-            }, (err) => {
-                console.error("Geolocation failed:", err);
-                alert("현재 위치를 가져오는데 실패했습니다.");
             });
         }
     };
 
     return (
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
-            {/* Layer 1: Full-screen Map Background */}
             <div className="absolute inset-0 z-10">
-                <MapBackground
+                <MapLibreBackground
                     pathResult={pathResult}
                     startStation={startStation}
                     endStation={endStation}
@@ -181,7 +142,7 @@ export default function Home() {
                     selectedBusStopId={selectedBusStop?.id ?? null}
                     onWCClick={setSelectedWC}
                     onBusStopClick={setSelectedBusStop}
-                    onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number], "subway")}
+                    onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number])}
                     selectedStationName={selectedStationName}
                     selectedWC={selectedWC}
                     selectedBusStop={selectedBusStop}
@@ -192,10 +153,9 @@ export default function Home() {
                 />
             </div>
 
-            {/* Unified Bottom UI */}
             <UnifiedBottomPanel 
                 activeTab={activeTab}
-                onTabChange={(tab) => setActiveTab(tab as ActiveTab)}
+                onTabChange={(tab: any) => setActiveTab(tab)}
                 onSearch={(start, end) => {
                     setStartStation(start);
                     setEndStation(end);
@@ -207,9 +167,13 @@ export default function Home() {
                 stations={stations}
                 busStops={busStops}
             >
-                {/* ─── Bottom Sheet Contents (Simplified: No legacy details) ───────────── */}
-                {pathResult ? (
-                    <div className="flex flex-col gap-6 animate-in slide-in-from-bottom duration-500">
+                {isCalculating ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3 text-zinc-400">
+                        <div className="w-8 h-8 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                        <span className="text-xs font-bold tracking-widest uppercase">매끄러운 경로 탐색 중...</span>
+                    </div>
+                ) : pathResult ? (
+                    <div className="flex flex-col gap-6 animate-in slide-in-from-bottom duration-500 pb-8">
                         <div className="flex items-center justify-between">
                             <div className="text-[20px] font-black tracking-tight flex flex-col">
                                 <span className="text-blue-600 dark:text-blue-400 text-sm font-black uppercase tracking-widest leading-none mb-1">RECOMMENDED ROUTE</span>
@@ -223,15 +187,11 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {/* Display filtered path nodes to avoid duplication */}
                         <div className="flex flex-col gap-2 relative pl-4">
-                            {/* Vertical Line Connector */}
                             <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-zinc-200 dark:bg-zinc-800"></div>
-                            
                             {pathResult.path.map((name, idx) => {
                                 const isStart = idx === 0;
                                 const isEnd = idx === pathResult.path.length - 1;
-                                
                                 return (
                                     <div key={idx} className="flex items-center gap-5 relative group">
                                         <div className={`w-3 h-3 rounded-full border-2 z-10 ${
@@ -248,14 +208,14 @@ export default function Home() {
                         </div>
                     </div>
                 ) : activeTab === "wc" ? (
-                    <div className="flex flex-col gap-6 pb-10">
+                    <div className="flex flex-col gap-6 pb-12">
                         <div className="text-xl font-black">📍 가까운 화장실</div>
                         <div className="flex flex-col gap-3">
                             {nearestWCs.map((wc) => (
                                 <button 
                                     key={wc.id}
                                     onClick={() => setSelectedWC(wc)}
-                                    className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-left hover:border-blue-500 transition-all"
+                                    className="p-4 rounded-2xl bg-white/50 dark:bg-white/5 border border-zinc-100 dark:border-white/10 text-left hover:border-blue-500 transition-all shadow-sm"
                                 >
                                     <div className="font-bold">{wc.name}</div>
                                     <div className="text-xs text-zinc-400 mt-1">{wc.address}</div>
@@ -265,15 +225,13 @@ export default function Home() {
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6">
-                        <div className="text-zinc-400 text-center py-10">
+                        <div className="text-zinc-400 text-center py-14">
                             지도의 역이나 정류장을 눌러보세요
                         </div>
                     </div>
                 )}
             </UnifiedBottomPanel>
 
-            {/* Hidden Utils */}
-            {/* Floating Utils Group (Right Side) */}
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
                 <button 
                     onClick={() => setIsDarkMode(!isDarkMode)}
@@ -281,7 +239,6 @@ export default function Home() {
                 >
                     {isDarkMode ? "☀️" : "🌙"}
                 </button>
-
                 <MapControls 
                     onZoomIn={handleZoomIn}
                     onZoomOut={handleZoomOut}

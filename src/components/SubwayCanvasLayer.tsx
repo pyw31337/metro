@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useMemo, useState } from "react";
-import { useMap } from "react-leaflet";
+import { useMap, useMapEvents } from "react-leaflet";
 import L from 'leaflet';
 import { SUBWAY_LINES, Station } from "@/data/subway-lines";
 import { Train } from "@/hooks/useRealtimeTrains";
@@ -32,6 +32,13 @@ export default function SubwayCanvasLayer({
 }: SubwayCanvasLayerProps) {
     const map = useMap();
     const [hoveredStation, setHoveredStation] = useState<string | null>(null);
+    const [bounds, setBounds] = useState<L.LatLngBounds>(map.getBounds());
+
+    // Throttled bounds update - Only update on moveend/zoomend to avoid jank
+    useMapEvents({
+        moveend: () => setBounds(map.getBounds()),
+        zoomend: () => setBounds(map.getBounds())
+    });
 
     // Separate LayerGroups for better performance
     const staticLayerRef = useRef<L.LayerGroup | null>(null); 
@@ -63,36 +70,34 @@ export default function SubwayCanvasLayer({
     const { activeLineNames } = useMemo(() => {
         const names = new Set<string>();
         if (!pathResult || !pathResult.path) return { activeLineNames: names };
-        for (let i = 0; i < pathResult.path.length - 1; i++) {
-            const s1 = stations.find(s => s.name === pathResult.path[i]);
-            const s2 = stations.find(s => s.name === pathResult.path[i+1]);
-            if (s1 && s2) {
-                s1.lines.filter(l => s2.lines.includes(l)).forEach(n => names.add(n));
-            }
-        }
+        const pathSet = new Set(pathResult.path);
+        
+        SUBWAY_LINES.forEach(line => {
+            const hasPath = line.stations.some(s => pathSet.has(s.name));
+            if (hasPath) names.add(line.name);
+        });
         return { activeLineNames: names };
-    }, [pathResult, stations]);
+    }, [pathResult]);
 
-    // 1. Static Layout: Lines & Background Stations
+    // 1. Optimized Rendering: Lines & Interaction Nodes
     useEffect(() => {
         if (!staticLayerRef.current || !interactionLayerRef.current) return;
-        staticLayerRef.current.clearLayers();
-        interactionLayerRef.current.clearLayers();
-
+        
         const layerGroup = staticLayerRef.current;
         const interactionGroup = interactionLayerRef.current;
+        
+        layerGroup.clearLayers();
+        interactionGroup.clearLayers();
+
         const isRouteActive = !!pathResult;
+        const zoomThreshold = 12;
+        const currentBounds = bounds.pad(0.15); // Small pad for smoother transitions
 
-        // Apply Impeccable SVG Filter for depth
-        const svgElement = document.querySelector(".leaflet-zoom-animated") as HTMLElement;
-        if (svgElement) {
-            svgElement.style.filter = isRouteActive
-                ? `drop-shadow(0 0 12px rgba(0,0,0,${isDarkMode ? 0.35 : 0.08}))`
-                : `drop-shadow(0 0 8px rgba(0,0,0,${isDarkMode ? 0.2 : 0.05}))`;
-        }
-
-        // Draw Subway Lines
+        // 1.1 Draw Subway Lines (With Viewport Clipping)
         SUBWAY_LINES.forEach((line) => {
+            const isVisible = line.stations.some(s => currentBounds.contains([s.lat, s.lng]));
+            if (!isVisible) return;
+
             const latlngs = line.stations.map(s => [s.lat, s.lng] as [number, number]);
             let drawColor = line.color;
             let opacity = 0.8;
@@ -116,25 +121,25 @@ export default function SubwayCanvasLayer({
                 opacity: opacity,
                 lineCap: THEME.canvas.lineCap,
                 lineJoin: THEME.canvas.lineJoin,
-                interactive: false
+                interactive: false,
+                smoothFactor: 1.5
             }));
         });
 
-        // Draw Interactive Station Nodes
-        const zoomThreshold = 12;
-
+        // 1.2 Draw Interactive Station Nodes (Virtualization)
         stations.forEach((station) => {
-            const isPathStation = pathResult?.path.includes(station.name);
-            const isSelected = isPathStation || 
+            const isSelected = pathResult?.path.includes(station.name) || 
                              station.name === startStation || 
                              station.name === endStation ||
                              station.name === selectedStationName;
             
+            if (!currentBounds.contains([station.lat, station.lng]) && !isSelected) return;
+
             const isHovered = hoveredStation === station.name;
             const primaryLine = SUBWAY_LINES.find(l => l.name === station.lines[0]);
             const baseColor = primaryLine?.color || "#888";
 
-            // 1. Invisible Hitbox (Improves usability/hit-testing)
+            // Marker Hitbox
             const hitbox = L.circleMarker([station.lat, station.lng], {
                 radius: THEME.canvas.hitAreaRadius,
                 fillOpacity: 0,
@@ -149,64 +154,54 @@ export default function SubwayCanvasLayer({
             hitbox.on('mouseout', () => setHoveredStation(null));
             interactionGroup.addLayer(hitbox);
 
-            // 2. Visible Marker Node
+            // Visible Dot
             const markerSize = THEME.canvas.stationRadius + (isHovered ? 2 : 0);
             layerGroup.addLayer(L.circleMarker([station.lat, station.lng], {
                 radius: markerSize,
                 color: isSelected ? baseColor : (isDarkMode ? "#444" : "#ccc"),
                 fillColor: "#fff",
                 fillOpacity: 1,
-                weight: isSelected ? 4 : 2,
+                weight: isSelected ? 3 : 1.5,
                 interactive: false
             }));
 
-            // 3. Typography Labels (Refined)
+            // Label Rendering
             if (zoomLevel >= zoomThreshold || isSelected) {
                 const labelColor = isDarkMode ? "#fff" : THEME.colors.textPrimary;
                 const isCapsule = isSelected;
 
-                let labelHtml = "";
-                if (isCapsule) {
-                    labelHtml = `
-                        <div style="
+                let labelHtml = `
+                    <div style="
+                        ${isCapsule ? `
                             background: ${baseColor};
                             color: #FFFFFF;
-                            padding: 4px 12px;
+                            padding: 4px 10px;
                             border-radius: ${THEME.canvas.capsuleRadius}px;
-                            font-weight: ${THEME.canvas.selectedFontWeight};
-                            font-size: 14px;
-                            white-space: nowrap;
-                            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                            font-weight: 800;
+                            font-size: 13px;
+                            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
                             border: 2px solid ${baseColor};
                             transform: translateY(-28px);
-                            pointer-events: none;
-                        ">
-                            ${station.name}
-                        </div>
-                    `;
-                } else {
-                    labelHtml = `
-                        <div style="
+                        ` : `
                             color: ${labelColor};
                             font-weight: ${THEME.canvas.fontWeight};
-                            font-size: ${isHovered ? 15 : THEME.canvas.labelSize}px;
-                            white-space: nowrap;
+                            font-size: ${isHovered ? 14 : THEME.canvas.labelSize}px;
                             transform: translateY(-22px);
-                            transition: ${THEME.transitions.default};
-                            font-family: ${THEME.fonts.primary};
-                            -webkit-text-stroke: 0.5px #fff;
+                            -webkit-text-stroke: 0.5px ${isDarkMode ? '#000' : '#fff'};
                             paint-order: stroke fill;
-                            pointer-events: none;
-                        ">
-                            ${station.name}
-                        </div>
-                    `;
-                }
+                        `}
+                        white-space: nowrap;
+                        pointer-events: none;
+                        font-family: ${THEME.fonts.primary};
+                    ">
+                        ${station.name}
+                    </div>
+                `;
 
                 layerGroup.addLayer(L.marker([station.lat, station.lng], {
                     icon: L.divIcon({
                         className: "bg-transparent",
-                        html: `<div class="flex items-center justify-center w-max h-px">${labelHtml}</div>`,
+                        html: `<div class="flex items-center justify-center w-0 h-0">${labelHtml}</div>`,
                         iconSize: [0, 0]
                     }),
                     interactive: false,
@@ -214,9 +209,9 @@ export default function SubwayCanvasLayer({
                 }));
             }
         });
-    }, [zoomLevel, stations, pathResult, activeLineNames, isDarkMode, hoveredStation, startStation, endStation, selectedStationName, map, onStationClick]);
+    }, [bounds, zoomLevel, stations, pathResult, activeLineNames, isDarkMode, hoveredStation, startStation, endStation, selectedStationName, map, onStationClick]);
 
-    // 2. Highlight Layer: Active Route Segments
+    // 2. Highlight Layer
     useEffect(() => {
         if (!highlightLayerRef.current) return;
         const layerGroup = highlightLayerRef.current;
@@ -230,14 +225,13 @@ export default function SubwayCanvasLayer({
                 if (s1 && s2) {
                     const commonLines = s1.lines.filter(l => s2.lines.includes(l));
                     const lineConfig = SUBWAY_LINES.find(l => l.name === commonLines[0]);
-                    const segmentColor = lineConfig?.color || "#6b7280";
+                    const segmentColor = lineConfig?.color || "#888888";
 
                     layerGroup.addLayer(L.polyline([[s1.lat, s1.lng], [s2.lat, s2.lng]], {
                         color: segmentColor,
-                        weight: THEME.canvas.lineWidth + 0.5,
+                        weight: THEME.canvas.lineWidth + 1,
                         opacity: 1,
-                        lineCap: THEME.canvas.lineCap,
-                        lineJoin: THEME.canvas.lineJoin,
+                        smoothFactor: 1.0,
                         interactive: false
                     }));
                 }
@@ -245,71 +239,62 @@ export default function SubwayCanvasLayer({
         }
     }, [pathResult, stations]);
     
-    // 3. Dynamic Layer: Real-time Trains
+    // 3. Dynamic Layer: Trains
     const trainMarkersRef = useRef<Map<string, L.Marker>>(new Map());
 
     useEffect(() => {
-        if (!dynamicLayerRef.current) return;
+        if (!dynamicLayerRef.current || !map) return;
         const layerGroup = dynamicLayerRef.current;
         const currentMarkers = trainMarkersRef.current;
-        const isRouteActive = !!pathResult;
+        const currentBounds = map.getBounds().pad(0.25);
 
         trains.forEach((train) => {
+            const isVisible = currentBounds.contains([train.lat || 0, train.lng || 0]);
             let marker = currentMarkers.get(train.id);
+
+            if (!isVisible) {
+                if (marker) {
+                    marker.remove();
+                    currentMarkers.delete(train.id);
+                }
+                return;
+            }
+
             const line = SUBWAY_LINES.find(l => l.name.includes(train.lineName));
             const color = line?.color || "#888";
-
-            // Impeccable Logic: Highlight trains on the active path
-            // Using headingTo as the station reference from API data
-            const isOnPath = isRouteActive && pathResult.path.some(p => p.includes(train.headingTo));
-            const baseSize = 22;
-            const size = isOnPath ? baseSize * 1.3 : baseSize;
-            const opacity = isRouteActive ? (isOnPath ? 1 : 0.4) : 1;
+            const isOnPath = !!pathResult && pathResult.path.some(p => p.includes(train.headingTo));
+            const size = isOnPath ? 28 : 22;
 
             const iconHtml = `
-                <div class="relative flex items-center justify-center" style="opacity: ${opacity}; transform: scale(${isOnPath ? 1.1 : 1}); transition: all 0.5s ease;">
-                    ${isOnPath ? `<div class="absolute inset-0 animate-ping rounded-full opacity-20" style="background: ${color}"></div>` : ""}
-                    <div class="absolute inset-0 animate-pulse rounded-full opacity-40" style="background: ${color}; transform: scale(1.4)"></div>
-                    <div class="relative bg-white dark:bg-zinc-900 rounded-full p-1 shadow-xl border-2" style="border-color: ${color}">
-                        <svg width="${size - 8}" height="${size - 8}" viewBox="0 0 24 24" fill="${color}" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M4 18c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v12zm8-12c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6 2.69-6 6-6z"/>
-                        </svg>
+                <div class="relative flex items-center justify-center" style="transform: scale(${isOnPath ? 1.05 : 1}); transition: transform 0.3s ease;">
+                    ${isOnPath ? `<div class="absolute inset-0 animate-pulse rounded-full opacity-20" style="background: ${color}; transform: scale(1.4)"></div>` : ""}
+                    <div class="relative bg-white dark:bg-zinc-900 rounded-full p-1 shadow-md border-2" style="border-color: ${color}">
+                        <div class="w-2 h-2 rounded-full" style="background: ${color}"></div>
                     </div>
                 </div>
             `;
 
             if (!marker) {
                 marker = L.marker([train.lat || 0, train.lng || 0], {
-                    icon: L.divIcon({
-                        className: "train-marker",
-                        html: iconHtml,
-                        iconSize: [size, size],
-                        iconAnchor: [size / 2, size / 2]
-                    }),
+                    icon: L.divIcon({ className: "train-marker", html: iconHtml, iconSize: [size, size] }),
                     zIndexOffset: isOnPath ? 2000 : 500,
                     interactive: false
                 }).addTo(layerGroup);
                 currentMarkers.set(train.id, marker);
             } else {
                 marker.setLatLng([train.lat || 0, train.lng || 0]);
-                marker.setIcon(L.divIcon({
-                    className: "train-marker",
-                    html: iconHtml,
-                    iconSize: [size, size],
-                    iconAnchor: [size / 2, size / 2]
-                }));
                 marker.setZIndexOffset(isOnPath ? 2000 : 500);
             }
         });
 
-        // Cleanup stale trains
+        // Cleanup
         currentMarkers.forEach((marker, id) => {
             if (!trains.find(t => t.id === id)) {
                 marker.remove();
                 currentMarkers.delete(id);
             }
         });
-    }, [trains, pathResult, isDarkMode]);
+    }, [trains, pathResult, isDarkMode, map]);
 
     return null;
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useMap } from "react-leaflet";
+import { useEffect, useRef, useState } from "react";
+import { useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
 
@@ -22,7 +22,14 @@ interface BusStopLayerProps {
 
 export default function BusStopLayer({ stops, selectedId, onStopClick }: BusStopLayerProps) {
   const map = useMap();
-  const layerRef = useRef<any>(null);
+  const clusterGroupRef = useRef<any>(null);
+  const [bounds, setBounds] = useState<L.LatLngBounds>(map.getBounds());
+
+  // Listen for move/zoom to update visible markers
+  useMapEvents({
+    moveend: () => setBounds(map.getBounds()),
+    zoomend: () => setBounds(map.getBounds())
+  });
 
   useEffect(() => {
     // @ts-ignore
@@ -32,47 +39,51 @@ export default function BusStopLayer({ stops, selectedId, onStopClick }: BusStop
       spiderfyOnMaxZoom: true,
       maxClusterRadius: 40,
       disableClusteringAtZoom: 15,
-      // Premium look for clusters
       iconCreateFunction: function(cluster: any) {
         const count = cluster.getChildCount();
         return L.divIcon({
-          html: `<div class="bus-cluster-inner" style="width: 36px; height: 36px; background: #f97316; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 12px rgba(249,115,22,0.5); border: 2px solid white;">${count}</div>`,
+          html: `<div class="bus-cluster-inner" style="width: 36px; height: 36px; background: #f59e0b; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 12px rgba(245,158,11,0.5); border: 2px solid white;">${count}</div>`,
           className: 'bus-marker-cluster',
           iconSize: L.point(36, 36)
         });
       }
     }).addTo(map);
-    layerRef.current = clusterGroup;
+    clusterGroupRef.current = clusterGroup;
     return () => { clusterGroup.remove(); };
   }, [map]);
 
   useEffect(() => {
-    if (!layerRef.current) return;
-    layerRef.current.clearLayers();
+    if (!clusterGroupRef.current) return;
+    const clusterGroup = clusterGroupRef.current;
+    
+    // Performance: Only update markers within expanded bounds to minimize "pop-in"
+    const currentBounds = bounds.pad(0.3); 
+    const visibleStops = stops.filter(s => currentBounds.contains([s.lat, s.lng]) || s.id === selectedId);
 
-    stops.forEach((stop) => {
+    clusterGroup.clearLayers();
+
+    visibleStops.forEach((stop) => {
       const isSelected = stop.id === selectedId;
-      const svgHtml = `
-        <div class="bus-marker-inner" style="
-          width: ${isSelected ? 34 : 26}px;
-          height: ${isSelected ? 34 : 26}px;
-          background: ${isSelected ? '#f97316' : '#fff'};
-          border-radius: 50%;
-          border: 2.5px solid ${isSelected ? '#ea580c' : '#f97316'};
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px rgba(249,115,22,0.4);
-          font-size: ${isSelected ? 16 : 12}px;
-          cursor: pointer;
-          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        ">🚌</div>
-      `;
       const size = isSelected ? 34 : 26;
+      
       const icon = L.divIcon({
         className: "bus-stop-marker",
-        html: svgHtml,
+        html: `
+          <div style="
+            width: ${size}px; height: ${size}px;
+            background: ${isSelected ? '#f59e0b' : '#fff'};
+            border-radius: 50%;
+            border: 2.5px solid ${isSelected ? '#d97706' : '#f59e0b'};
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(245,158,11,0.4);
+            font-size: ${isSelected ? 16 : 12}px;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          ">🚌</div>
+        `,
         iconSize: [size, size],
         iconAnchor: [size / 2, size / 2],
       });
+
       const marker = L.marker([stop.lat, stop.lng], { icon });
       marker.bindTooltip(stop.name, {
         direction: "top",
@@ -83,9 +94,9 @@ export default function BusStopLayer({ stops, selectedId, onStopClick }: BusStop
         L.DomEvent.stopPropagation(e);
         onStopClick(stop, [stop.lat, stop.lng]);
       });
-      layerRef.current!.addLayer(marker);
+      clusterGroup.addLayer(marker);
     });
-  }, [stops, selectedId, onStopClick]);
+  }, [bounds, stops, selectedId, onStopClick]);
 
   return null;
 }

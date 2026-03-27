@@ -136,34 +136,42 @@ export default function UnifiedBottomPanel({
                 transition={THEME.transitions.spring}
             >
                 <div className="flex flex-col gap-4">
-                    {/* ─── 1. Thin Iconic Tabs ────────────────────────── */}
-                    <div className="flex items-center justify-between gap-1 p-1 bg-zinc-800/5 dark:bg-white/5 rounded-2xl border border-white/5">
+                    {/* ─── 1. Thin Iconic Tabs with Sliding Indicator ────────────────────────── */}
+                    <div className="flex items-center justify-between gap-1 p-1 bg-black/5 dark:bg-white/5 rounded-2xl border border-white/5 relative">
                         {tabs.map((tab) => (
                             <button
                                 key={tab.id}
                                 onClick={() => onTabChange(tab.id)}
                                 className={`
-                                    flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all
+                                    flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl transition-all relative z-10
                                     ${activeTab === tab.id 
-                                        ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5" 
+                                        ? "text-zinc-900 dark:text-white" 
                                         : "text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-300"
                                     }
                                 `}
                             >
-                                {tab.icon}
-                                <span className="text-[12px] font-bold">{tab.label}</span>
+                                {activeTab === tab.id && (
+                                    <motion.div 
+                                        layoutId="activeTab"
+                                        className="absolute inset-0 bg-white dark:bg-zinc-800 rounded-xl shadow-sm ring-1 ring-black/5 z-0"
+                                        transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                    />
+                                )}
+                                <span className="relative z-10">{tab.icon}</span>
+                                <span className="text-[12px] font-bold relative z-10">{tab.label}</span>
                             </button>
                         ))}
                     </div>
 
                     {/* ─── 2. Expanded Content (Optional Detail View) ───── */}
-                    <AnimatePresence>
+                    <AnimatePresence mode="wait">
                         {isExpanded && children && (
                             <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="max-h-[250px] overflow-y-auto no-scrollbar border-b border-black/5 dark:border-white/5 pb-2"
+                                key="expanded-content"
+                                initial={{ height: 0, opacity: 0, y: 10 }}
+                                animate={{ height: "auto", opacity: 1, y: 0 }}
+                                exit={{ height: 0, opacity: 0, y: 10 }}
+                                className="max-h-[300px] overflow-y-auto no-scrollbar border-b border-black/5 dark:border-white/5 pb-2"
                             >
                                 {children}
                             </motion.div>

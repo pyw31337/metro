@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useMap } from "react-leaflet";
+import { useEffect, useRef, useState } from "react";
+import { useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet.markercluster";
 
@@ -34,7 +34,14 @@ interface WCLayerProps {
 
 export default function WCLayer({ items, onWCClick, isDimmed, filters }: WCLayerProps) {
   const map = useMap();
-  const layerRef = useRef<any>(null);
+  const clusterGroupRef = useRef<any>(null);
+  const [bounds, setBounds] = useState<L.LatLngBounds>(map.getBounds());
+
+  // Throttled update
+  useMapEvents({
+    moveend: () => setBounds(map.getBounds()),
+    zoomend: () => setBounds(map.getBounds())
+  });
 
   useEffect(() => {
     // @ts-ignore
@@ -53,46 +60,51 @@ export default function WCLayer({ items, onWCClick, isDimmed, filters }: WCLayer
         });
       }
     }).addTo(map);
-    layerRef.current = clusterGroup;
+    clusterGroupRef.current = clusterGroup;
     return () => { clusterGroup.remove(); };
   }, [map]);
 
   useEffect(() => {
-    if (!layerRef.current) return;
-    layerRef.current.clearLayers();
+    if (!clusterGroupRef.current) return;
+    const clusterGroup = clusterGroupRef.current;
+    clusterGroup.clearLayers();
+
+    const currentBounds = bounds.pad(0.3);
 
     const filteredItems = items.filter(item => {
+      // 1. Feature Filters
       if (filters.accessible && !item.accessible) return false;
       if (filters.diapers && !item.diapers) return false;
       if (filters.emergencyBell && !item.emergencyBell) return false;
-      return true;
+      
+      // 2. Viewport Virtualization
+      return currentBounds.contains([item.lat, item.lng]);
     });
 
     filteredItems.forEach((item) => {
       const opacity = isDimmed ? 0.3 : 1;
       const filter = isDimmed ? "grayscale(100%)" : "none";
       
-      const svgHtml = `
-        <div class="wc-marker-inner" style="
-          width: 30px; height: 30px;
-          background: white;
-          border-radius: 50%;
-          border: 2.5px solid #6366f1;
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px rgba(99,102,241,0.4);
-          font-size: 16px;
-          cursor: pointer;
-          opacity: ${opacity};
-          filter: ${filter};
-          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        ">🚻</div>
-      `;
       const icon = L.divIcon({
         className: "wc-marker-container",
-        html: svgHtml,
+        html: `
+          <div style="
+            width: 30px; height: 30px;
+            background: white;
+            border-radius: 50%;
+            border: 2.5px solid #6366f1;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+            font-size: 16px;
+            opacity: ${opacity};
+            filter: ${filter};
+            transition: opacity 0.3s ease;
+          ">🚻</div>
+        `,
         iconSize: [30, 30],
         iconAnchor: [15, 15],
       });
+
       const marker = L.marker([item.lat, item.lng], { icon });
       marker.bindTooltip(item.name, {
         direction: "top",
@@ -103,9 +115,9 @@ export default function WCLayer({ items, onWCClick, isDimmed, filters }: WCLayer
         L.DomEvent.stopPropagation(e);
         onWCClick(item);
       });
-      layerRef.current!.addLayer(marker);
+      clusterGroup.addLayer(marker);
     });
-  }, [items, onWCClick, isDimmed]);
+  }, [bounds, items, onWCClick, isDimmed, filters]);
 
   return null;
 }
