@@ -9,7 +9,7 @@
  * 엔드포인트:
  *   GET https://api.odcloud.kr/api/15098783/v1/uddi:...
  *   또는 서울 열린데이터광장:
- *   GET http://openapi.seoul.go.kr:8088/{KEY}/json/subwayStationMaster/1/1000/
+ *   GET https://openapi.seoul.go.kr:8088/{KEY}/json/subwayStationMaster/1/1000/
  */
 
 import type { WCItem } from "@/components/WCLayer";
@@ -80,12 +80,12 @@ async function fetchFromDataGoKr(apiKey: string): Promise<WCItem[]> {
 
 /**
  * 서울 열린데이터광장 API (교통약자이용정보 장애인화장실)
- * GET http://openapi.seoul.go.kr:8088/{KEY}/json/tbTraficWheelChrAdit/1/1000/
+ * GET https://openapi.seoul.go.kr:8088/{KEY}/json/tbTraficWheelChrAdit/1/1000/
  *
  * 이 API는 장애인 화장실 전용 데이터로 보완적으로 사용
  */
 async function fetchFromSeoulOpenData(apiKey: string): Promise<WCItem[]> {
-  const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/tbTraficWheelChrAdit/1/1000/`;
+  const url = `https://openapi.seoul.go.kr:8088/${apiKey}/json/tbTraficWheelChrAdit/1/1000/`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) throw new Error(`Seoul API Error: ${res.status}`);
