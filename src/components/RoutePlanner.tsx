@@ -16,6 +16,7 @@ interface RoutePlannerProps {
     isDarkMode: boolean;
     onDarkModeToggle: () => void;
     wcItems: WCItem[];
+    wcLoading?: boolean;
     busStops: BusStop[];
     selectedBusStop: BusStop | null;
     selectedWC: WCItem | null;
@@ -305,7 +306,7 @@ function BusSheet({ stop, onClose, isDarkMode }: { stop: BusStop; onClose: () =>
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function RoutePlanner({
     onPathFound, activeTab, onTabChange, isDarkMode, onDarkModeToggle,
-    wcItems, busStops, selectedBusStop, selectedWC, onBusStopSelect, onWCSelect
+    wcItems, wcLoading = false, busStops, selectedBusStop, selectedWC, onBusStopSelect, onWCSelect
 }: RoutePlannerProps) {
     const [startVal, setStartVal] = useState("");
     const [endVal, setEndVal] = useState("");
@@ -492,10 +493,14 @@ export default function RoutePlanner({
 
                     {activeTab === "wc" && (
                         <div className="flex items-center gap-2 p-3 rounded-xl" style={{ background: isDarkMode ? "#1e2235" : "#eff6ff" }}>
-                            <span className="text-xl">🚻</span>
+                            <span className="text-xl">{wcLoading ? "⏳" : "🚻"}</span>
                             <div>
-                                <div className="text-[13px] font-bold" style={{ color: isDarkMode ? "#93c5fd" : "#2563eb" }}>지하철역 내 공공화장실</div>
-                                <div className="text-[11px]" style={{ color: subText }}>지도 마커를 클릭하면 상세 정보를 볼 수 있습니다</div>
+                                <div className="text-[13px] font-bold" style={{ color: isDarkMode ? "#93c5fd" : "#2563eb" }}>
+                                    {wcLoading ? "화장실 데이터 로딩 중…" : "지하철역 내 공공화장실"}
+                                </div>
+                                <div className="text-[11px]" style={{ color: subText }}>
+                                    {wcLoading ? "공공데이터 API에서 불러오는 중입니다" : "지도 마커를 클릭하면 상세 정보를 볼 수 있습니다"}
+                                </div>
                             </div>
                         </div>
                     )}

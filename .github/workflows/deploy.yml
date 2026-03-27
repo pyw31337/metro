@@ -3,71 +3,51 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: ["main"]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Build job
   build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Detect package manager
-        id: detect-package-manager
-        run: |
-          if [ -f "${{ github.workspace }}/yarn.lock" ]; then
-            echo "manager=yarn" >> $GITHUB_OUTPUT
-            echo "command=install" >> $GITHUB_OUTPUT
-            echo "runner=yarn" >> $GITHUB_OUTPUT
-            exit 0
-          elif [ -f "${{ github.workspace }}/package.json" ]; then
-            echo "manager=npm" >> $GITHUB_OUTPUT
-            echo "command=ci" >> $GITHUB_OUTPUT
-            echo "runner=npx --no-install" >> $GITHUB_OUTPUT
-            exit 0
-          else
-            echo "Unable to determine package manager"
-            exit 1
-          fi
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: ${{ steps.detect-package-manager.outputs.manager }}
+          cache: "npm"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
       - name: Install dependencies
-        run: ${{ steps.detect-package-manager.outputs.manager }} ${{ steps.detect-package-manager.outputs.command }}
+        run: npm ci
 
       - name: Build with Next.js
-        run: ${{ steps.detect-package-manager.outputs.runner }} next build
+        run: npx --no-install next build
         env:
-          NEXT_PUBLIC_KAKAO_API_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_API_KEY }}
+          # 서울교통공사 역사공중화장실 API (data.go.kr)
+          NEXT_PUBLIC_WC_API_KEY: ${{ secrets.NEXT_PUBLIC_WC_API_KEY }}
+          # 서울 열린데이터광장 (data.seoul.go.kr) 기본키
           NEXT_PUBLIC_SEOUL_API_KEY: ${{ secrets.NEXT_PUBLIC_SEOUL_API_KEY }}
+          # 버스 실시간 API (추후 추가)
+          NEXT_PUBLIC_BUS_API_KEY: ${{ secrets.NEXT_PUBLIC_BUS_API_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./out
 
-  # Deployment job
   deploy:
     environment:
       name: github-pages
