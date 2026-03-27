@@ -260,7 +260,6 @@ export default function BottomPanel({
                             )}
                         </div>
                     </motion.div>
-                )}
             </AnimatePresence>
         </div>
     );
