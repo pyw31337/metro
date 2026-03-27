@@ -375,7 +375,7 @@ export default function RoutePlanner({
         const t = setTimeout(() => {
             const s = startVal.trim(), e = endVal.trim();
             if (!s || !e) { setPathResult(null); onPathFound(null); return; }
-            const res = findShortestPath(s, e);
+            const res = findShortestPath([s, e]);
             if (res) {
                 setPathResult(res);
                 setTimelineData(generateTimeline(res.path));
