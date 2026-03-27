@@ -46,11 +46,11 @@ export default function BottomPanel({
         }
     }, [pathResult, selectedBusStop, selectedWC]);
 
-    const tabs: { id: ActiveTab; label: string; icon: any }[] = [
-        { id: "subway", label: "Metro", icon: Train },
-        { id: "bus", label: "Bus", icon: Bus },
-        { id: "subway+bus", label: "MaaS+", icon: MapIcon },
-        { id: "wc", label: "WC", icon: Bath },
+    const tabs: { id: ActiveTab; label: string; icon: any; colorClass: string }[] = [
+        { id: "subway", label: "Metro", icon: Train, colorClass: "bg-blue-600" },
+        { id: "bus", label: "Bus", icon: Bus, colorClass: "bg-orange-600" },
+        { id: "subway+bus", label: "MaaS+", icon: MapIcon, colorClass: "bg-zinc-800" },
+        { id: "wc", label: "WC", icon: Bath, colorClass: "bg-emerald-600" },
     ];
 
     return (
@@ -71,7 +71,7 @@ export default function BottomPanel({
                             onClick={() => onTabChange(tab.id)}
                             className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl transition-all whitespace-nowrap ${
                                 isActive 
-                                ? "bg-black text-white shadow-xl scale-[1.05] z-10" 
+                                ? `${tab.colorClass} text-white shadow-xl scale-[1.05] z-10` 
                                 : "text-gray-500 hover:text-gray-900"
                             }`}
                         >

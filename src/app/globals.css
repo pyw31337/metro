@@ -4,13 +4,19 @@
 
 @layer theme {
     :root {
-        --background: #fdfdfd;
-        --foreground: #121212;
-        --surface: rgba(255, 255, 255, 0.85);
-        --surface-border: rgba(0, 0, 0, 0.05);
-        --edge-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.12);
+        --background: #ffffff;
+        --foreground: #111111;
+        --surface: rgba(255, 255, 255, 0.9);
+        --surface-border: rgba(0, 0, 0, 0.08);
+        --edge-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
         --primary: #000000;
         --accent: #2563eb;
+        
+        /* Brand Colors */
+        --subway-blue: #0052A4;
+        --bus-orange: #f59e0b;
+        --maas-purple: #7c3aed;
+        --wc-emerald: #10b981;
     }
 
     .dark {
@@ -68,14 +74,14 @@ body {
     border-radius: 99px;
 }
 
-/* ─── Leaflet Premium Monotone Filter ────────────────────────────────────── */
+/* ─── Leaflet Premium Monotone Filter (Rich Contrast) ───────────────────────── */
 .leaflet-container {
-    background: var(--background) !important;
-    filter: grayscale(100%) brightness(1.05) contrast(1.1);
+    background: #eeeeee !important;
+    filter: grayscale(100%) brightness(0.9) contrast(1.2);
 }
 
 .dark .leaflet-container {
-    filter: grayscale(100%) invert(100%) contrast(0.9) brightness(0.9);
+    filter: grayscale(100%) invert(100%) contrast(0.9) brightness(0.7);
 }
 
 .station-label {
