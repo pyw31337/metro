@@ -28,7 +28,9 @@ export default function Home() {
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
     const [selectedBusStop, setSelectedBusStop] = useState<BusStop | null>(null);
     const [wcItems, setWcItems] = useState<WCItem[]>([]);
+    const [nearestWCs, setNearestWCs] = useState<WCItem[]>([]);
     const [wcLoading, setWcLoading] = useState(false);
+    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const busStops = busData as BusStop[];
     
     // Map instance ref for popups
@@ -41,7 +43,24 @@ export default function Home() {
             setWcItems(data);
             setWcLoading(false);
         });
+
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+            });
+        }
     }, []);
+
+    useEffect(() => {
+        if (activeTab === "wc" && userLocation && wcItems.length > 0) {
+            const sorted = [...wcItems].sort((a, b) => {
+                const distA = Math.sqrt(Math.pow(a.lat - userLocation[0], 2) + Math.pow(a.lng - userLocation[1], 2));
+                const distB = Math.sqrt(Math.pow(b.lat - userLocation[0], 2) + Math.pow(b.lng - userLocation[1], 2));
+                return distA - distB;
+            }).slice(0, 3);
+            setNearestWCs(sorted);
+        }
+    }, [activeTab, userLocation, wcItems]);
 
     // ─── Pathfinding Logic ─────────────────────────────────────────────────────
     const calculatePath = useCallback((start: string | null, waypoints: string[], end: string | null) => {
@@ -135,7 +154,43 @@ export default function Home() {
                         <div className="text-[20px] font-black tracking-tight flex items-center gap-2">
                              최적 경로 <span className="text-zinc-400 text-sm font-normal">| {pathResult.path.length}개 역</span>
                         </div>
-                        {/* Rendering steps/info here */}
+                    </div>
+                ) : activeTab === "wc" ? (
+                    <div className="flex flex-col gap-6">
+                        <div className="text-xl font-black">📍 가까운 화장실</div>
+                        {selectedWC ? (
+                            <div className="p-5 rounded-3xl bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
+                                <div className="flex justify-between items-start mb-3">
+                                    <div>
+                                        <div className="text-lg font-black">{selectedWC.name}</div>
+                                        <div className="text-sm text-zinc-500">{selectedWC.address}</div>
+                                    </div>
+                                    <div className="px-3 py-1 bg-blue-500 text-white text-[10px] font-bold rounded-full uppercase">Selected</div>
+                                </div>
+                                <div className="flex gap-2 mb-4">
+                                    {selectedWC.accessible && <span className="px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-[10px] border border-zinc-100 dark:border-zinc-700 font-bold">♿ 장애인</span>}
+                                    {selectedWC.diapers && <span className="px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-[10px] border border-zinc-100 dark:border-zinc-700 font-bold">🍼 기저귀</span>}
+                                    {selectedWC.emergencyBell && <span className="px-2 py-1 bg-white dark:bg-zinc-800 rounded-lg text-[10px] border border-zinc-100 dark:border-zinc-700 font-bold">🔔 비상벨</span>}
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <a href={`https://map.naver.com/v5/search/${encodeURIComponent(selectedWC.address)}`} target="_blank" className="flex items-center justify-center h-12 bg-[#03C75A] text-white rounded-xl font-bold text-sm">네이버 길찾기</a>
+                                    <a href={`https://map.kakao.com/link/search/${encodeURIComponent(selectedWC.address)}`} target="_blank" className="flex items-center justify-center h-12 bg-[#FEE500] text-[#3c1e1e] rounded-xl font-bold text-sm">카카오 길찾기</a>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {nearestWCs.map((wc) => (
+                                    <button 
+                                        key={wc.id}
+                                        onClick={() => setSelectedWC(wc)}
+                                        className="p-4 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-800 text-left hover:border-blue-500 transition-all"
+                                    >
+                                        <div className="font-bold">{wc.name}</div>
+                                        <div className="text-xs text-zinc-400 mt-1">{wc.address}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="flex flex-col gap-6">

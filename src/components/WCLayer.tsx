@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
 import L from "leaflet";
+import "leaflet.markercluster";
 
 export interface WCItem {
   id: string;
@@ -28,12 +29,27 @@ interface WCLayerProps {
 
 export default function WCLayer({ items, onWCClick, isDimmed }: WCLayerProps) {
   const map = useMap();
-  const layerRef = useRef<L.LayerGroup | null>(null);
+  const layerRef = useRef<any>(null);
 
   useEffect(() => {
-    const layer = L.layerGroup().addTo(map);
-    layerRef.current = layer;
-    return () => { layer.remove(); };
+    // @ts-ignore
+    const clusterGroup = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      zoomToBoundsOnClick: true,
+      spiderfyOnMaxZoom: true,
+      maxClusterRadius: 50,
+      disableClusteringAtZoom: 16,
+      iconCreateFunction: function(cluster: any) {
+        const count = cluster.getChildCount();
+        return L.divIcon({
+          html: `<div class="wc-cluster-inner" style="width: 36px; height: 36px; background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 4px 15px rgba(99,102,241,0.5); border: 2.5px solid white; font-size: 13px;">${count}</div>`,
+          className: 'wc-marker-cluster',
+          iconSize: L.point(36, 36)
+        });
+      }
+    }).addTo(map);
+    layerRef.current = clusterGroup;
+    return () => { clusterGroup.remove(); };
   }, [map]);
 
   useEffect(() => {
@@ -46,32 +62,35 @@ export default function WCLayer({ items, onWCClick, isDimmed }: WCLayerProps) {
       
       const svgHtml = `
         <div class="wc-marker-inner" style="
-          width: 28px; height: 28px;
-          background: #fff;
+          width: 30px; height: 30px;
+          background: white;
           border-radius: 50%;
-          border: 2.5px solid #10b981;
+          border: 2.5px solid #6366f1;
           display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 4px 12px rgba(16,185,129,0.3);
-          font-size: 14px;
+          box-shadow: 0 4px 12px rgba(99,102,241,0.4);
+          font-size: 16px;
           cursor: pointer;
           opacity: ${opacity};
           filter: ${filter};
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         ">🚻</div>
       `;
       const icon = L.divIcon({
         className: "wc-marker-container",
         html: svgHtml,
-        iconSize: [28, 28],
-        iconAnchor: [14, 14],
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
       });
       const marker = L.marker([item.lat, item.lng], { icon });
       marker.bindTooltip(item.name, {
         direction: "top",
-        offset: [0, -16],
-        className: "wc-tooltip",
+        offset: [0, -18],
+        className: "wc-tooltip premium-tooltip",
       });
-      marker.on("click", () => onWCClick(item));
+      marker.on("click", (e) => {
+        L.DomEvent.stopPropagation(e);
+        onWCClick(item);
+      });
       layerRef.current!.addLayer(marker);
     });
   }, [items, onWCClick, isDimmed]);

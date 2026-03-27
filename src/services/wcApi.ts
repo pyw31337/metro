@@ -110,18 +110,11 @@ async function fetchFromSeoulOpenData(apiKey: string): Promise<WCItem[]> {
     .filter((item) => item.lat !== 0 && item.lng !== 0);
 }
 
-// ─── Mock fallback ────────────────────────────────────────────────────────────
-function getMockData(): WCItem[] {
-  return mockData as WCItem[];
-}
-
 /**
  * 공공데이터포털 (data.go.kr) - 전국공중화장실표준데이터
  * 2000건 이상의 전국 화장실 데이터를 수집합니다.
  */
 async function fetchNationalWC(apiKey: string): Promise<WCItem[]> {
-  // 전국공중화장실표준데이터 API (data.go.kr)
-  // uddi:9893d932-b677-4b18-b26a-986a4225e365
   const SERVICE_ID = "15013116"; 
   const UUID = "9893d932-b677-4b18-b26a-986a4225e365";
   const url = `https://api.odcloud.kr/api/${SERVICE_ID}/v1/uddi:${UUID}?page=1&perPage=2000&serviceKey=${apiKey}`;
@@ -152,35 +145,93 @@ async function fetchNationalWC(apiKey: string): Promise<WCItem[]> {
     .filter((item: WCItem) => item.lat !== 0 && item.lng !== 0);
 }
 
-// ─── 메인 함수 (전국 데이터 우선) ──────────────────────────────────────────
+// ─── Mock fallback ────────────────────────────────────────────────────────────
+function getMockData(): WCItem[] {
+  return mockData as WCItem[];
+}
+
+/**
+ * 경기도 공중화장실 현황 API (data.gg.go.kr)
+ * 1000건씩 최대 5페이지(5000건)를 수집합니다.
+ */
+async function fetchGyeonggiWC(apiKey: string): Promise<WCItem[]> {
+  const allItems: WCItem[] = [];
+  const PAGES = 5;
+  const PER_PAGE = 1000;
+
+  for (let p = 1; p <= PAGES; p++) {
+    const url = `https://openapi.gg.go.kr/PubToilet?KEY=${apiKey}&Type=json&pIndex=${p}&pSize=${PER_PAGE}`;
+    try {
+      const res = await fetch(url, { next: { revalidate: 86400 } });
+      if (!res.ok) break;
+      const json = await res.json();
+      const rows = json?.PubToilet?.[1]?.row || [];
+      if (rows.length === 0) break;
+
+      const items = rows.map((r: any, i: number) => ({
+        id: `gg-wc-${p}-${i}`,
+        name: r.PBCTLT_NM || "경기공중화장실",
+        station: "",
+        line: "",
+        lat: parseFloat(r.REFINE_WGS84_LAT),
+        lng: parseFloat(r.REFINE_WGS84_LOGT),
+        address: r.REFINE_ROADNM_ADDR || r.REFINE_LOTNO_ADDR || "",
+        floor: "",
+        gender: r.MALE_FEMALE_CMN_USE_TOILET_YN === "Y" ? "mixed" : "separated",
+        hours: r.OPEN_TM_INFO || "정보없음",
+        diapers: r.BABY_CHG_PO_PLACE_NM?.length > 0 || r.BABY_CHG_PO_LOC_DESC?.length > 0,
+        emergencyBell: r.EMGNCY_BELL_INSTL_YN === "Y",
+        accessible: r.MALE_DSB_SH_TOILET_CNT > 0 || r.FEMALE_DSB_SH_TOILET_CNT > 0,
+      }));
+      allItems.push(...items.filter((item: WCItem) => item.lat && item.lng));
+      if (rows.length < PER_PAGE) break;
+    } catch (err) {
+      console.warn(`[WC] GG API Error p${p}:`, err);
+      break;
+    }
+  }
+  return allItems;
+}
+
+/**
+ * 전용 서비스: 모든 화장실 데이터 통합 (서울/경기/인천)
+ */
 export async function fetchWCData(): Promise<WCItem[]> {
-  const wcKey = process.env.NEXT_PUBLIC_WC_API_KEY;
+  const nationalKey = process.env.NEXT_PUBLIC_WC_API_KEY;
   const seoulKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+  const ggKey = "bb76ade40706413f977749ddd28d5e38"; // Provided GG Key
 
   let allItems: WCItem[] = [];
 
-  // 1순위: 전국 공중화장실 데이터 (가장 방대함)
-  if (wcKey && wcKey.length > 10) {
+  // 1. 경기도 데이터 (최신)
+  if (ggKey) {
+    const ggData = await fetchGyeonggiWC(ggKey);
+    allItems = [...allItems, ...ggData];
+  }
+
+  // 2. 전국 데이터 (서울/인천 위주로 필터링 추천)
+  if (nationalKey && nationalKey.length > 10) {
     try {
-      const nationalData = await fetchNationalWC(wcKey);
-      if (nationalData.length > 0) {
-        allItems = [...allItems, ...nationalData];
-      }
+      const nationalData = await fetchNationalWC(nationalKey);
+      // 서울/인천만 필터링 (경기도는 위에서 별도로 받음)
+      const filtered = nationalData.filter((i: WCItem) => 
+        i.address.includes("서울") || i.address.includes("인천")
+      );
+      allItems = [...allItems, ...filtered];
     } catch (err) {
       console.warn("[WC] National API failed:", err);
     }
   }
 
-  // 2순위: 데이터포털 내 서울교통공사 전용 데이터 (중복 제거 필요)
-  if (wcKey && wcKey.length > 10) {
+  // 3. 서울 전용 데이터 (중복 제거)
+  if (seoulKey && seoulKey.length > 10) {
     try {
-      const data = await fetchFromDataGoKr(wcKey);
-      // 중복 체크 로직 (간단히 주소/이름 기준)
+      const seoulData = await fetchFromSeoulOpenData(seoulKey);
       const existingNames = new Set(allItems.map(i => i.name));
-      const filtered = data.filter(i => !existingNames.has(i.name));
+      const filtered = seoulData.filter(i => !existingNames.has(i.name));
       allItems = [...allItems, ...filtered];
     } catch (err) {
-      console.warn("[WC] Data.go.kr local API failed:", err);
+      console.warn("[WC] Seoul API failed:", err);
     }
   }
 
