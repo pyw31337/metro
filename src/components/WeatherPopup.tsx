@@ -78,67 +78,70 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
     const displayDays = isExpanded ? (data?.daily.time || []) : (data?.daily.time.slice(0, 7) || []);
 
     return (
-        <motion.div 
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed top-24 right-20 z-[3000] w-[340px] bg-white/95 dark:bg-zinc-950/90 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/20 dark:border-white/10 shadow-2xl"
-        >
-            <div className="p-5 flex flex-col gap-4">
-                <div className="flex items-start justify-between">
-                    <div className="flex flex-col">
-                        <h3 className="text-[17px] font-black leading-tight">
-                            <span className="text-blue-500 mr-1">
-                                {loading ? "위치 확인 중..." : data?.address}
-                            </span>
-                            <span className="text-zinc-900 dark:text-white">주간날씨</span>
-                        </h3>
-                    </div>
-                    <button onClick={onClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
-                        <X size={18} className="text-zinc-400" />
-                    </button>
-                </div>
-
-                <div className="h-px bg-black/5 dark:bg-white/5 w-full" />
-
-                <div className="flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-white/40">기상 예보 {isExpanded ? "(14일)" : "(7일)"}</span>
-                    </div>
-                    
-                    {loading ? (
-                        <div className="flex items-center justify-center py-10">
-                            <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+        <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px] pointer-events-auto" onClick={onClose}>
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                className="w-full max-w-[340px] bg-white/95 dark:bg-zinc-950/90 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/20 dark:border-white/10 shadow-2xl pointer-events-auto"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="p-5 flex flex-col gap-4">
+                    <div className="flex items-start justify-between">
+                        <div className="flex flex-col">
+                            <h3 className="text-[17px] font-black leading-tight text-zinc-900 dark:text-white">
+                                <span className="text-blue-500 mr-1">
+                                    {loading ? "위치 확인 중..." : data?.address}
+                                </span>
+                                주간날씨
+                            </h3>
                         </div>
-                    ) : (
-                        <div className="flex flex-col gap-4">
-                            <div className="grid grid-cols-7 gap-1">
-                                {displayDays.map((time, i) => (
-                                    <div key={i} className="flex flex-col items-center gap-2 p-1 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-all">
-                                        <span className={`text-[11px] font-black ${i === 0 ? 'text-blue-500' : 'text-zinc-500 dark:text-white/60'}`}>
-                                            {i === 0 ? "오늘" : i === 7 ? "다음주" : getDayName(time)}
-                                        </span>
-                                        {getWeatherIcon(data!.daily.weather_code[i])}
-                                        <div className="flex flex-col items-center -gap-0.5">
-                                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">{Math.round(data!.daily.temperature_2m_max[i])}°</span>
-                                            <span className="text-[9px] font-bold text-zinc-400 dark:text-white/30">{Math.round(data!.daily.temperature_2m_min[i])}°</span>
-                                        </div>
-                                    </div>
-                                ))}
+                        <button onClick={onClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
+                            <X size={18} className="text-zinc-400" />
+                        </button>
+                    </div>
+
+                    <div className="h-px bg-black/5 dark:bg-white/5 w-full" />
+
+                    <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400 dark:text-white/40">기상 예보 {isExpanded ? "(14일)" : "(7일)"}</span>
+                        </div>
+                        
+                        {loading ? (
+                            <div className="flex items-center justify-center py-10">
+                                <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
                             </div>
+                        ) : (
+                            <div className="flex flex-col gap-4">
+                                <div className="grid grid-cols-7 gap-1">
+                                    {displayDays.map((time, i) => (
+                                        <div key={i} className="flex flex-col items-center gap-2 p-1 py-3 rounded-2xl hover:bg-black/5 dark:hover:bg-white/10 transition-all">
+                                            <span className={`text-[11px] font-black ${i === 0 ? 'text-blue-500' : 'text-zinc-500 dark:text-white/60'}`}>
+                                                {i === 0 ? "오늘" : i === 7 ? "다음주" : getDayName(time)}
+                                            </span>
+                                            {data && data.daily.weather_code[i] !== undefined && getWeatherIcon(data.daily.weather_code[i])}
+                                            <div className="flex flex-col items-center -gap-0.5">
+                                                <span className="text-[11px] font-black text-zinc-900 dark:text-white">{data && Math.round(data.daily.temperature_2m_max[i])}°</span>
+                                                <span className="text-[9px] font-bold text-zinc-400 dark:text-white/30">{data && Math.round(data.daily.temperature_2m_min[i])}°</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
 
-                            {!isExpanded && data && data.daily.time.length > 7 && (
-                                <button 
-                                    onClick={() => setIsExpanded(true)}
-                                    className="w-full py-3 rounded-2xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 text-[11px] font-black transition-all"
-                                >
-                                    7일 더보기
-                                </button>
-                            )}
-                        </div>
-                    )}
+                                {!isExpanded && data && data.daily.time.length > 7 && (
+                                    <button 
+                                        onClick={() => setIsExpanded(true)}
+                                        className="w-full py-3 rounded-2xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 text-[11px] font-black transition-all"
+                                    >
+                                        7일 더보기
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+        </div>
     );
 }
