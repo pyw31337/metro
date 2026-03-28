@@ -236,10 +236,9 @@ function MapLibreBackground({
                     />
                 </Source>
 
-                {/* 2.5 Route Station Details & Highlight (ON TOP) */}
+                {/* 2.5 Route Station Circle Highlight (ON TOP) */}
                 {routeStationData.features.length > 0 && (
                     <Source id="route-highlight-source" type="geojson" data={routeStationData}>
-                        {/* 2.5.1 Circle Highlight (Solid white center with line border) */}
                         <Layer
                             id="route-station-circle-highlight"
                             type="circle"
@@ -257,52 +256,44 @@ function MapLibreBackground({
                                 "circle-stroke-opacity": 1
                             }}
                         />
-                        {/* 2.5.2 Name Label */}
-                        <Layer
-                            id="route-station-name-highlight"
-                            type="symbol"
-                            layout={{
-                                "text-field": ["get", "name"],
-                                "text-size": 15,
-                                "text-offset": [0, -1.8], // Above the point
-                                "text-anchor": "bottom",
-                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold", "sans-serif"]],
-                                "text-allow-overlap": true,
-                                "text-ignore-placement": true
-                            }}
-                            paint={{
-                                "text-color": ["get", "routeColor"],
-                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
-                                "text-halo-width": 3,
-                                "text-opacity": 1
-                            }}
-                        />
                     </Source>
                 )}
 
-                {/* 2.6 Route Info Bubbles (Tiny, High Contrast) */}
+                {/* 2.6 Consolidated Route Info Bubbles (Cohesive Card) */}
                 {routeStationData.features.map((f: any, i: number) => {
-                    const { name, arrivalTime, platformInfo } = f.properties;
+                    const { name, arrivalTime, platformInfo, routeColor } = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
                     
                     return (
-                        <Marker key={`info-${i}`} longitude={lng} latitude={lat} anchor="top" offset={[0, 18]}>
-                            <div className="flex flex-col gap-0.5 pointer-events-none items-center">
-                                {/* Small Bubble 1: Arrival Time */}
-                                <div className="px-1.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-black/5 dark:border-white/10">
-                                    <span className="text-[9px] font-black text-zinc-900 dark:text-white leading-none">
-                                        도착시간 {arrivalTime}
-                                    </span>
-                                </div>
+                        <Marker key={`info-${i}`} longitude={lng} latitude={lat} anchor="top-left" offset={[15, 12]}>
+                            <div className="flex flex-col gap-1 p-1.5 px-2 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-white/20 shadow-lg pointer-events-none ring-1 ring-black/5 min-w-[80px]">
+                                {/* Station Name */}
+                                <span 
+                                    className="text-[11px] font-black leading-none mb-0.5"
+                                    style={{ color: routeColor }}
+                                >
+                                    {name}
+                                </span>
                                 
-                                {/* Small Bubble 2: Fast Transfer (if exists) */}
-                                {platformInfo && (
-                                    <div className="px-1.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-black/5 dark:border-white/10">
-                                        <span className="text-[8px] font-black text-blue-500 dark:text-blue-400 leading-none">
-                                            빠른환승 {platformInfo}
+                                <div className="flex flex-col gap-0.5">
+                                    {/* Arrival Time */}
+                                    <div className="flex items-center gap-1">
+                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
+                                        <span className="text-[9px] font-black text-zinc-900 dark:text-zinc-300 whitespace-nowrap">
+                                            {arrivalTime} 도착
                                         </span>
                                     </div>
-                                )}
+                                    
+                                    {/* Fast Transfer (if exists) */}
+                                    {platformInfo && (
+                                        <div className="flex items-center gap-1">
+                                            <div className="w-1 h-1 rounded-full bg-blue-500" />
+                                            <span className="text-[9px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap">
+                                                빠른환승 {platformInfo}
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </Marker>
                     );

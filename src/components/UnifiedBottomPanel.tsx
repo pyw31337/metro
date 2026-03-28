@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station } from "@/data/subway-lines";
 import { THEME } from "@/theme/design-system";
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
+import { useViewportHeight } from "@/hooks/useViewportHeight";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -56,6 +57,7 @@ export default function UnifiedBottomPanel({
     pathResults,
     activePath
 }: UnifiedBottomPanelProps) {
+    const { keyboardOffset } = useViewportHeight();
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -149,11 +151,14 @@ export default function UnifiedBottomPanel({
     ];
 
     return (
-        <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center">
+        <div 
+            className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center transition-all duration-300"
+            style={{ bottom: `${keyboardOffset}px` }}
+        >
             <motion.div 
                 layout
                 className="max-w-lg w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-hidden"
-                style={{ paddingBottom: "calc(env(safe-area-inset-bottom) + 12px)" }}
+                style={{ paddingBottom: keyboardOffset > 0 ? "12px" : "calc(env(safe-area-inset-bottom) + 12px)" }}
                 initial={{ y: 200 }}
                 animate={{ y: 0 }}
                 transition={THEME.transitions.spring}
@@ -220,8 +225,8 @@ export default function UnifiedBottomPanel({
                     {/* Slim Functional Inputs with Clear Buttons */}
                     <div className="grid grid-cols-2 gap-2">
                         {/* Destination */}
-                        <div className="relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border border-transparent focus-within:border-blue-500/50 transition-all">
-                            <MapPin size={14} className="text-blue-500 shrink-0" />
+                        <div className={`relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
+                            <span className="text-[12px] font-black text-blue-500 shrink-0 mr-1">도착</span>
                             <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                 {(!activeField || activeField !== "dest") && destination && (
                                     <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">
@@ -246,8 +251,8 @@ export default function UnifiedBottomPanel({
                         </div>
 
                         {/* Source */}
-                        <div className="relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border border-transparent focus-within:border-blue-500/50 transition-all">
-                            <Navigation size={14} className="text-zinc-400 shrink-0" />
+                        <div className={`relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
+                            <span className="text-[12px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                             <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                 {(!activeField || activeField !== "source") && source && (
                                     <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">

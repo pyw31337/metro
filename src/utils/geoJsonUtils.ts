@@ -133,14 +133,37 @@ export const convertPathToGeoJSON = (path: string[], startTime: number = Date.no
         const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000); 
         const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
-        // Transfer Station Check: Show platform info ONLY at transfers
-        const isTransferStation = s.lines.length > 1;
-        const platform = isTransferStation ? `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}` : "";
-
-        // Determine route color (next segment color or previous)
+        // Transfer Logic: Only show platform info at actual points where the route changes lines
+        let isActualTransfer = false;
         let routeColor = "#3b82f6";
-        if (i < path.length - 1) {
+        
+        if (i > 0 && i < path.length - 1) {
+            const prevName = path[i-1];
             const nextName = path[i+1];
+            const prevS = allStations.find(st => st.name === prevName);
+            const nextS = allStations.find(st => st.name === nextName);
+            
+            if (prevS && nextS) {
+                // Lines that could have been used to get here
+                const incomingLines = s.lines.filter(l => prevS.lines.includes(l));
+                // Lines that will be used to go forward
+                const outgoingLines = s.lines.filter(l => nextS.lines.includes(l));
+                
+                // If there's no single line that handles both incoming and outgoing, it's a transfer
+                const overlappingLines = incomingLines.filter(l => outgoingLines.includes(l));
+                if (overlappingLines.length === 0 && incomingLines.length > 0 && outgoingLines.length > 0) {
+                    isActualTransfer = true;
+                }
+                
+                // Set route color based on the outgoing segment
+                if (outgoingLines.length > 0) {
+                    const line = SUBWAY_LINES.find(l => l.name === outgoingLines[0]);
+                    if (line) routeColor = line.color;
+                }
+            }
+        } else if (i === 0 && path.length > 1) {
+            // Start station: color based on first segment
+            const nextName = path[1];
             const nextS = allStations.find(st => st.name === nextName);
             if (nextS) {
                 const commonLines = s.lines.filter(l => nextS.lines.includes(l));
@@ -150,6 +173,8 @@ export const convertPathToGeoJSON = (path: string[], startTime: number = Date.no
                 }
             }
         }
+
+        const platform = isActualTransfer ? `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}` : "";
 
         stationFeatures.push({
             type: "Feature" as const,
