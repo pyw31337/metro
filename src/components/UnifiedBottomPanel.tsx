@@ -65,38 +65,33 @@ export default function UnifiedBottomPanel({
         if (type === "dest") setDestination(val);
         else setSource(val);
 
-        if (val.length === 0) {
+        if (!val || val.trim().length === 0) {
             setSearchResults([]);
             return;
         }
 
-        const q = val.toLowerCase();
+        const q = val.toLowerCase().trim();
         const filteredSubway = stations
-            .filter(s => matchChosung(val, s.name))
+            .filter(s => matchChosung(q, s.name) || s.name.toLowerCase().includes(q))
             .map(s => ({ ...s, type: 'subway' }))
             .sort((a, b) => {
-                const aExact = a.name.toLowerCase() === q;
-                const bExact = b.name.toLowerCase() === q;
+                const aName = a.name.toLowerCase();
+                const bName = b.name.toLowerCase();
+                const aExact = aName === q;
+                const bExact = bName === q;
                 if (aExact !== bExact) return aExact ? -1 : 1;
                 
-                const aStarts = a.name.toLowerCase().startsWith(q);
-                const bStarts = b.name.toLowerCase().startsWith(q);
+                const aStarts = aName.startsWith(q);
+                const bStarts = bName.startsWith(q);
                 if (aStarts !== bStarts) return aStarts ? -1 : 1;
 
-                const aLines = (a as any).lines?.length || 0;
-                const bLines = (b as any).lines?.length || 0;
-                return bLines - aLines;
+                return (b as any).lines?.length - (a as any).lines?.length;
             });
 
         const filteredBus = busStops
-            .filter(s => matchChosung(val, s.name))
+            .filter(s => s.name.toLowerCase().includes(q))
             .map(s => ({ ...s, type: 'bus' }))
-            .sort((a, b) => {
-                const aExact = a.name.toLowerCase() === q;
-                const bExact = b.name.toLowerCase() === q;
-                if (aExact !== bExact) return aExact ? -1 : 1;
-                return 0;
-            });
+            .slice(0, 5);
 
         setSearchResults([...filteredSubway, ...filteredBus].slice(0, 10));
     };
@@ -104,12 +99,11 @@ export default function UnifiedBottomPanel({
     const selectLocation = (name: string) => {
         if (activeField === "dest") {
             setDestination(name);
-            setActiveField(null);
         } else {
             setSource(name);
-            setActiveField(null);
         }
         setSearchResults([]);
+        setActiveField(null);
     };
 
     const tabs = [
@@ -129,7 +123,7 @@ export default function UnifiedBottomPanel({
         <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center pb-6 px-4">
             <motion.div 
                 layout
-                className="max-w-lg w-full glass-premium rounded-[32px] p-4 pointer-events-auto border border-white/20 shadow-2xl overflow-hidden relative bg-white/70 dark:bg-zinc-900/80"
+                className="max-w-lg w-full glass-premium rounded-[32px] p-4 pointer-events-auto border border-white/20 shadow-2xl relative bg-white/70 dark:bg-zinc-900/80"
                 style={{ 
                     backdropFilter: "blur(20px) saturate(180%)", 
                     WebkitBackdropFilter: "blur(20px) saturate(180%)" 
