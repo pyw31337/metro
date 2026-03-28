@@ -14,7 +14,7 @@ interface UnifiedBottomPanelProps {
     onTabChange: (tab: string) => void;
     onSearch: (start: string, end: string) => void;
     onReset?: () => void;
-    onLocate?: () => void;
+    onLocate?: (type: "source" | "dest") => void;
     startStation: string | null;
     endStation: string | null;
     isDarkMode: boolean;
@@ -273,11 +273,16 @@ export default function UnifiedBottomPanel({
                                     className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`}
                                 />
                             </div>
-                            {destination && (
-                                <button onClick={() => { setDestination(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
-                                    <X size={14} />
+                            <div className="flex items-center gap-1 shrink-0">
+                                {destination && (
+                                    <button onClick={() => { setDestination(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
+                                        <X size={14} />
+                                    </button>
+                                )}
+                                <button onClick={() => onLocate?.("dest")} className="p-1 text-zinc-400 hover:text-blue-500 transition-all active:scale-90">
+                                    <Locate size={14} />
                                 </button>
-                            )}
+                            </div>
                         </div>
 
                         {/* Source */}
@@ -299,11 +304,16 @@ export default function UnifiedBottomPanel({
                                     className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`}
                                 />
                             </div>
-                            {source && (
-                                <button onClick={() => { setSource(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all mr-1">
-                                    <X size={14} />
+                            <div className="flex items-center gap-1 shrink-0">
+                                {source && (
+                                    <button onClick={() => { setSource(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
+                                        <X size={14} />
+                                    </button>
+                                )}
+                                <button onClick={() => onLocate?.("source")} className="p-1 text-zinc-400 hover:text-blue-500 transition-all active:scale-90">
+                                    <Locate size={14} />
                                 </button>
-                            )}
+                            </div>
                         </div>
                     </div>
 

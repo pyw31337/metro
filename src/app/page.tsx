@@ -85,13 +85,14 @@ export default function Home() {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
+                // Update marker location but NO map movement (no center change)
                 setUserLocation([latitude, longitude]);
                 
-                // Auto-fill nearest station (Off-thread)
+                // Auto-fill nearest station ONLY if field is empty (Off-thread)
                 if (!startStation && stations.length > 0) {
                     const nearest = await findNearestStation(latitude, longitude, stations) as any;
                     if (nearest?.name) {
-                        setStartStation(`내 위치 : ${nearest.name} ${nearest.line}`);
+                        setStartStation(`내 위치 : ${nearest.name} (내 위치)`);
                     }
                 }
             });
@@ -190,35 +191,43 @@ export default function Home() {
 
     const handleZoomIn = () => mapRef.current?.zoomIn();
     const handleZoomOut = () => mapRef.current?.zoomOut();
+
     const handleLocate = useCallback(() => {
-        if (navigator.geolocation && mapRef.current) {
+        if (userLocation && mapRef.current) {
+            mapRef.current?.flyTo({ center: [userLocation[1], userLocation[0]], zoom: 15, duration: 1500 });
+        } else if (navigator.geolocation && mapRef.current) {
             navigator.geolocation.getCurrentPosition((pos) => {
                 const { latitude, longitude } = pos.coords;
                 mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
                 setUserLocation([latitude, longitude]);
             });
         }
-    }, []);
+    }, [userLocation]);
 
-    // Initial centering logic
-    useEffect(() => {
-        if (!hasCenteredOnLoad && userLocation && mapRef.current) {
-            const [lat, lng] = userLocation;
-            mapRef.current?.flyTo({ center: [lng, lat], zoom: 14, duration: 2000 });
-            setHasCenteredOnLoad(true);
+    // Manual station locator for inputs
+    const handleLocateStation = async (type: "source" | "dest") => {
+        if (!userLocation && navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                setUserLocation([latitude, longitude]);
+                const nearest = await findNearestStation(latitude, longitude, stations) as any;
+                if (nearest) {
+                    const val = `내 위치 : ${nearest.name} (내 위치)`;
+                    if (type === "source") setStartStation(val);
+                    else setEndStation(val);
+                }
+            });
+            return;
         }
-    }, [userLocation, hasCenteredOnLoad]);
 
-    const handleLocateStation = async () => {
-        if (!navigator.geolocation) return;
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            const nearest = await findNearestStation(latitude, longitude, stations) as any;
+        if (userLocation) {
+            const nearest = await findNearestStation(userLocation[0], userLocation[1], stations) as any;
             if (nearest) {
-                setStartStation(nearest.name);
-                mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
+                const val = `내 위치 : ${nearest.name} (내 위치)`;
+                if (type === "source") setStartStation(val);
+                else setEndStation(val);
             }
-        });
+        }
     };
 
     return (

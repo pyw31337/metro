@@ -306,28 +306,31 @@ function MapLibreBackground({
                             latitude={lat} 
                             anchor="top" 
                             offset={[0, 15]}
+                            style={{ zIndex: isFocused ? 5000 : 2000 }}
                         >
                             <button 
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setFocusedBubble(name);
                                 }}
-                                className={`flex flex-col gap-0 p-0.5 px-1.5 rounded-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 ${isFocused ? 'scale-[1.1] shadow-2xl z-[5000] border-blue-500 bg-white/90 dark:bg-zinc-800' : 'z-[2000]'}`}
-                                style={{ minWidth: '60px' }}
+                                className={`flex flex-col gap-0 p-0.5 px-2 rounded-xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
                             >
                                 {/* Station Name */}
                                 <span 
-                                    className="text-[9px] font-black leading-tight"
+                                    className="text-[9px] font-black leading-tight text-center"
                                     style={{ color: routeColor }}
                                 >
                                     {name}
                                 </span>
                                 
-                                <div className="flex flex-col gap-0">
+                                <div className="flex flex-col gap-0 items-center">
                                     {/* Info Row: Time & Fast Transfer */}
-                                    <div className="flex items-center gap-1">
+                                    <div className="flex items-center gap-1 justify-center">
                                         <span className="text-[10px] font-black text-zinc-900 dark:text-white leading-tight">
-                                            {arrivalTime}
+                                            {timeDisplayMode === "duration" 
+                                                ? `${Math.round(arrivalTime)}분` 
+                                                : new Date(Date.now() + arrivalTime * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                            }
                                         </span>
                                         {platformInfo && (
                                             <div className="flex items-center gap-0.5">
