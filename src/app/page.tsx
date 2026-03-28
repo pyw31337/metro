@@ -181,7 +181,6 @@ export default function Home() {
                 }
             }
         }
-        }
     }, [findPath, stations, selectedStrategy]);
 
     useEffect(() => {
