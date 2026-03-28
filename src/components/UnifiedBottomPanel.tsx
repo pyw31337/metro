@@ -24,6 +24,8 @@ interface UnifiedBottomPanelProps {
     onStrategyChange: (strategy: PathStrategy) => void;
     pathResults: Record<string, PathResult> | null;
     activePath: PathResult | null;
+    timeDisplayMode: "duration" | "arrival";
+    setTimeDisplayMode: (mode: "duration" | "arrival") => void;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -55,7 +57,9 @@ export default function UnifiedBottomPanel({
     selectedStrategy,
     onStrategyChange,
     pathResults,
-    activePath
+    activePath,
+    timeDisplayMode,
+    setTimeDisplayMode
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const [destination, setDestination] = useState("");
@@ -63,7 +67,9 @@ export default function UnifiedBottomPanel({
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
-    const [timeDisplayMode, setTimeDisplayMode] = useState<"duration" | "arrival">("duration");
+
+    const sourceInputRef = useRef<HTMLInputElement>(null);
+    const destInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
         setDestination(endStation || "");
@@ -264,6 +270,7 @@ export default function UnifiedBottomPanel({
                                     </div>
                                 )}
                                 <input 
+                                    ref={destInputRef}
                                     type="text"
                                     placeholder={!destination ? "도착역" : ""}
                                     value={activeField === "dest" ? destination : ""}
@@ -275,7 +282,11 @@ export default function UnifiedBottomPanel({
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                                 {destination && (
-                                    <button onClick={() => { setDestination(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
+                                    <button 
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} 
+                                        className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"
+                                    >
                                         <X size={14} />
                                     </button>
                                 )}
@@ -295,6 +306,7 @@ export default function UnifiedBottomPanel({
                                     </div>
                                 )}
                                 <input 
+                                    ref={sourceInputRef}
                                     type="text"
                                     placeholder={!source ? "출발역" : ""}
                                     value={activeField === "source" ? source : ""}
@@ -306,7 +318,11 @@ export default function UnifiedBottomPanel({
                             </div>
                             <div className="flex items-center gap-1 shrink-0">
                                 {source && (
-                                    <button onClick={() => { setSource(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
+                                    <button 
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} 
+                                        className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"
+                                    >
                                         <X size={14} />
                                     </button>
                                 )}

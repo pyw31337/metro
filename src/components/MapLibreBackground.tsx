@@ -35,6 +35,7 @@ interface MapLibreProps {
     onCenterChange?: (lat: number, lng: number) => void;
     onMapReady?: (map: any) => void;
     userLocation: [number, number] | null;
+    timeDisplayMode: "duration" | "arrival";
 }
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -44,7 +45,7 @@ function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
     onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-    onCenterChange, userLocation
+    onCenterChange, userLocation, timeDisplayMode
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -313,35 +314,35 @@ function MapLibreBackground({
                                     e.stopPropagation();
                                     setFocusedBubble(name);
                                 }}
-                                className={`flex flex-col gap-0 p-0.5 px-2 rounded-xl bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
+                                className={`flex flex-col gap-0.5 p-1 px-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center justify-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
                             >
-                                {/* Station Name */}
+                                {/* Line 1: Station Name */}
                                 <span 
-                                    className="text-[9px] font-black leading-tight text-center"
+                                    className="text-[10px] font-black leading-tight text-center"
                                     style={{ color: routeColor }}
                                 >
                                     {name}
                                 </span>
                                 
-                                <div className="flex flex-col gap-0 items-center">
-                                    {/* Info Row: Time & Fast Transfer */}
-                                    <div className="flex items-center gap-1 justify-center">
-                                        <span className="text-[10px] font-black text-zinc-900 dark:text-white leading-tight">
-                                            {timeDisplayMode === "duration" 
-                                                ? `${Math.round(arrivalTime)}분` 
-                                                : new Date(Date.now() + arrivalTime * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
-                                            }
+                                {/* Line 2: Arrival Info */}
+                                <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
+                                    {timeDisplayMode === "duration" 
+                                        ? `${Math.round(arrivalTime)}분` 
+                                        : new Date(Date.now() + arrivalTime * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                    }
+                                </span>
+
+                                {/* Line 3: Platform / Transfer Info */}
+                                {platformInfo ? (
+                                    <div className="flex items-center gap-1 justify-center mt-0.5">
+                                        <div className="w-1 h-1 rounded-full bg-blue-500" />
+                                        <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
+                                            환승 {platformInfo}
                                         </span>
-                                        {platformInfo && (
-                                            <div className="flex items-center gap-0.5">
-                                                <div className="w-1 h-1 rounded-full bg-blue-500/50" />
-                                                <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
-                                                    환승 {platformInfo}
-                                                </span>
-                                            </div>
-                                        )}
                                     </div>
-                                </div>
+                                ) : (
+                                    <div className="h-[2px]" /> // Maintain consistent spacing if no transfer info
+                                )}
                             </button>
                         </Marker>
                     );

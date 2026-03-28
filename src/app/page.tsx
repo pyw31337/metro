@@ -50,6 +50,7 @@ export default function Home() {
     const [weatherOpen, setWeatherOpen] = useState(false);
     const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
     const [stationArrivals, setStationArrivals] = useState<StationArrival[]>([]);
+    const [timeDisplayMode, setTimeDisplayMode] = useState<"duration" | "arrival">("duration");
     const busStops = busData as BusStop[];
     
     const stations = useMemo(() => {
@@ -257,6 +258,7 @@ export default function Home() {
                     onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
                     onMapReady={(r) => { mapRef.current = r; }}
                     userLocation={userLocation}
+                    timeDisplayMode={timeDisplayMode}
                 />
             </div>
 
@@ -278,6 +280,8 @@ export default function Home() {
                 onStrategyChange={setSelectedStrategy}
                 pathResults={pathResults}
                 activePath={activePath}
+                timeDisplayMode={timeDisplayMode}
+                setTimeDisplayMode={setTimeDisplayMode}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
