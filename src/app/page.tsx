@@ -5,8 +5,8 @@ import dynamic from "next/dynamic";
 import L from "leaflet";
 import { Train, Bus, Bath } from "lucide-react";
 import { SUBWAY_LINES, Station } from "@/data/subway-lines";
-import type { PathResult } from "@/utils/pathfinding";
-import type { ActiveTab } from "@/components/MapBackground";
+import type { PathResult, PathStrategy } from "@/utils/pathfinding";
+import type { ActiveTab } from "@/components/MapLibreBackground";
 import type { WCItem } from "@/components/WCLayer";
 import type { BusStop } from "@/components/BusStopLayer";
 import { fetchWCDataClient } from "@/services/wcApi";
@@ -23,7 +23,14 @@ export default function Home() {
     const { findPath, findNearestStation, sortWCs } = useDataWorker();
     const rawTrains = useRealtimeTrains();
     
-    const [pathResult, setPathResult] = useState<PathResult | null>(null);
+    const [pathResults, setPathResults] = useState<Record<string, PathResult> | null>(null);
+    const [selectedStrategy, setSelectedStrategy] = useState<PathStrategy>("time");
+
+    const activePath = useMemo(() => {
+        if (!pathResults) return null;
+        return pathResults[selectedStrategy] || Object.values(pathResults)[0];
+    }, [pathResults, selectedStrategy]);
+
     const [startStation, setStartStation] = useState<string | null>(null);
     const [endStation, setEndStation] = useState<string | null>(null);
     const [waypoints, setWaypoints] = useState<string[]>([]);
@@ -52,15 +59,14 @@ export default function Home() {
     }, []);
 
     const filteredTrains = useMemo(() => {
-        if (!pathResult) return rawTrains;
-        // Show trains on lines involved in the path + adjacent for context
+        if (!activePath) return rawTrains;
         const pathLineNames = new Set<string>();
-        pathResult.path.forEach(name => {
+        activePath.path.forEach(name => {
             const s = stations.find(st => st.name === name);
             s?.lines.forEach(l => pathLineNames.add(l));
         });
         return rawTrains.filter(t => pathLineNames.has(t.lineName));
-    }, [rawTrains, pathResult, stations]);
+    }, [rawTrains, activePath, stations]);
 
     const mapRef = useRef<any>(null);
 
@@ -110,7 +116,7 @@ export default function Home() {
     // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
     const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
         if (!start || !end) {
-            setPathResult(null);
+            setPathResults(null);
             return;
         }
         setIsCalculating(true);
@@ -123,8 +129,8 @@ export default function Home() {
         const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
 
         const points = [nStart, ...nWaypoints, nEnd];
-        const res = await findPath(points) as PathResult;
-        setPathResult(res);
+        const res = await findPath(points) as Record<string, PathResult>;
+        setPathResults(res);
         setIsCalculating(true); // Short delay for animation feel
         setTimeout(() => setIsCalculating(false), 500);
     }, [findPath]);
@@ -142,7 +148,7 @@ export default function Home() {
         setStartStation(null);
         setEndStation(null);
         setWaypoints([]);
-        setPathResult(null);
+        setPathResults(null);
         setSelectedStationName(null);
         setSelectedWC(null);
         setSelectedBusStop(null);
@@ -176,7 +182,7 @@ export default function Home() {
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
             <div className="absolute inset-0 z-10">
                 <MapLibreBackground
-                    pathResult={pathResult}
+                    pathResult={activePath}
                     startStation={startStation}
                     endStation={endStation}
                     isDarkMode={isDarkMode}
@@ -214,10 +220,10 @@ export default function Home() {
                 onLocate={handleLocateStation}
                 stations={stations}
                 busStops={busStops}
-                routeSummary={pathResult ? { 
-                    time: Math.round(pathResult.totalWeight * 1.5), 
-                    transfers: pathResult.transferCount 
-                } : null}
+                selectedStrategy={selectedStrategy}
+                onStrategyChange={setSelectedStrategy}
+                pathResults={pathResults}
+                activePath={activePath}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">

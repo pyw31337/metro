@@ -115,41 +115,77 @@ export const convertTrainsToGeoJSON = (trains: any[]): GeoJsonFeatureCollection 
   };
 };
 
-export const convertPathToGeoJSON = (path: string[]): GeoJsonFeatureCollection => {
-    const features: any[] = [];
+export const convertPathToGeoJSON = (path: string[], startTime: number = Date.now()): { 
+    pathLines: GeoJsonFeatureCollection, 
+    routeStations: GeoJsonFeatureCollection 
+} => {
+    const lineFeatures: any[] = [];
+    const stationFeatures: any[] = [];
     const allStations = getAllStations();
+    let cumulativeWeight = 0;
 
-    for (let i = 0; i < path.length - 1; i++) {
-        const s1Name = path[i];
-        const s2Name = path[i+1];
-        const s1 = allStations.find(s => s.name === s1Name);
-        const s2 = allStations.find(s => s.name === s2Name);
+    for (let i = 0; i < path.length; i++) {
+        const sName = path[i];
+        const s = allStations.find(st => st.name === sName);
+        if (!s) continue;
 
-        if (s1 && s2) {
-            // Find common line to get color
-            const commonLines = s1.lines.filter(l => s2.lines.includes(l));
-            let color = "#3b82f6"; // Default fallback
-            if (commonLines.length > 0) {
-                const line = SUBWAY_LINES.find(l => l.name === commonLines[0]);
-                if (line) color = line.color;
-            }
+        // Calculate arrival time for this station
+        const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000 * 1.5); // 1.5x weight for real-feel mins
+        const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
-            features.push({
-                type: "Feature" as const,
-                geometry: {
-                    type: "LineString" as const,
-                    coordinates: [[s1.lng, s1.lat], [s2.lng, s2.lat]]
-                },
-                properties: {
-                    type: "path_segment",
-                    color: color
+        // Platform heuristic
+        const platform = `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}`;
+
+        // Determine route color (next segment color or previous)
+        let routeColor = "#3b82f6";
+        if (i < path.length - 1) {
+            const nextName = path[i+1];
+            const nextS = allStations.find(st => st.name === nextName);
+            if (nextS) {
+                const commonLines = s.lines.filter(l => nextS.lines.includes(l));
+                if (commonLines.length > 0) {
+                    const line = SUBWAY_LINES.find(l => l.name === commonLines[0]);
+                    if (line) routeColor = line.color;
                 }
-            });
+            }
+        }
+
+        stationFeatures.push({
+            type: "Feature" as const,
+            geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] },
+            properties: {
+                name: s.name,
+                isRouteStation: true,
+                routeColor: routeColor,
+                arrivalTime: arrivalTimeStr,
+                platformInfo: platform,
+                type: "route_station"
+            }
+        });
+
+        if (i < path.length - 1) {
+            const nextName = path[i+1];
+            const nextS = allStations.find(st => st.name === nextName);
+            if (nextS) {
+                // Add weighted segment
+                lineFeatures.push({
+                    type: "Feature" as const,
+                    geometry: {
+                        type: "LineString" as const,
+                        coordinates: [[s.lng, s.lat], [nextS.lng, nextS.lat]]
+                    },
+                    properties: {
+                        type: "path_segment",
+                        color: routeColor
+                    }
+                });
+                cumulativeWeight += 2; // Increment cumulative weight for next station
+            }
         }
     }
 
     return {
-        type: "FeatureCollection" as const,
-        features: features
+        pathLines: { type: "FeatureCollection" as const, features: lineFeatures },
+        routeStations: { type: "FeatureCollection" as const, features: stationFeatures }
     };
 };

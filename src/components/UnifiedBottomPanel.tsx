@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station } from "@/data/subway-lines";
 import { THEME } from "@/theme/design-system";
+import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -18,7 +19,10 @@ interface UnifiedBottomPanelProps {
     isDarkMode: boolean;
     stations: Station[];
     busStops: any[];
-    routeSummary?: { time: number; transfers: number } | null;
+    selectedStrategy: PathStrategy;
+    onStrategyChange: (strategy: PathStrategy) => void;
+    pathResults: Record<string, PathResult> | null;
+    activePath: PathResult | null;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -47,7 +51,10 @@ export default function UnifiedBottomPanel({
     isDarkMode,
     stations,
     busStops,
-    routeSummary
+    selectedStrategy,
+    onStrategyChange,
+    pathResults,
+    activePath
 }: UnifiedBottomPanelProps) {
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
@@ -95,6 +102,12 @@ export default function UnifiedBottomPanel({
         setActiveField(null);
     };
 
+    const strategies: { id: PathStrategy; label: string; sub: string }[] = [
+        { id: "time", label: "최소 시간", sub: "가장 빠른 이동" },
+        { id: "transfer", label: "최소 환승", sub: "편안한 이동" },
+        { id: "distance", label: "최단 거리", sub: "최단 경로" },
+    ];
+
     const tabs = [
         { id: "subway", label: "지하철", icon: <Train size={14} /> },
         { id: "bus", label: "버스", icon: <Bus size={14} /> },
@@ -113,11 +126,33 @@ export default function UnifiedBottomPanel({
                 transition={THEME.transitions.spring}
             >
                 <div className="flex flex-col p-4 gap-3">
-                    {/* Route Summary (Slim Integration) */}
-                    {routeSummary && (
-                        <div className="flex items-center justify-between px-2 pb-1 border-b border-black/5 dark:border-white/5 mb-1">
-                            <span className="text-[11px] font-black text-blue-500 uppercase tracking-widest">Recommended</span>
-                            <span className="text-[12px] font-black">{routeSummary.time}분 | 환승 {routeSummary.transfers}회</span>
+                    {/* Strategy Selector (Only when pathResults exists) */}
+                    {pathResults && (
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 border-b border-black/5 dark:border-white/5 mb-1">
+                            {strategies.map((strat) => {
+                                const result = pathResults[strat.id];
+                                if (!result) return null;
+                                const isSelected = selectedStrategy === strat.id;
+                                return (
+                                    <button
+                                        key={strat.id}
+                                        onClick={() => onStrategyChange(strat.id)}
+                                        className={`
+                                            flex-shrink-0 flex flex-col gap-0.5 px-4 py-2 rounded-2xl border transition-all text-left
+                                            ${isSelected 
+                                                ? "bg-blue-500 border-blue-600 text-white shadow-lg scale-105" 
+                                                : "bg-zinc-100 dark:bg-white/5 border-transparent text-zinc-500 dark:text-zinc-400"
+                                            }
+                                        `}
+                                    >
+                                        <span className="text-[11px] font-black uppercase tracking-tight">{strat.label}</span>
+                                        <span className={`text-[13px] font-black ${isSelected ? "text-white" : "text-zinc-900 dark:text-white"}`}>
+                                            {Math.round(result.totalWeight * 1.5)}분
+                                        </span>
+                                        <span className={`text-[9px] font-bold opacity-70`}>환승 {result.transferCount}회</span>
+                                    </button>
+                                );
+                            })}
                         </div>
                     )}
 

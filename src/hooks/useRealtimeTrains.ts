@@ -47,63 +47,60 @@ export function useRealtimeTrains() {
     const trainsRef = useRef<any[]>([]);
 
     useEffect(() => {
-        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-
         const fetchRealtime = async () => {
-            if (!apiKey || apiKey.length < 10) return;
-
             const lineNames = ["1호선", "2호선", "3호선", "4호선", "5호선", "6호선", "7호선", "8호선", "9호선", "경의중앙선", "경춘선", "수인분당선", "신분당선"];
             
             try {
-                const allFetchedTrains: any[] = [];
-
-                await Promise.all(lineNames.map(async (name) => {
+                const results = await Promise.all(lineNames.map(async (name) => {
                     try {
-                        const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeSubwayPosition/1/100/${encodeURIComponent(name)}`;
-                        const res = await fetch(url);
+                        const res = await fetch(`/api/subway/position?line=${encodeURIComponent(name)}`);
                         const json = await res.json();
                         const list: RealtimePosition[] = json?.realtimeSubwayPosition?.row || [];
-
-                        list.forEach(rt => {
-                            const targetLines = SUBWAY_LINES.filter(l => l.name === name);
-                            const normalizedStatnNm = normalizeStationName(rt.statnNm);
-
-                            for (const line of targetLines) {
-                                // Find station using normalized name
-                                const stationIdx = line.stations.findIndex(s => normalizeStationName(s.name) === normalizedStatnNm);
-                                
-                                if (stationIdx !== -1) {
-                                    const dir = getDirection(rt.updnLine);
-                                    allFetchedTrains.push({
-                                        id: `real-${rt.trainNo}-${name}`,
-                                        lineId: line.id,
-                                        lineName: line.name,
-                                        stationIndex: stationIdx,
-                                        progress: rt.trainSttus === '3' ? 0.5 : 0.05, 
-                                        direction: dir,
-                                        status: rt.trainSttus === '3' ? 'RUNNING' : 'STOPPED',
-                                        headingTo: rt.statnNm, 
-                                        lastUpdate: Date.now()
-                                    });
-                                    break;
-                                }
-                            }
-                        });
+                        return { name, list };
                     } catch (e) {
-                        // Silence error
+                        return { name, list: [] };
                     }
                 }));
+
+                const allFetchedTrains: any[] = [];
+                results.forEach(({ name, list }) => {
+                    list.forEach(rt => {
+                        const targetLines = SUBWAY_LINES.filter(l => l.name === name);
+                        const normalizedStatnNm = normalizeStationName(rt.statnNm);
+
+                        // Check ALL segments for a match
+                        for (const line of targetLines) {
+                            const stationIdx = line.stations.findIndex(s => normalizeStationName(s.name) === normalizedStatnNm);
+                            
+                            if (stationIdx !== -1) {
+                                const dir = getDirection(rt.updnLine);
+                                allFetchedTrains.push({
+                                    id: `real-${rt.trainNo}-${name}`,
+                                    lineId: line.id,
+                                    lineName: line.name,
+                                    stationIndex: stationIdx,
+                                    progress: rt.trainSttus === '3' ? 0.3 : 0.05, 
+                                    direction: dir,
+                                    status: rt.trainSttus === '3' ? 'RUNNING' : 'STOPPED',
+                                    headingTo: rt.statnNm, 
+                                    lastUpdate: Date.now()
+                                });
+                                break; // Only add once per train
+                            }
+                        }
+                    });
+                });
 
                 if (allFetchedTrains.length > 0) {
                     trainsRef.current = allFetchedTrains;
                 }
             } catch (err) {
-                console.error("Failed to fetch realtime trains", err);
+                console.error("Failed to fetch realtime trains:", err);
             }
         };
 
         fetchRealtime();
-        const apiInterval = setInterval(fetchRealtime, 10000); 
+        const apiInterval = setInterval(fetchRealtime, 15000); // 15s refresh to be safe
 
         const animInterval = setInterval(() => {
             const now = Date.now();
@@ -112,16 +109,18 @@ export function useRealtimeTrains() {
                 if (!line) return null;
                 const stations = line.stations;
 
+                // Simple elapsed progress
                 const elapsed = (now - t.lastUpdate) / 1000; 
-                let progress = t.progress + (elapsed * 0.008); 
+                let progress = t.progress + (elapsed * 0.01); 
                 if (progress > 0.95) progress = 0.95; 
 
                 const currentStation = stations[t.stationIndex];
-                const nextStation = stations[t.stationIndex + t.direction] || currentStation;
+                const nextStationIdx = t.stationIndex + t.direction;
+                const nextStation = stations[nextStationIdx] || currentStation;
 
                 const pos = interpolate(currentStation, nextStation, progress);
 
-                const res: Train = {
+                return {
                     id: t.id,
                     lineId: t.lineId,
                     lineName: t.lineName,
@@ -133,10 +132,8 @@ export function useRealtimeTrains() {
                     direction: t.direction,
                     stationIndex: t.stationIndex,
                     isRealtime: true
-                };
-                return res;
-            })
-            .filter((t): t is Train => t !== null);
+                } as Train;
+            }).filter((t): t is Train => t !== null);
 
             setTrains(updated);
         }, 100); 

@@ -41,16 +41,19 @@ export const buildGraph = (): Map<string, GraphNode> => {
     return graph;
 };
 
+export type PathStrategy = "time" | "transfer" | "distance";
+
 export interface PathResult {
     path: string[]; // List of station names
     totalWeight: number;
     transferCount: number;
+    strategy: PathStrategy;
 }
 
 /**
- * Calculates the shortest path between a sequence of station names (Start, Waypoints, End).
+ * Calculates paths between a sequence of station names (Start, Waypoints, End) using a specific strategy.
  */
-export const findShortestPath = (points: string[]): PathResult | null => {
+export const findPathWithStrategy = (points: string[], strategy: PathStrategy): PathResult | null => {
     if (points.length < 2) return null;
 
     const graph = buildGraph();
@@ -64,10 +67,9 @@ export const findShortestPath = (points: string[]): PathResult | null => {
 
         if (start === end) continue;
 
-        const segment = dijkstra(start, end, graph);
-        if (!segment) return null; // Unreachable segment
+        const segment = dijkstra(start, end, graph, strategy);
+        if (!segment) return null; 
 
-        // Skip the first station of the next segment (duplicated from previous end)
         finalPath = [...finalPath, ...segment.path.slice(1)];
         totalWeight += segment.totalWeight;
         totalTransferCount += segment.transferCount;
@@ -76,48 +78,64 @@ export const findShortestPath = (points: string[]): PathResult | null => {
     return { 
         path: finalPath, 
         totalWeight, 
-        transferCount: totalTransferCount 
+        transferCount: totalTransferCount,
+        strategy
     };
 };
 
 /**
- * Standard Dijkstra for a single pair.
+ * Enhanced Dijkstra supporting strategies.
  */
-function dijkstra(startName: string, endName: string, graph: Map<string, GraphNode>): PathResult | null {
-    const pq: { nodeId: string; weight: number; path: string[]; lines: string[] }[] = [];
-    const distances = new Map<string, number>();
+function dijkstra(
+    startName: string, 
+    endName: string, 
+    graph: Map<string, GraphNode>, 
+    strategy: PathStrategy
+): Omit<PathResult, "strategy"> | null {
+    const pq: { nodeId: string; weight: number; path: string[]; lastLine: string | null; transfers: number }[] = [];
+    const minWeights = new Map<string, number>();
 
-    pq.push({ nodeId: startName, weight: 0, path: [startName], lines: [] });
-    distances.set(startName, 0);
+    pq.push({ nodeId: startName, weight: 0, path: [startName], lastLine: null, transfers: 0 });
 
     while (pq.length > 0) {
         pq.sort((a, b) => a.weight - b.weight);
-        const { nodeId, weight, path, lines } = pq.shift()!;
+        const { nodeId, weight, path, lastLine, transfers } = pq.shift()!;
 
         if (nodeId === endName) {
-            let transfers = 0;
-            for (let i = 0; i < lines.length - 1; i++) {
-                if (lines[i] !== lines[i + 1]) transfers++;
-            }
             return { path, totalWeight: weight, transferCount: transfers };
         }
 
-        if (weight > (distances.get(nodeId) ?? Infinity)) continue;
+        // Standard Dijkstra weight check
+        if (weight > (minWeights.get(nodeId) ?? Infinity)) continue;
+        minWeights.set(nodeId, weight);
 
         const node = graph.get(nodeId);
         if (!node) continue;
 
         for (const conn of node.connections) {
-            const newWeight = weight + conn.weight;
-            if (newWeight < (distances.get(conn.nodeId) ?? Infinity)) {
-                distances.set(conn.nodeId, newWeight);
-                pq.push({
-                    nodeId: conn.nodeId,
-                    weight: newWeight,
-                    path: [...path, conn.nodeId],
-                    lines: [...lines, conn.lineId]
-                });
+            let edgeWeight = conn.weight;
+            let isTransfer = lastLine !== null && lastLine !== conn.lineId;
+            let currentTransfers = transfers + (isTransfer ? 1 : 0);
+
+            // Apply Strategy Logic
+            if (strategy === "transfer") {
+                if (isTransfer) edgeWeight += 1000; // High penalty for transfers
+            } else if (strategy === "distance") {
+                edgeWeight = 1; // All hops equal 1
+            } else {
+                // "time" - default 2 min/station
+                edgeWeight = 2;
             }
+
+            const newWeight = weight + edgeWeight;
+            
+            pq.push({
+                nodeId: conn.nodeId,
+                weight: newWeight,
+                path: [...path, conn.nodeId],
+                lastLine: conn.lineId,
+                transfers: currentTransfers
+            });
         }
     }
 

@@ -50,41 +50,55 @@ function buildGraph(): Map<string, GraphNode> {
     return graph;
 }
 
-function dijkstra(startName: string, endName: string, graph: Map<string, GraphNode>): PathResult | null {
-    const pq: DijkstraState[] = [{ nodeId: startName, weight: 0, path: [startName], lines: [] }];
-    const distances = new Map<string, number>();
-    distances.set(startName, 0);
+type PathStrategy = "time" | "transfer" | "distance";
+
+function dijkstra(
+    startName: string, 
+    endName: string, 
+    graph: Map<string, GraphNode>, 
+    strategy: PathStrategy
+): PathResult | null {
+    const pq: { nodeId: string; weight: number; path: string[]; lastLine: string | null; transfers: number }[] = [];
+    const minWeights = new Map<string, number>();
+
+    pq.push({ nodeId: startName, weight: 0, path: [startName], lastLine: null, transfers: 0 });
 
     while (pq.length > 0) {
         pq.sort((a, b) => a.weight - b.weight);
-        const current = pq.shift();
-        if (!current) continue;
-        
-        const { nodeId, weight, path, lines } = current;
+        const current = pq.shift()!;
+        const { nodeId, weight, path, lastLine, transfers } = current;
 
         if (nodeId === endName) {
-            let transfers = 0;
-            for (let i = 0; i < lines.length - 1; i++) {
-                if (lines[i] !== lines[i + 1]) transfers++;
-            }
             return { path, totalWeight: weight, transferCount: transfers };
         }
 
-        if (weight > (distances.get(nodeId) ?? Infinity)) continue;
+        if (weight > (minWeights.get(nodeId) ?? Infinity)) continue;
+        minWeights.set(nodeId, weight);
+
         const node = graph.get(nodeId);
         if (!node) continue;
 
         for (const conn of node.connections) {
-            const newWeight = weight + conn.weight;
-            if (newWeight < (distances.get(conn.nodeId) ?? Infinity)) {
-                distances.set(conn.nodeId, newWeight);
-                pq.push({
-                    nodeId: conn.nodeId,
-                    weight: newWeight,
-                    path: [...path, conn.nodeId],
-                    lines: [...lines, conn.lineId]
-                });
+            let edgeWeight = conn.weight;
+            let isTransfer = lastLine !== null && lastLine !== conn.lineId;
+            let currentTransfers = transfers + (isTransfer ? 1 : 0);
+
+            if (strategy === "transfer") {
+                if (isTransfer) edgeWeight += 1000;
+            } else if (strategy === "distance") {
+                edgeWeight = 1;
+            } else {
+                edgeWeight = 2; // Time
             }
+
+            const newWeight = weight + edgeWeight;
+            pq.push({
+                nodeId: conn.nodeId,
+                weight: newWeight,
+                path: [...path, conn.nodeId],
+                lastLine: conn.lineId,
+                transfers: currentTransfers
+            });
         }
     }
     return null;
@@ -97,21 +111,37 @@ self.onmessage = (e: MessageEvent) => {
         case "FIND_PATH": {
             const { points } = payload;
             const graph = buildGraph();
-            let finalPath: string[] = [points[0]];
-            let totalWeight = 0;
-            let totalTransferCount = 0;
+            const strategies: PathStrategy[] = ["time", "transfer", "distance"];
+            const results: Record<string, any> = {};
 
-            for (let i = 0; i < points.length - 1; i++) {
-                const res = dijkstra(points[i], points[i+1], graph);
-                if (!res) {
-                    self.postMessage({ type: "PATH_RESULT", payload: null });
-                    return;
+            for (const strategy of strategies) {
+                let finalPath: string[] = [points[0]];
+                let totalWeight = 0;
+                let totalTransferCount = 0;
+                let failed = false;
+
+                for (let i = 0; i < points.length - 1; i++) {
+                    const res = dijkstra(points[i], points[i+1], graph, strategy);
+                    if (!res) {
+                        failed = true;
+                        break;
+                    }
+                    finalPath = [...finalPath, ...res.path.slice(1)];
+                    totalWeight += res.totalWeight;
+                    totalTransferCount += res.transferCount;
                 }
-                finalPath = [...finalPath, ...res.path.slice(1)];
-                totalWeight += res.totalWeight;
-                totalTransferCount += res.transferCount;
+                
+                if (!failed) {
+                    results[strategy] = { 
+                        path: finalPath, 
+                        totalWeight, 
+                        transferCount: totalTransferCount,
+                        strategy 
+                    };
+                }
             }
-            self.postMessage({ type: "PATH_RESULT", payload: { path: finalPath, totalWeight, transferCount: totalTransferCount } });
+            
+            self.postMessage({ type: "PATH_RESULT", payload: results });
             break;
         }
 

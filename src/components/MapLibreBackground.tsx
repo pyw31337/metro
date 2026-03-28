@@ -58,6 +58,14 @@ function MapLibreBackground({
         return convertPathToGeoJSON(pathResult.path);
     }, [pathResult]);
 
+    const pathLineData = useMemo((): GeoJSON.FeatureCollection => 
+        (pathData?.pathLines as GeoJSON.FeatureCollection) || { type: "FeatureCollection", features: [] }, 
+    [pathData]);
+    
+    const routeStationData = useMemo((): GeoJSON.FeatureCollection => 
+        (pathData?.routeStations as GeoJSON.FeatureCollection) || { type: "FeatureCollection", features: [] }, 
+    [pathData]);
+
     // Filters for WCs
     const filteredWCs = useMemo(() => {
         let features = wcData.features;
@@ -70,7 +78,6 @@ function MapLibreBackground({
     // Animation Effect for Path Line
     useEffect(() => {
         if (!pathResult || !mapRef.current) return;
-        // Animation removed for solid line
     }, [pathResult]);
 
     const [cursor, setCursor] = useState<string>("auto");
@@ -148,8 +155,8 @@ function MapLibreBackground({
                 </Source>
 
                 {/* 0. Path Result Layer (Solid/Colored segments) */}
-                {pathData && (
-                    <Source id="path-result" type="geojson" data={pathData}>
+                {pathLineData.features.length > 0 && (
+                    <Source id="path-result" type="geojson" data={pathLineData}>
                         <Layer
                             id="path-line-bg"
                             type="line"
@@ -202,20 +209,71 @@ function MapLibreBackground({
                             "text-color": isDarkMode ? "white" : "black",
                             "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
                             "text-halo-width": 2,
-                            "text-opacity": pathResult ? 0.5 : 1
+                            "text-opacity": pathResult ? 0.3 : 1
                         }}
                     />
                 </Source>
 
+                {/* 2.5 Route Station Labels (Colored and Detailed) */}
+                {routeStationData.features.length > 0 && (
+                    <Source id="route-stations" type="geojson" data={routeStationData}>
+                        <Layer
+                            id="route-station-label"
+                            type="symbol"
+                            layout={{
+                                "text-field": ["get", "name"],
+                                "text-size": 14,
+                                "text-offset": [0, 1.4],
+                                "text-anchor": "top",
+                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold"]]
+                            }}
+                            paint={{
+                                "text-color": ["get", "routeColor"],
+                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
+                                "text-halo-width": 3,
+                                "text-opacity": 1
+                            }}
+                        />
+                        <Layer
+                            id="route-info-label"
+                            type="symbol"
+                            layout={{
+                                "text-field": ["concat", ["get", "arrivalTime"], " | ", ["get", "platformInfo"]],
+                                "text-size": 10,
+                                "text-offset": [0, 3.2],
+                                "text-anchor": "top",
+                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold"]]
+                            }}
+                            paint={{
+                                "text-color": isDarkMode ? "#ffffff" : "#333333",
+                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)",
+                                "text-halo-width": 1,
+                                "text-opacity": 0.9
+                            }}
+                        />
+                    </Source>
+                )}
+
                 {/* 5. Real-time Train Layer */}
                 <Source id="train-source" type="geojson" data={trainData}>
+                    <Layer
+                        id="train-halo"
+                        type="circle"
+                        paint={{
+                            "circle-radius": 10,
+                            "circle-color": ["get", "lineColor"],
+                            "circle-blur": 1,
+                            "circle-opacity": 0.6
+                        }}
+                    />
                     <Layer
                         id="train-layer"
                         type="symbol"
                         layout={{
                             "text-field": "🚃",
-                            "text-size": 18,
-                            "text-allow-overlap": true
+                            "text-size": 16,
+                            "text-allow-overlap": true,
+                            "text-ignore-placement": true
                         }}
                     />
                 </Source>
