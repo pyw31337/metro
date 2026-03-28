@@ -203,12 +203,12 @@ function MapLibreBackground({
                             "text-size": 13,
                             "text-offset": [0, 1.4],
                             "text-anchor": "top",
-                            "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold"]]
+                            "text-font": ["literal", ["Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]]
                         }}
                         paint={{
-                            "text-color": isDarkMode ? "white" : "black",
-                            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
-                            "text-halo-width": 2,
+                            "text-color": isDarkMode ? "#ffffff" : "#000000",
+                            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
+                            "text-halo-width": 1.5,
                             "text-opacity": pathResult ? 0.3 : 1
                         }}
                     />
@@ -238,7 +238,12 @@ function MapLibreBackground({
                             id="route-info-label"
                             type="symbol"
                             layout={{
-                                "text-field": ["concat", ["get", "arrivalTime"], " | ", ["get", "platformInfo"]],
+                                "text-field": [
+                                    "case",
+                                    ["==", ["get", "platformInfo"], ""],
+                                    ["get", "arrivalTime"],
+                                    ["concat", ["get", "arrivalTime"], " | ", ["get", "platformInfo"]]
+                                ],
                                 "text-size": 10,
                                 "text-offset": [0, 3.2],
                                 "text-anchor": "top",

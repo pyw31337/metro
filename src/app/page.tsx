@@ -130,7 +130,16 @@ export default function Home() {
 
         const points = [nStart, ...nWaypoints, nEnd];
         const res = await findPath(points) as Record<string, PathResult>;
-        setPathResults(res);
+        
+        if (res) {
+            // Keep only time and transfer strategies
+            const filtered: Record<string, PathResult> = {
+                time: res.time,
+                transfer: res.transfer
+            };
+            setPathResults(filtered);
+        }
+        
         setIsCalculating(true); // Short delay for animation feel
         setTimeout(() => setIsCalculating(false), 500);
     }, [findPath]);

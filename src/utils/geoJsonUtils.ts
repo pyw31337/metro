@@ -129,12 +129,13 @@ export const convertPathToGeoJSON = (path: string[], startTime: number = Date.no
         const s = allStations.find(st => st.name === sName);
         if (!s) continue;
 
-        // Calculate arrival time for this station
-        const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000 * 1.5); // 1.5x weight for real-feel mins
+        // Arrival time for this station (2 mins per hop for consistency)
+        const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000); 
         const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
-        // Platform heuristic
-        const platform = `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}`;
+        // Transfer Station Check: Show platform info ONLY at transfers
+        const isTransferStation = s.lines.length > 1;
+        const platform = isTransferStation ? `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}` : "";
 
         // Determine route color (next segment color or previous)
         let routeColor = "#3b82f6";

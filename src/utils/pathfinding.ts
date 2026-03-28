@@ -41,11 +41,11 @@ export const buildGraph = (): Map<string, GraphNode> => {
     return graph;
 };
 
-export type PathStrategy = "time" | "transfer" | "distance";
+export type PathStrategy = "time" | "transfer";
 
 export interface PathResult {
     path: string[]; // List of station names
-    totalWeight: number;
+    totalWeight: number; // Actual time in minutes
     transferCount: number;
     strategy: PathStrategy;
 }
@@ -92,49 +92,52 @@ function dijkstra(
     graph: Map<string, GraphNode>, 
     strategy: PathStrategy
 ): Omit<PathResult, "strategy"> | null {
-    const pq: { nodeId: string; weight: number; path: string[]; lastLine: string | null; transfers: number }[] = [];
-    const minWeights = new Map<string, number>();
+    // Priority queue uses 'cost' for Dijkstra, but we track 'weight' for actual time
+    const pq: { nodeId: string; cost: number; weight: number; path: string[]; lastLine: string | null; transfers: number }[] = [];
+    const minCosts = new Map<string, number>();
 
-    pq.push({ nodeId: startName, weight: 0, path: [startName], lastLine: null, transfers: 0 });
+    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], lastLine: null, transfers: 0 });
 
     while (pq.length > 0) {
-        pq.sort((a, b) => a.weight - b.weight);
-        const { nodeId, weight, path, lastLine, transfers } = pq.shift()!;
+        pq.sort((a, b) => a.cost - b.cost);
+        const { nodeId, cost, weight, path, lastLine, transfers } = pq.shift()!;
 
         if (nodeId === endName) {
             return { path, totalWeight: weight, transferCount: transfers };
         }
 
-        // Standard Dijkstra weight check
-        if (weight > (minWeights.get(nodeId) ?? Infinity)) continue;
-        minWeights.set(nodeId, weight);
+        if (cost > (minCosts.get(nodeId) ?? Infinity)) continue;
+        minCosts.set(nodeId, cost);
 
         const node = graph.get(nodeId);
         if (!node) continue;
 
         for (const conn of node.connections) {
-            let edgeWeight = conn.weight;
-            let isTransfer = lastLine !== null && lastLine !== conn.lineId;
-            let currentTransfers = transfers + (isTransfer ? 1 : 0);
+            const isTransfer = lastLine !== null && lastLine !== conn.lineId;
+            
+            let edgeCost = 2; // Default 2 mins hop
+            let edgeWeight = 2; // Actual time hop
 
-            // Apply Strategy Logic
-            if (strategy === "transfer") {
-                if (isTransfer) edgeWeight += 1000; // High penalty for transfers
-            } else if (strategy === "distance") {
-                edgeWeight = 1; // All hops equal 1
-            } else {
-                // "time" - default 2 min/station
-                edgeWeight = 2;
+            if (isTransfer) {
+                // For Dijkstra cost optimization
+                if (strategy === "transfer") {
+                    edgeCost += 1000; // Massively penalize transfers in the algorithm
+                } else {
+                    edgeCost += 5; // standard time penalty
+                }
+                edgeWeight += 5; // Add 5 mins physical transfer time
             }
 
+            const newCost = cost + edgeCost;
             const newWeight = weight + edgeWeight;
             
             pq.push({
                 nodeId: conn.nodeId,
+                cost: newCost,
                 weight: newWeight,
                 path: [...path, conn.nodeId],
                 lastLine: conn.lineId,
-                transfers: currentTransfers
+                transfers: transfers + (isTransfer ? 1 : 0)
             });
         }
     }

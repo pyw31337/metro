@@ -105,7 +105,6 @@ export default function UnifiedBottomPanel({
     const strategies: { id: PathStrategy; label: string; sub: string }[] = [
         { id: "time", label: "최소 시간", sub: "가장 빠른 이동" },
         { id: "transfer", label: "최소 환승", sub: "편안한 이동" },
-        { id: "distance", label: "최단 거리", sub: "최단 경로" },
     ];
 
     const tabs = [
@@ -147,7 +146,7 @@ export default function UnifiedBottomPanel({
                                     >
                                         <span className="text-[11px] font-black uppercase tracking-tight">{strat.label}</span>
                                         <span className={`text-[13px] font-black ${isSelected ? "text-white" : "text-zinc-900 dark:text-white"}`}>
-                                            {Math.round(result.totalWeight * 1.5)}분
+                                            {Math.round(result.totalWeight)}분
                                         </span>
                                         <span className={`text-[9px] font-bold opacity-70`}>환승 {result.transferCount}회</span>
                                     </button>
