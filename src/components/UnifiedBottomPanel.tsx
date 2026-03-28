@@ -8,6 +8,7 @@ import { Station } from "@/data/subway-lines";
 import { THEME } from "@/theme/design-system";
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
+import type { BusPathResult } from "@/utils/busRouting";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -28,6 +29,11 @@ interface UnifiedBottomPanelProps {
     setTimeDisplayMode: (mode: "duration" | "arrival") => void;
     isLocating?: boolean;
     locatingTimer?: number;
+    isCalculating?: boolean;
+    validationError?: "source" | "dest" | "no_route" | null;
+    busPathResult?: BusPathResult | null;
+    onSetSource?: (val: string) => void;
+    onSetDestination?: (val: string) => void;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -63,7 +69,12 @@ export default function UnifiedBottomPanel({
     timeDisplayMode,
     setTimeDisplayMode,
     isLocating = false,
-    locatingTimer = 0
+    locatingTimer = 0,
+    isCalculating = false,
+    validationError: externalValidationError = null,
+    busPathResult = null,
+    onSetSource,
+    onSetDestination
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const [destination, setDestination] = useState("");
@@ -318,7 +329,7 @@ export default function UnifiedBottomPanel({
                             </div>
                         )}
 
-                        {validationError && (
+                        {(externalValidationError || validationError) && (
                             <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
@@ -326,9 +337,9 @@ export default function UnifiedBottomPanel({
                                     className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto"
                                 >
                                     <span className="text-zinc-600 dark:text-zinc-400">내용을 확인해 주세요: </span>
-                                    {validationError === "source" ? (
+                                    {(externalValidationError || validationError) === "source" ? (
                                         <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</>
-                                    ) : validationError === "dest" ? (
+                                    ) : (externalValidationError || validationError) === "dest" ? (
                                         <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</>
                                     ) : (
                                         <><span className="text-red-600 font-bold">경로를 찾을 수 없습니다</span> (수도권 내)</>
@@ -439,7 +450,7 @@ export default function UnifiedBottomPanel({
                             ))}
                         </div>
                         <button 
-                            disabled={isLocating}
+                            disabled={isLocating || isCalculating}
                             onClick={() => {
                                 if (!source) {
                                     setValidationError("source");
@@ -451,12 +462,36 @@ export default function UnifiedBottomPanel({
                                 }
                                 onSearch(source, destination);
                             }}
-                            className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}
+                            className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}
                         >
-                            길찾기
+                            {isCalculating ? '조회중...' : '길찾기'}
                         </button>
                         <button onClick={onReset} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
                     </div>
+
+                    {/* 5. Bus Routing Result Mini-Card */}
+                    {activeTab === 'bus' && busPathResult && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-4 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 backdrop-blur-md"
+                        >
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">직행 버스 추천</span>
+                                <span className="text-[12px] font-bold text-zinc-900 dark:text-white">약 {Math.round(busPathResult.distanceWeight)}분</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {busPathResult.commonRoutes.map((r, i) => (
+                                    <span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">
+                                        {r}
+                                    </span>
+                                ))}
+                            </div>
+                            <p className="mt-3 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-bold">
+                                {busPathResult.startStop.name} 정류장에서 승차하여 {busPathResult.endStop.name} 하차하십시오.
+                            </p>
+                        </motion.div>
+                    )}
                 </div>
             </motion.div>
         </div>
