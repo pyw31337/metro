@@ -1,44 +1,87 @@
 "use client";
 
-import { Plus, Minus, Crosshair } from "lucide-react";
+import { useState } from "react";
+import { Plus, Minus, Crosshair, Menu, X, Sun, Moon, CloudSun } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { THEME } from "@/theme/design-system";
 
 interface MapControlsProps {
     onZoomIn: () => void;
     onZoomOut: () => void;
     onLocate: () => void;
-    isDarkMode?: boolean;
+    onWeatherToggle: () => void;
+    isDarkMode: boolean;
+    onDarkModeToggle: () => void;
 }
 
-export default function MapControls({ onZoomIn, onZoomOut, onLocate, isDarkMode = false }: MapControlsProps) {
-    return (
-        <div className="flex flex-col gap-3">
-            {/* Zoom In/Out Group */}
-            <div className="flex flex-col rounded-2xl overflow-hidden glass-premium border border-zinc-200 dark:border-white/10 shadow-xl">
-                <button 
-                    onClick={onZoomIn}
-                    className="w-12 h-12 flex items-center justify-center text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors border-b border-zinc-200 dark:border-white/10"
-                    aria-label="Zoom In"
-                >
-                    <Plus size={20} strokeWidth={2.5} />
-                </button>
-                <button 
-                    onClick={onZoomOut}
-                    className="w-12 h-12 flex items-center justify-center text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
-                    aria-label="Zoom Out"
-                >
-                    <Minus size={20} strokeWidth={2.5} />
-                </button>
-            </div>
+export default function MapControls({ 
+    onZoomIn, 
+    onZoomOut, 
+    onLocate, 
+    onWeatherToggle,
+    isDarkMode, 
+    onDarkModeToggle 
+}: MapControlsProps) {
+    const [isOpen, setIsOpen] = useState(false);
 
-            {/* Locate Button */}
+    const menuItems = [
+        { id: "dark", icon: isDarkMode ? <Sun size={20} /> : <Moon size={20} />, onClick: onDarkModeToggle, label: "테마" },
+        { id: "weather", icon: <CloudSun size={20} />, onClick: onWeatherToggle, label: "날씨" },
+        { id: "locate", icon: <Crosshair size={20} />, onClick: onLocate, label: "위치" },
+        { id: "zoomIn", icon: <Plus size={20} />, onClick: onZoomIn, label: "확대" },
+        { id: "zoomOut", icon: <Minus size={20} />, onClick: onZoomOut, label: "축소" },
+    ];
+
+    return (
+        <div className="flex flex-col items-center gap-3">
+            {/* Main Menu Toggle */}
             <button 
-                onClick={onLocate}
-                className="w-12 h-12 rounded-2xl glass-premium border border-zinc-200 dark:border-white/10 shadow-xl flex items-center justify-center text-zinc-600 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-white/5 transition-colors"
-                aria-label="Find My Location"
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-14 h-14 rounded-3xl flex items-center justify-center transition-all ${isOpen ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl scale-[1.05]' : 'glass-premium text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-xl'}`}
+                aria-label="Toggle Menu"
             >
-                <Crosshair size={20} strokeWidth={2.5} />
+                <motion.div
+                    initial={false}
+                    animate={{ rotate: isOpen ? 90 : 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                >
+                    {isOpen ? <X size={24} strokeWidth={2.5} /> : <Menu size={24} strokeWidth={2.5} />}
+                </motion.div>
             </button>
+
+            {/* Cascading Menu Items */}
+            <AnimatePresence>
+                {isOpen && (
+                    <motion.div 
+                        className="flex flex-col gap-3"
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        variants={{
+                            visible: { transition: { staggerChildren: 0.05 } },
+                            hidden: { transition: { staggerChildren: 0.03, staggerDirection: -1 } }
+                        }}
+                    >
+                        {menuItems.map((item) => (
+                            <motion.button
+                                key={item.id}
+                                onClick={() => {
+                                    item.onClick();
+                                    // if (item.id !== "weather") setIsOpen(false); // Optional: close menu after non-toggle clicks
+                                }}
+                                variants={{
+                                    visible: { y: 0, opacity: 1, scale: 1 },
+                                    hidden: { y: -20, opacity: 0, scale: 0.8 }
+                                }}
+                                className="w-12 h-12 rounded-2xl glass-premium flex items-center justify-center text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                title={item.label}
+                            >
+                                {item.icon}
+                            </motion.button>
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

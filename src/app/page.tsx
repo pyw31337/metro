@@ -18,6 +18,8 @@ import busData from "@/data/bus-stops.json";
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
 const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: false });
+const WeatherPopup = dynamic(() => import("@/components/WeatherPopup"), { ssr: false });
+import { AnimatePresence } from "framer-motion";
 
 export default function Home() {
     const { findPath, findNearestStation, sortWCs } = useDataWorker();
@@ -44,6 +46,8 @@ export default function Home() {
     const [isCalculating, setIsCalculating] = useState(false);
     const [wcFilters, setWcFilters] = useState({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
+    const [currentCenter, setCurrentCenter] = useState<[number, number]>([37.5665, 126.9780]);
+    const [weatherOpen, setWeatherOpen] = useState(false);
     const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
     const [stationArrivals, setStationArrivals] = useState<StationArrival[]>([]);
     const busStops = busData as BusStop[];
@@ -241,6 +245,7 @@ export default function Home() {
                     onSetStart={setStartStation}
                     onSetEnd={setEndStation}
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
+                    onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
                     onMapReady={(r) => { mapRef.current = r; }}
                 />
             </div>
@@ -266,19 +271,26 @@ export default function Home() {
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
-                <button 
-                    onClick={() => setIsDarkMode(!isDarkMode)}
-                    className="w-12 h-12 rounded-full glass-premium flex items-center justify-center text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-xl transition-all hover:scale-105 active:scale-95"
-                >
-                    {isDarkMode ? "☀️" : "🌙"}
-                </button>
                 <MapControls 
                     onZoomIn={handleZoomIn}
                     onZoomOut={handleZoomOut}
                     onLocate={handleLocate}
+                    onWeatherToggle={() => setWeatherOpen(!weatherOpen)}
                     isDarkMode={isDarkMode}
+                    onDarkModeToggle={() => setIsDarkMode(!isDarkMode)}
                 />
             </div>
+
+            <AnimatePresence>
+                {weatherOpen && (
+                    <WeatherPopup 
+                        lat={currentCenter[0]}
+                        lng={currentCenter[1]}
+                        isDarkMode={isDarkMode}
+                        onClose={() => setWeatherOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
         </main>
     );
 }

@@ -32,6 +32,7 @@ interface MapLibreProps {
     selectedBusStop: BusStop | null;
     selectedStationName: string | null;
     stationArrivals: StationArrival[];
+    onCenterChange?: (lat: number, lng: number) => void;
     onMapReady?: (map: any) => void;
 }
 
@@ -41,7 +42,8 @@ const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.j
 function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
-    onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals
+    onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
+    onCenterChange
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -132,6 +134,10 @@ function MapLibreBackground({
                 onMouseEnter={onHover}
                 onMouseLeave={() => setCursor("auto")}
                 onClick={onClick}
+                onMove={(e) => {
+                    const { latitude, longitude } = e.viewState;
+                    if (onCenterChange) onCenterChange(latitude, longitude);
+                }}
                 interactiveLayerIds={["subway-station-circle", "subway-station-label", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
                 ref={(r) => {
                     if (r) {
@@ -140,7 +146,7 @@ function MapLibreBackground({
                     }
                 }}
             >
-                {/* 1. Subway Lines Layer */}
+                {/* 2. Subway Lines Layer */}
                 <Source id="subway-lines" type="geojson" data={subwayData.lines}>
                     <Layer
                         id="subway-line-layer"
@@ -181,15 +187,26 @@ function MapLibreBackground({
                     </Source>
                 )}
 
-                {/* 2. Subway Stations Layer */}
+                {/* 2. Subway Stations Layer (MOVED AFTER LINES) */}
                 <Source id="subway-stations" type="geojson" data={subwayData.stations}>
                     <Layer
                         id="subway-station-circle"
                         type="circle"
                         paint={{
-                            "circle-radius": 7,
+                            "circle-radius": [
+                                "interpolate", ["linear"], ["zoom"],
+                                10, 2,
+                                12, 4,
+                                14, 7,
+                                16, 9
+                            ],
                             "circle-color": "white",
-                            "circle-stroke-width": 3,
+                            "circle-stroke-width": [
+                                "interpolate", ["linear"], ["zoom"],
+                                12, 1.5,
+                                14, 2.5,
+                                16, 3
+                            ],
                             "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
                             "circle-opacity": pathResult ? 0.3 : 1,
                             "circle-stroke-opacity": pathResult ? 0.3 : 1
@@ -200,7 +217,12 @@ function MapLibreBackground({
                         type="symbol"
                         layout={{
                             "text-field": ["get", "name"],
-                            "text-size": 13,
+                            "text-size": [
+                                "interpolate", ["linear"], ["zoom"],
+                                12, 10,
+                                14, 13,
+                                16, 15
+                            ],
                             "text-offset": [0, 1.4],
                             "text-anchor": "top",
                             "text-font": ["literal", ["Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]]
@@ -214,16 +236,35 @@ function MapLibreBackground({
                     />
                 </Source>
 
-                {/* 2.5 Route Station Labels (Colored Name only) */}
+                {/* 2.5 Route Station Details & Highlight (ON TOP) */}
                 {routeStationData.features.length > 0 && (
-                    <Source id="route-stations" type="geojson" data={routeStationData}>
+                    <Source id="route-highlight-source" type="geojson" data={routeStationData}>
+                        {/* 2.5.1 Circle Highlight (Solid white center with line border) */}
                         <Layer
-                            id="route-station-label"
+                            id="route-station-circle-highlight"
+                            type="circle"
+                            paint={{
+                                "circle-radius": [
+                                    "interpolate", ["linear"], ["zoom"],
+                                    12, 5,
+                                    14, 8,
+                                    16, 11
+                                ],
+                                "circle-color": "white",
+                                "circle-stroke-width": 4,
+                                "circle-stroke-color": ["get", "routeColor"],
+                                "circle-opacity": 1,
+                                "circle-stroke-opacity": 1
+                            }}
+                        />
+                        {/* 2.5.2 Name Label */}
+                        <Layer
+                            id="route-station-name-highlight"
                             type="symbol"
                             layout={{
                                 "text-field": ["get", "name"],
                                 "text-size": 15,
-                                "text-offset": [0, -1.8], // Move name above the point
+                                "text-offset": [0, -1.8], // Above the point
                                 "text-anchor": "bottom",
                                 "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold", "sans-serif"]],
                                 "text-allow-overlap": true,
@@ -239,21 +280,28 @@ function MapLibreBackground({
                     </Source>
                 )}
 
-                {/* 2.6 Premium Route Info Cards (React Markers for 2-line detail) */}
+                {/* 2.6 Route Info Bubbles (Tiny, High Contrast) */}
                 {routeStationData.features.map((f: any, i: number) => {
                     const { name, arrivalTime, platformInfo } = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
                     
                     return (
-                        <Marker key={`info-${i}`} longitude={lng} latitude={lat} anchor="top" offset={[0, 15]}>
-                            <div className="flex flex-col items-center justify-center p-2 px-3 rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl pointer-events-none ring-1 ring-black/5">
-                                <span className="text-[10px] font-black text-zinc-900 dark:text-white whitespace-nowrap">
-                                    도착시간 {arrivalTime}
-                                </span>
-                                {platformInfo && (
-                                    <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 whitespace-nowrap mt-0.5">
-                                        빠른환승 {platformInfo}
+                        <Marker key={`info-${i}`} longitude={lng} latitude={lat} anchor="top" offset={[0, 18]}>
+                            <div className="flex flex-col gap-0.5 pointer-events-none items-center">
+                                {/* Small Bubble 1: Arrival Time */}
+                                <div className="px-1.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-black/5 dark:border-white/10">
+                                    <span className="text-[9px] font-black text-zinc-900 dark:text-white leading-none">
+                                        도착시간 {arrivalTime}
                                     </span>
+                                </div>
+                                
+                                {/* Small Bubble 2: Fast Transfer (if exists) */}
+                                {platformInfo && (
+                                    <div className="px-1.5 py-0.5 rounded-full bg-white dark:bg-zinc-800 shadow-sm border border-black/5 dark:border-white/10">
+                                        <span className="text-[8px] font-black text-blue-500 dark:text-blue-400 leading-none">
+                                            빠른환승 {platformInfo}
+                                        </span>
+                                    </div>
                                 )}
                             </div>
                         </Marker>
