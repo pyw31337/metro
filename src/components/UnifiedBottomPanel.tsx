@@ -110,7 +110,6 @@ export default function UnifiedBottomPanel({
     const tabs = [
         { id: "subway", label: "지하철", icon: <Train size={14} /> },
         { id: "bus", label: "버스", icon: <Bus size={14} /> },
-        { id: "subway+bus", label: "통합", icon: <MapIcon size={14} /> },
         { id: "wc", label: "화장실", icon: <Bath size={14} /> },
     ];
 

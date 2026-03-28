@@ -138,6 +138,25 @@ export default function Home() {
                 transfer: res.transfer
             };
             setPathResults(filtered);
+
+            // AUTO-FIT MAP to the route
+            const active = filtered[selectedStrategy] || filtered.time;
+            if (active && active.path.length > 0 && mapRef.current) {
+                const lats = active.path.map(name => stations.find(s => s.name === name)?.lat).filter(Boolean) as number[];
+                const lngs = active.path.map(name => stations.find(s => s.name === name)?.lng).filter(Boolean) as number[];
+                
+                if (lats.length > 0) {
+                    const minLat = Math.min(...lats);
+                    const maxLat = Math.max(...lats);
+                    const minLng = Math.min(...lngs);
+                    const maxLng = Math.max(...lngs);
+
+                    mapRef.current?.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+                        padding: { top: 100, bottom: 240, left: 100, right: 100 },
+                        duration: 1500
+                    });
+                }
+            }
         }
         
         setIsCalculating(true); // Short delay for animation feel
