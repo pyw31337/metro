@@ -71,9 +71,17 @@ export default function UnifiedBottomPanel({
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
     const destInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (validationError) {
+            const timer = setTimeout(() => setValidationError(null), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [validationError]);
 
     useEffect(() => {
         if (endStation !== null) setDestination(endStation);
@@ -280,7 +288,7 @@ export default function UnifiedBottomPanel({
 
                     {/* 3. Compact Inputs */}
                     <div className="grid grid-cols-2 gap-2 mt-0.5">
-                        {/* Locating Feedback */}
+                        {/* Locating Feedback or Validation Error */}
                         {isLocating && (
                             <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
                                 <motion.div 
@@ -290,6 +298,23 @@ export default function UnifiedBottomPanel({
                                 >
                                     <Locate size={12} className="animate-pulse" />
                                     현재 위치 조회 중... {locatingTimer}초
+                                </motion.div>
+                            </div>
+                        )}
+
+                        {validationError && (
+                            <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20"
+                                >
+                                    <span className="text-zinc-600 dark:text-zinc-400">내용을 확인해 주세요: </span>
+                                    {validationError === "source" ? (
+                                        <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</>
+                                    ) : (
+                                        <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</>
+                                    )}
                                 </motion.div>
                             </div>
                         )}
@@ -388,7 +413,17 @@ export default function UnifiedBottomPanel({
                             ))}
                         </div>
                         <button 
-                            onClick={() => onSearch(source, destination)}
+                            onClick={() => {
+                                if (!source) {
+                                    setValidationError("source");
+                                    return;
+                                }
+                                if (!destination) {
+                                    setValidationError("dest");
+                                    return;
+                                }
+                                onSearch(source, destination);
+                            }}
                             className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 h-9 px-5 rounded-xl font-black text-[13px] active:scale-95 transition-all"
                         >
                             길찾기
