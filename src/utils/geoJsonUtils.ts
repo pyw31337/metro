@@ -115,21 +115,28 @@ export const convertTrainsToGeoJSON = (trains: any[]): GeoJsonFeatureCollection 
   };
 };
 
-export const convertPathToGeoJSON = (path: string[], startTime: number = Date.now()): { 
+import { PathResult } from "./pathfinding";
+
+export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: number = Date.now()): { 
     pathLines: GeoJsonFeatureCollection, 
     routeStations: GeoJsonFeatureCollection 
 } => {
+    if (!pathResult) return { pathLines: { type: "FeatureCollection", features: [] }, routeStations: { type: "FeatureCollection", features: [] } };
+    
+    const path = pathResult.path;
+    const weights = pathResult.weights;
     const lineFeatures: any[] = [];
     const stationFeatures: any[] = [];
     const allStations = getAllStations();
-    let cumulativeWeight = 0;
 
     for (let i = 0; i < path.length; i++) {
         const sName = path[i];
         const s = allStations.find(st => st.name === sName);
         if (!s) continue;
 
-        // Arrival time for this station (2 mins per hop for consistency)
+        const cumulativeWeight = weights[i] || 0;
+
+        // Arrival time for this station
         const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000); 
         const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
@@ -206,7 +213,6 @@ export const convertPathToGeoJSON = (path: string[], startTime: number = Date.no
                         color: routeColor
                     }
                 });
-                cumulativeWeight += 2; // Increment cumulative weight for next station
             }
         }
     }

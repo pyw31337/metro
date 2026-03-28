@@ -62,8 +62,7 @@ function MapLibreBackground({
 
     // Memoized Path Data with exact line colors
     const pathData = useMemo(() => {
-        if (!pathResult) return null;
-        return convertPathToGeoJSON(pathResult.path);
+        return convertPathToGeoJSON(pathResult);
     }, [pathResult]);
 
     const pathLineData = useMemo((): GeoJSON.FeatureCollection => 
@@ -304,10 +303,10 @@ function MapLibreBackground({
                     const isFocused = focusedBubble === name;
                     const isLast = i === routeStationData.features.length - 1;
                     
-                    // Filter: Only show endpoints and transfers when zoomed out (< 13)
+                    // Filter: Only show endpoints and transfers when zoomed out (< 15)
                     const isEndpoint = i === 0 || isLast;
                     const isTransfer = !!platformInfo; // Any station with platform info is a transfer/point of interest
-                    const shouldShow = currentZoom >= 13 || isEndpoint || isTransfer;
+                    const shouldShow = currentZoom >= 15 || isEndpoint || isTransfer;
 
                     if (!shouldShow) return null;
                     

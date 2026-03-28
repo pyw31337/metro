@@ -46,6 +46,7 @@ export type PathStrategy = "time" | "transfer";
 export interface PathResult {
     path: string[]; // List of station names
     totalWeight: number; // Actual time in minutes
+    weights: number[]; // Cumulative physical time at each station in the path
     transferCount: number;
     strategy: PathStrategy;
 }
@@ -58,6 +59,7 @@ export const findPathWithStrategy = (points: string[], strategy: PathStrategy): 
 
     const graph = buildGraph();
     let finalPath: string[] = [points[0]];
+    let finalWeights: number[] = [0];
     let totalWeight = 0;
     let totalTransferCount = 0;
 
@@ -70,7 +72,13 @@ export const findPathWithStrategy = (points: string[], strategy: PathStrategy): 
         const segment = dijkstra(start, end, graph, strategy);
         if (!segment) return null; 
 
-        finalPath = [...finalPath, ...segment.path.slice(1)];
+        // Append path and adjust weights relative to the current total
+        const segmentPath = segment.path.slice(1);
+        const startWeight = totalWeight;
+        const segmentWeights = segment.weights.slice(1).map(w => w + startWeight);
+
+        finalPath = [...finalPath, ...segmentPath];
+        finalWeights = [...finalWeights, ...segmentWeights];
         totalWeight += segment.totalWeight;
         totalTransferCount += segment.transferCount;
     }
@@ -78,6 +86,7 @@ export const findPathWithStrategy = (points: string[], strategy: PathStrategy): 
     return { 
         path: finalPath, 
         totalWeight, 
+        weights: finalWeights,
         transferCount: totalTransferCount,
         strategy
     };
@@ -93,17 +102,17 @@ function dijkstra(
     strategy: PathStrategy
 ): Omit<PathResult, "strategy"> | null {
     // Priority queue uses 'cost' for Dijkstra, but we track 'weight' for actual time
-    const pq: { nodeId: string; cost: number; weight: number; path: string[]; lastLine: string | null; transfers: number }[] = [];
+    const pq: { nodeId: string; cost: number; weight: number; path: string[]; weights: number[]; lastLine: string | null; transfers: number }[] = [];
     const minCosts = new Map<string, number>();
 
-    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], lastLine: null, transfers: 0 });
+    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], weights: [0], lastLine: null, transfers: 0 });
 
     while (pq.length > 0) {
         pq.sort((a, b) => a.cost - b.cost);
-        const { nodeId, cost, weight, path, lastLine, transfers } = pq.shift()!;
+        const { nodeId, cost, weight, path, weights: weightPath, lastLine, transfers } = pq.shift()!;
 
         if (nodeId === endName) {
-            return { path, totalWeight: weight, transferCount: transfers };
+            return { path, totalWeight: weight, weights: weightPath, transferCount: transfers };
         }
 
         if (cost > (minCosts.get(nodeId) ?? Infinity)) continue;
@@ -136,6 +145,7 @@ function dijkstra(
                 cost: newCost,
                 weight: newWeight,
                 path: [...path, conn.nodeId],
+                weights: [...weightPath, newWeight],
                 lastLine: conn.lineId,
                 transfers: transfers + (isTransfer ? 1 : 0)
             });
