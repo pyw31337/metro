@@ -348,7 +348,6 @@ function MapLibreBackground({
                     </Popup>
                 )}
 
-                <GeolocateControl position="top-left" />
                 <NavigationControl position="bottom-right" />
             </Map>
         </div>

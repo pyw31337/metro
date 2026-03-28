@@ -163,9 +163,11 @@ export default function Home() {
         setSelectedBusStop(null);
     };
 
+    const [hasCenteredOnLoad, setHasCenteredOnLoad] = useState(false);
+
     const handleZoomIn = () => mapRef.current?.zoomIn();
     const handleZoomOut = () => mapRef.current?.zoomOut();
-    const handleLocate = () => {
+    const handleLocate = useCallback(() => {
         if (navigator.geolocation && mapRef.current) {
             navigator.geolocation.getCurrentPosition((pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -173,7 +175,16 @@ export default function Home() {
                 setUserLocation([latitude, longitude]);
             });
         }
-    };
+    }, []);
+
+    // Initial centering logic
+    useEffect(() => {
+        if (!hasCenteredOnLoad && userLocation && mapRef.current) {
+            const [lat, lng] = userLocation;
+            mapRef.current?.flyTo({ center: [lng, lat], zoom: 14, duration: 2000 });
+            setHasCenteredOnLoad(true);
+        }
+    }, [userLocation, hasCenteredOnLoad]);
 
     const handleLocateStation = async () => {
         if (!navigator.geolocation) return;
