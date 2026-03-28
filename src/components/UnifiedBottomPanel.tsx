@@ -26,6 +26,8 @@ interface UnifiedBottomPanelProps {
     activePath: PathResult | null;
     timeDisplayMode: "duration" | "arrival";
     setTimeDisplayMode: (mode: "duration" | "arrival") => void;
+    isLocating?: boolean;
+    locatingTimer?: number;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -59,7 +61,9 @@ export default function UnifiedBottomPanel({
     pathResults,
     activePath,
     timeDisplayMode,
-    setTimeDisplayMode
+    setTimeDisplayMode,
+    isLocating = false,
+    locatingTimer = 0
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const [destination, setDestination] = useState("");
@@ -72,8 +76,8 @@ export default function UnifiedBottomPanel({
     const destInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        setDestination(endStation || "");
-        setSource(startStation || "");
+        if (endStation !== null) setDestination(endStation);
+        if (startStation !== null) setSource(startStation);
     }, [startStation, endStation]);
 
     const handleSearch = (val: string, type: "source" | "dest") => {
@@ -112,19 +116,22 @@ export default function UnifiedBottomPanel({
         setActiveField(null);
     };
 
-    const getLineBadge = (lineName: string) => {
+    const getLineBadge = (lineStr: string) => {
         const lineColors: Record<string, string> = {
             "1호선": "#0052A4", "2호선": "#00A84D", "3호선": "#EF7C1C", "4호선": "#00A5DE",
             "5호선": "#996CAC", "6호선": "#CD7C2F", "7호선": "#747F00", "8호선": "#E6186C",
             "9호선": "#BDB092", "수인분당선": "#F5A200", "신분당선": "#D4003B", "경의중앙선": "#77C4A3",
             "공항철도": "#0090D2", "경춘선": "#0C8E72", "인천1호선": "#7CA8D5", "인천2호선": "#ED8B00"
         };
-        const color = lineColors[lineName] || "#999999";
-        const short = lineName.replace("호선", "").replace("철도", "").replace("중앙선", "").replace("분당선", "").substring(0, 1).toUpperCase();
+        
+        // Clean parentheses and 호선 word
+        const cleanLine = lineStr.replace(/[()]/g, "").trim();
+        const color = lineColors[cleanLine] || lineColors[cleanLine + "호선"] || "#999999";
+        const short = cleanLine.replace("호선", "").replace("철도", "").replace("중앙선", "").replace("분당선", "").substring(0, 1).toUpperCase();
         
         return (
             <span 
-                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm"
+                className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm"
                 style={{ backgroundColor: color }}
             >
                 {short}
@@ -134,17 +141,30 @@ export default function UnifiedBottomPanel({
 
     const formatStationDisplay = (value: string) => {
         if (!value) return null;
-        const namePart = value.split(' : ').pop() || value;
-        const parts = namePart.split(' ');
-        const stationName = parts[0];
-        const lineName = parts[1];
         
-        return (
-            <div className="flex items-center gap-1.5 overflow-hidden">
-                <span className="truncate">{stationName}</span>
-                {lineName && getLineBadge(lineName)}
-            </div>
-        );
+        // Handle "My Location" format: "내 위치 : 강남 (내 위치)"
+        if (value.startsWith("내 위치")) {
+            const parts = value.split(' : ');
+            const main = parts[1] || value;
+            return <span className="truncate font-bold text-blue-500">{main}</span>;
+        }
+
+        const namePart = value.split(' : ').pop() || value;
+        // Search for station name and line in parentheses: "천왕(7)" or "천왕 (7호선)"
+        const match = namePart.match(/^([^(]+)(\([^)]+\))?$/);
+        
+        if (match) {
+            const stationName = match[1].trim();
+            const lineName = match[2];
+            return (
+                <div className="flex items-center gap-1.5 overflow-hidden">
+                    <span className="truncate">{stationName}</span>
+                    {lineName && getLineBadge(lineName)}
+                </div>
+            );
+        }
+
+        return <span className="truncate">{namePart}</span>;
     };
 
     const strategies: { id: PathStrategy; label: string; sub: string }[] = [
@@ -260,6 +280,20 @@ export default function UnifiedBottomPanel({
 
                     {/* 3. Compact Inputs */}
                     <div className="grid grid-cols-2 gap-2 mt-0.5">
+                        {/* Locating Feedback */}
+                        {isLocating && (
+                            <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    className="bg-blue-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2"
+                                >
+                                    <Locate size={12} className="animate-pulse" />
+                                    현재 위치 조회 중... {locatingTimer}초
+                                </motion.div>
+                            </div>
+                        )}
+
                         {/* Destination */}
                         <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
                             <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">도착</span>

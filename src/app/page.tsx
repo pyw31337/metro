@@ -38,6 +38,8 @@ export default function Home() {
     const [waypoints, setWaypoints] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState<ActiveTab>("subway");
     const [isDarkMode, setIsDarkMode] = useState(false);
+    const [isLocating, setIsLocating] = useState(false);
+    const [locatingTimer, setLocatingTimer] = useState(5);
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
     const [selectedBusStop, setSelectedBusStop] = useState<BusStop | null>(null);
     const [wcItems, setWcItems] = useState<WCItem[]>([]);
@@ -207,6 +209,18 @@ export default function Home() {
 
     // Manual station locator for inputs
     const handleLocateStation = async (type: "source" | "dest") => {
+        setIsLocating(true);
+        setLocatingTimer(5);
+        const timer = setInterval(() => {
+            setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+
+        const cleanup = () => {
+            clearInterval(timer);
+            setIsLocating(false);
+            setLocatingTimer(0);
+        };
+
         if (!userLocation && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -217,7 +231,8 @@ export default function Home() {
                     if (type === "source") setStartStation(val);
                     else setEndStation(val);
                 }
-            });
+                cleanup();
+            }, () => cleanup(), { enableHighAccuracy: true, timeout: 10000 });
             return;
         }
 
@@ -228,6 +243,9 @@ export default function Home() {
                 if (type === "source") setStartStation(val);
                 else setEndStation(val);
             }
+            cleanup();
+        } else {
+            cleanup();
         }
     };
 
@@ -282,6 +300,8 @@ export default function Home() {
                 activePath={activePath}
                 timeDisplayMode={timeDisplayMode}
                 setTimeDisplayMode={setTimeDisplayMode}
+                isLocating={isLocating}
+                locatingTimer={locatingTimer}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
