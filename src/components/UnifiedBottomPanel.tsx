@@ -199,7 +199,7 @@ export default function UnifiedBottomPanel({
         >
             <motion.div 
                 layout
-                className={`max-w-lg w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-hidden ${isCollapsed ? 'translate-y-[calc(100%-44px)]' : 'translate-y-0'}`}
+                className={`max-w-lg w-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-2xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-hidden ${isCollapsed ? 'translate-y-[calc(100%-44px)]' : 'translate-y-0'}`}
                 style={{ paddingBottom: keyboardOffset > 0 ? "8px" : "calc(env(safe-area-inset-bottom) + 8px)" }}
                 initial={{ y: 200 }}
                 animate={{ y: isCollapsed ? "calc(100% - 44px)" : 0 }}
