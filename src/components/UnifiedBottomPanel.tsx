@@ -125,33 +125,32 @@ export default function UnifiedBottomPanel({
                 transition={THEME.transitions.spring}
             >
                 <div className="flex flex-col p-4 gap-3">
-                    {/* Strategy Selector (1 Horizontal Line) */}
-                    {pathResults && (
-                        <div className="flex items-stretch gap-2 mb-1">
-                            {strategies.map((strat) => {
-                                const result = pathResults[strat.id];
-                                if (!result) return null;
-                                const isSelected = selectedStrategy === strat.id;
-                                return (
-                                    <button
-                                        key={strat.id}
-                                        onClick={() => onStrategyChange(strat.id)}
-                                        className={`
-                                            flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl border transition-all text-center
-                                            ${isSelected 
-                                                ? "bg-blue-500 border-blue-600 text-white shadow-lg scale-[1.02]" 
-                                                : "bg-zinc-100 dark:bg-white/5 border-transparent text-zinc-500 dark:text-zinc-400"
-                                            }
-                                        `}
-                                    >
-                                        <span className="text-[10px] font-black uppercase tracking-tight opacity-70">{strat.label}</span>
-                                        <span className={`text-[14px] font-black ${isSelected ? "text-white" : "text-zinc-900 dark:text-white"}`}>
-                                            {Math.round(result.totalWeight)}분
-                                        </span>
-                                        <span className={`text-[9px] font-bold opacity-60`}>환승 {result.transferCount}회</span>
-                                    </button>
-                                );
-                            })}
+                    {/* Strategy Selector (Consolidated 1 Row) */}
+                    {pathResults && pathResults.time && pathResults.transfer && (
+                        <div className="flex items-center justify-center bg-zinc-100 dark:bg-white/5 rounded-2xl p-3 mb-1 border border-black/5 dark:border-white/5">
+                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+                                {/* Min Time Side */}
+                                <button 
+                                    onClick={() => onStrategyChange("time")}
+                                    className={`flex items-center gap-1.5 whitespace-nowrap px-2 py-1 rounded-lg transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-sm scale-[1.03]" : "text-zinc-500 dark:text-zinc-400"}`}
+                                >
+                                    <span className="text-[11px] font-black">최소시간</span>
+                                    <span className="text-[10px] opacity-70">(환승 {pathResults.time.transferCount}회)</span>
+                                    <span className="text-[13px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
+                                </button>
+
+                                <span className="text-zinc-300 dark:text-white/10 mx-1">/</span>
+
+                                {/* Min Transfer Side */}
+                                <button 
+                                    onClick={() => onStrategyChange("transfer")}
+                                    className={`flex items-center gap-1.5 whitespace-nowrap px-2 py-1 rounded-lg transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-sm scale-[1.03]" : "text-zinc-500 dark:text-zinc-400"}`}
+                                >
+                                    <span className="text-[11px] font-black">최소환승</span>
+                                    <span className="text-[10px] opacity-70">(환승 {pathResults.transfer.transferCount}회)</span>
+                                    <span className="text-[13px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
+                                </button>
+                            </div>
                         </div>
                     )}
 

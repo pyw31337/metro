@@ -225,12 +225,14 @@ function MapLibreBackground({
                                 "text-size": 14,
                                 "text-offset": [0, 1.4],
                                 "text-anchor": "top",
-                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold"]]
+                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold", "sans-serif"]],
+                                "text-allow-overlap": true,
+                                "text-ignore-placement": true
                             }}
                             paint={{
                                 "text-color": ["get", "routeColor"],
-                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
-                                "text-halo-width": 3,
+                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
+                                "text-halo-width": 2.5,
                                 "text-opacity": 1
                             }}
                         />
@@ -247,12 +249,14 @@ function MapLibreBackground({
                                 "text-size": 10,
                                 "text-offset": [0, 3.2],
                                 "text-anchor": "top",
-                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold"]]
+                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold", "sans-serif"]],
+                                "text-allow-overlap": true,
+                                "text-ignore-placement": true
                             }}
                             paint={{
                                 "text-color": isDarkMode ? "#ffffff" : "#333333",
-                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.5)" : "rgba(255,255,255,0.5)",
-                                "text-halo-width": 1,
+                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)",
+                                "text-halo-width": 1.5,
                                 "text-opacity": 0.9
                             }}
                         />
