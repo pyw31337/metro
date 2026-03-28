@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
-import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef, Popup } from "react-map-gl/maplibre";
+import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef, Popup, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
@@ -214,7 +214,7 @@ function MapLibreBackground({
                     />
                 </Source>
 
-                {/* 2.5 Route Station Labels (Colored and Detailed) */}
+                {/* 2.5 Route Station Labels (Colored Name only) */}
                 {routeStationData.features.length > 0 && (
                     <Source id="route-stations" type="geojson" data={routeStationData}>
                         <Layer
@@ -222,9 +222,9 @@ function MapLibreBackground({
                             type="symbol"
                             layout={{
                                 "text-field": ["get", "name"],
-                                "text-size": 14,
-                                "text-offset": [0, 1.4],
-                                "text-anchor": "top",
+                                "text-size": 15,
+                                "text-offset": [0, -1.8], // Move name above the point
+                                "text-anchor": "bottom",
                                 "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold", "sans-serif"]],
                                 "text-allow-overlap": true,
                                 "text-ignore-placement": true
@@ -232,36 +232,33 @@ function MapLibreBackground({
                             paint={{
                                 "text-color": ["get", "routeColor"],
                                 "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
-                                "text-halo-width": 2.5,
+                                "text-halo-width": 3,
                                 "text-opacity": 1
-                            }}
-                        />
-                        <Layer
-                            id="route-info-label"
-                            type="symbol"
-                            layout={{
-                                "text-field": [
-                                    "case",
-                                    ["==", ["get", "platformInfo"], ""],
-                                    ["get", "arrivalTime"],
-                                    ["concat", ["get", "arrivalTime"], " | ", ["get", "platformInfo"]]
-                                ],
-                                "text-size": 10,
-                                "text-offset": [0, 3.2],
-                                "text-anchor": "top",
-                                "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold", "sans-serif"]],
-                                "text-allow-overlap": true,
-                                "text-ignore-placement": true
-                            }}
-                            paint={{
-                                "text-color": isDarkMode ? "#ffffff" : "#333333",
-                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.6)" : "rgba(255,255,255,0.6)",
-                                "text-halo-width": 1.5,
-                                "text-opacity": 0.9
                             }}
                         />
                     </Source>
                 )}
+
+                {/* 2.6 Premium Route Info Cards (React Markers for 2-line detail) */}
+                {routeStationData.features.map((f: any, i: number) => {
+                    const { name, arrivalTime, platformInfo } = f.properties;
+                    const [lng, lat] = f.geometry.coordinates;
+                    
+                    return (
+                        <Marker key={`info-${i}`} longitude={lng} latitude={lat} anchor="top" offset={[0, 15]}>
+                            <div className="flex flex-col items-center justify-center p-2 px-3 rounded-2xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-xl pointer-events-none ring-1 ring-black/5">
+                                <span className="text-[10px] font-black text-zinc-900 dark:text-white whitespace-nowrap">
+                                    도착시간 {arrivalTime}
+                                </span>
+                                {platformInfo && (
+                                    <span className="text-[9px] font-bold text-blue-500 dark:text-blue-400 whitespace-nowrap mt-0.5">
+                                        빠른환승 {platformInfo}
+                                    </span>
+                                )}
+                            </div>
+                        </Marker>
+                    );
+                })}
 
                 {/* 5. Real-time Train Layer */}
                 <Source id="train-source" type="geojson" data={trainData}>

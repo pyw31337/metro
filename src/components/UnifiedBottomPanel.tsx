@@ -124,32 +124,32 @@ export default function UnifiedBottomPanel({
                 transition={THEME.transitions.spring}
             >
                 <div className="flex flex-col p-4 gap-3">
-                    {/* Strategy Selector (Consolidated 1 Row) */}
+                    {/* Strategy Selector (2-Segment Tab) */}
                     {pathResults && pathResults.time && pathResults.transfer && (
-                        <div className="flex items-center justify-center bg-zinc-100 dark:bg-white/5 rounded-2xl p-3 mb-1 border border-black/5 dark:border-white/5">
-                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
-                                {/* Min Time Side */}
-                                <button 
-                                    onClick={() => onStrategyChange("time")}
-                                    className={`flex items-center gap-1.5 whitespace-nowrap px-2 py-1 rounded-lg transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-sm scale-[1.03]" : "text-zinc-500 dark:text-zinc-400"}`}
-                                >
-                                    <span className="text-[11px] font-black">최소시간</span>
-                                    <span className="text-[10px] opacity-70">(환승 {pathResults.time.transferCount}회)</span>
-                                    <span className="text-[13px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
-                                </button>
+                        <div className="grid grid-cols-2 bg-zinc-100 dark:bg-white/5 rounded-2xl p-1 mb-1 border border-black/5 dark:border-white/5">
+                            {/* Min Time */}
+                            <button 
+                                onClick={() => onStrategyChange("time")}
+                                className={`flex flex-col items-center justify-center py-2 rounded-[14px] transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg scale-[1.02]" : "text-zinc-500 dark:text-zinc-400"}`}
+                            >
+                                <span className={`text-[11px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[15px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
+                                    <span className="text-[10px] font-bold opacity-70">환승 {pathResults.time.transferCount}회</span>
+                                </div>
+                            </button>
 
-                                <span className="text-zinc-300 dark:text-white/10 mx-1">/</span>
-
-                                {/* Min Transfer Side */}
-                                <button 
-                                    onClick={() => onStrategyChange("transfer")}
-                                    className={`flex items-center gap-1.5 whitespace-nowrap px-2 py-1 rounded-lg transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-sm scale-[1.03]" : "text-zinc-500 dark:text-zinc-400"}`}
-                                >
-                                    <span className="text-[11px] font-black">최소환승</span>
-                                    <span className="text-[10px] opacity-70">(환승 {pathResults.transfer.transferCount}회)</span>
-                                    <span className="text-[13px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
-                                </button>
-                            </div>
+                            {/* Min Transfer */}
+                            <button 
+                                onClick={() => onStrategyChange("transfer")}
+                                className={`flex flex-col items-center justify-center py-2 rounded-[14px] transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg scale-[1.02]" : "text-zinc-500 dark:text-zinc-400"}`}
+                            >
+                                <span className={`text-[11px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
+                                <div className="flex items-baseline gap-1">
+                                    <span className="text-[15px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
+                                    <span className="text-[10px] font-bold opacity-70">환승 {pathResults.transfer.transferCount}회</span>
+                                </div>
+                            </button>
                         </div>
                     )}
 
