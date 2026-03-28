@@ -12,6 +12,7 @@ interface UnifiedBottomPanelProps {
     onTabChange: (tab: string) => void;
     onSearch: (start: string, end: string) => void;
     onReset?: () => void;
+    onLocate?: () => void;
     startStation: string | null;
     endStation: string | null;
     isDarkMode: boolean;
@@ -40,6 +41,7 @@ export default function UnifiedBottomPanel({
     onTabChange,
     onSearch,
     onReset,
+    onLocate,
     startStation,
     endStation,
     isDarkMode,
@@ -200,7 +202,7 @@ export default function UnifiedBottomPanel({
 
                         {/* Source Input */}
                         <div className="relative flex items-center px-4 h-12 bg-white/50 dark:bg-black/20 rounded-2xl border border-black/5 dark:border-white/5 focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                            <Locate size={18} className="text-blue-500 shrink-0" />
+                            <Navigation size={18} className="text-blue-500 shrink-0" />
                             <input 
                                 type="text"
                                 placeholder="(출발지) 어디서 출발하시나요?"
@@ -209,6 +211,16 @@ export default function UnifiedBottomPanel({
                                 onChange={(e) => handleSearch(e.target.value, "source")}
                                 className="flex-1 bg-transparent border-none outline-none font-bold text-[15px] px-3 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
                             />
+                            <button 
+                                onClick={(e) => { 
+                                    e.stopPropagation(); 
+                                    if(onLocate) onLocate(); 
+                                }}
+                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl transition-all border border-blue-500/20"
+                            >
+                                <Locate size={14} />
+                                <span className="text-[12px] font-bold">내 위치</span>
+                            </button>
                         </div>
                     </div>
 

@@ -11,6 +11,7 @@ import type { WCItem } from "@/components/WCLayer";
 import type { BusStop } from "@/components/BusStopLayer";
 import { fetchWCDataClient } from "@/services/wcApi";
 import { useDataWorker } from "@/hooks/useDataWorker";
+import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
 import busData from "@/data/bus-stops.json";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
@@ -19,6 +20,7 @@ const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: fal
 
 export default function Home() {
     const { findPath, findNearestStation, sortWCs } = useDataWorker();
+    const rawTrains = useRealtimeTrains();
     
     const [pathResult, setPathResult] = useState<PathResult | null>(null);
     const [startStation, setStartStation] = useState<string | null>(null);
@@ -46,6 +48,17 @@ export default function Home() {
         });
         return Array.from(unique.values());
     }, []);
+
+    const filteredTrains = useMemo(() => {
+        if (!pathResult) return rawTrains;
+        // Show trains on lines involved in the path + adjacent for context
+        const pathLineNames = new Set<string>();
+        pathResult.path.forEach(name => {
+            const s = stations.find(st => st.name === name);
+            s?.lines.forEach(l => pathLineNames.add(l));
+        });
+        return rawTrains.filter(t => pathLineNames.has(t.lineName));
+    }, [rawTrains, pathResult, stations]);
 
     const mapRef = useRef<any>(null);
 
@@ -127,6 +140,18 @@ export default function Home() {
         }
     };
 
+    const handleLocateStation = async () => {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            const nearest = await findNearestStation(latitude, longitude, stations) as any;
+            if (nearest) {
+                setStartStation(nearest.name);
+                mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
+            }
+        });
+    };
+
     return (
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
             <div className="absolute inset-0 z-10">
@@ -138,6 +163,7 @@ export default function Home() {
                     wcItems={wcItems}
                     wcFilters={wcFilters}
                     busStops={busStops}
+                    trains={filteredTrains}
                     activeTab={activeTab}
                     selectedBusStopId={selectedBusStop?.id ?? null}
                     onWCClick={setSelectedWC}
@@ -149,7 +175,7 @@ export default function Home() {
                     onSetStart={setStartStation}
                     onSetEnd={setEndStation}
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
-                    onMapReady={(map) => { mapRef.current = map; }}
+                    onMapReady={(r) => { mapRef.current = r; }}
                 />
             </div>
 
@@ -164,6 +190,7 @@ export default function Home() {
                 startStation={startStation}
                 endStation={endStation}
                 isDarkMode={isDarkMode}
+                onLocate={handleLocateStation}
                 stations={stations}
                 busStops={busStops}
             >

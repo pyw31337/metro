@@ -7,6 +7,20 @@ export interface GeoJsonFeatureCollection {
   features: any[];
 }
 
+interface FeatureProperties {
+    type: string;
+    [key: string]: any;
+}
+
+interface GeoJsonFeature {
+    type: "Feature";
+    geometry: {
+        type: "Point" | "LineString";
+        coordinates: number[] | number[][];
+    };
+    properties: FeatureProperties;
+}
+
 export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
@@ -82,6 +96,20 @@ export const convertWCToGeoJSON = (items: WCItem[]): GeoJsonFeatureCollection =>
       properties: {
         ...item,
         type: "wc"
+      }
+    }))
+  };
+};
+
+export const convertTrainsToGeoJSON = (trains: any[]): GeoJsonFeatureCollection => {
+  return {
+    type: "FeatureCollection" as const,
+    features: trains.map(t => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [t.lng, t.lat] },
+      properties: {
+        ...t,
+        type: "train"
       }
     }))
   };

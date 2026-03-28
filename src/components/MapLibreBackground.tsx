@@ -3,11 +3,11 @@
 import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
 import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { Station, getAllStations } from "@/data/subway-lines";
+import { getAllStations } from "@/data/subway-lines";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
-import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON } from "@/utils/geoJsonUtils";
+import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON } from "@/utils/geoJsonUtils";
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
@@ -24,6 +24,7 @@ interface MapLibreProps {
     wcItems: WCItem[];
     wcFilters: { accessible: boolean; diapers: boolean; emergencyBell: boolean };
     busStops: BusStop[];
+    trains: any[];
     selectedBusStopId: string | null;
     onWCClick: (item: WCItem) => void;
     onBusStopClick: (stop: BusStop, latlng?: [number, number]) => void;
@@ -37,7 +38,7 @@ const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.
 const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
 function MapLibreBackground({
-    pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops,
+    pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
@@ -46,6 +47,7 @@ function MapLibreBackground({
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
     const busData = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
     const wcData = useMemo(() => convertWCToGeoJSON(wcItems), [wcItems]);
+    const trainData = useMemo(() => convertTrainsToGeoJSON(trains), [trains]);
 
     // Filters for WCs
     const filteredWCs = useMemo(() => {
@@ -101,7 +103,7 @@ function MapLibreBackground({
         const { layer, properties, geometry } = feature;
         const coords = (geometry as any).coordinates as [number, number];
 
-        if (layer.id === "subway-station-circle") {
+        if (layer.id === "subway-station-circle" || layer.id === "subway-station-label") {
             if (onStationClick) onStationClick(properties.name, [coords[1], coords[0]]);
         } else if (layer.id === "wc-unclustered") {
             onWCClick(properties as any);
@@ -136,7 +138,7 @@ function MapLibreBackground({
                 onMouseEnter={onHover}
                 onMouseLeave={() => setCursor("auto")}
                 onClick={onClick}
-                interactiveLayerIds={["subway-station-circle", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
+                interactiveLayerIds={["subway-station-circle", "subway-station-label", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
                 ref={(r) => {
                     if (r) {
                         mapRef.current = r;
@@ -144,7 +146,21 @@ function MapLibreBackground({
                     }
                 }}
             >
-                {/* 0. Path Result Layer (Animated) */}
+                {/* 1. Subway Lines Layer */}
+                <Source id="subway-lines" type="geojson" data={subwayData.lines}>
+                    <Layer
+                        id="subway-line-layer"
+                        type="line"
+                        layout={{ "line-join": "round", "line-cap": "round" }}
+                        paint={{
+                            "line-color": pathResult ? (isDarkMode ? "#333333" : "#cccccc") : ["get", "color"],
+                            "line-width": 4,
+                            "line-opacity": pathResult ? 0.4 : 0.8
+                        }}
+                    />
+                </Source>
+
+                {/* 0. Path Result Layer (Animated/Colored over grayscale) */}
                 {pathData && (
                     <Source id="path-result" type="geojson" data={pathData}>
                         <Layer
@@ -154,7 +170,7 @@ function MapLibreBackground({
                             paint={{
                                 "line-color": "#3b82f6",
                                 "line-width": 8,
-                                "line-opacity": 0.4,
+                                "line-opacity": 0.6,
                                 "line-blur": 2
                             }}
                         />
@@ -164,26 +180,12 @@ function MapLibreBackground({
                             layout={{ "line-join": "round", "line-cap": "round" }}
                             paint={{
                                 "line-color": "#60a5fa",
-                                "line-width": 4,
+                                "line-width": 5,
                                 "line-dasharray": [2, 4]
                             }}
                         />
                     </Source>
                 )}
-
-                {/* 1. Subway Lines Layer */}
-                <Source id="subway-lines" type="geojson" data={subwayData.lines}>
-                    <Layer
-                        id="subway-line-layer"
-                        type="line"
-                        layout={{ "line-join": "round", "line-cap": "round" }}
-                        paint={{
-                            "line-color": ["get", "color"],
-                            "line-width": 4,
-                            "line-opacity": 0.8
-                        }}
-                    />
-                </Source>
 
                 {/* 2. Subway Stations Layer */}
                 <Source id="subway-stations" type="geojson" data={subwayData.stations}>
@@ -194,7 +196,38 @@ function MapLibreBackground({
                             "circle-radius": 6,
                             "circle-color": "white",
                             "circle-stroke-width": 2,
-                            "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]]
+                            "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
+                            "circle-opacity": pathResult ? 0.3 : 1,
+                            "circle-stroke-opacity": pathResult ? 0.3 : 1
+                        }}
+                    />
+                    <Layer
+                        id="subway-station-label"
+                        type="symbol"
+                        layout={{
+                            "text-field": ["get", "name"],
+                            "text-size": 11,
+                            "text-offset": [0, 1.2],
+                            "text-anchor": "top"
+                        }}
+                        paint={{
+                            "text-color": isDarkMode ? "white" : "black",
+                            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
+                            "text-halo-width": 1.5,
+                            "text-opacity": pathResult ? 0.5 : 1
+                        }}
+                    />
+                </Source>
+
+                {/* 5. Real-time Train Layer */}
+                <Source id="train-source" type="geojson" data={trainData}>
+                    <Layer
+                        id="train-layer"
+                        type="symbol"
+                        layout={{
+                            "text-field": "🚃",
+                            "text-size": 18,
+                            "text-allow-overlap": true
                         }}
                     />
                 </Source>
@@ -202,72 +235,18 @@ function MapLibreBackground({
                 {/* 3. Bus Stop Markers (with Clustering) */}
                 {(activeTab === "bus" || activeTab === "subway+bus") && (
                     <Source id="bus-source" type="geojson" data={busData as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
-                        <Layer
-                            id="bus-clusters"
-                            type="circle"
-                            filter={["has", "point_count"]}
-                            paint={{
-                                "circle-color": "#10b981",
-                                "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25]
-                            }}
-                        />
-                        <Layer
-                            id="bus-cluster-count"
-                            type="symbol"
-                            filter={["has", "point_count"]}
-                            layout={{
-                                "text-field": "{point_count}",
-                                "text-size": 12
-                            }}
-                            paint={{ "text-color": "white" }}
-                        />
-                        <Layer
-                            id="bus-unclustered"
-                            type="circle"
-                            filter={["!", ["has", "point_count"]]}
-                            paint={{
-                                "circle-radius": 6,
-                                "circle-color": "white",
-                                "circle-stroke-width": 2,
-                                "circle-stroke-color": "#10b981"
-                            }}
-                        />
+                        <Layer id="bus-clusters" type="circle" filter={["has", "point_count"]} paint={{ "circle-color": "#10b981", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25] }} />
+                        <Layer id="bus-cluster-count" type="symbol" filter={["has", "point_count"]} layout={{ "text-field": "{point_count}", "text-size": 12 }} paint={{ "text-color": "white" }} />
+                        <Layer id="bus-unclustered" type="circle" filter={["!", ["has", "point_count"]]} paint={{ "circle-radius": 6, "circle-color": "white", "circle-stroke-width": 2, "circle-stroke-color": "#10b981" }} />
                     </Source>
                 )}
 
                 {/* 4. WC Markers (with Clustering) */}
                 {activeTab === "wc" && (
                     <Source id="wc-source" type="geojson" data={filteredWCs as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
-                        <Layer
-                            id="wc-clusters"
-                            type="circle"
-                            filter={["has", "point_count"]}
-                            paint={{
-                                "circle-color": "#6366f1",
-                                "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25]
-                            }}
-                        />
-                        <Layer
-                            id="wc-cluster-count"
-                            type="symbol"
-                            filter={["has", "point_count"]}
-                            layout={{
-                                "text-field": "{point_count}",
-                                "text-size": 12
-                            }}
-                            paint={{ "text-color": "white" }}
-                        />
-                        <Layer
-                            id="wc-unclustered"
-                            type="circle"
-                            filter={["!", ["has", "point_count"]]}
-                            paint={{
-                                "circle-radius": 8,
-                                "circle-color": "white",
-                                "circle-stroke-width": 2,
-                                "circle-stroke-color": "#6366f1"
-                            }}
-                        />
+                        <Layer id="wc-clusters" type="circle" filter={["has", "point_count"]} paint={{ "circle-color": "#6366f1", "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25] }} />
+                        <Layer id="wc-cluster-count" type="symbol" filter={["has", "point_count"]} layout={{ "text-field": "{point_count}", "text-size": 12 }} paint={{ "text-color": "white" }} />
+                        <Layer id="wc-unclustered" type="circle" filter={["!", ["has", "point_count"]]} paint={{ "circle-radius": 8, "circle-color": "white", "circle-stroke-width": 2, "circle-stroke-color": "#6366f1" }} />
                     </Source>
                 )}
 
