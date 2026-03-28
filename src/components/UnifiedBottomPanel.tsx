@@ -86,7 +86,17 @@ export default function UnifiedBottomPanel({
     useEffect(() => {
         if (endStation !== null) setDestination(endStation);
         if (startStation !== null) setSource(startStation);
-    }, [startStation, endStation]);
+        
+        // Clear search results if path found
+        if (pathResults) setSearchResults([]);
+    }, [startStation, endStation, pathResults]);
+
+    // Handle "Route Not Found" alert from parent
+    useEffect(() => {
+        if (startStation && endStation && !pathResults && !isLocating) {
+            // Potential no route state
+        }
+    }, [pathResults, startStation, endStation, isLocating]);
 
     const handleSearch = (val: string, type: "source" | "dest") => {
         if (type === "dest") setDestination(val);
@@ -313,13 +323,15 @@ export default function UnifiedBottomPanel({
                                 <motion.div 
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20"
+                                    className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto"
                                 >
                                     <span className="text-zinc-600 dark:text-zinc-400">내용을 확인해 주세요: </span>
                                     {validationError === "source" ? (
                                         <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</>
-                                    ) : (
+                                    ) : validationError === "dest" ? (
                                         <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</>
+                                    ) : (
+                                        <><span className="text-red-600 font-bold">경로를 찾을 수 없습니다</span> (수도권 내)</>
                                     )}
                                 </motion.div>
                             </div>

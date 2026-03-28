@@ -14,6 +14,7 @@ import { fetchStationArrivals, StationArrival } from "@/services/arrivalApi";
 import { useDataWorker } from "@/hooks/useDataWorker";
 import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
 import busData from "@/data/bus-stops.json";
+import { findBusPath, BusPathResult } from "@/utils/busRouting";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
@@ -46,6 +47,8 @@ export default function Home() {
     const [nearestWCs, setNearestWCs] = useState<WCItem[]>([]);
     const [wcLoading, setWcLoading] = useState(false);
     const [isCalculating, setIsCalculating] = useState(false);
+    const [busPathResult, setBusPathResult] = useState<BusPathResult | null>(null);
+    const [validationError, setValidationError] = useState<"source" | "dest" | "no_route" | null>(null);
     const [wcFilters, setWcFilters] = useState({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const [currentCenter, setCurrentCenter] = useState<[number, number]>([37.5665, 126.9780]);
@@ -147,41 +150,49 @@ export default function Home() {
             return;
         }
 
-        const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
+        setIsCalculating(true);
+        setValidationError(null);
 
-        const points = [nStart, ...nWaypoints, nEnd];
-        const res = await findPath(points) as Record<string, PathResult>;
-        
-        setIsCalculating(false);
-
-        if (res && res.time && res.transfer) {
-            // Keep only time and transfer strategies
-            const filtered: Record<string, PathResult> = {
-                time: res.time,
-                transfer: res.transfer
-            };
-            setPathResults(filtered);
-
-            // AUTO-FIT MAP to the route
-            const active = filtered[selectedStrategy] || filtered.time;
-            if (active && active.path.length > 0 && mapRef.current) {
-                const lats = active.path.map(name => stations.find(s => s.name === name)?.lat).filter(Boolean) as number[];
-                const lngs = active.path.map(name => stations.find(s => s.name === name)?.lng).filter(Boolean) as number[];
-                
-                if (lats.length > 0) {
-                    const minLat = Math.min(...lats);
-                    const maxLat = Math.max(...lats);
-                    const minLng = Math.min(...lngs);
-                    const maxLng = Math.max(...lngs);
-
-                    mapRef.current?.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
-                        padding: { top: 100, bottom: 240, left: 100, right: 100 },
-                        duration: 1500
-                    });
-                }
+        // 🟢 BUS ROUTING BRANCH
+        if (activeTab === "bus") {
+            const res = findBusPath(start, end, busStops);
+            if (res) {
+                setBusPathResult(res);
+                setPathResults(null); 
+            } else {
+                setBusPathResult(null);
+                setValidationError("no_route");
             }
+            setIsCalculating(false);
+            return;
         }
-    }, [findPath, stations, selectedStrategy]);
+
+        // 🟠 SUBWAY ROUTING BRANCH
+        const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
+        const points = [nStart, ...nWaypoints, nEnd];
+        
+        try {
+            const res = await findPath(points) as Record<string, PathResult>;
+            setIsCalculating(false);
+
+            if (res && res.time && res.transfer) {
+                const filtered: Record<string, PathResult> = {
+                    time: res.time,
+                    transfer: res.transfer
+                };
+                setPathResults(filtered);
+                setBusPathResult(null);
+            } else {
+                setPathResults(null);
+                setValidationError("no_route");
+            }
+        } catch (error) {
+            console.error("Pathfinding error:", error);
+            setPathResults(null);
+            setValidationError("no_route");
+            setIsCalculating(false);
+        }
+    }, [activeTab, busStops, findPath, stations, selectedStrategy]);
 
     useEffect(() => {
         calculatePath(startStation, waypoints, endStation);
@@ -297,13 +308,12 @@ export default function Home() {
             <UnifiedBottomPanel 
                 activeTab={activeTab}
                 onTabChange={(tab: any) => setActiveTab(tab)}
-                onSearch={(start, end) => {
-                    setStartStation(start);
-                    setEndStation(end);
-                }}
+                onSearch={() => calculatePath(startStation, waypoints, endStation)}
                 onReset={handleReset}
                 startStation={startStation}
                 endStation={endStation}
+                onSetSource={setStartStation}
+                onSetDestination={setEndStation}
                 isDarkMode={isDarkMode}
                 onLocate={handleLocateStation}
                 stations={stations}
@@ -316,6 +326,9 @@ export default function Home() {
                 setTimeDisplayMode={setTimeDisplayMode}
                 isLocating={isLocating}
                 locatingTimer={locatingTimer}
+                isCalculating={isCalculating}
+                validationError={validationError}
+                busPathResult={busPathResult}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">

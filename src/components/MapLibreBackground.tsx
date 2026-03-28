@@ -46,7 +46,7 @@ function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
     onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-    onCenterChange, userLocation, timeDisplayMode
+    onCenterChange, userLocation, timeDisplayMode, selectedBusStop
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -119,7 +119,8 @@ function MapLibreBackground({
         } else if (layer.id === "wc-unclustered") {
             onWCClick(properties as any);
         } else if (layer.id === "bus-unclustered") {
-            onBusStopClick(properties as any);
+            setPopupCoords([coords[0], coords[1]]);
+            onBusStopClick(properties as any, [coords[1], coords[0]]);
         } else if ((layer.id === "wc-clusters" || layer.id === "bus-clusters") && mapRef.current) {
             const clusterId = properties.cluster_id;
             const sourceId = layer.id === "wc-clusters" ? "wc-source" : "bus-source";
@@ -405,13 +406,42 @@ function MapLibreBackground({
                 )}
 
                 {/* 3. Bus Stop Markers ( Clustering) */}
-                {(activeTab === "bus" || activeTab === "subway+bus") && (
                     <Source id="bus-source" type="geojson" data={busData as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
                         <Layer id="bus-clusters" type="circle" filter={["has", "point_count"]} paint={{ "circle-color": "#10b981", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25] }} />
                         <Layer id="bus-cluster-count" type="symbol" filter={["has", "point_count"]} layout={{ "text-field": "{point_count}", "text-size": 12 }} paint={{ "text-color": "white" }} />
-                        <Layer id="bus-unclustered" type="circle" filter={["!", ["has", "point_count"]]} paint={{ "circle-radius": 6, "circle-color": "white", "circle-stroke-width": 2, "circle-stroke-color": "#10b981" }} />
+                        <Layer id="bus-unclustered" type="circle" filter={["!", ["has", "point_count"]]} paint={{ "circle-radius": [
+                            "interpolate", ["linear"], ["zoom"],
+                            12, 3,
+                            14, 6,
+                            16, 8
+                        ], "circle-color": "white", "circle-stroke-width": 2, "circle-stroke-color": "#10b981" }} />
+                        <Layer 
+                            id="bus-station-label"
+                            type="symbol"
+                            filter={["!", ["has", "point_count"]]}
+                            layout={{
+                                "text-field": ["get", "name"],
+                                "text-size": [
+                                    "interpolate", ["linear"], ["zoom"],
+                                    14, 9,
+                                    16, 12
+                                ],
+                                "text-offset": [0, 1.2],
+                                "text-anchor": "top",
+                                "visibility": "visible"
+                            }}
+                            paint={{
+                                "text-color": isDarkMode ? "#ffffff" : "#059669",
+                                "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
+                                "text-halo-width": 1.5,
+                                "text-opacity": [
+                                    "interpolate", ["linear"], ["zoom"],
+                                    14, 0,
+                                    14.5, 1
+                                ]
+                            }}
+                        />
                     </Source>
-                )}
 
                 {/* 4. WC Markers ( Clustering) */}
                 {activeTab === "wc" && (
@@ -446,10 +476,20 @@ function MapLibreBackground({
                                 <button onClick={() => { onSetEnd(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">도착</button>
                             </div>
 
-                            {/* Arrivals */}
+                            {/* Arrivals or Routes */}
                             <div className="space-y-2 max-h-[160px] overflow-y-auto no-scrollbar">
-                                <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">실시간 도착 정보</p>
-                                {stationArrivals.length > 0 ? (
+                                <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">
+                                    {activeTab === 'bus' ? '경유 노선 정보' : '실시간 도착 정보'}
+                                </p>
+                                {activeTab === 'bus' && selectedBusStop ? (
+                                    <div className="flex flex-wrap gap-1">
+                                        {selectedBusStop.routes.map((r: string, i: number) => (
+                                            <span key={i} className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/20">
+                                                {r}
+                                            </span>
+                                        ))}
+                                    </div>
+                                ) : stationArrivals.length > 0 ? (
                                     stationArrivals.slice(0, 6).map((arr, i) => (
                                         <div key={i} className="flex flex-col gap-0.5 p-2 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
                                             <div className="flex items-center justify-between">
