@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
-import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef } from "react-map-gl/maplibre";
+import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef, Popup } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
+import { StationArrival } from "@/services/arrivalApi";
 import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON, convertPathToGeoJSON } from "@/utils/geoJsonUtils";
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
@@ -30,6 +31,7 @@ interface MapLibreProps {
     selectedWC: WCItem | null;
     selectedBusStop: BusStop | null;
     selectedStationName: string | null;
+    stationArrivals: StationArrival[];
     onMapReady?: (map: any) => void;
 }
 
@@ -38,9 +40,11 @@ const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.j
 
 function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
-    onStationClick, onWCClick, onBusStopClick, onMapReady
+    onStationClick, onWCClick, onBusStopClick, onMapReady,
+    onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
+    const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
     
     // Memoized GeoJSON Data
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
@@ -66,18 +70,7 @@ function MapLibreBackground({
     // Animation Effect for Path Line
     useEffect(() => {
         if (!pathResult || !mapRef.current) return;
-        let step = 0;
-        const map = mapRef.current.getMap();
-        const animate = () => {
-            step = (step + 1) % 200;
-            if (map.getLayer("path-line-dash")) {
-                map.setPaintProperty("path-line-dash", "line-dasharray", [1, 2]);
-                map.setPaintProperty("path-line-dash", "line-dasharray-offset", step / 20);
-            }
-            requestAnimationFrame(animate);
-        };
-        const animId = requestAnimationFrame(animate);
-        return () => cancelAnimationFrame(animId);
+        // Animation removed for solid line
     }, [pathResult]);
 
     const [cursor, setCursor] = useState<string>("auto");
@@ -88,12 +81,16 @@ function MapLibreBackground({
 
     const onClick = useCallback((e: any) => {
         const feature = e.features && e.features[0];
-        if (!feature) return;
+        if (!feature) {
+            setPopupCoords(null);
+            return;
+        }
 
         const { layer, properties, geometry } = feature;
         const coords = (geometry as any).coordinates as [number, number];
 
         if (layer.id === "subway-station-circle" || layer.id === "subway-station-label") {
+            setPopupCoords([coords[0], coords[1]]);
             if (onStationClick) onStationClick(properties.name, [coords[1], coords[0]]);
         } else if (layer.id === "wc-unclustered") {
             onWCClick(properties as any);
@@ -150,7 +147,7 @@ function MapLibreBackground({
                     />
                 </Source>
 
-                {/* 0. Path Result Layer (Animated/Colored segments) */}
+                {/* 0. Path Result Layer (Solid/Colored segments) */}
                 {pathData && (
                     <Source id="path-result" type="geojson" data={pathData}>
                         <Layer
@@ -159,19 +156,19 @@ function MapLibreBackground({
                             layout={{ "line-join": "round", "line-cap": "round" }}
                             paint={{
                                 "line-color": ["get", "color"],
-                                "line-width": 10,
-                                "line-opacity": 0.4,
+                                "line-width": 12,
+                                "line-opacity": 0.5,
                                 "line-blur": 3
                             }}
                         />
                         <Layer
-                            id="path-line-dash"
+                            id="path-line-solid"
                             type="line"
                             layout={{ "line-join": "round", "line-cap": "round" }}
                             paint={{
                                 "line-color": ["get", "color"],
-                                "line-width": 5,
-                                "line-dasharray": [2, 4]
+                                "line-width": 6,
+                                "line-opacity": 1
                             }}
                         />
                     </Source>
@@ -183,9 +180,9 @@ function MapLibreBackground({
                         id="subway-station-circle"
                         type="circle"
                         paint={{
-                            "circle-radius": 6,
+                            "circle-radius": 7,
                             "circle-color": "white",
-                            "circle-stroke-width": 2,
+                            "circle-stroke-width": 3,
                             "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
                             "circle-opacity": pathResult ? 0.3 : 1,
                             "circle-stroke-opacity": pathResult ? 0.3 : 1
@@ -196,14 +193,15 @@ function MapLibreBackground({
                         type="symbol"
                         layout={{
                             "text-field": ["get", "name"],
-                            "text-size": 11,
-                            "text-offset": [0, 1.2],
-                            "text-anchor": "top"
+                            "text-size": 13,
+                            "text-offset": [0, 1.4],
+                            "text-anchor": "top",
+                            "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Arial Unicode MS Bold"]]
                         }}
                         paint={{
                             "text-color": isDarkMode ? "white" : "black",
-                            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
-                            "text-halo-width": 1.5,
+                            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
+                            "text-halo-width": 2,
                             "text-opacity": pathResult ? 0.5 : 1
                         }}
                     />
@@ -222,7 +220,7 @@ function MapLibreBackground({
                     />
                 </Source>
 
-                {/* 3. Bus Stop Markers (with Clustering) */}
+                {/* 3. Bus Stop Markers ( Clustering) */}
                 {(activeTab === "bus" || activeTab === "subway+bus") && (
                     <Source id="bus-source" type="geojson" data={busData as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
                         <Layer id="bus-clusters" type="circle" filter={["has", "point_count"]} paint={{ "circle-color": "#10b981", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25] }} />
@@ -231,13 +229,60 @@ function MapLibreBackground({
                     </Source>
                 )}
 
-                {/* 4. WC Markers (with Clustering) */}
+                {/* 4. WC Markers ( Clustering) */}
                 {activeTab === "wc" && (
                     <Source id="wc-source" type="geojson" data={filteredWCs as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
                         <Layer id="wc-clusters" type="circle" filter={["has", "point_count"]} paint={{ "circle-color": "#6366f1", "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25] }} />
                         <Layer id="wc-cluster-count" type="symbol" filter={["has", "point_count"]} layout={{ "text-field": "{point_count}", "text-size": 12 }} paint={{ "text-color": "white" }} />
                         <Layer id="wc-unclustered" type="circle" filter={["!", ["has", "point_count"]]} paint={{ "circle-radius": 8, "circle-color": "white", "circle-stroke-width": 2, "circle-stroke-color": "#6366f1" }} />
                     </Source>
+                )}
+
+                {/* 6. Station Detail Popup */}
+                {popupCoords && selectedStationName && (
+                    <Popup
+                        longitude={popupCoords[0]}
+                        latitude={popupCoords[1]}
+                        closeButton={false}
+                        closeOnClick={false}
+                        onClose={() => setPopupCoords(null)}
+                        anchor="bottom"
+                        offset={15}
+                        className="custom-station-popup"
+                    >
+                        <div className="p-3 min-w-[220px] glass-premium rounded-2xl bg-white/95 dark:bg-zinc-900/95 border border-white/20 shadow-2xl">
+                            <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2">
+                                {selectedStationName}
+                            </h3>
+                            
+                            {/* Navigation Actions */}
+                            <div className="grid grid-cols-3 gap-1.5 mb-4">
+                                <button onClick={() => { onSetStart(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">출발</button>
+                                <button onClick={() => { onSetWaypoint(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95">경유</button>
+                                <button onClick={() => { onSetEnd(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">도착</button>
+                            </div>
+
+                            {/* Arrivals */}
+                            <div className="space-y-2 max-h-[160px] overflow-y-auto no-scrollbar">
+                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">실시간 도착 정보</p>
+                                {stationArrivals.length > 0 ? (
+                                    stationArrivals.slice(0, 6).map((arr, i) => (
+                                        <div key={i} className="flex flex-col gap-0.5 p-2 rounded-lg bg-black/5 dark:bg-white/5 border border-white/5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300">{arr.trainLineNm}</span>
+                                                <span className={`text-[10px] font-black ${arr.updnLine === '0' ? 'text-blue-500' : 'text-orange-500'}`}>
+                                                    {arr.updnLine === '0' ? '상행' : '하행'}
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] font-bold text-zinc-900 dark:text-white">{arr.arrivalMsg2}</span>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="py-4 text-center text-zinc-400 text-[11px] font-bold">도착 정보가 없습니다.</div>
+                                )}
+                            </div>
+                        </div>
+                    </Popup>
                 )}
 
                 <GeolocateControl position="top-left" />

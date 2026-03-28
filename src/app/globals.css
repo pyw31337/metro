@@ -176,41 +176,27 @@ body {
     border-color: #333;
 }
 
-/* ─── Premium Leaflet Popups (Impeccable Overrides) ───────────────────────── */
-.leaflet-popup.premium-popup {
-    margin-bottom: 25px !important;
-}
-
-.leaflet-popup.premium-popup .leaflet-popup-content-wrapper {
+/* ─── MapLibre Premium Popups ─────────────────────────────────────────────── */
+.maplibregl-popup-content {
     background: transparent !important;
-    border: none !important;
     box-shadow: none !important;
     padding: 0 !important;
-    overflow: visible !important;
+    border-radius: 20px !important;
 }
 
-.leaflet-popup.premium-popup .leaflet-popup-content {
-    margin: 0 !important;
-    width: auto !important;
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: rgba(255, 255, 255, 0.95) !important;
 }
 
-/* Customize the Triangle Tip to match our white bubble */
-.leaflet-popup.premium-popup .leaflet-popup-tip-container {
-    width: 20px !important;
-    height: 11px !important;
+.dark .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+    border-top-color: rgba(44, 44, 46, 0.95) !important;
 }
 
-.leaflet-popup.premium-popup .leaflet-popup-tip {
-    background: white !important;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-}
-
-.dark .leaflet-popup.premium-popup .leaflet-popup-tip {
-    background: rgba(44, 44, 46, 0.95) !important;
-    border: 1px solid rgba(255,255,255,0.05) !important;
-}
-
-/* Remove default Leaflet close button */
-.leaflet-popup-close-button {
+/* Hide default close button */
+.maplibregl-popup-close-button {
     display: none !important;
+}
+
+.custom-station-popup {
+    z-index: 3000 !important;
 }

@@ -10,6 +10,7 @@ import type { ActiveTab } from "@/components/MapBackground";
 import type { WCItem } from "@/components/WCLayer";
 import type { BusStop } from "@/components/BusStopLayer";
 import { fetchWCDataClient } from "@/services/wcApi";
+import { fetchStationArrivals, StationArrival } from "@/services/arrivalApi";
 import { useDataWorker } from "@/hooks/useDataWorker";
 import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
 import busData from "@/data/bus-stops.json";
@@ -37,6 +38,7 @@ export default function Home() {
     const [wcFilters, setWcFilters] = useState({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
     const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
+    const [stationArrivals, setStationArrivals] = useState<StationArrival[]>([]);
     const busStops = busData as BusStop[];
     
     const stations = useMemo(() => {
@@ -95,6 +97,15 @@ export default function Home() {
         };
         updateWCs();
     }, [activeTab, userLocation, wcItems, sortWCs]);
+
+    // Fetch station arrivals when selected
+    useEffect(() => {
+        if (selectedStationName) {
+            fetchStationArrivals(selectedStationName).then(setStationArrivals);
+        } else {
+            setStationArrivals([]);
+        }
+    }, [selectedStationName]);
 
     // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
     const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
@@ -179,6 +190,7 @@ export default function Home() {
                     onBusStopClick={setSelectedBusStop}
                     onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number])}
                     selectedStationName={selectedStationName}
+                    stationArrivals={stationArrivals}
                     selectedWC={selectedWC}
                     selectedBusStop={selectedBusStop}
                     onSetStart={setStartStation}
