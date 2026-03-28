@@ -1,4 +1,4 @@
-import { SUBWAY_LINES, Station, SubwayLine } from "@/data/subway-lines";
+import { SUBWAY_LINES, Station, SubwayLine, getAllStations } from "@/data/subway-lines";
 import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";
 
@@ -113,4 +113,43 @@ export const convertTrainsToGeoJSON = (trains: any[]): GeoJsonFeatureCollection 
       }
     }))
   };
+};
+
+export const convertPathToGeoJSON = (path: string[]): GeoJsonFeatureCollection => {
+    const features: any[] = [];
+    const allStations = getAllStations();
+
+    for (let i = 0; i < path.length - 1; i++) {
+        const s1Name = path[i];
+        const s2Name = path[i+1];
+        const s1 = allStations.find(s => s.name === s1Name);
+        const s2 = allStations.find(s => s.name === s2Name);
+
+        if (s1 && s2) {
+            // Find common line to get color
+            const commonLines = s1.lines.filter(l => s2.lines.includes(l));
+            let color = "#3b82f6"; // Default fallback
+            if (commonLines.length > 0) {
+                const line = SUBWAY_LINES.find(l => l.name === commonLines[0]);
+                if (line) color = line.color;
+            }
+
+            features.push({
+                type: "Feature" as const,
+                geometry: {
+                    type: "LineString" as const,
+                    coordinates: [[s1.lng, s1.lat], [s2.lng, s2.lat]]
+                },
+                properties: {
+                    type: "path_segment",
+                    color: color
+                }
+            });
+        }
+    }
+
+    return {
+        type: "FeatureCollection" as const,
+        features: features
+    };
 };

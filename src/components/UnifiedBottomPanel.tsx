@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Search, Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw } from "lucide-react";
+import { Search, Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station } from "@/data/subway-lines";
@@ -54,6 +54,7 @@ export default function UnifiedBottomPanel({
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isListExpanded, setIsListExpanded] = useState(true);
 
     useEffect(() => {
         setDestination(endStation || "");
@@ -170,12 +171,26 @@ export default function UnifiedBottomPanel({
                         {isExpanded && children && (
                             <motion.div
                                 key="expanded-content"
-                                initial={{ height: 0, opacity: 0, y: 10 }}
-                                animate={{ height: "auto", opacity: 1, y: 0 }}
-                                exit={{ height: 0, opacity: 0, y: 10 }}
-                                className="max-h-[300px] overflow-y-auto no-scrollbar border-b border-black/5 dark:border-white/5 pb-2"
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: "auto", opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="overflow-hidden border-b border-black/5 dark:border-white/5 pb-2"
                             >
-                                {children}
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[14px] font-bold text-zinc-400 uppercase tracking-widest pl-2">Recommendation</span>
+                                    <button 
+                                        onClick={() => setIsListExpanded(!isListExpanded)}
+                                        className="p-1 hover:bg-black/5 dark:hover:bg-white/5 rounded-full text-zinc-400 transition-all active:scale-90"
+                                    >
+                                        {isListExpanded ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+                                    </button>
+                                </div>
+                                <motion.div
+                                    animate={{ height: isListExpanded ? "auto" : 0, opacity: isListExpanded ? 1 : 0 }}
+                                    className="max-h-[300px] overflow-y-auto no-scrollbar"
+                                >
+                                    {children}
+                                </motion.div>
                             </motion.div>
                         )}
                     </AnimatePresence>

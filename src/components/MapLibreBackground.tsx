@@ -3,11 +3,10 @@
 import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
 import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { getAllStations } from "@/data/subway-lines";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
-import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON } from "@/utils/geoJsonUtils";
+import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON, convertPathToGeoJSON } from "@/utils/geoJsonUtils";
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
@@ -49,6 +48,12 @@ function MapLibreBackground({
     const wcData = useMemo(() => convertWCToGeoJSON(wcItems), [wcItems]);
     const trainData = useMemo(() => convertTrainsToGeoJSON(trains), [trains]);
 
+    // Memoized Path Data with exact line colors
+    const pathData = useMemo(() => {
+        if (!pathResult) return null;
+        return convertPathToGeoJSON(pathResult.path);
+    }, [pathResult]);
+
     // Filters for WCs
     const filteredWCs = useMemo(() => {
         let features = wcData.features;
@@ -57,21 +62,6 @@ function MapLibreBackground({
         if (wcFilters.emergencyBell) features = features.filter(f => f.properties.emergencyBell);
         return { type: "FeatureCollection" as const, features };
     }, [wcData, wcFilters]);
-
-    // Memoized Path Data
-    const pathData = useMemo(() => {
-        if (!pathResult) return null;
-        const coords: [number, number][] = [];
-        pathResult.path.forEach(name => {
-            const station = getAllStations().find(s => s.name === name);
-            if (station) coords.push([station.lng, station.lat]);
-        });
-        return {
-            type: "Feature" as const,
-            geometry: { type: "LineString" as const, coordinates: coords },
-            properties: {}
-        };
-    }, [pathResult]);
 
     // Animation Effect for Path Line
     useEffect(() => {
@@ -160,7 +150,7 @@ function MapLibreBackground({
                     />
                 </Source>
 
-                {/* 0. Path Result Layer (Animated/Colored over grayscale) */}
+                {/* 0. Path Result Layer (Animated/Colored segments) */}
                 {pathData && (
                     <Source id="path-result" type="geojson" data={pathData}>
                         <Layer
@@ -168,10 +158,10 @@ function MapLibreBackground({
                             type="line"
                             layout={{ "line-join": "round", "line-cap": "round" }}
                             paint={{
-                                "line-color": "#3b82f6",
-                                "line-width": 8,
-                                "line-opacity": 0.6,
-                                "line-blur": 2
+                                "line-color": ["get", "color"],
+                                "line-width": 10,
+                                "line-opacity": 0.4,
+                                "line-blur": 3
                             }}
                         />
                         <Layer
@@ -179,7 +169,7 @@ function MapLibreBackground({
                             type="line"
                             layout={{ "line-join": "round", "line-cap": "round" }}
                             paint={{
-                                "line-color": "#60a5fa",
+                                "line-color": ["get", "color"],
                                 "line-width": 5,
                                 "line-dasharray": [2, 4]
                             }}

@@ -103,10 +103,19 @@ export default function Home() {
             return;
         }
         setIsCalculating(true);
-        const points = [start, ...waypoints.filter(w => w.trim() !== ""), end];
+        
+        // Normalize: Strip "내 위치 : " and platform info from strings
+        const normalize = (s: string) => s.split(' : ').pop()?.split(' ').shift() || s;
+        
+        const nStart = normalize(start);
+        const nEnd = normalize(end);
+        const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
+
+        const points = [nStart, ...nWaypoints, nEnd];
         const res = await findPath(points) as PathResult;
         setPathResult(res);
-        setIsCalculating(false);
+        setIsCalculating(true); // Short delay for animation feel
+        setTimeout(() => setIsCalculating(false), 500);
     }, [findPath]);
 
     useEffect(() => {
@@ -214,21 +223,48 @@ export default function Home() {
                             </div>
                         </div>
 
-                        <div className="flex flex-col gap-2 relative pl-4">
+                        <div className="flex flex-col gap-3 relative pl-4">
                             <div className="absolute left-[19px] top-2 bottom-2 w-0.5 bg-zinc-200 dark:bg-zinc-800"></div>
                             {pathResult.path.map((name, idx) => {
                                 const isStart = idx === 0;
                                 const isEnd = idx === pathResult.path.length - 1;
+                                
+                                // Mock Arrival Time Calculation
+                                const now = new Date();
+                                const minutesToAdd = idx * 2 + (idx > 5 ? 5 : 0); // basic estim
+                                const arrivalTime = new Date(now.getTime() + minutesToAdd * 60000);
+                                const timeStr = `${arrivalTime.getHours().toString().padStart(2, '0')}:${arrivalTime.getMinutes().toString().padStart(2, '0')}`;
+
+                                // Mock Platform Info for Transfers
+                                const station = stations.find(s => s.name === name);
+                                const isTransfer = station && station.lines.length > 1 && !isStart && !isEnd;
+                                const platform = `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}`;
+
                                 return (
-                                    <div key={idx} className="flex items-center gap-5 relative group">
-                                        <div className={`w-3 h-3 rounded-full border-2 z-10 ${
-                                            isStart ? 'bg-blue-600 border-blue-200' : 
-                                            isEnd ? 'bg-rose-500 border-rose-200' : 
-                                            'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
-                                        }`}></div>
-                                        <div className={`font-extrabold text-[15px] ${isStart || isEnd ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>
-                                            {name}
+                                    <div key={idx} className="flex flex-col gap-1">
+                                        <div className="flex items-center gap-5 relative group">
+                                            <div className={`w-3 h-3 rounded-full border-2 z-10 transition-all ${
+                                                isStart ? 'bg-blue-600 border-blue-200 scale-125' : 
+                                                isEnd ? 'bg-rose-500 border-rose-200 scale-125' : 
+                                                'bg-white dark:bg-zinc-900 border-zinc-300 dark:border-zinc-700'
+                                            }`}></div>
+                                            <div className="flex flex-1 items-center justify-between pr-2">
+                                                <div className={`font-extrabold text-[15px] ${isStart || isEnd ? 'text-zinc-900 dark:text-white' : 'text-zinc-500'}`}>
+                                                    {name}
+                                                </div>
+                                                <div className="text-[11px] font-mono font-bold text-zinc-400">
+                                                    {isEnd ? "도착 " : ""} {timeStr}
+                                                </div>
+                                            </div>
                                         </div>
+                                        {isTransfer && (
+                                            <div className="ml-8 mb-2">
+                                                <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/10 text-[10px] font-bold text-zinc-500">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                                                    빠른 환승 {platform}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 );
                             })}
