@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { findShortestPath, PathResult } from "@/utils/pathfinding";
+import { findPathWithStrategy as findShortestPath, PathResult } from "@/utils/pathfinding";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 import { searchStations } from "@/utils/hangulSearch";
 import { matchesSearch } from "@/utils/hangulSearch";
@@ -375,7 +375,7 @@ export default function RoutePlanner({
         const t = setTimeout(() => {
             const s = startVal.trim(), e = endVal.trim();
             if (!s || !e) { setPathResult(null); onPathFound(null); return; }
-            const res = findShortestPath([s, e]);
+            const res = findShortestPath([s, e], "time");
             if (res) {
                 setPathResult(res);
                 setTimelineData(generateTimeline(res.path));

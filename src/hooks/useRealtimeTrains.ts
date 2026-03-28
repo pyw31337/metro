@@ -53,7 +53,11 @@ export function useRealtimeTrains() {
             try {
                 const results = await Promise.all(lineNames.map(async (name) => {
                     try {
-                        const res = await fetch(`/api/subway/position?line=${encodeURIComponent(name)}`);
+                        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeSubwayPosition/1/100/${encodeURIComponent(name)}`;
+                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                        
+                        const res = await fetch(proxyUrl);
                         const json = await res.json();
                         const list: RealtimePosition[] = json?.realtimeSubwayPosition?.row || [];
                         return { name, list };
