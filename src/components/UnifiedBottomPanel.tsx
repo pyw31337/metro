@@ -125,9 +125,9 @@ export default function UnifiedBottomPanel({
                 transition={THEME.transitions.spring}
             >
                 <div className="flex flex-col p-4 gap-3">
-                    {/* Strategy Selector (Only when pathResults exists) */}
+                    {/* Strategy Selector (1 Horizontal Line) */}
                     {pathResults && (
-                        <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1 border-b border-black/5 dark:border-white/5 mb-1">
+                        <div className="flex items-stretch gap-2 mb-1">
                             {strategies.map((strat) => {
                                 const result = pathResults[strat.id];
                                 if (!result) return null;
@@ -137,18 +137,18 @@ export default function UnifiedBottomPanel({
                                         key={strat.id}
                                         onClick={() => onStrategyChange(strat.id)}
                                         className={`
-                                            flex-shrink-0 flex flex-col gap-0.5 px-4 py-2 rounded-2xl border transition-all text-left
+                                            flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 rounded-2xl border transition-all text-center
                                             ${isSelected 
-                                                ? "bg-blue-500 border-blue-600 text-white shadow-lg scale-105" 
+                                                ? "bg-blue-500 border-blue-600 text-white shadow-lg scale-[1.02]" 
                                                 : "bg-zinc-100 dark:bg-white/5 border-transparent text-zinc-500 dark:text-zinc-400"
                                             }
                                         `}
                                     >
-                                        <span className="text-[11px] font-black uppercase tracking-tight">{strat.label}</span>
-                                        <span className={`text-[13px] font-black ${isSelected ? "text-white" : "text-zinc-900 dark:text-white"}`}>
+                                        <span className="text-[10px] font-black uppercase tracking-tight opacity-70">{strat.label}</span>
+                                        <span className={`text-[14px] font-black ${isSelected ? "text-white" : "text-zinc-900 dark:text-white"}`}>
                                             {Math.round(result.totalWeight)}분
                                         </span>
-                                        <span className={`text-[9px] font-bold opacity-70`}>환승 {result.transferCount}회</span>
+                                        <span className={`text-[9px] font-bold opacity-60`}>환승 {result.transferCount}회</span>
                                     </button>
                                 );
                             })}
@@ -156,7 +156,7 @@ export default function UnifiedBottomPanel({
                     )}
 
                     {/* Integrated Search Results Extension */}
-                    <AnimatePresence>
+                    <AnimatePresence mode="wait">
                         {searchResults.length > 0 && activeField && (
                             <motion.div 
                                 initial={{ height: 0, opacity: 0 }}
@@ -183,7 +183,7 @@ export default function UnifiedBottomPanel({
                         )}
                     </AnimatePresence>
 
-                    {/* Slim Functional Inputs */}
+                    {/* Slim Functional Inputs with Clear Buttons */}
                     <div className="grid grid-cols-2 gap-2">
                         {/* Destination */}
                         <div className="relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border border-transparent focus-within:border-blue-500/50 transition-all">
@@ -196,6 +196,11 @@ export default function UnifiedBottomPanel({
                                 onChange={(e) => handleSearch(e.target.value, "dest")}
                                 className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] px-2 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
                             />
+                            {destination && (
+                                <button onClick={() => { setDestination(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
+                                    <X size={14} />
+                                </button>
+                            )}
                         </div>
 
                         {/* Source */}
@@ -209,7 +214,12 @@ export default function UnifiedBottomPanel({
                                 onChange={(e) => handleSearch(e.target.value, "source")}
                                 className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] px-2 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
                             />
-                            <button onClick={onLocate} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all"><Locate size={14} /></button>
+                            {source && (
+                                <button onClick={() => { setSource(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all mr-1">
+                                    <X size={14} />
+                                </button>
+                            )}
+                            <button onClick={onLocate} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all" title="현재 위치 주변역 찾기"><Locate size={14} /></button>
                         </div>
                     </div>
 
