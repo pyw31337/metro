@@ -73,7 +73,7 @@ export default function MapControls({
                                     visible: { y: 0, opacity: 1, scale: 1 },
                                     hidden: { y: -20, opacity: 0, scale: 0.8 }
                                 }}
-                                className="w-12 h-12 rounded-2xl glass-premium flex items-center justify-center text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-lg hover:scale-105 active:scale-95 transition-all"
+                                className="w-12 h-12 rounded-2xl flex items-center justify-center text-zinc-600 dark:text-zinc-200 bg-white/95 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-lg hover:scale-105 active:scale-95 transition-all"
                                 title={item.label}
                             >
                                 {item.icon}

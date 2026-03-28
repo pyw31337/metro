@@ -247,6 +247,7 @@ export default function Home() {
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
                     onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
                     onMapReady={(r) => { mapRef.current = r; }}
+                    userLocation={userLocation}
                 />
             </div>
 

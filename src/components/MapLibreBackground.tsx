@@ -34,6 +34,7 @@ interface MapLibreProps {
     stationArrivals: StationArrival[];
     onCenterChange?: (lat: number, lng: number) => void;
     onMapReady?: (map: any) => void;
+    userLocation: [number, number] | null;
 }
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -43,10 +44,12 @@ function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
     onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-    onCenterChange
+    onCenterChange, userLocation
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
+    const [focusedLine, setFocusedLine] = useState<string | null>(null);
+    const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
     
     // Memoized GeoJSON Data
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
@@ -92,14 +95,24 @@ function MapLibreBackground({
         const feature = e.features && e.features[0];
         if (!feature) {
             setPopupCoords(null);
+            setFocusedLine(null); // Reset focus on background click
             return;
         }
 
         const { layer, properties, geometry } = feature;
+        
+        if (layer.id === "subway-line-layer") {
+            // Focus on a specific line, reset if already focused
+            setFocusedLine(prev => prev === properties.name ? null : properties.name);
+            setPopupCoords(null);
+            return;
+        }
+
         const coords = (geometry as any).coordinates as [number, number];
 
         if (layer.id === "subway-station-circle" || layer.id === "subway-station-label") {
             setPopupCoords([coords[0], coords[1]]);
+            setFocusedLine(null); // Clear line focus when selecting a station
             if (onStationClick) onStationClick(properties.name, [coords[1], coords[0]]);
         } else if (layer.id === "wc-unclustered") {
             onWCClick(properties as any);
@@ -138,7 +151,7 @@ function MapLibreBackground({
                     const { latitude, longitude } = e.viewState;
                     if (onCenterChange) onCenterChange(latitude, longitude);
                 }}
-                interactiveLayerIds={["subway-station-circle", "subway-station-label", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
+                interactiveLayerIds={["subway-line-layer", "subway-station-circle", "subway-station-label", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
                 ref={(r) => {
                     if (r) {
                         mapRef.current = r;
@@ -146,16 +159,37 @@ function MapLibreBackground({
                     }
                 }}
             >
-                {/* 2. Subway Lines Layer */}
+                {/* 1.1 Dark Mode Base Dimming Overlay */}
+                {isDarkMode && (
+                    <Layer
+                        id="dark-mode-overlay"
+                        type="background"
+                        paint={{
+                            "background-color": "black",
+                            "background-opacity": 0.15
+                        }}
+                        beforeId="subway-line-layer"
+                    />
+                )}
+
+                {/* 1. Subway Lines Layer */}
                 <Source id="subway-lines" type="geojson" data={subwayData.lines}>
                     <Layer
                         id="subway-line-layer"
                         type="line"
                         layout={{ "line-join": "round", "line-cap": "round" }}
                         paint={{
-                            "line-color": pathResult ? (isDarkMode ? "#333333" : "#cccccc") : ["get", "color"],
+                            "line-color": pathResult 
+                                ? (isDarkMode ? "#333333" : "#cccccc") 
+                                : focusedLine 
+                                    ? ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], (isDarkMode ? "#2D3436" : "#E2E8F0")]
+                                    : ["get", "color"],
                             "line-width": 4,
-                            "line-opacity": pathResult ? 0.4 : 0.8
+                            "line-opacity": pathResult 
+                                ? 0.4 
+                                : focusedLine
+                                    ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.2]
+                                    : 0.8
                         }}
                     />
                 </Source>
@@ -263,52 +297,75 @@ function MapLibreBackground({
                 {routeStationData.features.map((f: any, i: number) => {
                     const { name, arrivalTime, platformInfo, routeColor } = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
+                    const isFocused = focusedBubble === name;
                     
                     return (
-                        <Marker key={`info-${i}`} longitude={lng} latitude={lat} anchor="top-left" offset={[15, 12]}>
-                            <div className="flex flex-col gap-1 p-1.5 px-2 rounded-xl bg-white/95 dark:bg-zinc-900/95 backdrop-blur-md border border-white/20 shadow-lg pointer-events-none ring-1 ring-black/5 min-w-[80px]">
+                        <Marker 
+                            key={`info-${i}`} 
+                            longitude={lng} 
+                            latitude={lat} 
+                            anchor="top" 
+                            offset={[0, 15]}
+                        >
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setFocusedBubble(name);
+                                }}
+                                className={`flex flex-col gap-0 p-0.5 px-1.5 rounded-xl bg-white/70 dark:bg-zinc-900/70 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 ${isFocused ? 'scale-[1.1] shadow-2xl z-[5000] border-blue-500 bg-white/90 dark:bg-zinc-800' : 'z-[2000]'}`}
+                                style={{ minWidth: '60px' }}
+                            >
                                 {/* Station Name */}
                                 <span 
-                                    className="text-[11px] font-black leading-none mb-0.5"
+                                    className="text-[9px] font-black leading-tight"
                                     style={{ color: routeColor }}
                                 >
                                     {name}
                                 </span>
                                 
-                                <div className="flex flex-col gap-0.5">
-                                    {/* Arrival Time */}
+                                <div className="flex flex-col gap-0">
+                                    {/* Info Row: Time & Fast Transfer */}
                                     <div className="flex items-center gap-1">
-                                        <div className="w-1 h-1 rounded-full bg-zinc-400" />
-                                        <span className="text-[9px] font-black text-zinc-900 dark:text-zinc-300 whitespace-nowrap">
-                                            {arrivalTime} 도착
+                                        <span className="text-[10px] font-black text-zinc-900 dark:text-white leading-tight">
+                                            {arrivalTime}
                                         </span>
+                                        {platformInfo && (
+                                            <div className="flex items-center gap-0.5">
+                                                <div className="w-1 h-1 rounded-full bg-blue-500/50" />
+                                                <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
+                                                    환승 {platformInfo}
+                                                </span>
+                                            </div>
+                                        )}
                                     </div>
-                                    
-                                    {/* Fast Transfer (if exists) */}
-                                    {platformInfo && (
-                                        <div className="flex items-center gap-1">
-                                            <div className="w-1 h-1 rounded-full bg-blue-500" />
-                                            <span className="text-[9px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap">
-                                                빠른환승 {platformInfo}
-                                            </span>
-                                        </div>
-                                    )}
                                 </div>
-                            </div>
+                            </button>
                         </Marker>
                     );
                 })}
 
-                {/* 5. Real-time Train Layer */}
+                {/* 5.1 User Location Marker (RED) */}
+                {userLocation && (
+                    <Marker longitude={userLocation[1]} latitude={userLocation[0]} anchor="bottom">
+                        <div className="flex flex-col items-center group">
+                            <div className="px-2 py-1 rounded-full bg-rose-500 text-white text-[10px] font-black shadow-lg mb-1 animate-bounce">
+                                내 위치
+                            </div>
+                            <div className="w-3 h-3 rounded-full bg-rose-500 border-2 border-white shadow-md" />
+                        </div>
+                    </Marker>
+                )}
+
+                {/* 5. Real-time Train Layer (Rendering on top of everything else) */}
                 <Source id="train-source" type="geojson" data={trainData}>
                     <Layer
                         id="train-halo"
                         type="circle"
                         paint={{
-                            "circle-radius": 10,
+                            "circle-radius": 12,
                             "circle-color": ["get", "lineColor"],
                             "circle-blur": 1,
-                            "circle-opacity": 0.6
+                            "circle-opacity": 0.7
                         }}
                     />
                     <Layer
@@ -316,9 +373,10 @@ function MapLibreBackground({
                         type="symbol"
                         layout={{
                             "text-field": "🚃",
-                            "text-size": 16,
+                            "text-size": 18,
                             "text-allow-overlap": true,
-                            "text-ignore-placement": true
+                            "text-ignore-placement": true,
+                            "text-anchor": "center"
                         }}
                     />
                 </Source>
@@ -353,7 +411,7 @@ function MapLibreBackground({
                         offset={15}
                         className="custom-station-popup"
                     >
-                        <div className="p-3 min-w-[220px] glass-premium rounded-2xl bg-white/95 dark:bg-zinc-900/95 border border-white/20 shadow-2xl">
+                        <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
                             <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2">
                                 {selectedStationName}
                             </h3>
@@ -367,10 +425,10 @@ function MapLibreBackground({
 
                             {/* Arrivals */}
                             <div className="space-y-2 max-h-[160px] overflow-y-auto no-scrollbar">
-                                <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">실시간 도착 정보</p>
+                                <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">실시간 도착 정보</p>
                                 {stationArrivals.length > 0 ? (
                                     stationArrivals.slice(0, 6).map((arr, i) => (
-                                        <div key={i} className="flex flex-col gap-0.5 p-2 rounded-lg bg-black/5 dark:bg-white/5 border border-white/5">
+                                        <div key={i} className="flex flex-col gap-0.5 p-2 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300">{arr.trainLineNm}</span>
                                                 <span className={`text-[10px] font-black ${arr.updnLine === '0' ? 'text-blue-500' : 'text-orange-500'}`}>
@@ -381,14 +439,13 @@ function MapLibreBackground({
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="py-4 text-center text-zinc-400 text-[11px] font-bold">도착 정보가 없습니다.</div>
+                                    <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">도착 정보가 없습니다.</div>
                                 )}
                             </div>
                         </div>
                     </Popup>
                 )}
 
-                <NavigationControl position="bottom-right" />
             </Map>
         </div>
     );

@@ -62,6 +62,7 @@ export default function UnifiedBottomPanel({
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
+    const [isCollapsed, setIsCollapsed] = useState(false);
 
     useEffect(() => {
         setDestination(endStation || "");
@@ -157,36 +158,40 @@ export default function UnifiedBottomPanel({
         >
             <motion.div 
                 layout
-                className="max-w-lg w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-hidden"
-                style={{ paddingBottom: keyboardOffset > 0 ? "12px" : "calc(env(safe-area-inset-bottom) + 12px)" }}
+                className={`max-w-lg w-full bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-hidden transition-all duration-500 ease-in-out ${isCollapsed ? 'translate-y-[calc(100%-44px)]' : 'translate-y-0'}`}
+                style={{ paddingBottom: keyboardOffset > 0 ? "8px" : "calc(env(safe-area-inset-bottom) + 8px)" }}
                 initial={{ y: 200 }}
-                animate={{ y: 0 }}
+                animate={{ y: isCollapsed ? "calc(100% - 44px)" : 0 }}
                 transition={THEME.transitions.spring}
             >
-                <div className="flex flex-col p-4 gap-3">
-                    {/* Strategy Selector (2-Segment Tab) */}
+                {/* 1. Drawer Handle Bar */}
+                <div 
+                    onClick={() => setIsCollapsed(!isCollapsed)}
+                    className="w-full py-2.5 flex items-center justify-center cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group"
+                >
+                    <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 transition-colors" />
+                </div>
+
+                <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
+                    {/* 2. Strategy Selector (Ultra-Compact Single Row) */}
                     {pathResults && pathResults.time && pathResults.transfer && (
-                        <div className="grid grid-cols-2 bg-zinc-100 dark:bg-white/5 rounded-2xl p-1 mb-1 border border-black/5 dark:border-white/5">
-                            {/* Min Time */}
+                        <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 mb-0.5 border border-black/5 dark:border-white/5">
                             <button 
                                 onClick={() => onStrategyChange("time")}
-                                className={`flex flex-col items-center justify-center py-2 rounded-[14px] transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg scale-[1.02]" : "text-zinc-500 dark:text-zinc-400"}`}
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}
                             >
-                                <span className={`text-[11px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[15px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
-                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
+                                <span className="text-[13px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
                             </button>
 
-                            {/* Min Transfer */}
+                            <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+
                             <button 
                                 onClick={() => onStrategyChange("transfer")}
-                                className={`flex flex-col items-center justify-center py-2 rounded-[14px] transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg scale-[1.02]" : "text-zinc-500 dark:text-zinc-400"}`}
+                                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}
                             >
-                                <span className={`text-[11px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
-                                <div className="flex items-baseline gap-1">
-                                    <span className="text-[15px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
-                                </div>
+                                <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
+                                <span className="text-[13px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
                             </button>
                         </div>
                     )}
@@ -222,11 +227,11 @@ export default function UnifiedBottomPanel({
                         )}
                     </AnimatePresence>
 
-                    {/* Slim Functional Inputs with Clear Buttons */}
-                    <div className="grid grid-cols-2 gap-2">
+                    {/* 3. Compact Inputs */}
+                    <div className="grid grid-cols-2 gap-2 mt-0.5">
                         {/* Destination */}
-                        <div className={`relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
-                            <span className="text-[12px] font-black text-blue-500 shrink-0 mr-1">도착</span>
+                        <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
+                            <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">도착</span>
                             <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                 {(!activeField || activeField !== "dest") && destination && (
                                     <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">
@@ -251,8 +256,8 @@ export default function UnifiedBottomPanel({
                         </div>
 
                         {/* Source */}
-                        <div className={`relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
-                            <span className="text-[12px] font-black text-blue-500 shrink-0 mr-1">출발</span>
+                        <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
+                            <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                             <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                 {(!activeField || activeField !== "source") && source && (
                                     <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">
@@ -274,11 +279,10 @@ export default function UnifiedBottomPanel({
                                     <X size={14} />
                                 </button>
                             )}
-                            <button onClick={onLocate} className="p-1.5 text-blue-500 hover:bg-blue-500/10 rounded-lg transition-all" title="현재 위치 주변역 찾기"><Locate size={14} /></button>
                         </div>
                     </div>
 
-                    {/* Bottom Utility Row */}
+                    {/* 4. Bottom Utility Row (Compact) */}
                     <div className="flex items-center gap-2">
                         <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl">
                             {tabs.map((tab) => (
@@ -286,7 +290,7 @@ export default function UnifiedBottomPanel({
                                     key={tab.id}
                                     onClick={() => onTabChange(tab.id)}
                                     className={`
-                                        flex-1 flex flex-col items-center justify-center py-1.5 rounded-lg transition-all
+                                        flex-1 flex flex-col items-center justify-center py-1 rounded-lg transition-all
                                         ${activeTab === tab.id 
                                             ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" 
                                             : "text-zinc-400"
@@ -300,11 +304,11 @@ export default function UnifiedBottomPanel({
                         </div>
                         <button 
                             onClick={() => onSearch(source, destination)}
-                            className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 h-10 px-6 rounded-xl font-black text-[13px] active:scale-95 transition-all"
+                            className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 h-9 px-5 rounded-xl font-black text-[13px] active:scale-95 transition-all"
                         >
                             길찾기
                         </button>
-                        <button onClick={onReset} className="w-10 h-10 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
+                        <button onClick={onReset} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
                     </div>
                 </div>
             </motion.div>
