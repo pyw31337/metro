@@ -102,6 +102,41 @@ export default function UnifiedBottomPanel({
         setActiveField(null);
     };
 
+    const getLineBadge = (lineName: string) => {
+        const lineColors: Record<string, string> = {
+            "1호선": "#0052A4", "2호선": "#00A84D", "3호선": "#EF7C1C", "4호선": "#00A5DE",
+            "5호선": "#996CAC", "6호선": "#CD7C2F", "7호선": "#747F00", "8호선": "#E6186C",
+            "9호선": "#BDB092", "수인분당선": "#F5A200", "신분당선": "#D4003B", "경의중앙선": "#77C4A3",
+            "공항철도": "#0090D2", "경춘선": "#0C8E72", "인천1호선": "#7CA8D5", "인천2호선": "#ED8B00"
+        };
+        const color = lineColors[lineName] || "#999999";
+        const short = lineName.replace("호선", "").replace("철도", "").replace("중앙선", "").replace("분당선", "").substring(0, 1).toUpperCase();
+        
+        return (
+            <span 
+                className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm"
+                style={{ backgroundColor: color }}
+            >
+                {short}
+            </span>
+        );
+    };
+
+    const formatStationDisplay = (value: string) => {
+        if (!value) return null;
+        const namePart = value.split(' : ').pop() || value;
+        const parts = namePart.split(' ');
+        const stationName = parts[0];
+        const lineName = parts[1];
+        
+        return (
+            <div className="flex items-center gap-1.5 overflow-hidden">
+                <span className="truncate">{stationName}</span>
+                {lineName && getLineBadge(lineName)}
+            </div>
+        );
+    };
+
     const strategies: { id: PathStrategy; label: string; sub: string }[] = [
         { id: "time", label: "최소 시간", sub: "가장 빠른 이동" },
         { id: "transfer", label: "최소 환승", sub: "편안한 이동" },
@@ -135,7 +170,6 @@ export default function UnifiedBottomPanel({
                                 <span className={`text-[11px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-[15px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
-                                    <span className="text-[10px] font-bold opacity-70">환승 {pathResults.time.transferCount}회</span>
                                 </div>
                             </button>
 
@@ -147,7 +181,6 @@ export default function UnifiedBottomPanel({
                                 <span className={`text-[11px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-[15px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
-                                    <span className="text-[10px] font-bold opacity-70">환승 {pathResults.transfer.transferCount}회</span>
                                 </div>
                             </button>
                         </div>
@@ -166,14 +199,17 @@ export default function UnifiedBottomPanel({
                                     {searchResults.map((s, i) => (
                                         <button
                                             key={i}
-                                            onClick={() => selectLocation(s.name)}
+                                            onClick={() => selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim())}
                                             className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-all text-left"
                                         >
                                             <div className="flex items-center gap-2">
                                                 {s.type === 'subway' ? <Train size={14} className="text-zinc-400" /> : <Bus size={14} className="text-zinc-400" />}
                                                 <span className="font-bold text-zinc-900 dark:text-white text-[14px]">{s.name}</span>
+                                                {s.type === 'subway' && s.lines?.map((l: string) => (
+                                                    <span key={l}>{getLineBadge(l)}</span>
+                                                ))}
                                             </div>
-                                            <span className="text-[9px] text-zinc-400 font-black uppercase">{s.lines?.join(", ") || s.id}</span>
+                                            <span className="text-[9px] text-zinc-400 font-black uppercase">{s.line || s.id}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -186,14 +222,22 @@ export default function UnifiedBottomPanel({
                         {/* Destination */}
                         <div className="relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border border-transparent focus-within:border-blue-500/50 transition-all">
                             <MapPin size={14} className="text-blue-500 shrink-0" />
-                            <input 
-                                type="text"
-                                placeholder="도착역"
-                                value={destination}
-                                onFocus={() => setActiveField("dest")}
-                                onChange={(e) => handleSearch(e.target.value, "dest")}
-                                className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] px-2 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
-                            />
+                            <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
+                                {(!activeField || activeField !== "dest") && destination && (
+                                    <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">
+                                        {formatStationDisplay(destination)}
+                                    </div>
+                                )}
+                                <input 
+                                    type="text"
+                                    placeholder={!destination ? "도착역" : ""}
+                                    value={activeField === "dest" ? destination : ""}
+                                    onFocus={() => setActiveField("dest")}
+                                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
+                                    onChange={(e) => handleSearch(e.target.value, "dest")}
+                                    className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`}
+                                />
+                            </div>
                             {destination && (
                                 <button onClick={() => { setDestination(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all">
                                     <X size={14} />
@@ -204,14 +248,22 @@ export default function UnifiedBottomPanel({
                         {/* Source */}
                         <div className="relative flex items-center px-3 h-10 bg-zinc-100 dark:bg-white/5 rounded-xl border border-transparent focus-within:border-blue-500/50 transition-all">
                             <Navigation size={14} className="text-zinc-400 shrink-0" />
-                            <input 
-                                type="text"
-                                placeholder="출발역"
-                                value={source}
-                                onFocus={() => setActiveField("source")}
-                                onChange={(e) => handleSearch(e.target.value, "source")}
-                                className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] px-2 placeholder:text-zinc-400 text-zinc-900 dark:text-white"
-                            />
+                            <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
+                                {(!activeField || activeField !== "source") && source && (
+                                    <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">
+                                        {formatStationDisplay(source)}
+                                    </div>
+                                )}
+                                <input 
+                                    type="text"
+                                    placeholder={!source ? "출발역" : ""}
+                                    value={activeField === "source" ? source : ""}
+                                    onFocus={() => setActiveField("source")}
+                                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
+                                    onChange={(e) => handleSearch(e.target.value, "source")}
+                                    className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`}
+                                />
+                            </div>
                             {source && (
                                 <button onClick={() => { setSource(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all mr-1">
                                     <X size={14} />
