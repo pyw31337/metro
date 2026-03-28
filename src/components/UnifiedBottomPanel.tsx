@@ -158,21 +158,27 @@ export default function UnifiedBottomPanel({
         }
 
         const namePart = value.split(' : ').pop() || value;
-        // Search for station name and line in parentheses: "천왕(7)" or "천왕 (7호선)"
-        const match = namePart.match(/^([^(]+)(\([^)]+\))?$/);
+
+        // More robust station vs line parser
+        // Matches: "양평 (5호선)", "천왕(7)", "강남 2호선", "마곡나루 공항철도"
+        const lineKeywords = ["호선", "철도", "중앙선", "분당선", "인천1", "인천2"];
+        let stationName = namePart;
+        let lineInfo = "";
+
+        // Check if ends with recognized line name or numeric/id
+        const lineMatch = namePart.match(/^(.*?)\s*\(?(\d+호선|[\uac00-\ud7af]+\d*선|공항철도|\d+)\)?$/);
         
-        if (match) {
-            const stationName = match[1].trim();
-            const lineName = match[2];
-            return (
-                <div className="flex items-center gap-1.5 overflow-hidden">
-                    <span className="truncate">{stationName}</span>
-                    {lineName && getLineBadge(lineName)}
-                </div>
-            );
+        if (lineMatch) {
+            stationName = lineMatch[1].trim();
+            lineInfo = lineMatch[2].trim();
         }
 
-        return <span className="truncate">{namePart}</span>;
+        return (
+            <div className="flex items-center gap-1.5 overflow-hidden">
+                <span className="truncate">{stationName}</span>
+                {lineInfo && getLineBadge(lineInfo)}
+            </div>
+        );
     };
 
     const strategies: { id: PathStrategy; label: string; sub: string }[] = [
@@ -225,8 +231,8 @@ export default function UnifiedBottomPanel({
                                 <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
                                 <span className="text-[13px] font-black">
                                     {timeDisplayMode === "duration" 
-                                        ? `${Math.round(pathResults.time.totalWeight)}분` 
-                                        : new Date(Date.now() + pathResults.time.totalWeight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                        ? `${Math.round(pathResults.time.totalWeight || 0)}분` 
+                                        : new Date(Date.now() + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
                                     }
                                 </span>
                             </button>
@@ -247,8 +253,8 @@ export default function UnifiedBottomPanel({
                                 <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
                                 <span className="text-[13px] font-black">
                                     {timeDisplayMode === "duration" 
-                                        ? `${Math.round(pathResults.transfer.totalWeight)}분` 
-                                        : new Date(Date.now() + pathResults.transfer.totalWeight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                        ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` 
+                                        : new Date(Date.now() + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
                                     }
                                 </span>
                             </button>
