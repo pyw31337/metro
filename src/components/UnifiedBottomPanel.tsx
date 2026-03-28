@@ -355,7 +355,11 @@ export default function UnifiedBottomPanel({
                                         <X size={14} />
                                     </button>
                                 )}
-                                <button onClick={() => onLocate?.("dest")} className="p-1 text-zinc-400 hover:text-blue-500 transition-all active:scale-90">
+                                 <button 
+                                    disabled={isLocating}
+                                    onClick={() => onLocate?.("dest")} 
+                                    className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}
+                                >
                                     <Locate size={14} />
                                 </button>
                             </div>
@@ -391,7 +395,11 @@ export default function UnifiedBottomPanel({
                                         <X size={14} />
                                     </button>
                                 )}
-                                <button onClick={() => onLocate?.("source")} className="p-1 text-zinc-400 hover:text-blue-500 transition-all active:scale-90">
+                                 <button 
+                                    disabled={isLocating}
+                                    onClick={() => onLocate?.("source")} 
+                                    className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}
+                                >
                                     <Locate size={14} />
                                 </button>
                             </div>
@@ -419,6 +427,7 @@ export default function UnifiedBottomPanel({
                             ))}
                         </div>
                         <button 
+                            disabled={isLocating}
                             onClick={() => {
                                 if (!source) {
                                     setValidationError("source");
@@ -430,7 +439,7 @@ export default function UnifiedBottomPanel({
                                 }
                                 onSearch(source, destination);
                             }}
-                            className="bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 h-9 px-5 rounded-xl font-black text-[13px] active:scale-95 transition-all"
+                            className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}
                         >
                             길찾기
                         </button>

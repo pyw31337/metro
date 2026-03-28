@@ -127,19 +127,34 @@ export default function Home() {
             setPathResults(null);
             return;
         }
-        setIsCalculating(true);
-        
-        // Normalize: Strip "내 위치 : " and platform info from strings
-        const normalize = (s: string) => s.split(' : ').pop()?.split(' ').shift() || s;
+        // Normalize: Strip "내 위치 : ", parentheses, and line suffixes from strings
+        const normalize = (s: string) => {
+            if (!s) return "";
+            // 1. Split by ' : ' to handle "내 위치 : 강남 (내 위치)"
+            let name = s.split(' : ').pop() || s;
+            // 2. Remove parentheses blocks like "(5호선)" or "(내 위치)"
+            name = name.replace(/\(.*\)/g, '').trim();
+            // 3. Take only the first word to strip line suffixes like "5호선" if space-delimited
+            name = name.split(' ')[0];
+            return name;
+        };
         
         const nStart = normalize(start);
         const nEnd = normalize(end);
+        
+        if (!nStart || !nEnd) {
+            setIsCalculating(false);
+            return;
+        }
+
         const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
 
         const points = [nStart, ...nWaypoints, nEnd];
         const res = await findPath(points) as Record<string, PathResult>;
         
-        if (res) {
+        setIsCalculating(false);
+
+        if (res && res.time && res.transfer) {
             // Keep only time and transfer strategies
             const filtered: Record<string, PathResult> = {
                 time: res.time,
@@ -166,10 +181,8 @@ export default function Home() {
                 }
             }
         }
-        
-        setIsCalculating(true); // Short delay for animation feel
-        setTimeout(() => setIsCalculating(false), 500);
-    }, [findPath]);
+        }
+    }, [findPath, stations, selectedStrategy]);
 
     useEffect(() => {
         calculatePath(startStation, waypoints, endStation);
@@ -209,14 +222,16 @@ export default function Home() {
 
     // Manual station locator for inputs
     const handleLocateStation = async (type: "source" | "dest") => {
+        if (isLocating) return; // Concurrency Lock
+        
         setIsLocating(true);
         setLocatingTimer(5);
-        const timer = setInterval(() => {
+        const interval = setInterval(() => {
             setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
         }, 1000);
 
         const cleanup = () => {
-            clearInterval(timer);
+            clearInterval(interval);
             setIsLocating(false);
             setLocatingTimer(0);
         };
