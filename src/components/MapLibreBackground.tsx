@@ -51,6 +51,7 @@ function MapLibreBackground({
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
     const [focusedLine, setFocusedLine] = useState<string | null>(null);
     const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
+    const [currentZoom, setCurrentZoom] = useState<number>(12);
     
     // Memoized GeoJSON Data
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
@@ -149,7 +150,8 @@ function MapLibreBackground({
                 onMouseLeave={() => setCursor("auto")}
                 onClick={onClick}
                 onMove={(e) => {
-                    const { latitude, longitude } = e.viewState;
+                    const { latitude, longitude, zoom } = e.viewState;
+                    setCurrentZoom(zoom);
                     if (onCenterChange) onCenterChange(latitude, longitude);
                 }}
                 interactiveLayerIds={["subway-line-layer", "subway-station-circle", "subway-station-label", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
@@ -299,6 +301,13 @@ function MapLibreBackground({
                     const { name, arrivalTime, platformInfo, routeColor } = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
                     const isFocused = focusedBubble === name;
+                    
+                    // Filter: Only show endpoints and transfers when zoomed out (< 13)
+                    const isEndpoint = i === 0 || i === routeStationData.features.length - 1;
+                    const isTransfer = !!platformInfo; // Any station with platform info is a transfer/point of interest
+                    const shouldShow = currentZoom >= 13 || isEndpoint || isTransfer;
+
+                    if (!shouldShow) return null;
                     
                     return (
                         <Marker 
