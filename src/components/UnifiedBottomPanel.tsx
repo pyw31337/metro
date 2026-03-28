@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
@@ -186,7 +186,7 @@ export default function UnifiedBottomPanel({
                             <button 
                                 onClick={() => {
                                     if (selectedStrategy === "time") {
-                                        setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration");
+                                        setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration");
                                     } else {
                                         onStrategyChange("time");
                                         setTimeDisplayMode("duration");
@@ -208,7 +208,7 @@ export default function UnifiedBottomPanel({
                             <button 
                                 onClick={() => {
                                     if (selectedStrategy === "transfer") {
-                                        setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration");
+                                        setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration");
                                     } else {
                                         onStrategyChange("transfer");
                                         setTimeDisplayMode("duration");
