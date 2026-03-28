@@ -3,6 +3,7 @@
 import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
 import Map, { Source, Layer, NavigationControl, GeolocateControl, MapRef, Popup, Marker } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { Flag } from "lucide-react";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
@@ -298,12 +299,13 @@ function MapLibreBackground({
 
                 {/* 2.6 Consolidated Route Info Bubbles (Cohesive Card) */}
                 {routeStationData.features.map((f: any, i: number) => {
-                    const { name, arrivalTime, platformInfo, routeColor } = f.properties;
+                    const { name, arrivalTime, arrivalTimeWeight, platformInfo, routeColor } = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
                     const isFocused = focusedBubble === name;
+                    const isLast = i === routeStationData.features.length - 1;
                     
                     // Filter: Only show endpoints and transfers when zoomed out (< 13)
-                    const isEndpoint = i === 0 || i === routeStationData.features.length - 1;
+                    const isEndpoint = i === 0 || isLast;
                     const isTransfer = !!platformInfo; // Any station with platform info is a transfer/point of interest
                     const shouldShow = currentZoom >= 13 || isEndpoint || isTransfer;
 
@@ -325,19 +327,22 @@ function MapLibreBackground({
                                 }}
                                 className={`flex flex-col gap-0.5 p-1 px-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center justify-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
                             >
-                                {/* Line 1: Station Name */}
-                                <span 
-                                    className="text-[10px] font-black leading-tight text-center"
-                                    style={{ color: routeColor }}
-                                >
-                                    {name}
-                                </span>
+                                {/* Line 1: Station Name + Flag Icon */}
+                                <div className="flex items-center gap-1">
+                                    {isLast && <Flag size={10} className="text-rose-500 fill-rose-500" />}
+                                    <span 
+                                        className="text-[10px] font-black leading-tight text-center"
+                                        style={{ color: routeColor }}
+                                    >
+                                        {name}
+                                    </span>
+                                </div>
                                 
                                 {/* Line 2: Arrival Info */}
                                 <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
                                     {timeDisplayMode === "duration" 
-                                        ? `${Math.round(arrivalTime)}분` 
-                                        : new Date(Date.now() + arrivalTime * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                        ? `${Math.round(arrivalTimeWeight || 0)}분` 
+                                        : (arrivalTime || "")
                                     }
                                 </span>
 

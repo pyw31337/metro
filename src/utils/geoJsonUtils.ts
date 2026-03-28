@@ -184,6 +184,7 @@ export const convertPathToGeoJSON = (path: string[], startTime: number = Date.no
                 isRouteStation: true,
                 routeColor: routeColor,
                 arrivalTime: arrivalTimeStr,
+                arrivalTimeWeight: cumulativeWeight,
                 platformInfo: platform,
                 type: "route_station"
             }
