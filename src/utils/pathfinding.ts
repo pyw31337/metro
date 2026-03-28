@@ -115,17 +115,17 @@ function dijkstra(
         for (const conn of node.connections) {
             const isTransfer = lastLine !== null && lastLine !== conn.lineId;
             
-            let edgeCost = 2; // Default 2 mins hop
-            let edgeWeight = 2; // Actual time hop
+            let edgeCost = 2.5; // Average 2.5 mins hop (more realistic for Seoul)
+            let edgeWeight = 2.5; // Actual time hop
 
             if (isTransfer) {
                 // For Dijkstra cost optimization
                 if (strategy === "transfer") {
-                    edgeCost += 1000; // Massively penalize transfers in the algorithm
+                    edgeCost += 1000; // Massively penalize transfers locally
                 } else {
-                    edgeCost += 5; // standard time penalty
+                    edgeCost += 8; // standard time penalty (walking + waiting)
                 }
-                edgeWeight += 5; // Add 5 mins physical transfer time
+                edgeWeight += 8; // Add 8 mins physical transfer time
             }
 
             const newCost = cost + edgeCost;

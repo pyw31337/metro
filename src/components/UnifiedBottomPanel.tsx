@@ -63,6 +63,7 @@ export default function UnifiedBottomPanel({
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [timeDisplayMode, setTimeDisplayMode] = useState<"duration" | "arrival">("duration");
 
     useEffect(() => {
         setDestination(endStation || "");
@@ -177,21 +178,45 @@ export default function UnifiedBottomPanel({
                     {pathResults && pathResults.time && pathResults.transfer && (
                         <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 mb-0.5 border border-black/5 dark:border-white/5">
                             <button 
-                                onClick={() => onStrategyChange("time")}
+                                onClick={() => {
+                                    if (selectedStrategy === "time") {
+                                        setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration");
+                                    } else {
+                                        onStrategyChange("time");
+                                        setTimeDisplayMode("duration");
+                                    }
+                                }}
                                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}
                             >
                                 <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
-                                <span className="text-[13px] font-black">{Math.round(pathResults.time.totalWeight)}분</span>
+                                <span className="text-[13px] font-black">
+                                    {timeDisplayMode === "duration" 
+                                        ? `${Math.round(pathResults.time.totalWeight)}분` 
+                                        : new Date(Date.now() + pathResults.time.totalWeight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                    }
+                                </span>
                             </button>
 
                             <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
 
                             <button 
-                                onClick={() => onStrategyChange("transfer")}
+                                onClick={() => {
+                                    if (selectedStrategy === "transfer") {
+                                        setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration");
+                                    } else {
+                                        onStrategyChange("transfer");
+                                        setTimeDisplayMode("duration");
+                                    }
+                                }}
                                 className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}
                             >
                                 <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
-                                <span className="text-[13px] font-black">{Math.round(pathResults.transfer.totalWeight)}분</span>
+                                <span className="text-[13px] font-black">
+                                    {timeDisplayMode === "duration" 
+                                        ? `${Math.round(pathResults.transfer.totalWeight)}분` 
+                                        : new Date(Date.now() + pathResults.transfer.totalWeight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                                    }
+                                </span>
                             </button>
                         </div>
                     )}
