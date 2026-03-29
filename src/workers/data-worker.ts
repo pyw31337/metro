@@ -23,6 +23,7 @@ interface PathResult {
     path: string[];
     totalWeight: number;
     transferCount: number;
+    weights: number[];
 }
 
 // Simplified Dijkstra for Worker
@@ -59,17 +60,17 @@ function dijkstra(
     strategy: PathStrategy
 ): PathResult | null {
     // Priority queue uses 'cost' for Dijkstra, but we track 'weight' for actual time
-    const pq: { nodeId: string; cost: number; weight: number; path: string[]; lastLine: string | null; transfers: number }[] = [];
+    const pq: { nodeId: string; cost: number; weight: number; path: string[]; weights: number[]; lastLine: string | null; transfers: number }[] = [];
     const minCosts = new Map<string, number>();
 
-    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], lastLine: null, transfers: 0 });
+    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], weights: [0], lastLine: null, transfers: 0 });
 
     while (pq.length > 0) {
         pq.sort((a, b) => a.cost - b.cost);
-        const { nodeId, cost, weight, path, lastLine, transfers } = pq.shift()!;
+        const { nodeId, cost, weight, path, weights: weightPath, lastLine, transfers } = pq.shift()!;
 
         if (nodeId === endName) {
-            return { path, totalWeight: weight, transferCount: transfers };
+            return { path, totalWeight: weight, weights: weightPath, transferCount: transfers };
         }
 
         if (cost > (minCosts.get(nodeId) ?? Infinity)) continue;
@@ -102,6 +103,7 @@ function dijkstra(
                 cost: newCost,
                 weight: newWeight,
                 path: [...path, conn.nodeId],
+                weights: [...weightPath, newWeight],
                 lastLine: conn.lineId,
                 transfers: transfers + (isTransfer ? 1 : 0)
             });
@@ -122,6 +124,7 @@ self.onmessage = (e: MessageEvent) => {
 
             for (const strategy of strategies) {
                 let finalPath: string[] = [points[0]];
+                let finalWeights: number[] = [0];
                 let totalWeight = 0;
                 let totalTransferCount = 0;
                 let failed = false;
@@ -132,7 +135,13 @@ self.onmessage = (e: MessageEvent) => {
                         failed = true;
                         break;
                     }
-                    finalPath = [...finalPath, ...res.path.slice(1)];
+                    
+                    const segmentPath = res.path.slice(1);
+                    const startWeight = totalWeight;
+                    const segmentWeights = res.weights.slice(1).map(w => w + startWeight);
+
+                    finalPath = [...finalPath, ...segmentPath];
+                    finalWeights = [...finalWeights, ...segmentWeights];
                     totalWeight += res.totalWeight;
                     totalTransferCount += res.transferCount;
                 }
@@ -141,6 +150,7 @@ self.onmessage = (e: MessageEvent) => {
                     results[strategy] = { 
                         path: finalPath, 
                         totalWeight, 
+                        weights: finalWeights,
                         transferCount: totalTransferCount,
                         strategy 
                     };
