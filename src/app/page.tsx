@@ -167,6 +167,13 @@ export default function Home() {
             return;
         }
 
+        if (activeTab === "wc") {
+            setPathResults(null);
+            setBusPathResult(null);
+            setIsCalculating(false);
+            return;
+        }
+
         // 🟠 SUBWAY ROUTING BRANCH
         const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
         const points = [nStart, ...nWaypoints, nEnd];
@@ -308,7 +315,7 @@ export default function Home() {
             <UnifiedBottomPanel 
                 activeTab={activeTab}
                 onTabChange={(tab: any) => setActiveTab(tab)}
-                onSearch={() => calculatePath(startStation, waypoints, endStation)}
+                onSearch={(start, end) => calculatePath(start, waypoints, end)}
                 onReset={handleReset}
                 startStation={startStation}
                 endStation={endStation}

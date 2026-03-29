@@ -89,6 +89,12 @@ function MapLibreBackground({
 
     const [cursor, setCursor] = useState<string>("auto");
 
+    useEffect(() => {
+        setPopupCoords(null);
+        setFocusedLine(null);
+        setFocusedBubble(null);
+    }, [activeTab]);
+
     const onHover = useCallback((e: any) => {
         setCursor(e.features.length ? "pointer" : "auto");
     }, []);
@@ -177,7 +183,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 1. Subway Lines Layer */}
-                {activeTab.includes("subway") && (
+                {activeTab === "subway" && (
                     <Source id="subway-lines" type="geojson" data={subwayData.lines}>
                         <Layer
                             id="subway-line-layer"
@@ -201,7 +207,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 0. Path Result Layer (Solid/Colored segments) */}
-                {activeTab.includes("subway") && pathLineData.features.length > 0 && (
+                {activeTab === "subway" && pathLineData.features.length > 0 && (
                     <Source id="path-result" type="geojson" data={pathLineData}>
                         <Layer
                             id="path-line-bg"
@@ -228,7 +234,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 2. Subway Stations Layer (MOVED AFTER LINES) */}
-                {activeTab.includes("subway") && (
+                {activeTab === "subway" && (
                     <Source id="subway-stations" type="geojson" data={subwayData.stations}>
                         <Layer
                             id="subway-station-circle"
@@ -279,7 +285,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 2.5 Route Station Circle Highlight (ON TOP) */}
-                {activeTab.includes("subway") && routeStationData.features.length > 0 && (
+                {activeTab === "subway" && routeStationData.features.length > 0 && (
                     <Source id="route-highlight-source" type="geojson" data={routeStationData}>
                         <Layer
                             id="route-station-circle-highlight"
@@ -302,7 +308,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 2.6 Consolidated Route Info Bubbles (Cohesive Card) */}
-                {activeTab.includes("subway") && routeStationData.features.map((f: any, i: number) => {
+                {activeTab === "subway" && routeStationData.features.map((f: any, i: number) => {
                     const { name, arrivalTime, arrivalTimeWeight, platformInfo, routeColor } = f.properties;
                     const [lng, lat] = f.geometry.coordinates;
                     const isFocused = focusedBubble === name;
@@ -379,7 +385,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 5. Real-time Train Layer (Rendering on top of everything else) */}
-                {activeTab.includes("subway") && (
+                {activeTab === "subway" && (
                     <Source id="train-source" type="geojson" data={trainData}>
                         <Layer
                             id="train-halo"
@@ -406,6 +412,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 3. Bus Stop Markers ( Clustering) */}
+                {activeTab === "bus" && (
                     <Source id="bus-source" type="geojson" data={busData as any} cluster={true} clusterMaxZoom={14} clusterRadius={50}>
                         <Layer id="bus-clusters" type="circle" filter={["has", "point_count"]} paint={{ "circle-color": "#10b981", "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25] }} />
                         <Layer id="bus-cluster-count" type="symbol" filter={["has", "point_count"]} layout={{ "text-field": "{point_count}", "text-size": 12 }} paint={{ "text-color": "white" }} />
@@ -442,6 +449,7 @@ function MapLibreBackground({
                             }}
                         />
                     </Source>
+                )}
 
                 {/* 4. WC Markers ( Clustering) */}
                 {activeTab === "wc" && (
@@ -453,7 +461,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 6. Station Detail Popup */}
-                {popupCoords && selectedStationName && (
+                {popupCoords && ((activeTab === 'subway' && selectedStationName) || (activeTab === 'bus' && selectedBusStop)) && (
                     <Popup
                         longitude={popupCoords[0]}
                         latitude={popupCoords[1]}
@@ -466,14 +474,14 @@ function MapLibreBackground({
                     >
                         <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
                             <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2">
-                                {selectedStationName}
+                                {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
                             </h3>
                             
                             {/* Navigation Actions */}
                             <div className="grid grid-cols-3 gap-1.5 mb-4">
-                                <button onClick={() => { onSetStart(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">출발</button>
-                                <button onClick={() => { onSetWaypoint(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95">경유</button>
-                                <button onClick={() => { onSetEnd(selectedStationName); setPopupCoords(null); }} className="py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">도착</button>
+                                <button onClick={() => { onSetStart(activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name); setPopupCoords(null); }} className="py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">출발</button>
+                                <button onClick={() => { onSetWaypoint(activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name); setPopupCoords(null); }} className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95">경유</button>
+                                <button onClick={() => { onSetEnd(activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name); setPopupCoords(null); }} className="py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">도착</button>
                             </div>
 
                             {/* Arrivals or Routes */}
@@ -483,7 +491,7 @@ function MapLibreBackground({
                                 </p>
                                 {activeTab === 'bus' && selectedBusStop ? (
                                     <div className="flex flex-wrap gap-1">
-                                        {selectedBusStop.routes.map((r: string, i: number) => (
+                                        {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes as unknown as string) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
                                             <span key={i} className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/20">
                                                 {r}
                                             </span>

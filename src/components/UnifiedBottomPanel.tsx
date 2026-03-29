@@ -139,8 +139,13 @@ export default function UnifiedBottomPanel({
     };
 
     const selectLocation = (name: string) => {
-        if (activeField === "dest") setDestination(name);
-        else setSource(name);
+        if (activeField === "dest") {
+            setDestination(name);
+            onSetDestination?.(name);
+        } else {
+            setSource(name);
+            onSetSource?.(name);
+        }
         setSearchResults([]);
         setActiveField(null);
     };
@@ -236,7 +241,7 @@ export default function UnifiedBottomPanel({
 
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
                     {/* 2. Strategy Selector (Ultra-Compact Single Row) */}
-                    {pathResults && pathResults.time && pathResults.transfer && (
+                    {activeTab === "subway" && pathResults && pathResults.time && pathResults.transfer && (
                         <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 mb-0.5 border border-black/5 dark:border-white/5">
                             <button 
                                 onClick={() => {
@@ -314,7 +319,8 @@ export default function UnifiedBottomPanel({
                     </AnimatePresence>
 
                     {/* 3. Compact Inputs */}
-                    <div className="grid grid-cols-2 gap-2 mt-0.5">
+                    {activeTab !== "wc" && (
+                        <div className="grid grid-cols-2 gap-2 mt-0.5">
                         {/* Locating Feedback or Validation Error */}
                         {isLocating && (
                             <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
@@ -428,6 +434,7 @@ export default function UnifiedBottomPanel({
                             </div>
                         </div>
                     </div>
+                    )}
 
                     {/* 4. Bottom Utility Row (Compact) */}
                     <div className="flex items-center gap-2">
@@ -449,24 +456,28 @@ export default function UnifiedBottomPanel({
                                 </button>
                             ))}
                         </div>
-                        <button 
-                            disabled={isLocating || isCalculating}
-                            onClick={() => {
-                                if (!source) {
-                                    setValidationError("source");
-                                    return;
-                                }
-                                if (!destination) {
-                                    setValidationError("dest");
-                                    return;
-                                }
-                                onSearch(source, destination);
-                            }}
-                            className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}
-                        >
-                            {isCalculating ? '조회중...' : '길찾기'}
-                        </button>
-                        <button onClick={onReset} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
+                        {activeTab !== "wc" && (
+                            <>
+                                <button 
+                                    disabled={isLocating || isCalculating}
+                                    onClick={() => {
+                                        if (!source) {
+                                            setValidationError("source");
+                                            return;
+                                        }
+                                        if (!destination) {
+                                            setValidationError("dest");
+                                            return;
+                                        }
+                                        onSearch(source, destination);
+                                    }}
+                                    className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}
+                                >
+                                    {isCalculating ? '조회중...' : '길찾기'}
+                                </button>
+                                <button onClick={onReset} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
+                            </>
+                        )}
                     </div>
 
                     {/* 5. Bus Routing Result Mini-Card */}
