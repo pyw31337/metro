@@ -7,7 +7,7 @@ import { Flag } from "lucide-react";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
-import { StationArrival, fetchTrainCongestion } from "@/services/arrivalApi";
+import { StationArrival, fetchTrainCongestion, fetchTransferPlatform } from "@/services/arrivalApi";
 import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON, convertPathToGeoJSON } from "@/utils/geoJsonUtils";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 
@@ -172,6 +172,8 @@ function MapLibreBackground({
     const [selectedTrain, setSelectedTrain] = useState<any | null>(null);
     const [congestionData, setCongestionData] = useState<any | null>(null);
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
+    const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
+    const [isFetchingPlat, setIsFetchingPlat] = useState<string | null>(null);
 
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
@@ -572,10 +574,27 @@ function MapLibreBackground({
 
                                 {/* Line 3: Platform / Transfer Info */}
                                 {platformInfo ? (
-                                    <div className="flex items-center gap-1 justify-center mt-0.5">
-                                        <div className="w-1 h-1 rounded-full bg-blue-500" />
+                                    <div 
+                                        className="flex items-center gap-1 justify-center mt-0.5 group/plat"
+                                        onClick={async (e) => {
+                                            e.stopPropagation();
+                                            const key = `${name}-${f.properties.fromLine}-${f.properties.toLine}`;
+                                            if (verifiedPlats[key]) return;
+                                            
+                                            setIsFetchingPlat(key);
+                                            const res = await fetchTransferPlatform(name, f.properties.fromLine, f.properties.toLine);
+                                            setVerifiedPlats(prev => ({ ...prev, [key]: res || "정보 없음" }));
+                                            setIsFetchingPlat(null);
+                                        }}
+                                    >
+                                        <div className={`w-1 h-1 rounded-full ${isFetchingPlat === `${name}-${f.properties.fromLine}-${f.properties.toLine}` ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`} />
                                         <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
-                                            환승 {platformInfo}
+                                            {verifiedPlats[`${name}-${f.properties.fromLine}-${f.properties.toLine}`] 
+                                                ? `환승 ${verifiedPlats[`${name}-${f.properties.fromLine}-${f.properties.toLine}`]}`
+                                                : isFetchingPlat === `${name}-${f.properties.fromLine}-${f.properties.toLine}`
+                                                    ? '확인 중...'
+                                                    : '빠른 환승 확인'
+                                            }
                                         </span>
                                     </div>
                                 ) : (

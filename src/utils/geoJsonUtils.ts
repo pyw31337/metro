@@ -167,6 +167,13 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                     const line = SUBWAY_LINES.find(l => l.name === outgoingLines[0]);
                     if (line) routeColor = line.color;
                 }
+                
+                // Track transfer details for API fetching
+                if (isActualTransfer) {
+                    const fromLine = incomingLines[0];
+                    const toLine = outgoingLines[0];
+                    (s as any).transferDetails = { fromLine, toLine };
+                }
             }
         } else if (i === 0 && path.length > 1) {
             // Start station: color based on first segment
@@ -181,7 +188,8 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             }
         }
 
-        const platform = isActualTransfer ? `${Math.floor(Math.random() * 8) + 1}-${Math.floor(Math.random() * 4) + 1}` : "";
+        const transferDetails = (s as any).transferDetails;
+        const platform = transferDetails ? "정보 확인" : "";
 
         stationFeatures.push({
             type: "Feature" as const,
@@ -193,6 +201,8 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 arrivalTime: arrivalTimeStr,
                 arrivalTimeWeight: cumulativeWeight,
                 platformInfo: platform,
+                fromLine: transferDetails?.fromLine || "",
+                toLine: transferDetails?.toLine || "",
                 type: "route_station"
             }
         });

@@ -111,3 +111,32 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
         return null;
     }
 };
+
+export const fetchTransferPlatform = async (stationName: string, fromLine: string, toLine: string) => {
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+    if (!apiKey || apiKey.length < 10) apiKey = "sample";
+
+    const cleanStation = stationName.replace(/역$/, '');
+    const cleanFromLine = fromLine.replace(/선$/, '');
+    const cleanToLine = toLine.replace(/선$/, '');
+
+    // CardSubwayTransferPos: [인증키]/json/CardSubwayTransferPos/1/50/[역명]
+    const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(cleanStation)}`;
+    
+    try {
+        const json = await fetchWithFallbacks(url);
+        const list = json?.CardSubwayTransferPos?.row || [];
+        
+        // Find the matching transfer route
+        // Matches like "1" (fromLine) to "2" (toLine)
+        const match = list.find((item: any) => 
+            (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM === cleanToLine) ||
+            (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM.includes(cleanToLine))
+        );
+
+        return match ? match.TRNSIT_PLATFORM_NO : null;
+    } catch (err) {
+        console.warn("Transfer info fetching failed:", err);
+        return null;
+    }
+};
