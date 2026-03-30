@@ -218,7 +218,7 @@ function MapLibreBackground({
 
         const img = new Image(64, 64);
         const svgString = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
                 <rect width="16" height="16" x="4" y="3" rx="2"/>
                 <path d="M4 11h16M12 3v8M8 19l-2 3M18 22l-2-3M8 15h.01M16 15h.01"/>
             </svg>
@@ -549,7 +549,9 @@ function MapLibreBackground({
                                 "icon-anchor": "center"
                             }}
                             paint={{
-                                "icon-color": ["get", "lineColor"]
+                                "icon-color": ["get", "lineColor"],
+                                "icon-halo-color": "white",
+                                "icon-halo-width": 2
                             }}
                         />
                     </Source>
