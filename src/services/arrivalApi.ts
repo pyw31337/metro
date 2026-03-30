@@ -11,18 +11,45 @@ export interface StationArrival {
 }
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
-    const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) return [];
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+    if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
-    // Normalize: remove "역" suffix if present
     const cleanName = stationName.replace(/역$/, '');
-    const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/0/30/${encodeURIComponent(cleanName)}`;
-
+    
+    // Attempt with user key first
+    let url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/1/30/${encodeURIComponent(cleanName)}`;
+    
     try {
-        const res = await fetch(url);
-        const json = await res.json();
-        const arrivals: StationArrival[] = json?.realtimeStationArrival?.row || [];
-        return arrivals;
+        let res = await fetch(url);
+        let json = await res.json();
+        
+        // Fallback to sample key if user key lacks real-time permissions
+        if (json?.status === 500 && json?.code === "ERROR-338") {
+            url = `https://swopenapi.seoul.go.kr/api/subway/sample/json/realtimeStationArrival/1/5/${encodeURIComponent(cleanName)}`;
+            res = await fetch(url);
+            json = await res.json();
+        }
+
+        const arrivals: StationArrival[] = json?.realtimeStationArrivalList || json?.realtimeStationArrival?.row || [];
+        
+        // Filter to max 3 per direction (up/inner vs down/outer)
+        const upTrains: StationArrival[] = [];
+        const downTrains: StationArrival[] = [];
+        
+        arrivals.forEach(arr => {
+            if (arr.updnLine.includes("상행") || arr.updnLine.includes("내선")) {
+                if (upTrains.length < 3) upTrains.push(arr);
+            } else {
+                if (downTrains.length < 3) downTrains.push(arr);
+            }
+        });
+
+        // Sort by barvlDt (arrival time in seconds) string-to-number
+        const sorted = [...upTrains, ...downTrains].sort((a, b) => {
+            return parseInt(a.barvlDt || "9999") - parseInt(b.barvlDt || "9999");
+        });
+
+        return sorted;
     } catch (err) {
         console.error("Failed to fetch station arrivals:", err);
         return [];
