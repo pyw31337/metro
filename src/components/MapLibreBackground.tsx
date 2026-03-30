@@ -175,6 +175,7 @@ function MapLibreBackground({
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
     const [isFetchingPlat, setIsFetchingPlat] = useState<string | null>(null);
     const [iconsReady, setIconsReady] = useState(false);
+    const [mapInstance, setMapInstance] = useState<any | null>(null);
 
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
@@ -317,18 +318,19 @@ function MapLibreBackground({
 
     // Registration triggered by initial load and style changes (Light/Dark Mode)
     useEffect(() => {
-        const map = mapRef.current?.getMap();
-        if (!map) return;
+        if (!mapInstance) return;
 
-        const onStyleLoad = () => registerHDTrainIcons(map);
+        const onStyleLoad = () => registerHDTrainIcons(mapInstance);
         
-        map.on('style.load', onStyleLoad);
-        if (map.isStyleLoaded()) onStyleLoad();
+        mapInstance.on('style.load', onStyleLoad);
+        if (mapInstance.isStyleLoaded()) {
+            onStyleLoad();
+        }
 
         return () => {
-            map.off('style.load', onStyleLoad);
+            mapInstance.off('style.load', onStyleLoad);
         };
-    }, [mapRef.current, registerHDTrainIcons]);
+    }, [mapInstance, registerHDTrainIcons]);
 
     const onHover = useCallback((e: any) => {
         setCursor(e.features.length ? "pointer" : "auto");
@@ -401,12 +403,16 @@ function MapLibreBackground({
                     setCurrentZoom(zoom);
                     if (onCenterChange) onCenterChange(latitude, longitude);
                 }}
-                interactiveLayerIds={["subway-line-layer", "subway-station-circle", "subway-station-label", "train-layer", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
                 ref={(r) => {
                     if (r) {
                         mapRef.current = r;
-                        if (onMapReady) onMapReady(r.getMap());
+                        const m = r.getMap();
+                        if (m && !mapInstance) setMapInstance(m);
+                        if (onMapReady) onMapReady(m);
                     }
+                }}
+                onLoad={(e) => {
+                    setMapInstance(e.target);
                 }}
             >
                 {/* 1.1 Dark Mode Base Dimming Overlay */}
