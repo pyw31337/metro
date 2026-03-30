@@ -81,29 +81,54 @@ export default function Home() {
     const mapRef = useRef<any>(null);
 
     // ─── Data Loading & Off-thread sorting ──────────────────────────────────────
+    // ─── Data Loading & Off-thread sorting ──────────────────────────────────────
     useEffect(() => {
         setWcLoading(true);
         fetchWCDataClient().then(data => {
             setWcItems(data);
             setWcLoading(false);
         });
+    }, []);
 
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                // Update marker location but NO map movement (no center change)
-                setUserLocation([latitude, longitude]);
-                
-                // Auto-fill nearest station ONLY if field is empty (Off-thread)
-                if (!startStation && stations.length > 0) {
-                    const nearest = await findNearestStation(latitude, longitude, stations) as any;
-                    if (nearest?.name) {
-                        setStartStation(`내 위치 : ${nearest.name} (내 위치)`);
-                    }
+    // ─── Auto Locate On First Load ──────────────────────────────────────────────
+    useEffect(() => {
+        if (!navigator.geolocation) return;
+        
+        // Prevent concurrent location overlaps if manual locate triggered quickly
+        setIsLocating(true);
+        setLocatingTimer(5);
+        
+        const interval = setInterval(() => {
+            setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
+        }, 1000);
+
+        const cleanup = () => {
+            clearInterval(interval);
+            setIsLocating(false);
+            setLocatingTimer(0);
+        };
+
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setUserLocation([latitude, longitude]);
+            
+            // Auto-fill nearest station ONLY if field is empty (Off-thread)
+            setStartStation(prev => {
+                if (!prev && stations.length > 0) {
+                    findNearestStation(latitude, longitude, stations).then((nearest: any) => {
+                        if (nearest?.name) {
+                            setStartStation(current => current ? current : `내 위치 : ${nearest.name} (내 위치)`);
+                        }
+                    });
                 }
+                return prev;
             });
-        }
-    }, [stations, startStation, findNearestStation]);
+            cleanup();
+        }, () => cleanup(), { enableHighAccuracy: true, timeout: 5000 });
+        
+        // Disable es-lint for the exact single-mount run behavior without changing refs
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     useEffect(() => {
         const updateWCs = async () => {
