@@ -580,7 +580,7 @@ function MapLibreBackground({
                             </div>
 
                             {/* Arrivals or Routes */}
-                            <div className="space-y-2 max-h-[160px] overflow-y-auto no-scrollbar">
+                            <div className="space-y-2">
                                 {activeTab === 'bus' && (
                                     <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">
                                         경유 노선 정보
