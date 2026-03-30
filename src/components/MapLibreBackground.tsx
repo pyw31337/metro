@@ -261,21 +261,21 @@ function MapLibreBackground({
         setFocusedBubble(null);
     }, [activeTab]);
 
-    // Register HD Pre-rendered Train Icons (Re-usable)
+    // Register HD Pre-rendered Train Icons (Parallel & Bulletproof)
     const registerHDTrainIcons = useCallback(async (map: any) => {
         if (!map) return;
         
         const uniqueColors = Array.from(new Set(SUBWAY_LINES.map(l => l.color)));
         
-        for (const color of uniqueColors) {
+        await Promise.all(uniqueColors.map(async (color) => {
             const iconId = `train-card-${color}`;
-            if (map.hasImage(iconId)) continue;
+            if (map.hasImage(iconId)) return;
 
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 128;
             const ctx = canvas.getContext('2d');
-            if (!ctx) continue;
+            if (!ctx) return;
 
             // 1. Crisp White Rounded Rect
             ctx.fillStyle = 'white';
@@ -301,8 +301,14 @@ function MapLibreBackground({
             const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
             const url = URL.createObjectURL(blob);
             
-            await new Promise((resolve) => {
+            return new Promise((resolve) => {
+                const timeoutId = setTimeout(() => {
+                    URL.revokeObjectURL(url);
+                    resolve(null);
+                }, 1000); // Fail-safe (1s)
+
                 img.onload = () => {
+                    clearTimeout(timeoutId);
                     ctx.drawImage(img, 16, 16, 96, 96);
                     if (!map.hasImage(iconId)) {
                         map.addImage(iconId, canvas as any);
@@ -310,9 +316,14 @@ function MapLibreBackground({
                     URL.revokeObjectURL(url);
                     resolve(null);
                 };
+                img.onerror = () => {
+                    clearTimeout(timeoutId);
+                    URL.revokeObjectURL(url);
+                    resolve(null);
+                };
                 img.src = url;
             });
-        }
+        }));
         setIconsReady(true);
     }, []);
 
@@ -323,12 +334,15 @@ function MapLibreBackground({
         const onStyleLoad = () => registerHDTrainIcons(mapInstance);
         
         mapInstance.on('style.load', onStyleLoad);
+        mapInstance.on('styledata', onStyleLoad); // Catch more event types for extra safety
+        
         if (mapInstance.isStyleLoaded()) {
             onStyleLoad();
         }
 
         return () => {
             mapInstance.off('style.load', onStyleLoad);
+            mapInstance.off('styledata', onStyleLoad);
         };
     }, [mapInstance, registerHDTrainIcons]);
 
@@ -638,7 +652,7 @@ function MapLibreBackground({
                 )}
 
                 {/* 5. Train Positioning (Pre-rendered HD) */}
-                {activeTab === "subway" && iconsReady && (
+                {activeTab === "subway" && (
                     <Source id="train-source" type="geojson" data={trainData}>
                         <Layer
                             id="train-layer"
