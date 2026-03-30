@@ -257,45 +257,61 @@ function MapLibreBackground({
         setFocusedBubble(null);
     }, [activeTab]);
 
-    // Register Train Icon Image
+    // Register HD Pre-rendered Train Icons
     useEffect(() => {
         const map = mapRef.current?.getMap();
         if (!map) return;
 
-        // Background: White Rounded Rectangle
-        const bgImg = new Image(512, 512);
-        const bgSvg = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24">
-                <rect x="2" y="2" width="20" height="20" rx="5" fill="white" />
-            </svg>
-        `.trim();
-        const bgBlob = new Blob([bgSvg], { type: 'image/svg+xml;charset=utf-8' });
-        const bgUrl = URL.createObjectURL(bgBlob);
-        bgImg.onload = () => {
-            if (!map.hasImage('train-marker-v3-bg')) map.addImage('train-marker-v3-bg', bgImg);
-            URL.revokeObjectURL(bgUrl);
-        };
-        bgImg.src = bgUrl;
+        const uniqueColors = Array.from(new Set(SUBWAY_LINES.map(l => l.color)));
+        
+        const registerIcons = async () => {
+            for (const color of uniqueColors) {
+                const iconId = `train-card-${color}`;
+                if (map.hasImage(iconId)) continue;
 
-        // Icon: Tram (SDF)
-        const iconImg = new Image(512, 512);
-        const iconSvg = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="18" height="18" x="3" y="2" rx="2"/>
-                <path d="M3 10h18M12 2v8M8 20l-2 3M18 23l-2-3M8 15h.01M16 15h.01"/>
-            </svg>
-        `.trim();
-        const iconBlob = new Blob([iconSvg], { type: 'image/svg+xml;charset=utf-8' });
-        const iconUrl = URL.createObjectURL(iconBlob);
-        iconImg.onload = () => {
-            if (!map.hasImage('train-marker-v3-icon')) map.addImage('train-marker-v3-icon', iconImg, { sdf: true });
-            URL.revokeObjectURL(iconUrl);
-        };
-        iconImg.src = iconUrl;
+                const canvas = document.createElement('canvas');
+                canvas.width = 128;
+                canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) continue;
 
-        return () => {
-            // No need to remove images on simple re-renders
+                // 1. Crisp White Rounded Rect
+                ctx.fillStyle = 'white';
+                const x=4, y=4, w=120, h=120, r=28;
+                ctx.beginPath();
+                ctx.moveTo(x + r, y);
+                ctx.arcTo(x + w, y, x + w, y + h, r);
+                ctx.arcTo(x + w, y + h, x, y + h, r);
+                ctx.arcTo(x, y + h, x, y, r);
+                ctx.arcTo(x, y, x + w, y, r);
+                ctx.closePath();
+                ctx.fill();
+
+                // 2. High-Res Colored Tram SVG
+                const svg = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect width="18" height="18" x="3" y="2" rx="2"/>
+                        <path d="M3 10h18M12 2v8M8 20l-2 3M18 23l-2-3M8 15h.01M16 15h.01"/>
+                    </svg>
+                `.trim();
+                
+                const img = new Image();
+                const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                
+                await new Promise((resolve) => {
+                    img.onload = () => {
+                        ctx.drawImage(img, 16, 16, 96, 96);
+                        map.addImage(iconId, canvas as any);
+                        URL.revokeObjectURL(url);
+                        resolve(null);
+                    };
+                    img.src = url;
+                });
+            }
         };
+
+        registerIcons();
     }, [mapRef.current]);
 
     const onHover = useCallback((e: any) => {
@@ -586,12 +602,12 @@ function MapLibreBackground({
                 {activeTab === "subway" && (
                     <Source id="train-source" type="geojson" data={trainData}>
                         <Layer
-                            id="train-bg"
+                            id="train-layer"
                             type="symbol"
-                            filter={trainFilter}
+                            filter={trainFilter || true}
                             layout={{
-                                "icon-image": "train-marker-v3-bg",
-                                "icon-size": 0.026, // Base slightly larger than icon
+                                "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
+                                "icon-size": 0.15, // Approx 19px display from 128px source
                                 "icon-allow-overlap": true,
                                 "icon-ignore-placement": true,
                                 "icon-anchor": "center"
@@ -601,31 +617,14 @@ function MapLibreBackground({
                             }}
                         />
                         <Layer
-                            id="train-layer"
-                            type="symbol"
-                            filter={trainFilter}
-                            layout={{
-                                "icon-image": "train-marker-v3-icon",
-                                "icon-size": 0.0225, // Exactly 50% of the previous 0.045 scale
-                                "icon-allow-overlap": true,
-                                "icon-ignore-placement": true,
-                                "icon-anchor": "center"
-                            }}
-                            paint={{
-                                "icon-color": ["get", "lineColor"],
-                                "icon-halo-color": "white",
-                                "icon-halo-width": 1.5
-                            }}
-                        />
-                        <Layer
                             id="train-express-badge"
                             type="symbol"
                             filter={trainFilter ? ["all", trainFilter, ["==", ["get", "directAt"], "1"]] : ["==", ["get", "directAt"], "1"]}
                             layout={{
                                 "text-field": "급행",
-                                "text-size": 8.5,
+                                "text-size": 9,
                                 "text-font": ["literal", ["Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]],
-                                "text-offset": [0.8, -0.8],
+                                "text-offset": [0.9, -0.9],
                                 "text-anchor": "center",
                                 "icon-allow-overlap": true,
                                 "text-ignore-placement": true
