@@ -7,7 +7,7 @@ import { Flag } from "lucide-react";
 import { PathResult } from "@/utils/pathfinding";
 import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
-import { StationArrival } from "@/services/arrivalApi";
+import { StationArrival, fetchTrainCongestion } from "@/services/arrivalApi";
 import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON, convertPathToGeoJSON } from "@/utils/geoJsonUtils";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 
@@ -169,6 +169,23 @@ function MapLibreBackground({
     const [focusedLine, setFocusedLine] = useState<string | null>(null);
     const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
     const [currentZoom, setCurrentZoom] = useState<number>(12);
+    const [selectedTrain, setSelectedTrain] = useState<any | null>(null);
+    const [congestionData, setCongestionData] = useState<any | null>(null);
+    const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
+
+    const handleTrainClick = async (train: any) => {
+        setSelectedTrain(train);
+        setIsLoadingCongestion(true);
+        setCongestionData(null);
+        try {
+            const data = await fetchTrainCongestion(train.lineName, train.trainNo);
+            setCongestionData(data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setIsLoadingCongestion(false);
+        }
+    };
     
     // Memoized GeoJSON Data
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
@@ -307,7 +324,12 @@ function MapLibreBackground({
         if (layer.id === "subway-station-circle" || layer.id === "subway-station-label") {
             setPopupCoords([coords[0], coords[1]]);
             setFocusedLine(null); // Clear line focus when selecting a station
+            setSelectedTrain(null); // Clear train select
             if (onStationClick) onStationClick(properties.name, [coords[1], coords[0]]);
+        } else if (layer.id === "train-layer") {
+            handleTrainClick({ ...properties, lng: coords[0], lat: coords[1] });
+            setPopupCoords(null);
+            setFocusedLine(null);
         } else if (layer.id === "wc-unclustered") {
             onWCClick(properties as any);
         } else if (layer.id === "bus-unclustered") {
@@ -347,7 +369,7 @@ function MapLibreBackground({
                     setCurrentZoom(zoom);
                     if (onCenterChange) onCenterChange(latitude, longitude);
                 }}
-                interactiveLayerIds={["subway-line-layer", "subway-station-circle", "subway-station-label", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
+                interactiveLayerIds={["subway-line-layer", "subway-station-circle", "subway-station-label", "train-layer", "wc-unclustered", "wc-clusters", "bus-unclustered", "bus-clusters"]}
                 ref={(r) => {
                     if (r) {
                         mapRef.current = r;
@@ -595,6 +617,26 @@ function MapLibreBackground({
                                 "icon-halo-width": 1.5
                             }}
                         />
+                        <Layer
+                            id="train-express-badge"
+                            type="symbol"
+                            filter={trainFilter ? ["all", trainFilter, ["==", ["get", "directAt"], "1"]] : ["==", ["get", "directAt"], "1"]}
+                            layout={{
+                                "text-field": "급행",
+                                "text-size": 8.5,
+                                "text-font": ["literal", ["Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]],
+                                "text-offset": [0.8, -0.8],
+                                "text-anchor": "center",
+                                "icon-allow-overlap": true,
+                                "text-ignore-placement": true
+                            }}
+                            paint={{
+                                "text-color": "white",
+                                "text-halo-color": "#ef4444",
+                                "text-halo-width": 3,
+                                "text-halo-blur": 0
+                            }}
+                        />
                     </Source>
                 )}
 
@@ -762,6 +804,78 @@ function MapLibreBackground({
                                     </div>
                                 ) : (
                                     <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">도착 정보가 없습니다.</div>
+                                )}
+                            </div>
+                        </div>
+                    </Popup>
+                )}
+
+                {/* 7. Train Detail Popup (OnClick) */}
+                {selectedTrain && (
+                    <Popup
+                        longitude={selectedTrain.lng}
+                        latitude={selectedTrain.lat}
+                        closeButton={false}
+                        closeOnClick={false}
+                        onClose={() => setSelectedTrain(null)}
+                        anchor="bottom"
+                        offset={20}
+                        className="custom-train-popup"
+                    >
+                        <div className="p-3 min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
+                            <div className="flex items-center justify-between mb-2">
+                                <span className="text-[12px] font-black text-zinc-900 dark:text-white">
+                                    {selectedTrain.trainNo}열차 {selectedTrain.headingTo}행
+                                </span>
+                                {selectedTrain.directAt === '1' && (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[9px] font-black">급행</span>
+                                )}
+                            </div>
+                            
+                            <div className="flex items-center gap-2 mb-3">
+                                <div className="px-2 py-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                    {(() => {
+                                        switch(selectedTrain.trainSttus) {
+                                            case '0': return '진입중';
+                                            case '1': return '정차중';
+                                            case '2': return '출발함';
+                                            case '3': return '전역출발';
+                                            case '4': return '전역진입';
+                                            case '5': return '전역도착';
+                                            default: return '운행중';
+                                        }
+                                    })()}
+                                </div>
+                                <div className="text-[10px] text-zinc-400 font-medium">{selectedTrain.lineName}</div>
+                            </div>
+
+                            {/* Congestion Visualization */}
+                            <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">칸별 혼잡도</span>
+                                    {isLoadingCongestion && <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />}
+                                </div>
+                                
+                                {congestionData ? (
+                                    <div className="grid grid-cols-10 gap-0.5 h-6 items-end">
+                                        {congestionData.congestionTrain.split('|').map((val: string, idx: number) => {
+                                            const v = parseInt(val);
+                                            const color = v < 35 ? 'bg-emerald-500' : v < 70 ? 'bg-amber-500' : v < 100 ? 'bg-orange-600' : 'bg-rose-600';
+                                            return (
+                                                <div key={idx} className="group relative flex flex-col items-center">
+                                                    <div 
+                                                        className={`w-full rounded-t-sm transition-all duration-500 ${color}`}
+                                                        style={{ height: `${Math.max(10, v/2)}%` }}
+                                                    />
+                                                    <div className="opacity-0 group-hover:opacity-100 absolute -top-4 left-1/2 -translate-x-1/2 bg-black text-white text-[7px] px-1 rounded z-10">{v}%</div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="text-[9px] text-zinc-400 py-1 italic">
+                                        {isLoadingCongestion ? "혼잡도 불러오는 중..." : "혼잡도 데이터 없음"}
+                                    </div>
                                 )}
                             </div>
                         </div>

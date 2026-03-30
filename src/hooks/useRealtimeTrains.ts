@@ -14,6 +14,9 @@ export interface Train {
     stationIndex: number;
     isRealtime?: boolean;
     lineColor: string;
+    trainNo: string;
+    directAt: string;
+    trainSttus: string;
 }
 
 interface RealtimePosition {
@@ -90,7 +93,10 @@ export function useRealtimeTrains() {
                                     direction: dir,
                                     status: rt.trainSttus === '1' ? 'STOPPED' : 'RUNNING',
                                     headingTo: rt.statnTnm || rt.statnNm, 
-                                    lastUpdate: Date.now()
+                                    lastUpdate: Date.now(),
+                                    trainNo: rt.trainNo,
+                                    directAt: rt.directAt,
+                                    trainSttus: rt.trainSttus
                                 });
                                 break; // Only add once per train
                             }
@@ -117,27 +123,23 @@ export function useRealtimeTrains() {
         };
 
         fetchRealtime();
-        const apiInterval = setInterval(fetchRealtime, 15000); // 15s refresh to be safe
+        const apiInterval = setInterval(fetchRealtime, 15000); 
 
         const animInterval = setInterval(() => {
             const now = Date.now();
             const nextStates = trainsRef.current.map(t => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
                 if (!line) return t;
-                const stations = line.stations;
 
-                // Simple elapsed progress
                 const elapsed = (now - t.lastUpdate) / 1000; 
-                let progress = t.progress + (elapsed * 0.008); // Slightly slower for smoothness
+                let progress = t.progress + (elapsed * 0.008); 
                 if (progress > 0.95) progress = 0.95; 
 
                 return { ...t, progress, lastUpdate: now };
             });
 
-            // Update ref so we don't reset on next tick
             trainsRef.current = nextStates;
 
-            // Update UI
             const updated = nextStates.map(t => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
                 if (!line) return null;
@@ -160,7 +162,10 @@ export function useRealtimeTrains() {
                     headingTo: t.headingTo,
                     direction: t.direction,
                     stationIndex: t.stationIndex,
-                    isRealtime: true
+                    isRealtime: true,
+                    trainNo: t.trainNo,
+                    directAt: t.directAt,
+                    trainSttus: t.trainSttus
                 } as Train;
             }).filter((t): t is Train => t !== null);
 

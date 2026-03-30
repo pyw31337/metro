@@ -40,7 +40,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
-
+    // ... (existing code remains) ...
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
@@ -82,5 +82,32 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     } catch (err) {
         console.error("Failed to fetch station arrivals:", err);
         return [];
+    }
+};
+
+export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) => {
+    const lineMap: { [key: string]: string } = {
+        "1호선": "1001", "2호선": "1002", "3호선": "1003", "4호선": "1004", "5호선": "1005",
+        "6호선": "1006", "7호선": "1007", "8호선": "1008", "9호선": "1009",
+        "경의중앙선": "1063", "경춘선": "1067", "수인분당선": "1075", "신분당선": "1077"
+    };
+    
+    const subwayId = lineMap[subwayNm];
+    if (!subwayId) return null;
+
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+    if (!apiKey || apiKey.length < 10) apiKey = "sample";
+
+    const url = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`;
+    
+    try {
+        const json = await fetchWithFallbacks(url);
+        if (json?.status === 200) {
+            return json?.realtimeTrainCongestionList?.[0] || null;
+        }
+        return null;
+    } catch (err) {
+        console.warn("Congestion fetching skipped or failed:", err);
+        return null;
     }
 };
