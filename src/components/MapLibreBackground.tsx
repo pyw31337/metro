@@ -216,11 +216,11 @@ function MapLibreBackground({
         const map = mapRef.current?.getMap();
         if (!map) return;
 
-        const img = new Image(64, 64);
+        const img = new Image(512, 512); // High resolution to prevent pixelation
         const svgString = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                <rect width="16" height="16" x="4" y="3" rx="2"/>
-                <path d="M4 11h16M12 3v8M8 19l-2 3M18 22l-2-3M8 15h.01M16 15h.01"/>
+            <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <rect width="18" height="18" x="3" y="2" rx="2"/>
+                <path d="M3 10h18M12 2v8M8 20l-2 3M18 23l-2-3M8 15h.01M16 15h.01"/>
             </svg>
         `.trim();
         
@@ -530,10 +530,10 @@ function MapLibreBackground({
                             id="train-halo"
                             type="circle"
                             paint={{
-                                "circle-radius": 5.5,
+                                "circle-radius": 3.5,
                                 "circle-color": "white",
                                 "circle-opacity": 1,
-                                "circle-stroke-width": 1.2,
+                                "circle-stroke-width": 1.0,
                                 "circle-stroke-color": ["get", "lineColor"],
                                 "circle-stroke-opacity": 0.8
                             }}
@@ -543,7 +543,7 @@ function MapLibreBackground({
                             type="symbol"
                             layout={{
                                 "icon-image": "train-marker",
-                                "icon-size": 0.35,
+                                "icon-size": 0.045, // Scaled for the higher 512px source resolution (~23px total)
                                 "icon-allow-overlap": true,
                                 "icon-ignore-placement": true,
                                 "icon-anchor": "center"
@@ -551,7 +551,7 @@ function MapLibreBackground({
                             paint={{
                                 "icon-color": ["get", "lineColor"],
                                 "icon-halo-color": "white",
-                                "icon-halo-width": 2
+                                "icon-halo-width": 3
                             }}
                         />
                     </Source>
