@@ -353,35 +353,53 @@ function MapLibreBackground({
             mapInstance.off('styledata', onStyleLoad);
         };
     }, [mapInstance, registerHDTrainIcons]);
+    
+    // 2.7. Interactive Layer IDs for react-map-gl hit testing
+    const interactiveLayerIds = useMemo(() => [
+        "subway-station-circle",
+        "subway-station-label",
+        "train-layer",
+        "wc-unclustered",
+        "wc-clusters",
+        "bus-unclustered",
+        "bus-clusters",
+        "subway-line-layer"
+    ], []);
 
     const onHover = useCallback((e: any) => {
-        setCursor(e.features.length ? "pointer" : "auto");
+        setCursor(e.features && e.features.length > 0 ? "pointer" : "auto");
     }, []);
 
     const onClick = useCallback((e: any) => {
-        const feature = e.features && e.features[0];
-        if (!feature) {
+        if (!e.features || e.features.length === 0) {
             setPopupCoords(null);
             setFocusedLine(null); 
             if (onStationClick) onStationClick(null as any, null as any); // Sync parent state
             return;
         }
 
-        const { layer, properties, geometry } = feature;
+        // Prioritize features: station > train > bus/wc > line
+        const stationFeature = e.features.find((f: any) => f.layer.id === "subway-station-circle" || f.layer.id === "subway-station-label");
+        const trainFeature = e.features.find((f: any) => f.layer.id === "train-layer");
+        const busWCFeature = e.features.find((f: any) => ["wc-unclustered", "bus-unclustered", "wc-clusters", "bus-clusters"].includes(f.layer.id));
+        const lineFeature = e.features.find((f: any) => f.layer.id === "subway-line-layer");
+
+        const targetFeature = stationFeature || trainFeature || busWCFeature || lineFeature;
+        if (!targetFeature) return;
+
+        const { layer, properties, geometry } = targetFeature;
+        const coords = (geometry as any).coordinates as [number, number];
         
         if (layer.id === "subway-line-layer") {
-            // Focus on a specific line, reset if already focused
             setFocusedLine(prev => prev === properties.name ? null : properties.name);
             setPopupCoords(null);
             return;
         }
 
-        const coords = (geometry as any).coordinates as [number, number];
-
         if (layer.id === "subway-station-circle" || layer.id === "subway-station-label") {
             setPopupCoords([coords[0], coords[1]]);
-            setFocusedLine(null); // Clear line focus when selecting a station
-            setSelectedTrain(null); // Clear train select
+            setFocusedLine(null); 
+            setSelectedTrain(null); 
             if (onStationClick) onStationClick(properties.name, [coords[1], coords[0]]);
         } else if (layer.id === "train-layer") {
             handleTrainClick({ ...properties, lng: coords[0], lat: coords[1] });
@@ -421,6 +439,7 @@ function MapLibreBackground({
                 onMouseEnter={onHover}
                 onMouseLeave={() => setCursor("auto")}
                 onClick={onClick}
+                interactiveLayerIds={interactiveLayerIds}
                 onMove={(e) => {
                     const { latitude, longitude, zoom } = e.viewState;
                     setCurrentZoom(zoom);
