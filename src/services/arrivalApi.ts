@@ -14,8 +14,12 @@ export interface StationArrival {
 export const fetchWithFallbacks = async (targetUrl: string) => {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (!isHttps) {
-        const res = await fetch(targetUrl);
-        return await res.json();
+        try {
+            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(3000) });
+            return await res.json();
+        } catch (e) {
+            // handle abort
+        }
     }
 
     // Multiple free CORS proxies to ensure high availability on static sites
@@ -25,18 +29,26 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         `https://thingproxy.freeboard.io/fetch/${targetUrl}`
     ];
 
-    let lastError = null;
-    for (const proxy of proxies) {
-        try {
-            const res = await fetch(proxy);
-            if (res.ok) {
-                return await res.json();
-            }
-        } catch (err) {
-            lastError = err;
-        }
+    try {
+        // Run all proxy requests in parallel and return the first successful JSON response
+        const res = await Promise.any(
+            proxies.map(async (proxy) => {
+                const response = await fetch(proxy, { signal: AbortSignal.timeout(4000) });
+                if (!response.ok) throw new Error("Proxy response not ok");
+                const json = await response.json();
+                
+                // If it's a wrapped openapi 500 ERROR, throw to try next or fail fast
+                if (json?.RESULT?.CODE?.includes("ERROR-500")) {
+                     throw new Error("Target API 500 Error");
+                }
+                return json;
+            })
+        );
+        return res;
+    } catch (err) {
+        console.warn("All fetch proxies failed or timed out for", targetUrl);
+        throw new Error("All proxies failed or API returned 500");
     }
-    throw lastError || new Error("All proxies failed");
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
