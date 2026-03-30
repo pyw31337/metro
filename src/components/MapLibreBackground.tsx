@@ -662,27 +662,16 @@ function MapLibreBackground({
 
                                 {/* Line 3: Platform / Transfer Info */}
                                 {platformInfo ? (
-                                    <div 
-                                        className="flex items-center gap-1 justify-center mt-0.5 group/plat"
-                                        onClick={async (e) => {
-                                            e.stopPropagation();
-                                            const key = `${name}-${f.properties.fromLine}-${f.properties.toLine}`;
-                                            if (verifiedPlats[key]) return;
-                                            
-                                            setIsFetchingPlat(key);
-                                            const res = await fetchTransferPlatform(name, f.properties.fromLine, f.properties.toLine);
-                                            setVerifiedPlats(prev => ({ ...prev, [key]: res || "정보 없음" }));
-                                            setIsFetchingPlat(null);
-                                        }}
-                                    >
-                                        <div className={`w-1 h-1 rounded-full ${isFetchingPlat === `${name}-${f.properties.fromLine}-${f.properties.toLine}` ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`} />
+                                    <div className="flex items-center gap-1 justify-center mt-0.5">
+                                        <div className={`w-1 h-1 rounded-full ${!verifiedPlats[`${name}-${f.properties.fromLine}-${f.properties.toLine}`] ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`} />
                                         <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
-                                            {verifiedPlats[`${name}-${f.properties.fromLine}-${f.properties.toLine}`] 
-                                                ? `환승 ${verifiedPlats[`${name}-${f.properties.fromLine}-${f.properties.toLine}`]}`
-                                                : isFetchingPlat === `${name}-${f.properties.fromLine}-${f.properties.toLine}`
-                                                    ? '확인 중...'
-                                                    : '빠른 환승 확인'
-                                            }
+                                            {(() => {
+                                                const key = `${name}-${f.properties.fromLine}-${f.properties.toLine}`;
+                                                const plat = verifiedPlats[key];
+                                                if (plat && plat !== "정보없음") return `환승 ${plat}`;
+                                                if (plat === "정보없음") return "정보 없음";
+                                                return "환승 확인 중...";
+                                            })()}
                                         </span>
                                     </div>
                                 ) : (
