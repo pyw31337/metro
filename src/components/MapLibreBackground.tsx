@@ -263,8 +263,9 @@ function MapLibreBackground({
         
         // Auto-fetch transfer platform info when path changes
         if (pathResult && routeStationData?.features) {
-            const transfers = routeStationData.features.filter(f => f.properties.platformInfo === "정보 확인");
+            const transfers = routeStationData.features.filter(f => f.properties?.platformInfo === "정보 확인");
             transfers.forEach(async (f) => {
+                if (!f.properties) return;
                 const { name, fromLine, toLine } = f.properties;
                 const key = `${name}-${fromLine}-${toLine}`;
                 if (!verifiedPlats[key] && !isFetchingPlat) {
