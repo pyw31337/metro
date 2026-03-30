@@ -163,8 +163,8 @@ export default function Home() {
             if (!s) return "";
             // 1. Split by ' : ' to handle "내 위치 : 강남 (내 위치)"
             let name = s.split(' : ').pop() || s;
-            // 2. Remove parentheses blocks like "(5호선)" or "(내 위치)"
-            name = name.replace(/\(.*\)/g, '').trim();
+            // 2. Remove specified parentheses blocks, but keep line identifiers
+            name = name.replace(/\(내 위치\)|\(출발\)|\(도착\)|\(경유\)/g, '').trim();
             // 3. Remove "역" at the end if it exists (e.g., "시청역" -> "시청")
             // However, some stations like "서울역" are often kept as is. 
             // We'll strip it for matching if it's longer than 2 chars or common pattern.
