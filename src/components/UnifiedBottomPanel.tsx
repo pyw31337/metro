@@ -173,14 +173,14 @@ export default function UnifiedBottomPanel({
         );
     };
 
-    const formatStationDisplay = (value: string) => {
+    const formatStationDisplay = (value: string, isDest: boolean = false) => {
         if (!value) return null;
         
         // Handle "My Location" format: "내 위치 : 강남 (내 위치)"
         if (value.startsWith("내 위치")) {
             const parts = value.split(' : ');
             const main = parts[1] || value;
-            return <span className="truncate font-bold text-blue-500">{main}</span>;
+            return <span className={`truncate font-bold ${isDest ? 'text-rose-500' : 'text-blue-500'}`}>{main}</span>;
         }
 
         const namePart = value.split(' : ').pop() || value;
@@ -362,12 +362,12 @@ export default function UnifiedBottomPanel({
                         )}
 
                         {/* Destination */}
-                        <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
-                            <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">도착</span>
+                        <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
+                            <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
                             <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                 {(!activeField || activeField !== "dest") && destination && (
                                     <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">
-                                        {formatStationDisplay(destination)}
+                                        {formatStationDisplay(destination, true)}
                                     </div>
                                 )}
                                 <input 
