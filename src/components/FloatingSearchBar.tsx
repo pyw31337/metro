@@ -50,6 +50,7 @@ export default function FloatingSearchBar({
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<Station[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
+    const [selectedIndex, setSelectedIndex] = useState(-1);
 
     const allStations = useRef<Station[]>([]);
 
@@ -76,6 +77,7 @@ export default function FloatingSearchBar({
 
         if (val.length === 0) {
             setSearchResults([]);
+            setSelectedIndex(-1);
             return;
         }
 
@@ -84,6 +86,26 @@ export default function FloatingSearchBar({
         }).slice(0, 10);
 
         setSearchResults(filtered);
+        setSelectedIndex(filtered.length > 0 ? 0 : -1);
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (searchResults.length === 0) return;
+
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev < searchResults.length - 1 ? prev + 1 : prev));
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setSelectedIndex(prev => (prev > 0 ? prev - 1 : prev));
+        } else if (e.key === "Enter") {
+            if (selectedIndex >= 0 && selectedIndex < searchResults.length) {
+                selectStation(searchResults[selectedIndex].name);
+            }
+        } else if (e.key === "Escape") {
+            setSearchResults([]);
+            setSelectedIndex(-1);
+        }
     };
 
     const selectStation = (name: string) => {
@@ -149,6 +171,7 @@ export default function FloatingSearchBar({
                                     value={destination}
                                     onFocus={() => { setActiveField("dest"); setIsExpanded(true); }}
                                     onChange={(e) => handleSearch(e.target.value, "dest")}
+                                    onKeyDown={handleKeyDown}
                                     className="flex-1 bg-transparent border-none outline-none font-bold text-sm px-2 placeholder:text-zinc-400"
                                 />
                                 {destination && (
@@ -180,6 +203,7 @@ export default function FloatingSearchBar({
                                                 value={source}
                                                 onFocus={() => setActiveField("source")}
                                                 onChange={(e) => handleSearch(e.target.value, "source")}
+                                                onKeyDown={handleKeyDown}
                                                 className="flex-1 bg-transparent border-none outline-none font-bold text-sm px-2 placeholder:text-zinc-400"
                                             />
                                             <button onClick={findNearestStation} className="p-2 hover:bg-zinc-200 dark:hover:bg-white/10 rounded-xl">
@@ -212,21 +236,40 @@ export default function FloatingSearchBar({
                             className="glass-premium rounded-[24px] p-2 pointer-events-auto shadow-2xl overflow-hidden border border-white/20"
                         >
                             <div className="max-h-[200px] overflow-y-auto no-scrollbar">
-                                {searchResults.map((s, i) => (
-                                    <button
-                                        key={i}
-                                        onClick={() => selectStation(s.name)}
-                                        className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-all text-left"
-                                    >
-                                        <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-white/5 flex items-center justify-center shrink-0">
-                                            <Train size={14} className="text-zinc-400" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-bold text-zinc-900 dark:text-white text-sm">{s.name}</span>
-                                            <span className="text-[9px] text-zinc-400 uppercase tracking-tighter leading-none">{s.lines.join(", ")}</span>
-                                        </div>
-                                    </button>
-                                ))}
+                                {searchResults.map((s, i) => {
+                                    const isSelected = i === selectedIndex;
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => selectStation(s.name)}
+                                            onMouseEnter={() => setSelectedIndex(i)}
+                                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${isSelected ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-50 dark:hover:bg-white/5"}`}
+                                        >
+                                            <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-white/5 flex items-center justify-center shrink-0">
+                                                <Train size={14} className={isSelected ? "text-zinc-900 dark:text-white" : "text-zinc-400"} />
+                                            </div>
+                                            <div className="flex flex-col flex-1">
+                                                <span className="font-bold text-zinc-900 dark:text-white text-sm">{s.name}</span>
+                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                    {s.lines.map(lineName => {
+                                                        const line = SUBWAY_LINES.find(l => l.name === lineName || (lineName.includes('호선') && l.name.includes(lineName.replace('호선', ''))));
+                                                        const color = line?.color || "#94a3b8";
+                                                        const shortName = lineName.replace('호선', '').replace('서울배차', '').trim();
+                                                        return (
+                                                            <div 
+                                                                key={lineName}
+                                                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20"
+                                                            >
+                                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                                                                <span className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 leading-none">{shortName}</span>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
                             </div>
                         </motion.div>
                     )}

@@ -175,6 +175,7 @@ function MapLibreBackground({
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
     const [isFetchingPlat, setIsFetchingPlat] = useState<string | null>(null);
+    const fetchingRef = useRef<Set<string>>(new Set());
     const [iconsReady, setIconsReady] = useState(false);
     const [mapInstance, setMapInstance] = useState<any | null>(null);
 
@@ -264,25 +265,27 @@ function MapLibreBackground({
         // Auto-fetch transfer platform info when path changes
         if (pathResult && routeStationData?.features) {
             const transfers = routeStationData.features.filter(f => f.properties?.platformInfo === "정보 확인");
+            
             transfers.forEach(async (f) => {
                 if (!f.properties) return;
                 const { name, fromLine, toLine } = f.properties;
                 const key = `${name}-${fromLine}-${toLine}`;
-                if (!verifiedPlats[key] && !isFetchingPlat) {
+                
+                // Only fetch if not already verified and NOT currently in progress
+                if (!verifiedPlats[key] && !fetchingRef.current.has(key)) {
+                    fetchingRef.current.add(key);
                     try {
                         const plat = await fetchTransferPlatform(name, fromLine, toLine);
-                        if (plat) {
-                            setVerifiedPlats(prev => ({ ...prev, [key]: plat }));
-                        } else {
-                            setVerifiedPlats(prev => ({ ...prev, [key]: "정보없음" }));
-                        }
+                        setVerifiedPlats(prev => ({ ...prev, [key]: plat || "정보없음" }));
                     } catch (err) {
                         console.warn("Auto-fetch transfer failed:", err);
+                    } finally {
+                        fetchingRef.current.delete(key);
                     }
                 }
             });
         }
-    }, [activeTab, pathResult, routeStationData, verifiedPlats, isFetchingPlat]);
+    }, [pathResult, routeStationData]); // Removed verifiedPlats and isFetchingPlat
 
     // Register HD Pre-rendered Train Icons (Parallel & Bulletproof)
     const registerHDTrainIcons = useCallback(async (map: any) => {
