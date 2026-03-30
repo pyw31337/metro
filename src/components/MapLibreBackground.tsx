@@ -159,7 +159,7 @@ const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: { ar
 };
 
 function MapLibreBackground({
-    pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
+    pathResult, startStation, endStation, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
     onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
     onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, selectedBusStop
@@ -639,9 +639,33 @@ function MapLibreBackground({
                             
                             {/* Navigation Actions */}
                             <div className="grid grid-cols-3 gap-1.5 mb-4">
-                                <button onClick={() => { onSetStart(activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name); setPopupCoords(null); }} className="py-2 rounded-xl bg-blue-500 hover:bg-blue-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">출발</button>
-                                <button onClick={() => { onSetWaypoint(activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name); setPopupCoords(null); }} className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95">경유</button>
-                                <button onClick={() => { onSetEnd(activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name); setPopupCoords(null); }} className="py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold shadow-sm transition-all active:scale-95">도착</button>
+                                {(() => {
+                                    const stationName = activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name;
+                                    const isStartSet = !!startStation;
+                                    
+                                    return (
+                                        <>
+                                            <button 
+                                                onClick={() => { onSetEnd(stationName); setPopupCoords(null); }} 
+                                                className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                            >
+                                                도착
+                                            </button>
+                                            <button 
+                                                onClick={() => { onSetWaypoint(stationName); setPopupCoords(null); }} 
+                                                className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95"
+                                            >
+                                                경유
+                                            </button>
+                                            <button 
+                                                onClick={() => { onSetStart(stationName); setPopupCoords(null); }} 
+                                                className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                            >
+                                                출발
+                                            </button>
+                                        </>
+                                    );
+                                })()}
                             </div>
 
                             {/* Arrivals or Routes */}
