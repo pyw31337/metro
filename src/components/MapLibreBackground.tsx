@@ -50,6 +50,7 @@ interface MapLibreProps {
     onMapReady?: (map: any) => void;
     userLocation: [number, number] | null;
     timeDisplayMode: "duration" | "arrival";
+    onToggleTimeDisplay?: () => void;
 }
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -77,8 +78,7 @@ const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: { defau
     );
 };
 
-const ArrivalItemListItem = ({ arr }: { arr: StationArrival }) => {
-    const [showRelative, setShowRelative] = useState(false);
+const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: { arr: StationArrival, timeDisplayMode: "duration" | "arrival", onToggleTimeDisplay?: () => void }) => {
     
     let stopsLeft = "";
     if (arr.arvlMsg2.includes("정거장") || arr.arvlMsg2.includes("역 전") || arr.arvlMsg2.includes("번째 전역")) {
@@ -104,11 +104,11 @@ const ArrivalItemListItem = ({ arr }: { arr: StationArrival }) => {
         relativeStr = "";
     }
     
-    let displayTime = showRelative ? relativeStr : clockStr;
+    let displayTime = timeDisplayMode === "duration" ? relativeStr : clockStr;
 
     return (
         <button 
-            onClick={(e) => { e.stopPropagation(); setShowRelative(!showRelative); }}
+            onClick={(e) => { e.stopPropagation(); if(onToggleTimeDisplay) onToggleTimeDisplay(); }}
             className="w-full focus:outline-none flex items-center justify-between px-2.5 py-2 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
         >
             <span className={`text-[11px] leading-tight ${displayTime ? 'font-black text-zinc-900 dark:text-white' : 'font-black text-rose-500 dark:text-rose-400'}`}>
@@ -127,7 +127,7 @@ function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
     onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-    onCenterChange, userLocation, timeDisplayMode, selectedBusStop
+    onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, selectedBusStop
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -606,7 +606,7 @@ function MapLibreBackground({
                                             />
                                             {stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
                                                 stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr, i) => (
-                                                    <ArrivalItemListItem key={i} arr={arr} />
+                                                    <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
                                                 ))
                                             ) : (
                                                 <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
@@ -623,7 +623,7 @@ function MapLibreBackground({
                                             />
                                             {stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
                                                 stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr, i) => (
-                                                    <ArrivalItemListItem key={i} arr={arr} />
+                                                    <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
                                                 ))
                                             ) : (
                                                 <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>

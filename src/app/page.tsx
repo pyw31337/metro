@@ -334,6 +334,7 @@ export default function Home() {
                     onMapReady={(r) => { mapRef.current = r; }}
                     userLocation={userLocation}
                     timeDisplayMode={timeDisplayMode}
+                    onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                 />
             </div>
 
