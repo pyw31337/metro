@@ -174,6 +174,7 @@ function MapLibreBackground({
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
     const [isFetchingPlat, setIsFetchingPlat] = useState<string | null>(null);
+    const [iconsReady, setIconsReady] = useState(false);
 
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
@@ -259,62 +260,75 @@ function MapLibreBackground({
         setFocusedBubble(null);
     }, [activeTab]);
 
-    // Register HD Pre-rendered Train Icons
+    // Register HD Pre-rendered Train Icons (Re-usable)
+    const registerHDTrainIcons = useCallback(async (map: any) => {
+        if (!map) return;
+        
+        const uniqueColors = Array.from(new Set(SUBWAY_LINES.map(l => l.color)));
+        
+        for (const color of uniqueColors) {
+            const iconId = `train-card-${color}`;
+            if (map.hasImage(iconId)) continue;
+
+            const canvas = document.createElement('canvas');
+            canvas.width = 128;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) continue;
+
+            // 1. Crisp White Rounded Rect
+            ctx.fillStyle = 'white';
+            const x=4, y=4, w=120, h=120, r=28;
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+            ctx.fill();
+
+            // 2. High-Res Colored Tram SVG
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <rect width="18" height="18" x="3" y="2" rx="2"/>
+                    <path d="M3 10h18M12 2v8M8 20l-2 3M18 23l-2-3M8 15h.01M16 15h.01"/>
+                </svg>
+            `.trim();
+            
+            const img = new Image();
+            const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            
+            await new Promise((resolve) => {
+                img.onload = () => {
+                    ctx.drawImage(img, 16, 16, 96, 96);
+                    if (!map.hasImage(iconId)) {
+                        map.addImage(iconId, canvas as any);
+                    }
+                    URL.revokeObjectURL(url);
+                    resolve(null);
+                };
+                img.src = url;
+            });
+        }
+        setIconsReady(true);
+    }, []);
+
+    // Registration triggered by initial load and style changes (Light/Dark Mode)
     useEffect(() => {
         const map = mapRef.current?.getMap();
         if (!map) return;
 
-        const uniqueColors = Array.from(new Set(SUBWAY_LINES.map(l => l.color)));
+        const onStyleLoad = () => registerHDTrainIcons(map);
         
-        const registerIcons = async () => {
-            for (const color of uniqueColors) {
-                const iconId = `train-card-${color}`;
-                if (map.hasImage(iconId)) continue;
+        map.on('style.load', onStyleLoad);
+        if (map.isStyleLoaded()) onStyleLoad();
 
-                const canvas = document.createElement('canvas');
-                canvas.width = 128;
-                canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                if (!ctx) continue;
-
-                // 1. Crisp White Rounded Rect
-                ctx.fillStyle = 'white';
-                const x=4, y=4, w=120, h=120, r=28;
-                ctx.beginPath();
-                ctx.moveTo(x + r, y);
-                ctx.arcTo(x + w, y, x + w, y + h, r);
-                ctx.arcTo(x + w, y + h, x, y + h, r);
-                ctx.arcTo(x, y + h, x, y, r);
-                ctx.arcTo(x, y, x + w, y, r);
-                ctx.closePath();
-                ctx.fill();
-
-                // 2. High-Res Colored Tram SVG
-                const svg = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                        <rect width="18" height="18" x="3" y="2" rx="2"/>
-                        <path d="M3 10h18M12 2v8M8 20l-2 3M18 23l-2-3M8 15h.01M16 15h.01"/>
-                    </svg>
-                `.trim();
-                
-                const img = new Image();
-                const blob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
-                const url = URL.createObjectURL(blob);
-                
-                await new Promise((resolve) => {
-                    img.onload = () => {
-                        ctx.drawImage(img, 16, 16, 96, 96);
-                        map.addImage(iconId, canvas as any);
-                        URL.revokeObjectURL(url);
-                        resolve(null);
-                    };
-                    img.src = url;
-                });
-            }
+        return () => {
+            map.off('style.load', onStyleLoad);
         };
-
-        registerIcons();
-    }, [mapRef.current]);
+    }, [mapRef.current, registerHDTrainIcons]);
 
     const onHover = useCallback((e: any) => {
         setCursor(e.features.length ? "pointer" : "auto");
@@ -617,8 +631,8 @@ function MapLibreBackground({
                     </Marker>
                 )}
 
-                {/* 5. Real-time Train Layer (Context-Aware Filtering) */}
-                {activeTab === "subway" && (
+                {/* 5. Train Positioning (Pre-rendered HD) */}
+                {activeTab === "subway" && iconsReady && (
                     <Source id="train-source" type="geojson" data={trainData}>
                         <Layer
                             id="train-layer"
