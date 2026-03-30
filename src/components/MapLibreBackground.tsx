@@ -84,8 +84,7 @@ const ArrivalItemListItem = ({ arr }: { arr: StationArrival }) => {
     if (arr.arvlMsg2.includes("정거장") || arr.arvlMsg2.includes("역 전") || arr.arvlMsg2.includes("번째 전역")) {
         const match = arr.arvlMsg2.match(/\d+/);
         if (match) stopsLeft = `${match[0]} 정거장전`;
-        else stopsLeft = arr.arvlMsg2.split("(")[0].trim();
-    } else {
+    } else if (arr.arvlMsg2.includes("도착") || arr.arvlMsg2.includes("출발") || arr.arvlMsg2.includes("진입")) {
         stopsLeft = arr.arvlMsg2.split("(")[0].trim();
     }
     
@@ -101,29 +100,25 @@ const ArrivalItemListItem = ({ arr }: { arr: StationArrival }) => {
         const m = Math.floor(timeSec / 60);
         relativeStr = m > 0 ? `${m}분후` : `1분 이내`;
     } else {
-        clockStr = "곧 도착";
-        relativeStr = "곧 도착";
+        clockStr = "";
+        relativeStr = "";
     }
     
     let displayTime = showRelative ? relativeStr : clockStr;
-    let finalMsg = displayTime;
-    if (stopsLeft && !stopsLeft.includes("도착") && !stopsLeft.includes("종료") && !stopsLeft.includes("출발")) {
-        finalMsg = `${displayTime} ${stopsLeft}`;
-    } else if (stopsLeft) {
-        finalMsg = stopsLeft;
-    }
 
     return (
         <button 
             onClick={(e) => { e.stopPropagation(); setShowRelative(!showRelative); }}
-            className="w-full text-left focus:outline-none flex flex-col px-2 py-1.5 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
+            className="w-full focus:outline-none flex items-center justify-between px-2.5 py-2 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
         >
-            <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight mb-0.5">
-                {arr.trainLineNm.split('-')[0].trim()}
+            <span className={`text-[11px] leading-tight ${displayTime ? 'font-black text-zinc-900 dark:text-white' : 'font-black text-rose-500 dark:text-rose-400'}`}>
+                {displayTime || stopsLeft || "도착 안내 대기"}
             </span>
-            <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
-                {finalMsg}
-            </span>
+            {displayTime && stopsLeft && (
+                <span className="text-[10px] font-normal text-zinc-500 dark:text-zinc-400 leading-tight">
+                    {stopsLeft}
+                </span>
+            )}
         </button>
     );
 };
@@ -586,9 +581,11 @@ function MapLibreBackground({
 
                             {/* Arrivals or Routes */}
                             <div className="space-y-2 max-h-[160px] overflow-y-auto no-scrollbar">
-                                <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">
-                                    {activeTab === 'bus' ? '경유 노선 정보' : '실시간 도착 정보'}
-                                </p>
+                                {activeTab === 'bus' && (
+                                    <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">
+                                        경유 노선 정보
+                                    </p>
+                                )}
                                 {activeTab === 'bus' && selectedBusStop ? (
                                     <div className="flex flex-wrap gap-1">
                                         {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes as unknown as string) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
