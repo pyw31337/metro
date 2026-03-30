@@ -211,6 +211,42 @@ function MapLibreBackground({
         setFocusedBubble(null);
     }, [activeTab]);
 
+    // Register Train Icon Image
+    useEffect(() => {
+        const map = mapRef.current?.getMap();
+        if (!map) return;
+
+        const img = new Image(64, 64);
+        const svgString = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7 15h10"/>
+                <path d="M15 22 13 18"/>
+                <path d="M9 22 11 18"/>
+                <path d="M15 11l-3-3l-3 3"/>
+                <path d="M21 9a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9Z"/>
+            </svg>
+        `.trim();
+        
+        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        
+        const loadImg = () => {
+            if (!map.hasImage('train-marker')) {
+                map.addImage('train-marker', img, { sdf: true });
+            }
+            URL.revokeObjectURL(url);
+        };
+
+        img.onload = loadImg;
+        img.src = url;
+
+        return () => {
+            if (map.hasImage('train-marker')) {
+                // We keep it usually, but if component unmounts it's fine
+            }
+        };
+    }, [mapRef.current]);
+
     const onHover = useCallback((e: any) => {
         setCursor(e.features.length ? "pointer" : "auto");
     }, []);
@@ -508,20 +544,25 @@ function MapLibreBackground({
                             type="circle"
                             paint={{
                                 "circle-radius": 12,
-                                "circle-color": ["get", "lineColor"],
-                                "circle-blur": 1,
-                                "circle-opacity": 0.7
+                                "circle-color": "white",
+                                "circle-opacity": 0.9,
+                                "circle-stroke-width": 2,
+                                "circle-stroke-color": ["get", "lineColor"],
+                                "circle-stroke-opacity": 0.5
                             }}
                         />
                         <Layer
                             id="train-layer"
                             type="symbol"
                             layout={{
-                                "text-field": "🚃",
-                                "text-size": 18,
-                                "text-allow-overlap": true,
-                                "text-ignore-placement": true,
-                                "text-anchor": "center"
+                                "icon-image": "train-marker",
+                                "icon-size": 0.45,
+                                "icon-allow-overlap": true,
+                                "icon-ignore-placement": true,
+                                "icon-anchor": "center"
+                            }}
+                            paint={{
+                                "icon-color": ["get", "lineColor"]
                             }}
                         />
                     </Source>
