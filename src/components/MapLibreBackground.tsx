@@ -245,31 +245,39 @@ function MapLibreBackground({
         const map = mapRef.current?.getMap();
         if (!map) return;
 
-        const img = new Image(512, 512); // High resolution to prevent pixelation
-        const svgString = `
+        // Background: White Rounded Rectangle
+        const bgImg = new Image(512, 512);
+        const bgSvg = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24">
+                <rect x="2" y="2" width="20" height="20" rx="5" fill="white" />
+            </svg>
+        `.trim();
+        const bgBlob = new Blob([bgSvg], { type: 'image/svg+xml;charset=utf-8' });
+        const bgUrl = URL.createObjectURL(bgBlob);
+        bgImg.onload = () => {
+            if (!map.hasImage('train-marker-v3-bg')) map.addImage('train-marker-v3-bg', bgImg);
+            URL.revokeObjectURL(bgUrl);
+        };
+        bgImg.src = bgUrl;
+
+        // Icon: Tram (SDF)
+        const iconImg = new Image(512, 512);
+        const iconSvg = `
             <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <rect width="18" height="18" x="3" y="2" rx="2"/>
                 <path d="M3 10h18M12 2v8M8 20l-2 3M18 23l-2-3M8 15h.01M16 15h.01"/>
             </svg>
         `.trim();
-        
-        const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
-        const url = URL.createObjectURL(svgBlob);
-        
-        const loadImg = () => {
-            if (!map.hasImage('train-marker')) {
-                map.addImage('train-marker', img, { sdf: true });
-            }
-            URL.revokeObjectURL(url);
+        const iconBlob = new Blob([iconSvg], { type: 'image/svg+xml;charset=utf-8' });
+        const iconUrl = URL.createObjectURL(iconBlob);
+        iconImg.onload = () => {
+            if (!map.hasImage('train-marker-v3-icon')) map.addImage('train-marker-v3-icon', iconImg, { sdf: true });
+            URL.revokeObjectURL(iconUrl);
         };
-
-        img.onload = loadImg;
-        img.src = url;
+        iconImg.src = iconUrl;
 
         return () => {
-            if (map.hasImage('train-marker')) {
-                // We keep it usually, but if component unmounts it's fine
-            }
+            // No need to remove images on simple re-renders
         };
     }, [mapRef.current]);
 
@@ -556,16 +564,18 @@ function MapLibreBackground({
                 {activeTab === "subway" && (
                     <Source id="train-source" type="geojson" data={trainData}>
                         <Layer
-                            id="train-halo"
-                            type="circle"
+                            id="train-bg"
+                            type="symbol"
                             filter={trainFilter}
+                            layout={{
+                                "icon-image": "train-marker-v3-bg",
+                                "icon-size": 0.026, // Base slightly larger than icon
+                                "icon-allow-overlap": true,
+                                "icon-ignore-placement": true,
+                                "icon-anchor": "center"
+                            }}
                             paint={{
-                                "circle-radius": 3.5,
-                                "circle-color": "white",
-                                "circle-opacity": 1,
-                                "circle-stroke-width": 1.0,
-                                "circle-stroke-color": ["get", "lineColor"],
-                                "circle-stroke-opacity": 0.8
+                                "icon-opacity": 1
                             }}
                         />
                         <Layer
@@ -573,8 +583,8 @@ function MapLibreBackground({
                             type="symbol"
                             filter={trainFilter}
                             layout={{
-                                "icon-image": "train-marker",
-                                "icon-size": 0.045, // Scaled for the higher 512px source resolution (~23px total)
+                                "icon-image": "train-marker-v3-icon",
+                                "icon-size": 0.0225, // Exactly 50% of the previous 0.045 scale
                                 "icon-allow-overlap": true,
                                 "icon-ignore-placement": true,
                                 "icon-anchor": "center"
@@ -582,7 +592,7 @@ function MapLibreBackground({
                             paint={{
                                 "icon-color": ["get", "lineColor"],
                                 "icon-halo-color": "white",
-                                "icon-halo-width": 3
+                                "icon-halo-width": 1.5
                             }}
                         />
                     </Source>
