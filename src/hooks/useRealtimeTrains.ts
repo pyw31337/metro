@@ -54,10 +54,10 @@ export function useRealtimeTrains() {
                 const results = await Promise.all(lineNames.map(async (name) => {
                     try {
                         const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
-                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeTrainPosition/0/100/${name}`;
+                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimePosition/0/100/${name}`;
                         
                         const json = await fetchWithFallbacks(targetUrl);
-                        const list: RealtimePosition[] = json?.realtimeTrainPositionList || [];
+                        const list: RealtimePosition[] = json?.realtimePositionList || [];
                         return { name, list };
                     } catch (e) {
                         return { name, list: [] };
