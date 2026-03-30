@@ -55,6 +55,79 @@ interface MapLibreProps {
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
 const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
 
+const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: { defaultTitle: string, trains: StationArrival[], textColor: string, borderColor: string }) => {
+    const [showSchedule, setShowSchedule] = useState(false);
+    
+    let title = defaultTitle;
+    if (trains.length > 0) {
+        const dest = trains[0].trainLineNm.split('-')[0].replace('행', '').trim();
+        const base = defaultTitle.split('·')[0].trim();
+        title = `${base} (${dest}행)`; 
+    }
+
+    return (
+        <button 
+            onClick={(e) => { e.stopPropagation(); setShowSchedule(!showSchedule); }}
+            className={`w-full text-left focus:outline-none transition-transform active:scale-95`}
+        >
+            <div className={`text-[10px] font-black ${textColor} text-center pb-1 border-b ${borderColor}`}>
+                {showSchedule ? '첫차 05:00 / 막차 12:00' : title}
+            </div>
+        </button>
+    );
+};
+
+const ArrivalItemListItem = ({ arr }: { arr: StationArrival }) => {
+    const [showRelative, setShowRelative] = useState(false);
+    
+    let stopsLeft = "";
+    if (arr.arvlMsg2.includes("정거장") || arr.arvlMsg2.includes("역 전") || arr.arvlMsg2.includes("번째 전역")) {
+        const match = arr.arvlMsg2.match(/\d+/);
+        if (match) stopsLeft = `${match[0]} 정거장전`;
+        else stopsLeft = arr.arvlMsg2.split("(")[0].trim();
+    } else {
+        stopsLeft = arr.arvlMsg2.split("(")[0].trim();
+    }
+    
+    const timeSec = parseInt(arr.barvlDt) || 0;
+    
+    let relativeStr = "";
+    let clockStr = "";
+    
+    if (timeSec > 0) {
+        const d = new Date(Date.now() + timeSec * 1000);
+        clockStr = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+        
+        const m = Math.floor(timeSec / 60);
+        relativeStr = m > 0 ? `${m}분후` : `1분 이내`;
+    } else {
+        clockStr = "곧 도착";
+        relativeStr = "곧 도착";
+    }
+    
+    let displayTime = showRelative ? relativeStr : clockStr;
+    let finalMsg = displayTime;
+    if (stopsLeft && !stopsLeft.includes("도착") && !stopsLeft.includes("종료") && !stopsLeft.includes("출발")) {
+        finalMsg = `${displayTime} ${stopsLeft}`;
+    } else if (stopsLeft) {
+        finalMsg = stopsLeft;
+    }
+
+    return (
+        <button 
+            onClick={(e) => { e.stopPropagation(); setShowRelative(!showRelative); }}
+            className="w-full text-left focus:outline-none flex flex-col px-2 py-1.5 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
+        >
+            <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight mb-0.5">
+                {arr.trainLineNm.split('-')[0].trim()}
+            </span>
+            <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
+                {finalMsg}
+            </span>
+        </button>
+    );
+};
+
 function MapLibreBackground({
     pathResult, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
@@ -528,17 +601,15 @@ function MapLibreBackground({
                                     <div className="grid grid-cols-2 gap-2 mt-1">
                                         {/* Up/Inner Line */}
                                         <div className="flex flex-col gap-1.5">
-                                            <div className="text-[10px] font-black text-blue-500 dark:text-blue-400 text-center pb-1 border-b border-blue-500/20">상행 · 내선</div>
+                                            <ArrivalHeader 
+                                                defaultTitle="상행 · 내선" 
+                                                trains={stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선'))}
+                                                textColor="text-blue-500 dark:text-blue-400"
+                                                borderColor="border-blue-500/20"
+                                            />
                                             {stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
                                                 stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr, i) => (
-                                                    <div key={i} className="flex flex-col px-2 py-1.5 rounded-lg bg-black-[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
-                                                        <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight mb-0.5">
-                                                            {arr.trainLineNm.split('-')[0].trim()}
-                                                        </span>
-                                                        <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
-                                                            {arr.arvlMsg2}
-                                                        </span>
-                                                    </div>
+                                                    <ArrivalItemListItem key={i} arr={arr} />
                                                 ))
                                             ) : (
                                                 <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
@@ -547,17 +618,15 @@ function MapLibreBackground({
                                         
                                         {/* Down/Outer Line */}
                                         <div className="flex flex-col gap-1.5">
-                                            <div className="text-[10px] font-black text-orange-500 dark:text-orange-400 text-center pb-1 border-b border-orange-500/20">하행 · 외선</div>
+                                            <ArrivalHeader 
+                                                defaultTitle="하행 · 외선" 
+                                                trains={stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선'))}
+                                                textColor="text-orange-500 dark:text-orange-400"
+                                                borderColor="border-orange-500/20"
+                                            />
                                             {stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
                                                 stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr, i) => (
-                                                    <div key={i} className="flex flex-col px-2 py-1.5 rounded-lg bg-black-[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
-                                                        <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight mb-0.5">
-                                                            {arr.trainLineNm.split('-')[0].trim()}
-                                                        </span>
-                                                        <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
-                                                            {arr.arvlMsg2}
-                                                        </span>
-                                                    </div>
+                                                    <ArrivalItemListItem key={i} arr={arr} />
                                                 ))
                                             ) : (
                                                 <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
