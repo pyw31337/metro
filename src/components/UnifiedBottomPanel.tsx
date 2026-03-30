@@ -191,12 +191,19 @@ export default function UnifiedBottomPanel({
         let stationName = namePart;
         let lineInfo = "";
 
-        // Check if ends with recognized line name or numeric/id
         const lineMatch = namePart.match(/^(.*?)\s*\(?(\d+호선|[\uac00-\ud7af]+\d*선|공항철도|\d+)\)?$/);
         
         if (lineMatch) {
             stationName = lineMatch[1].trim();
             lineInfo = lineMatch[2].trim();
+        }
+
+        // Handle raw map click names by looking up their primary line
+        if (!lineInfo && stations) {
+            const found = stations.find(s => s.name === stationName);
+            if (found && found.lines && found.lines.length > 0) {
+                lineInfo = found.lines[0];
+            }
         }
 
         return (
