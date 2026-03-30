@@ -116,8 +116,17 @@ const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: { ar
         stopsLeft = stopsLeft.replace(new RegExp(`${cleanName}역?`, 'g'), "당역");
     }
     
-    const timeSec = parseInt(arr.barvlDt) || 0;
+    let timeSec = parseInt(arr.barvlDt) || 0;
     
+    // Estimate time if missing but stops info is available (common for Gyeongui-Jungang, etc.)
+    if (timeSec === 0 && stopsLeft) {
+        if (stopsLeft.includes("당역")) timeSec = 30; // 30 sec
+        else if (stopsLeft.includes("정거장")) {
+            const m = stopsLeft.match(/\d+/);
+            if (m) timeSec = parseInt(m[0]) * 180; // 3 min per stop
+        }
+    }
+
     let relativeStr = "";
     let clockStr = "";
     
@@ -126,10 +135,10 @@ const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: { ar
         clockStr = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
         
         const m = Math.floor(timeSec / 60);
-        relativeStr = m > 0 ? `${m}분후` : `1분 이내`;
+        relativeStr = m > 0 ? `${m}분후` : `곧 도착`;
     } else {
         clockStr = "";
-        relativeStr = "";
+        relativeStr = "정보 없음";
     }
     
     let displayTime = timeDisplayMode === "duration" ? relativeStr : clockStr;
@@ -139,14 +148,12 @@ const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: { ar
             onClick={(e) => { e.stopPropagation(); if(onToggleTimeDisplay) onToggleTimeDisplay(); }}
             className="w-full focus:outline-none flex items-center justify-between px-2.5 py-2 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
         >
-            <span className={`text-[11px] leading-tight ${displayTime ? 'font-black text-zinc-900 dark:text-white' : 'font-black text-rose-500 dark:text-rose-400'}`}>
-                {displayTime || stopsLeft || "도착 안내 대기"}
+            <span className="text-[11px] leading-tight font-black text-zinc-900 dark:text-white">
+                {displayTime}
             </span>
-            {displayTime && stopsLeft && (
-                <span className="text-[10px] font-normal text-zinc-500 dark:text-zinc-400 leading-tight">
-                    {stopsLeft}
-                </span>
-            )}
+            <span className="text-[10px] font-normal text-zinc-400 dark:text-zinc-500 leading-tight">
+                {stopsLeft}
+            </span>
         </button>
     );
 };
