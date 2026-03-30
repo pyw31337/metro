@@ -98,8 +98,18 @@ export function useRealtimeTrains() {
                     });
                 });
 
-                if (allFetchedTrains.length > 0) {
-                    trainsRef.current = allFetchedTrains;
+                const oldMap = new Map(trainsRef.current.map(t => [t.id, t]));
+                const mergedTrains = allFetchedTrains.map(newT => {
+                    const existing = oldMap.get(newT.id);
+                    if (existing && existing.stationIndex === newT.stationIndex) {
+                        // Same station, keep moving from where we are
+                        return { ...newT, progress: existing.progress, lastUpdate: existing.lastUpdate };
+                    }
+                    return newT;
+                });
+
+                if (mergedTrains.length > 0) {
+                    trainsRef.current = mergedTrains;
                 }
             } catch (err) {
                 console.error("Failed to fetch realtime trains:", err);
@@ -111,21 +121,33 @@ export function useRealtimeTrains() {
 
         const animInterval = setInterval(() => {
             const now = Date.now();
-            const updated = trainsRef.current.map(t => {
+            const nextStates = trainsRef.current.map(t => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
-                if (!line) return null;
+                if (!line) return t;
                 const stations = line.stations;
 
                 // Simple elapsed progress
                 const elapsed = (now - t.lastUpdate) / 1000; 
-                let progress = t.progress + (elapsed * 0.01); 
+                let progress = t.progress + (elapsed * 0.008); // Slightly slower for smoothness
                 if (progress > 0.95) progress = 0.95; 
+
+                return { ...t, progress, lastUpdate: now };
+            });
+
+            // Update ref so we don't reset on next tick
+            trainsRef.current = nextStates;
+
+            // Update UI
+            const updated = nextStates.map(t => {
+                const line = SUBWAY_LINES.find(l => l.id === t.lineId);
+                if (!line) return null;
+                const stations = line.stations;
 
                 const currentStation = stations[t.stationIndex];
                 const nextStationIdx = t.stationIndex + t.direction;
                 const nextStation = stations[nextStationIdx] || currentStation;
 
-                const pos = interpolate(currentStation, nextStation, progress);
+                const pos = interpolate(currentStation, nextStation, t.progress);
 
                 return {
                     id: t.id,
