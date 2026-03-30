@@ -169,6 +169,7 @@ function MapLibreBackground({
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
     const [focusedLine, setFocusedLine] = useState<string | null>(null);
     const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
+    const [showAllRouteBubbles, setShowAllRouteBubbles] = useState(false);
     const [currentZoom, setCurrentZoom] = useState<number>(12);
     const [selectedTrain, setSelectedTrain] = useState<any | null>(null);
     const [congestionData, setCongestionData] = useState<any | null>(null);
@@ -261,10 +262,33 @@ function MapLibreBackground({
         setPopupCoords(null);
         setFocusedLine(null);
         setFocusedBubble(null);
+        setShowAllRouteBubbles(false);
         
         // Auto-fetch transfer platform info when path changes
         if (pathResult && routeStationData?.features) {
-            const transfers = routeStationData.features.filter(f => f.properties?.platformInfo === "정보 확인");
+            const features = routeStationData.features;
+            
+            // Auto Fit Bounds
+            if (features.length > 0 && mapRef.current) {
+                const map = mapRef.current.getMap();
+                let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+                features.forEach((f: any) => {
+                    const [lng, lat] = f.geometry.coordinates;
+                    if (lng < minLng) minLng = lng;
+                    if (lat < minLat) minLat = lat;
+                    if (lng > maxLng) maxLng = lng;
+                    if (lat > maxLat) maxLat = lat;
+                });
+                
+                if (minLng !== Infinity && map) {
+                    map.fitBounds([
+                        [minLng, minLat],
+                        [maxLng, maxLat]
+                    ], { padding: 80, duration: 800 });
+                }
+            }
+
+            const transfers = features.filter((f: any) => f.properties?.platformInfo === "정보 확인");
             
             transfers.forEach(async (f) => {
                 if (!f.properties) return;
@@ -389,7 +413,8 @@ function MapLibreBackground({
         "wc-clusters",
         "bus-unclustered",
         "bus-clusters",
-        "subway-line-layer"
+        "subway-line-layer",
+        "path-line-solid"
     ], []);
 
     const onHover = useCallback((e: any) => {
@@ -404,17 +429,23 @@ function MapLibreBackground({
             return;
         }
 
-        // Prioritize features: station > train > bus/wc > line
+        // Prioritize features: station > train > bus/wc > route > line
         const stationFeature = e.features.find((f: any) => f.layer.id === "subway-station-circle" || f.layer.id === "subway-station-label");
         const trainFeature = e.features.find((f: any) => f.layer.id === "train-layer");
         const busWCFeature = e.features.find((f: any) => ["wc-unclustered", "bus-unclustered", "wc-clusters", "bus-clusters"].includes(f.layer.id));
+        const pathLineFeature = e.features.find((f: any) => f.layer.id === "path-line-solid");
         const lineFeature = e.features.find((f: any) => f.layer.id === "subway-line-layer");
 
-        const targetFeature = stationFeature || trainFeature || busWCFeature || lineFeature;
+        const targetFeature = stationFeature || trainFeature || busWCFeature || pathLineFeature || lineFeature;
         if (!targetFeature) return;
 
         const { layer, properties, geometry } = targetFeature;
         const coords = (geometry as any).coordinates as [number, number];
+        
+        if (layer.id === "path-line-solid") {
+            setShowAllRouteBubbles(prev => !prev);
+            return;
+        }
         
         if (layer.id === "subway-line-layer") {
             setFocusedLine(prev => prev === properties.name ? null : properties.name);
@@ -617,10 +648,9 @@ function MapLibreBackground({
                     const isFocused = focusedBubble === name;
                     const isLast = i === routeStationData.features.length - 1;
                     
-                    // Filter: Only show endpoints and transfers when zoomed out (< 15)
                     const isEndpoint = i === 0 || isLast;
                     const isTransfer = !!platformInfo; // Any station with platform info is a transfer/point of interest
-                    const shouldShow = currentZoom >= 15 || isEndpoint || isTransfer;
+                    const shouldShow = showAllRouteBubbles || isEndpoint || isTransfer;
 
                     if (!shouldShow) return null;
                     
