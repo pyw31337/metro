@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { SUBWAY_LINES } from '@/data/subway-lines';
+import { fetchWithFallbacks } from '@/services/arrivalApi';
 
 export interface Train {
     id: string;
@@ -53,12 +54,10 @@ export function useRealtimeTrains() {
             try {
                 const results = await Promise.all(lineNames.map(async (name) => {
                     try {
-                        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeSubwayPosition/1/100/${encodeURIComponent(name)}`;
-                        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+                        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
+                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeSubwayPosition/1/100/${name}`;
                         
-                        const res = await fetch(proxyUrl);
-                        const json = await res.json();
+                        const json = await fetchWithFallbacks(targetUrl);
                         const list: RealtimePosition[] = json?.realtimeSubwayPosition?.row || [];
                         return { name, list };
                     } catch (e) {

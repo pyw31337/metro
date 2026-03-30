@@ -11,43 +11,41 @@ export interface StationArrival {
 }
 
 
+export const fetchWithFallbacks = async (targetUrl: string) => {
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    if (!isHttps) {
+        const res = await fetch(targetUrl);
+        return await res.json();
+    }
+
+    // Multiple free CORS proxies to ensure high availability on static sites
+    const proxies = [
+        `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+        `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+    ];
+
+    let lastError = null;
+    for (const proxy of proxies) {
+        try {
+            const res = await fetch(proxy);
+            if (res.ok) {
+                return await res.json();
+            }
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    throw lastError || new Error("All proxies failed");
+};
+
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
+
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
     const cleanName = stationName.replace(/역$/, '');
-    
-    // Seoul Open API drops HTTPS connections, so we must use HTTP. 
-    // If the site is deployed on HTTPS (e.g., GitHub Pages), we must wrap it in a proxy to prevent Mixed Content blocking.
-    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     const baseUrl = `http://swopenapi.seoul.go.kr/api/subway`;
-    
-    const fetchWithFallbacks = async (targetUrl: string) => {
-        if (!isHttps) {
-            const res = await fetch(targetUrl);
-            return await res.json();
-        }
-
-        // Multiple free CORS proxies to ensure high availability on static sites
-        const proxies = [
-            `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
-            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-            `https://thingproxy.freeboard.io/fetch/${targetUrl}`
-        ];
-
-        let lastError = null;
-        for (const proxy of proxies) {
-            try {
-                const res = await fetch(proxy);
-                if (res.ok) {
-                    return await res.json();
-                }
-            } catch (err) {
-                lastError = err;
-            }
-        }
-        throw lastError || new Error("All proxies failed");
-    };
 
     // Attempt with user key first
     const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/30/${cleanName}`;
@@ -61,7 +59,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             json = await fetchWithFallbacks(fallbackUrl);
         }
 
-        const arrivals: StationArrival[] = json?.realtimeStationArrivalList || json?.realtimeStationArrival?.row || [];
+        const arrivals: StationArrival[] = json?.realtimeArrivalList || [];
         
         // Filter to max 3 per direction (up/inner vs down/outer)
         const upTrains: StationArrival[] = [];
