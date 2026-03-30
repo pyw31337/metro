@@ -45,12 +45,13 @@ interface MapLibreProps {
     selectedWC: WCItem | null;
     selectedBusStop: BusStop | null;
     selectedStationName: string | null;
-    stationArrivals: StationArrival[];
+    stationArrivals: any[];
     onCenterChange?: (lat: number, lng: number) => void;
     onMapReady?: (map: any) => void;
     userLocation: [number, number] | null;
     timeDisplayMode: "duration" | "arrival";
     onToggleTimeDisplay?: () => void;
+    stations: any[];
 }
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -162,7 +163,7 @@ function MapLibreBackground({
     pathResult, startStation, endStation, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
     onStationClick, onWCClick, onBusStopClick, onMapReady,
     onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-    onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, selectedBusStop
+    onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, selectedBusStop, stations
 }: MapLibreProps) {
     const mapRef = useRef<MapRef | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -259,7 +260,28 @@ function MapLibreBackground({
         setPopupCoords(null);
         setFocusedLine(null);
         setFocusedBubble(null);
-    }, [activeTab]);
+        
+        // Auto-fetch transfer platform info when path changes
+        if (pathResult && routeStationData?.features) {
+            const transfers = routeStationData.features.filter(f => f.properties.platformInfo === "정보 확인");
+            transfers.forEach(async (f) => {
+                const { name, fromLine, toLine } = f.properties;
+                const key = `${name}-${fromLine}-${toLine}`;
+                if (!verifiedPlats[key] && !isFetchingPlat) {
+                    try {
+                        const plat = await fetchTransferPlatform(name, fromLine, toLine);
+                        if (plat) {
+                            setVerifiedPlats(prev => ({ ...prev, [key]: plat }));
+                        } else {
+                            setVerifiedPlats(prev => ({ ...prev, [key]: "정보없음" }));
+                        }
+                    } catch (err) {
+                        console.warn("Auto-fetch transfer failed:", err);
+                    }
+                }
+            });
+        }
+    }, [activeTab, pathResult, routeStationData, verifiedPlats, isFetchingPlat]);
 
     // Register HD Pre-rendered Train Icons (Parallel & Bulletproof)
     const registerHDTrainIcons = useCallback(async (map: any) => {

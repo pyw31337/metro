@@ -344,6 +344,7 @@ export default function Home() {
                     userLocation={userLocation}
                     timeDisplayMode={timeDisplayMode}
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
+                    stations={stations}
                 />
             </div>
 

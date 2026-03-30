@@ -80,6 +80,7 @@ export default function UnifiedBottomPanel({
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [activeIndex, setActiveIndex] = useState<number>(-1);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
@@ -141,6 +142,7 @@ export default function UnifiedBottomPanel({
             .slice(0, 3);
 
         setSearchResults([...filteredSubway, ...filteredBus].slice(0, 8));
+        setActiveIndex(-1); // Reset index on new search
     };
 
     const selectLocation = (name: string) => {
@@ -181,40 +183,42 @@ export default function UnifiedBottomPanel({
     const formatStationDisplay = (value: string, isDest: boolean = false) => {
         if (!value) return null;
         
+        let stationName = value;
+        let lineInfo = "";
+        let isMyLocation = false;
+
         // Handle "My Location" format: "내 위치 : 강남 (내 위치)"
         if (value.startsWith("내 위치")) {
+            isMyLocation = true;
             const parts = value.split(' : ');
-            const main = parts[1] || value;
-            return <span className={`truncate font-bold ${isDest ? 'text-rose-500' : 'text-blue-500'}`}>{main}</span>;
+            stationName = parts[1] || value;
+            // Strip the suffix "(내 위치)" if it exists
+            stationName = stationName.replace(/ \((내 위치|출발|도착|경유)\)/g, '').trim();
         }
 
-        const namePart = value.split(' : ').pop() || value;
+        const namePart = stationName.split(' : ').pop() || stationName;
+        stationName = namePart;
 
-        // More robust station vs line parser
-        // Matches: "양평 (5호선)", "천왕(7)", "강남 2호선", "마곡나루 공항철도"
-        const lineKeywords = ["호선", "철도", "중앙선", "분당선", "인천1", "인천2"];
-        let stationName = namePart;
-        let lineInfo = "";
-
+        // Extract line from parentheses: "Yangpyeong (5호선)" -> "Yangpyeong", "5호선"
         const lineMatch = namePart.match(/^(.*?)\s*\(?(\d+호선|[\uac00-\ud7af]+\d*선|공항철도|\d+)\)?$/);
-        
         if (lineMatch) {
             stationName = lineMatch[1].trim();
             lineInfo = lineMatch[2].trim();
         }
 
-        // Handle raw map click names by looking up their primary line
+        // Fallback: look up in stations for clicking coordinates
         if (!lineInfo && stations) {
-            const found = stations.find(s => s.name === stationName);
+            const found = stations.find(s => s.name === stationName || s.name === stationName + "역");
             if (found && found.lines && found.lines.length > 0) {
                 lineInfo = found.lines[0];
             }
         }
 
         return (
-            <div className="flex items-center gap-1.5 overflow-hidden">
+            <div className={`flex items-center gap-1.5 overflow-hidden font-bold ${isMyLocation ? (isDest ? 'text-rose-500' : 'text-blue-500') : ''}`}>
                 <span className="truncate">{stationName}</span>
                 {lineInfo && getLineBadge(lineInfo)}
+                {isMyLocation && <span className="text-[10px] opacity-70 ml-1 font-black shrink-0">내 위치</span>}
             </div>
         );
     };
@@ -313,16 +317,20 @@ export default function UnifiedBottomPanel({
                                         <button
                                             key={i}
                                             onClick={() => selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim())}
-                                            className="w-full flex items-center justify-between gap-3 px-3 py-2.5 hover:bg-zinc-100 dark:hover:bg-white/5 rounded-xl transition-all text-left"
+                                            onMouseEnter={() => setActiveIndex(i)}
+                                            className={`
+                                                w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left
+                                                ${activeIndex === i ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-100/50 dark:hover:bg-white/5"}
+                                            `}
                                         >
                                             <div className="flex items-center gap-2">
-                                                {s.type === 'subway' ? <Train size={14} className="text-zinc-400" /> : <Bus size={14} className="text-zinc-400" />}
-                                                <span className="font-bold text-zinc-900 dark:text-white text-[14px]">{s.name}</span>
+                                                {s.type === 'subway' ? <Train size={14} className={activeIndex === i ? "text-blue-500" : "text-zinc-400"} /> : <Bus size={14} className={activeIndex === i ? "text-emerald-500" : "text-zinc-400"} />}
+                                                <span className={`font-bold text-[14px] ${activeIndex === i ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"}`}>{s.name}</span>
                                                 {s.type === 'subway' && s.lines?.map((l: string) => (
                                                     <span key={l}>{getLineBadge(l)}</span>
                                                 ))}
                                             </div>
-                                            <span className="text-[9px] text-zinc-400 font-black uppercase">{s.line || s.id}</span>
+                                            <span className="text-[9px] text-zinc-400 font-black uppercase tracking-tighter">{s.line || s.id}</span>
                                         </button>
                                     ))}
                                 </div>
@@ -380,8 +388,24 @@ export default function UnifiedBottomPanel({
                                     type="text"
                                     placeholder={!destination ? "도착역" : ""}
                                     value={activeField === "dest" ? destination : ""}
-                                    onFocus={() => setActiveField("dest")}
-                                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
+                                    onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }}
+                                    onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                            setActiveIndex(p => (p + 1) % searchResults.length);
+                                        } else if (e.key === 'ArrowUp') {
+                                            e.preventDefault();
+                                            setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length);
+                                        } else if (e.key === 'Enter') {
+                                            if (activeIndex >= 0 && searchResults[activeIndex]) {
+                                                const s = searchResults[activeIndex];
+                                                selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim());
+                                            } else if (destination) {
+                                                setActiveField(null);
+                                            }
+                                        }
+                                    }}
                                     onChange={(e) => handleSearch(e.target.value, "dest")}
                                     className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`}
                                 />
@@ -420,8 +444,24 @@ export default function UnifiedBottomPanel({
                                     type="text"
                                     placeholder={!source ? "출발역" : ""}
                                     value={activeField === "source" ? source : ""}
-                                    onFocus={() => setActiveField("source")}
-                                    onBlur={() => setTimeout(() => setActiveField(null), 200)}
+                                    onFocus={() => { setActiveField("source"); setActiveIndex(-1); }}
+                                    onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'ArrowDown') {
+                                            e.preventDefault();
+                                            setActiveIndex(p => (p + 1) % searchResults.length);
+                                        } else if (e.key === 'ArrowUp') {
+                                            e.preventDefault();
+                                            setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length);
+                                        } else if (e.key === 'Enter') {
+                                            if (activeIndex >= 0 && searchResults[activeIndex]) {
+                                                const s = searchResults[activeIndex];
+                                                selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim());
+                                            } else if (source) {
+                                                setActiveField(null);
+                                            }
+                                        }
+                                    }}
                                     onChange={(e) => handleSearch(e.target.value, "source")}
                                     className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`}
                                 />
