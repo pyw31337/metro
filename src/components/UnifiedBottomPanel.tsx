@@ -110,8 +110,13 @@ export default function UnifiedBottomPanel({
     }, [pathResults, startStation, endStation, isLocating]);
 
     const handleSearch = (val: string, type: "source" | "dest") => {
-        if (type === "dest") setDestination(val);
-        else setSource(val);
+        if (type === "dest") {
+            setDestination(val);
+            onSetDestination?.(val);
+        } else {
+            setSource(val);
+            onSetSource?.(val);
+        }
 
         if (!val || val.trim().length === 0) {
             setSearchResults([]);

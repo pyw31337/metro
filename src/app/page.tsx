@@ -165,8 +165,14 @@ export default function Home() {
             let name = s.split(' : ').pop() || s;
             // 2. Remove parentheses blocks like "(5호선)" or "(내 위치)"
             name = name.replace(/\(.*\)/g, '').trim();
-            // 3. Take only the first word to strip line suffixes like "5호선" if space-delimited
-            name = name.split(' ')[0];
+            // 3. Remove "역" at the end if it exists (e.g., "시청역" -> "시청")
+            // However, some stations like "서울역" are often kept as is. 
+            // We'll strip it for matching if it's longer than 2 chars or common pattern.
+            if (name.endsWith("역") && name.length > 2) {
+                name = name.slice(0, -1);
+            }
+            // 4. Take only the first word
+            name = name.split(' ')[0].trim();
             return name;
         };
         

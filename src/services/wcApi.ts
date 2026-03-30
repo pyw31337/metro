@@ -59,6 +59,13 @@ async function fetchFromDataGoKr(apiKey: string): Promise<WCItem[]> {
   if (!res.ok) throw new Error(`WC API Error: ${res.status}`);
 
   const json = await res.json();
+  
+  // Check for "Unregistered service" or other API-specific errors
+  if (json?.code === -3 || json?.msg?.includes("등록되지 않은")) {
+      console.warn(`[WC] DataGoKr Unregistered: ${json.msg}`);
+      return [];
+  }
+
   const rows: DataGoKrWCItem[] = json?.data || [];
 
   return rows
@@ -85,7 +92,8 @@ async function fetchFromDataGoKr(apiKey: string): Promise<WCItem[]> {
  * 이 API는 장애인 화장실 전용 데이터로 보완적으로 사용
  */
 async function fetchFromSeoulOpenData(apiKey: string): Promise<WCItem[]> {
-  const url = `https://openapi.seoul.go.kr:8088/${apiKey}/json/tbTraficWheelChrAdit/1/1000/`;
+  // Use standard HTTPS (443) instead of 8088 to avoid SSL protocol errors
+  const url = `https://openapi.seoul.go.kr/${apiKey}/json/tbTraficWheelChrAdit/1/1000/`;
 
   const res = await fetch(url, { next: { revalidate: 86400 } });
   if (!res.ok) throw new Error(`Seoul API Error: ${res.status}`);
@@ -123,6 +131,12 @@ async function fetchNationalWC(apiKey: string): Promise<WCItem[]> {
   if (!res.ok) throw new Error(`National WC API Error: ${res.status}`);
 
   const json = await res.json();
+
+  if (json?.code === -3 || json?.msg?.includes("등록되지 않은")) {
+      console.warn(`[WC] National Unregistered: ${json.msg}`);
+      return [];
+  }
+
   const rows = json?.data || [];
 
   return rows

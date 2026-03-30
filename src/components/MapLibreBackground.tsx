@@ -269,12 +269,13 @@ function MapLibreBackground({
         
         await Promise.all(uniqueColors.map(async (color) => {
             const iconId = `train-card-${color}`;
+            // Move check to the very beginning for speed
             if (map.hasImage(iconId)) return;
 
             const canvas = document.createElement('canvas');
             canvas.width = 128;
             canvas.height = 128;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext('2d', { alpha: true });
             if (!ctx) return;
 
             // 1. Crisp White Rounded Rect
@@ -331,16 +332,23 @@ function MapLibreBackground({
     useEffect(() => {
         if (!mapInstance) return;
 
-        const onStyleLoad = () => registerHDTrainIcons(mapInstance);
+        let debounceTimer: NodeJS.Timeout;
+        const onStyleLoad = () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                registerHDTrainIcons(mapInstance);
+            }, 300); // 300ms debounce
+        };
         
         mapInstance.on('style.load', onStyleLoad);
-        mapInstance.on('styledata', onStyleLoad); // Catch more event types for extra safety
+        mapInstance.on('styledata', onStyleLoad); 
         
         if (mapInstance.isStyleLoaded()) {
             onStyleLoad();
         }
 
         return () => {
+            clearTimeout(debounceTimer);
             mapInstance.off('style.load', onStyleLoad);
             mapInstance.off('styledata', onStyleLoad);
         };
@@ -354,7 +362,8 @@ function MapLibreBackground({
         const feature = e.features && e.features[0];
         if (!feature) {
             setPopupCoords(null);
-            setFocusedLine(null); // Reset focus on background click
+            setFocusedLine(null); 
+            if (onStationClick) onStationClick(null as any, null as any); // Sync parent state
             return;
         }
 
