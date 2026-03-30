@@ -21,9 +21,8 @@ interface RealtimePosition {
     subwayNm: string;
     statnNm: string; 
     trainNo: string;
-    lastStnNm: string; 
+    statnTnm: string; 
     directAt: string; 
-    lstnyNm: string; 
     updnLine: string; 
     trainSttus: string; 
 }
@@ -55,10 +54,10 @@ export function useRealtimeTrains() {
                 const results = await Promise.all(lineNames.map(async (name) => {
                     try {
                         const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
-                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeSubwayPosition/1/100/${name}`;
+                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeTrainPosition/0/100/${name}`;
                         
                         const json = await fetchWithFallbacks(targetUrl);
-                        const list: RealtimePosition[] = json?.realtimeSubwayPosition?.row || [];
+                        const list: RealtimePosition[] = json?.realtimeTrainPositionList || [];
                         return { name, list };
                     } catch (e) {
                         return { name, list: [] };
@@ -77,15 +76,20 @@ export function useRealtimeTrains() {
                             
                             if (stationIdx !== -1) {
                                 const dir = getDirection(rt.updnLine);
+                                let initialProgress = 0.05;
+                                if (rt.trainSttus === '0') initialProgress = 0.8; // Entering
+                                if (rt.trainSttus === '1') initialProgress = 0.95; // Arrived
+                                if (rt.trainSttus === '2') initialProgress = 0.1; // Departed
+
                                 allFetchedTrains.push({
                                     id: `real-${rt.trainNo}-${name}`,
                                     lineId: line.id,
                                     lineName: line.name,
                                     stationIndex: stationIdx,
-                                    progress: rt.trainSttus === '3' ? 0.3 : 0.05, 
+                                    progress: initialProgress, 
                                     direction: dir,
-                                    status: rt.trainSttus === '3' ? 'RUNNING' : 'STOPPED',
-                                    headingTo: rt.statnNm, 
+                                    status: rt.trainSttus === '1' ? 'STOPPED' : 'RUNNING',
+                                    headingTo: rt.statnTnm || rt.statnNm, 
                                     lastUpdate: Date.now()
                                 });
                                 break; // Only add once per train

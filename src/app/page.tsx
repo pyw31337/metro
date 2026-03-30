@@ -71,8 +71,11 @@ export default function Home() {
     const filteredTrains = useMemo(() => {
         if (!activePath) return rawTrains;
         const pathLineNames = new Set<string>();
+        const normalize = (n: string) => n.replace(/역$/, '').trim();
+        
         activePath.path.forEach(name => {
-            const s = stations.find(st => st.name === name);
+            const cleanName = normalize(name);
+            const s = stations.find(st => normalize(st.name) === cleanName);
             s?.lines.forEach(l => pathLineNames.add(l));
         });
         return rawTrains.filter(t => pathLineNames.has(t.lineName));
