@@ -525,17 +525,45 @@ function MapLibreBackground({
                                         ))}
                                     </div>
                                 ) : stationArrivals.length > 0 ? (
-                                    stationArrivals.slice(0, 6).map((arr, i) => (
-                                        <div key={i} className="flex flex-col gap-0.5 p-2 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300">{arr.trainLineNm}</span>
-                                                <span className={`text-[10px] font-black ${arr.updnLine.includes('상행') || arr.updnLine.includes('내선') ? 'text-blue-500' : 'text-orange-500'}`}>
-                                                    {arr.updnLine}
-                                                </span>
-                                            </div>
-                                            <span className="text-[11px] font-bold text-zinc-900 dark:text-white">{arr.arvlMsg2}</span>
+                                    <div className="grid grid-cols-2 gap-2 mt-1">
+                                        {/* Up/Inner Line */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="text-[10px] font-black text-blue-500 dark:text-blue-400 text-center pb-1 border-b border-blue-500/20">상행 · 내선</div>
+                                            {stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
+                                                stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr, i) => (
+                                                    <div key={i} className="flex flex-col px-2 py-1.5 rounded-lg bg-black-[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
+                                                        <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight mb-0.5">
+                                                            {arr.trainLineNm.split('-')[0].trim()}
+                                                        </span>
+                                                        <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
+                                                            {arr.arvlMsg2}
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
+                                            )}
                                         </div>
-                                    ))
+                                        
+                                        {/* Down/Outer Line */}
+                                        <div className="flex flex-col gap-1.5">
+                                            <div className="text-[10px] font-black text-orange-500 dark:text-orange-400 text-center pb-1 border-b border-orange-500/20">하행 · 외선</div>
+                                            {stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
+                                                stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr, i) => (
+                                                    <div key={i} className="flex flex-col px-2 py-1.5 rounded-lg bg-black-[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
+                                                        <span className="text-[9px] font-bold text-zinc-500 dark:text-zinc-400 leading-tight mb-0.5">
+                                                            {arr.trainLineNm.split('-')[0].trim()}
+                                                        </span>
+                                                        <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
+                                                            {arr.arvlMsg2}
+                                                        </span>
+                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
+                                            )}
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">도착 정보가 없습니다.</div>
                                 )}
