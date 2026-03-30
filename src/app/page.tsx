@@ -124,7 +124,7 @@ export default function Home() {
                 return prev;
             });
             cleanup();
-        }, () => cleanup(), { enableHighAccuracy: true, timeout: 5000 });
+        }, () => cleanup(), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
         
         // Disable es-lint for the exact single-mount run behavior without changing refs
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -289,7 +289,7 @@ export default function Home() {
                     else setEndStation(val);
                 }
                 cleanup();
-            }, () => cleanup(), { enableHighAccuracy: true, timeout: 10000 });
+            }, () => cleanup(), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
             return;
         }
 
