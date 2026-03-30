@@ -197,6 +197,35 @@ function MapLibreBackground({
         if (wcFilters.emergencyBell) features = features.filter(f => f.properties.emergencyBell);
         return { type: "FeatureCollection" as const, features };
     }, [wcData, wcFilters]);
+    
+    // Identify lines being used in the current path
+    const activePathLines = useMemo(() => {
+        if (!pathResult) return [];
+        const lines = new Set<string>();
+        for (let i = 0; i < pathResult.path.length - 1; i++) {
+            const s1 = pathResult.path[i];
+            const s2 = pathResult.path[i+1];
+            SUBWAY_LINES.forEach(l => {
+                const idx1 = l.stations.findIndex(st => st.name === s1);
+                const idx2 = l.stations.findIndex(st => st.name === s2);
+                if (idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1) {
+                    lines.add(l.name);
+                }
+            });
+        }
+        return Array.from(lines);
+    }, [pathResult]);
+
+    // Compute train filter based on focus and path
+    const trainFilter = useMemo((): any => {
+        if (focusedLine) {
+            return ["==", ["get", "lineName"], focusedLine];
+        }
+        if (pathResult && activePathLines.length > 0) {
+            return ["in", ["get", "lineName"], ["literal", activePathLines]];
+        }
+        return null; // Show all if no focus and no path
+    }, [focusedLine, pathResult, activePathLines]);
 
     // Animation Effect for Path Line
     useEffect(() => {
@@ -523,12 +552,13 @@ function MapLibreBackground({
                     </Marker>
                 )}
 
-                {/* 5. Real-time Train Layer (Rendering on top of everything else) */}
+                {/* 5. Real-time Train Layer (Context-Aware Filtering) */}
                 {activeTab === "subway" && (
                     <Source id="train-source" type="geojson" data={trainData}>
                         <Layer
                             id="train-halo"
                             type="circle"
+                            filter={trainFilter}
                             paint={{
                                 "circle-radius": 3.5,
                                 "circle-color": "white",
@@ -541,6 +571,7 @@ function MapLibreBackground({
                         <Layer
                             id="train-layer"
                             type="symbol"
+                            filter={trainFilter}
                             layout={{
                                 "icon-image": "train-marker",
                                 "icon-size": 0.045, // Scaled for the higher 512px source resolution (~23px total)
