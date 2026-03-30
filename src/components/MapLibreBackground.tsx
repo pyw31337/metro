@@ -219,11 +219,8 @@ function MapLibreBackground({
         const img = new Image(64, 64);
         const svgString = `
             <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M7 15h10"/>
-                <path d="M15 22 13 18"/>
-                <path d="M9 22 11 18"/>
-                <path d="M15 11l-3-3l-3 3"/>
-                <rect x="3" y="7" width="18" height="10" rx="2"/>
+                <rect width="16" height="16" x="4" y="3" rx="2"/>
+                <path d="M4 11h16M12 3v8M8 19l-2 3M18 22l-2-3M8 15h.01M16 15h.01"/>
             </svg>
         `.trim();
         
@@ -533,10 +530,10 @@ function MapLibreBackground({
                             id="train-halo"
                             type="circle"
                             paint={{
-                                "circle-radius": 9.5,
+                                "circle-radius": 5.5,
                                 "circle-color": "white",
                                 "circle-opacity": 1,
-                                "circle-stroke-width": 1.5,
+                                "circle-stroke-width": 1.2,
                                 "circle-stroke-color": ["get", "lineColor"],
                                 "circle-stroke-opacity": 0.8
                             }}
@@ -546,7 +543,7 @@ function MapLibreBackground({
                             type="symbol"
                             layout={{
                                 "icon-image": "train-marker",
-                                "icon-size": 0.7,
+                                "icon-size": 0.35,
                                 "icon-allow-overlap": true,
                                 "icon-ignore-placement": true,
                                 "icon-anchor": "center"
