@@ -21,26 +21,43 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     const baseUrl = `http://swopenapi.seoul.go.kr/api/subway`;
     
-    const buildUrl = (key: string, start: number, end: number) => {
-        const targetUrl = `${baseUrl}/${key}/json/realtimeStationArrival/${start}/${end}/${encodeURIComponent(cleanName)}`;
-        if (isHttps) {
-            return `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+    const fetchWithFallbacks = async (targetUrl: string) => {
+        if (!isHttps) {
+            const res = await fetch(targetUrl);
+            return await res.json();
         }
-        return targetUrl;
+
+        // Multiple free CORS proxies to ensure high availability on static sites
+        const proxies = [
+            `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
+            `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
+            `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+        ];
+
+        let lastError = null;
+        for (const proxy of proxies) {
+            try {
+                const res = await fetch(proxy);
+                if (res.ok) {
+                    return await res.json();
+                }
+            } catch (err) {
+                lastError = err;
+            }
+        }
+        throw lastError || new Error("All proxies failed");
     };
 
     // Attempt with user key first
-    let url = buildUrl(apiKey, 1, 30);
+    const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/30/${encodeURIComponent(cleanName)}`;
     
     try {
-        let res = await fetch(url);
-        let json = await res.json();
+        let json = await fetchWithFallbacks(primaryUrl);
         
         // Fallback to sample key if user key lacks real-time permissions
         if (json?.status === 500 && json?.code === "ERROR-338") {
-            url = buildUrl("sample", 1, 5);
-            res = await fetch(url);
-            json = await res.json();
+            const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/5/${encodeURIComponent(cleanName)}`;
+            json = await fetchWithFallbacks(fallbackUrl);
         }
 
         const arrivals: StationArrival[] = json?.realtimeStationArrivalList || json?.realtimeStationArrival?.row || [];
