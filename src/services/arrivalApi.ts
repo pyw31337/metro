@@ -16,8 +16,21 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
 
     const cleanName = stationName.replace(/역$/, '');
     
+    // Seoul Open API drops HTTPS connections, so we must use HTTP. 
+    // If the site is deployed on HTTPS (e.g., GitHub Pages), we must wrap it in a proxy to prevent Mixed Content blocking.
+    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
+    const baseUrl = `http://swopenapi.seoul.go.kr/api/subway`;
+    
+    const buildUrl = (key: string, start: number, end: number) => {
+        const targetUrl = `${baseUrl}/${key}/json/realtimeStationArrival/${start}/${end}/${encodeURIComponent(cleanName)}`;
+        if (isHttps) {
+            return `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+        }
+        return targetUrl;
+    };
+
     // Attempt with user key first
-    let url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/1/30/${encodeURIComponent(cleanName)}`;
+    let url = buildUrl(apiKey, 1, 30);
     
     try {
         let res = await fetch(url);
@@ -25,7 +38,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         
         // Fallback to sample key if user key lacks real-time permissions
         if (json?.status === 500 && json?.code === "ERROR-338") {
-            url = `https://swopenapi.seoul.go.kr/api/subway/sample/json/realtimeStationArrival/1/5/${encodeURIComponent(cleanName)}`;
+            url = buildUrl("sample", 1, 5);
             res = await fetch(url);
             json = await res.json();
         }
