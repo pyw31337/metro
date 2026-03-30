@@ -362,17 +362,6 @@ function MapLibreBackground({
                 {activeTab === "subway" && pathLineData.features.length > 0 && (
                     <Source id="path-result" type="geojson" data={pathLineData}>
                         <Layer
-                            id="path-line-bg"
-                            type="line"
-                            layout={{ "line-join": "round", "line-cap": "round" }}
-                            paint={{
-                                "line-color": ["get", "color"],
-                                "line-width": 12,
-                                "line-opacity": 0.5,
-                                "line-blur": 3
-                            }}
-                        />
-                        <Layer
                             id="path-line-solid"
                             type="line"
                             layout={{ "line-join": "round", "line-cap": "round" }}
