@@ -529,11 +529,11 @@ function MapLibreBackground({
                                         <div key={i} className="flex flex-col gap-0.5 p-2 rounded-lg bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5">
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[10px] font-black text-zinc-600 dark:text-zinc-300">{arr.trainLineNm}</span>
-                                                <span className={`text-[10px] font-black ${arr.updnLine === '0' ? 'text-blue-500' : 'text-orange-500'}`}>
-                                                    {arr.updnLine === '0' ? '상행' : '하행'}
+                                                <span className={`text-[10px] font-black ${arr.updnLine.includes('상행') || arr.updnLine.includes('내선') ? 'text-blue-500' : 'text-orange-500'}`}>
+                                                    {arr.updnLine}
                                                 </span>
                                             </div>
-                                            <span className="text-[11px] font-bold text-zinc-900 dark:text-white">{arr.arrivalMsg2}</span>
+                                            <span className="text-[11px] font-bold text-zinc-900 dark:text-white">{arr.arvlMsg2}</span>
                                         </div>
                                     ))
                                 ) : (
