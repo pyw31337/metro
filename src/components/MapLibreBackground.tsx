@@ -9,6 +9,19 @@ import { WCItem } from "./WCLayer";
 import { BusStop } from "./BusStopLayer";
 import { StationArrival } from "@/services/arrivalApi";
 import { convertSubwayToGeoJSON, convertBusStopsToGeoJSON, convertWCToGeoJSON, convertTrainsToGeoJSON, convertPathToGeoJSON } from "@/utils/geoJsonUtils";
+import { SUBWAY_LINES } from "@/data/subway-lines";
+
+const getStationBadge = (name: string) => {
+    if (!name) return null;
+    const cleanName = name.replace(/역+$/, '');
+    for (const line of SUBWAY_LINES) {
+        if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
+            const num = line.name.replace('호선', '').replace('서울배차', '').trim();
+            return { num, color: line.color };
+        }
+    }
+    return null;
+};
 
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
@@ -473,8 +486,22 @@ function MapLibreBackground({
                         className="custom-station-popup"
                     >
                         <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
-                            <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2">
-                                {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
+                            <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center gap-1.5">
+                                {activeTab === 'subway' && selectedStationName ? (
+                                    <>
+                                        {selectedStationName}
+                                        {getStationBadge(selectedStationName) && (
+                                            <span 
+                                                className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[11px] font-black text-white shadow-sm"
+                                                style={{ backgroundColor: getStationBadge(selectedStationName)!.color }}
+                                            >
+                                                {getStationBadge(selectedStationName)!.num}
+                                            </span>
+                                        )}
+                                    </>
+                                ) : (
+                                    selectedBusStop?.name
+                                )}
                             </h3>
                             
                             {/* Navigation Actions */}

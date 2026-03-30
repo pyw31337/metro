@@ -1,14 +1,15 @@
 export interface StationArrival {
     lineName: string;
     subwayId: string;
-    updnLine: string; // 0: 상행/내선, 1: 하행/외선
+    updnLine: string; // "상행" or "외선"
     trainLineNm: string; // "방화행 - 마장방면"
     statnNm: string;
-    arrivalMsg2: string; // "전역 도착", "3분 후 도착"
-    arrivalMsg3: string; // "마장"
-    arvlCd: string; // 0:진입, 1:도착, 2:출발, 3:전역출발, 4:전역진입, 5:전역도착, 99:운행중
-    barvlDt: string; // 남은시간(초)
+    arvlMsg2: string;
+    arvlMsg3: string;
+    arvlCd: string;
+    barvlDt: string;
 }
+
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
@@ -49,14 +50,14 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     };
 
     // Attempt with user key first
-    const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/30/${encodeURIComponent(cleanName)}`;
+    const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/30/${cleanName}`;
     
     try {
         let json = await fetchWithFallbacks(primaryUrl);
         
         // Fallback to sample key if user key lacks real-time permissions
         if (json?.status === 500 && json?.code === "ERROR-338") {
-            const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/5/${encodeURIComponent(cleanName)}`;
+            const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/5/${cleanName}`;
             json = await fetchWithFallbacks(fallbackUrl);
         }
 
