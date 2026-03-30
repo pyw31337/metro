@@ -8,8 +8,8 @@ export interface StationArrival {
     arvlMsg3: string;
     arvlCd: string;
     barvlDt: string;
+    btrainNo: string;
 }
-
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
@@ -40,7 +40,6 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
-    // ... (existing code remains) ...
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
@@ -55,30 +54,51 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         
         // Fallback to sample key if user key lacks real-time permissions
         if (json?.status === 500 && json?.code === "ERROR-338") {
-            const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/5/${cleanName}`;
+            const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/10/${cleanName}`;
             json = await fetchWithFallbacks(fallbackUrl);
         }
 
-        const arrivals: StationArrival[] = json?.realtimeArrivalList || [];
+        const rawList: any[] = json?.realtimeArrivalList || [];
         
-        // Filter to max 3 per direction (up/inner vs down/outer)
-        const upTrains: StationArrival[] = [];
-        const downTrains: StationArrival[] = [];
+        // Deduplicate and group
+        const upMap = new Map<string, StationArrival>();
+        const downMap = new Map<string, StationArrival>();
         
-        arrivals.forEach(arr => {
-            if (arr.updnLine.includes("상행") || arr.updnLine.includes("내선")) {
-                if (upTrains.length < 3) upTrains.push(arr);
+        rawList.forEach(item => {
+            // Use btrainNo as primary key, fallback to composite key if missing
+            const trainId = (item.btrainNo && item.btrainNo !== "0000") 
+                ? item.btrainNo 
+                : `${item.trainLineNm}-${item.arvlMsg2}-${item.updnLine}`;
+            
+            const arrival: StationArrival = {
+                lineName: item.subwayNm || "",
+                subwayId: item.subwayId || "",
+                updnLine: item.updnLine || "",
+                trainLineNm: item.trainLineNm || "",
+                statnNm: item.statnNm || "",
+                arvlMsg2: item.arvlMsg2 || "",
+                arvlMsg3: item.arvlMsg3 || "",
+                arvlCd: item.arvlCd || "",
+                barvlDt: item.barvlDt || "0",
+                btrainNo: item.btrainNo || ""
+            };
+
+            if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선")) {
+                if (!upMap.has(trainId)) upMap.set(trainId, arrival);
             } else {
-                if (downTrains.length < 3) downTrains.push(arr);
+                if (!downMap.has(trainId)) downMap.set(trainId, arrival);
             }
         });
 
-        // Sort by barvlDt (arrival time in seconds) string-to-number
-        const sorted = [...upTrains, ...downTrains].sort((a, b) => {
-            return parseInt(a.barvlDt || "9999") - parseInt(b.barvlDt || "9999");
-        });
+        // Convert to arrays and sort by seconds remaining
+        const getSortedTop3 = (map: Map<string, StationArrival>) => {
+            return Array.from(map.values())
+                .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
+                .slice(0, 3);
+        };
 
-        return sorted;
+        const finalArrivals = [...getSortedTop3(upMap), ...getSortedTop3(downMap)];
+        return finalArrivals;
     } catch (err) {
         console.error("Failed to fetch station arrivals:", err);
         return [];

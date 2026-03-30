@@ -156,10 +156,15 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 // Lines that will be used to go forward
                 const outgoingLines = s.lines.filter(l => nextS.lines.includes(l));
                 
-                // If there's no single line that handles both incoming and outgoing, it's a transfer
+                // Transfer Logic: Show bubble if actual line change OR if it's a known hub
+                const isHub = s.lines.length > 1;
                 const overlappingLines = incomingLines.filter(l => outgoingLines.includes(l));
                 if (overlappingLines.length === 0 && incomingLines.length > 0 && outgoingLines.length > 0) {
                     isActualTransfer = true;
+                }
+                
+                if (isActualTransfer || isHub) {
+                    isActualTransfer = true; // Set to true to trigger the bubble rendering
                 }
                 
                 // Set route color based on the outgoing segment
@@ -170,8 +175,8 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 
                 // Track transfer details for API fetching
                 if (isActualTransfer) {
-                    const fromLine = incomingLines[0];
-                    const toLine = outgoingLines[0];
+                    const fromLine = incomingLines[0] || s.lines[0];
+                    const toLine = outgoingLines[0] || s.lines[0];
                     (s as any).transferDetails = { fromLine, toLine };
                 }
             }
