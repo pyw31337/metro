@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X } from "lucide-react";
-import { StationArrival } from "@/services/arrivalApi";
+import { StationArrival, parseSeoulDate } from "@/services/arrivalApi";
 import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
@@ -295,10 +295,9 @@ const MapPopups = ({
                         </div>
                         <span className="text-[10px] font-medium text-zinc-400 dark:text-white/40">
                             {(() => {
-                                // Simplified relative time for current status based on last update
-                                const diff = Math.floor((Date.now() - new Date(selectedTrain.lastRecptnDt).getTime()) / 60000);
+                                const diff = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
                                 if (timeDisplayMode === 'duration') return diff <= 0 ? '방금전' : `${diff}분전`;
-                                return new Date(selectedTrain.lastRecptnDt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                return new Date(parseSeoulDate(selectedTrain.lastRecptnDt)).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                             })()}
                         </span>
                     </div>
@@ -321,7 +320,22 @@ const MapPopups = ({
                                         return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                                     }
                                 })()
-                            ) : '정보없음'}
+                            ) : (
+                                (() => {
+                                    // Intelligent Estimate Fallback
+                                    const diffMins = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
+                                    let estimate = 5; // Default 5 mins
+                                    if (selectedTrain.trainSttus === '1' || selectedTrain.trainSttus === '0') {
+                                        estimate = Math.max(3, 5 - diffMins); // If stopped/entering, estimate 3-5 mins
+                                    } else if (selectedTrain.trainSttus === '2') {
+                                        estimate = Math.max(2, 4 - diffMins); // If departed, estimate 2-4 mins
+                                    }
+                                    
+                                    if (timeDisplayMode === 'duration') return `${estimate}분후`;
+                                    const d = new Date(Date.now() + estimate * 60000);
+                                    return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                })()
+                            )}
                         </span>
                     </div>
                 </div>

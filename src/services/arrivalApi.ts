@@ -23,6 +23,7 @@ export interface TrainPosition {
     lastRecptnDt: string;
     updnLine: string;
     directAt: string;
+    trainSttus: string; // 0: Entering, 1: Stopped, 2: Departed ...
     lstnyNm: string;
     arrivalNm: string;
     arvlCd: string;
@@ -33,6 +34,20 @@ export interface SubwayAlert {
     content: string;
     date: string;
 }
+
+export const parseSeoulDate = (dateStr: string): number => {
+    if (!dateStr) return Date.now();
+    // Try standard YYYY-MM-DD HH:mm:ss
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) return d.getTime();
+    
+    // Fallback for YYYYMMDDHHmmss
+    const match = dateStr.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
+    if (match) {
+        return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`).getTime();
+    }
+    return Date.now();
+};
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
@@ -246,6 +261,7 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
             lastRecptnDt: item.lastRecptnDt,
             updnLine: item.updnLine,
             directAt: item.directAt,
+            trainSttus: item.trainSttus || "99",
             lstnyNm: item.lstnyNm,
             arrivalNm: item.arrivalNm,
             arvlCd: item.arvlCd
