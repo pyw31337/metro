@@ -20,7 +20,12 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
         filter={trainFilter || true}
         layout={{
           "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
-          "icon-size": 0.15,
+          "icon-size": [
+            "interpolate", ["linear"], ["zoom"],
+            10, 0.08,
+            14, 0.18,
+            18, 0.5
+          ],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true,
           "icon-anchor": "center"
@@ -34,10 +39,21 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
         type="symbol"
         filter={trainFilter ? ["all", trainFilter, ["==", ["get", "directAt"], "1"]] : ["==", ["get", "directAt"], "1"]}
         layout={{
+          "icon-image": "express-capsule",
+          "icon-size": [
+            "interpolate", ["linear"], ["zoom"],
+            10, 0.2,
+            14, 0.45,
+            18, 0.95
+          ],
           "text-field": "급행",
-          "text-size": 9,
-          "text-font": ["literal", ["Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]],
-          "text-offset": [0.9, -0.9],
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            12, 8,
+            16, 11
+          ],
+          "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]],
+          "text-offset": [1.4, -1.4],
           "text-anchor": "center",
           "icon-allow-overlap": true,
           "text-ignore-placement": true
@@ -45,7 +61,7 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
         paint={{
           "text-color": "white",
           "text-halo-color": "#ef4444",
-          "text-halo-width": 3,
+          "text-halo-width": 1.5,
           "text-halo-blur": 0
         }}
       />

@@ -176,6 +176,22 @@ function MapLibreBackground(props: MapLibreProps) {
                 }
             }
         });
+
+        // Register Express Capsule Background
+        if (!map.hasImage('express-capsule')) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 120; canvas.height = 48; // Rectangular for pill shape
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.roundRect(4, 4, 112, 40, 20); // Capsule shape
+                ctx.fill();
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.stroke();
+                const data = ctx.getImageData(0,0,120,48);
+                map.addImage('express-capsule', data, { pixelRatio: 2 });
+            }
+        }
     };
 
     return (
