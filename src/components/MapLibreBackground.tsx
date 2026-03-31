@@ -74,7 +74,7 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 };
 
 // ─── Icon Registration Sub-component ──────────────────────────────────────────
-const MapIconRegister = () => {
+const MapIconRegister = ({ stations }: { stations: any[] }) => {
     const { current: mapRef } = useMap();
     const map = mapRef?.getMap();
 
@@ -82,15 +82,18 @@ const MapIconRegister = () => {
         if (!map) return;
 
         const registerIcons = () => {
-            const colors = [
-                "#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", 
-                "#CD7C2F", "#747F00", "#E6186C", "#BDB092", "#77C4A3", 
-                "#0C8E72", "#F5A200", "#D4003B", "#0090D2", "#81A914", 
-                "#50AD08", "#FDA600", "#B0AD00", "#6789CA", "#003DA5", 
-                "#EF7C1C", "#996CAC", "#00A2D1", "#0160A2", "#E2B215"
-            ];
+            // Find all unique subway line colors from the current data
+            const uniqueColors = new Set<string>();
+            stations.forEach(s => {
+                if (s.lineColors) {
+                    s.lineColors.forEach((color: string) => uniqueColors.add(color.toUpperCase()));
+                }
+            });
 
-            colors.forEach(color => {
+            // Ensure common fallback/data colors are present just in case
+            uniqueColors.add("#0052A4"); uniqueColors.add("#00A84D"); uniqueColors.add("#EF7C1C");
+
+            uniqueColors.forEach(color => {
                 const id = `train-card-${color}`;
                 if (map.hasImage(id)) return;
                 const canvas = document.createElement('canvas');
@@ -132,12 +135,15 @@ const MapIconRegister = () => {
             }
         };
 
-        if (map.loaded()) {
+        if (map.isStyleLoaded()) {
             registerIcons();
-        } else {
-            map.on('style.load', registerIcons);
         }
-    }, [map]);
+        map.on('style.load', registerIcons);
+        
+        return () => {
+            map.off('style.load', registerIcons);
+        };
+    }, [map, stations]);
 
     return null;
 };
@@ -236,13 +242,13 @@ function MapLibreBackground(props: MapLibreProps) {
                 'bus-station-label', 'train-layer'
             ]}
         >
-            <MapIconRegister />
+            <MapIconRegister stations={stations} />
             <SubwayLayers 
                 subwayData={subwayData} 
                 activeTab={activeTab} 
                 isDarkMode={isDarkMode} 
                 pathResult={pathResult}
-                focusedLine={focusedLine}
+                focusedLine={focusedLine || activeLine}
             />
             
             <BusLayers busData={busGeoJSON} activeTab={activeTab} isDarkMode={isDarkMode} />

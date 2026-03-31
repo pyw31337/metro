@@ -20,6 +20,18 @@ const SubwayLayers = ({
 }: SubwayLayersProps) => {
   if (activeTab !== "subway" && activeTab !== "subway+bus") return null;
 
+  // Optimized light gray colors for fading
+  const FADED_COLOR = isDarkMode ? "#34495E" : "#BDBDBD";
+  const FADED_TEXT = isDarkMode ? "#555555" : "#AAAAAA";
+
+  // Logic: prominent if (on focused line) OR (is a transfer station)
+  const isProminentStation: any = focusedLine 
+    ? ["any", 
+        ["in", ["literal", focusedLine], ["get", "lines"]], 
+        [">", ["length", ["get", "lines"]], 1]
+      ]
+    : true;
+
   return (
     <>
       <Source id="subway-lines" type="geojson" data={subwayData.lines}>
@@ -32,13 +44,13 @@ const SubwayLayers = ({
             "line-color": pathResult
               ? (isDarkMode ? "#333333" : "#cccccc")
               : focusedLine
-              ? ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], (isDarkMode ? "#2D3436" : "#E2E8F0")]
+              ? ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], FADED_COLOR]
               : ["get", "color"],
             "line-width": 4,
             "line-opacity": pathResult
               ? 0.4
               : focusedLine
-              ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.2]
+              ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.3]
               : 0.8
           }}
         />
@@ -63,9 +75,20 @@ const SubwayLayers = ({
               14, 2.5,
               16, 3
             ],
-            "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
-            "circle-opacity": pathResult ? 0.3 : 1,
-            "circle-stroke-opacity": pathResult ? 0.3 : 1
+            "circle-stroke-color": ["case",
+                isProminentStation, ["get", ["at", 0, ["get", "lineColors"]]],
+                FADED_COLOR
+            ],
+            "circle-opacity": pathResult 
+                ? 0.3 
+                : focusedLine 
+                ? ["case", isProminentStation, 1.0, 0.2]
+                : 1,
+            "circle-stroke-opacity": pathResult 
+                ? 0.3 
+                : focusedLine 
+                ? ["case", isProminentStation, 1.0, 0.2]
+                : 1
           }}
         />
         <Layer
@@ -83,10 +106,17 @@ const SubwayLayers = ({
             "text-anchor": "top"
           }}
           paint={{
-            "text-color": isDarkMode ? "#ffffff" : "#000000",
+            "text-color": ["case",
+                isProminentStation, (isDarkMode ? "#ffffff" : "#000000"),
+                FADED_TEXT
+            ],
             "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
             "text-halo-width": 1.5,
-            "text-opacity": pathResult ? 0.3 : 1
+            "text-opacity": pathResult 
+                ? 0.3 
+                : focusedLine 
+                ? ["case", isProminentStation, 1.0, 0.2]
+                : 1
           }}
         />
       </Source>
