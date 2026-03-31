@@ -19,7 +19,7 @@ export class MetroDatabase extends Dexie {
 
   constructor() {
     super('MetroDatabase');
-    this.version(4).stores({
+    this.version(5).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, *routes',
       wc: 'id, name, station',

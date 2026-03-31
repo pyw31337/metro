@@ -122,3 +122,23 @@ export const getLineLongName = (lineName: string): string => {
 
     return clean;
 };
+
+/**
+ * Normalizes subway line names for data matching (e.g., "1호선" -> "1", "01호선" -> "1")
+ */
+export const normalizeLineName = (line: string): string => {
+    if (!line) return "";
+    let clean = line.replace(/[()]/g, "").trim();
+    
+    // Remove "호선", "선", "0" prefix for numbers
+    clean = clean.replace(/호선|선$/g, "");
+    if (clean.match(/^0\d/)) {
+        clean = clean.replace(/^0+/, "");
+    }
+
+    // Specific mapping for consistency
+    if (clean === "경의중앙") return "경의중앙";
+    if (clean === "경의중앙선") return "경의중앙";
+    
+    return clean;
+};

@@ -1,6 +1,7 @@
 import { db } from './db';
 import { Facility, WCItem, OperationalData, TimetableEntry, TransferInfo } from '@/types/metro';
 import { fetchWithFallbacks } from './arrivalApi';
+import { normalizeLineName } from '@/utils/stationUtils';
 
 /**
  * DataIngestionService
@@ -203,8 +204,8 @@ export class DataIngestionService {
                 station.transfers.forEach((t: any) => {
                     allTransfers.push({
                         stationName: station.stationName,
-                        fromLine: t.from,
-                        toLine: t.to,
+                        fromLine: normalizeLineName(t.from),
+                        toLine: normalizeLineName(t.to),
                         platform: t.platform
                     });
                 });

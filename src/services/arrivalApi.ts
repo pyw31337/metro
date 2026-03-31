@@ -3,6 +3,7 @@ import { db } from './db';
 import { DataIngestionService } from './dataIngestion';
 import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
+import { normalizeLineName } from '@/utils/stationUtils';
 
 const LINE_ID_MAP: { [key: string]: string } = {
     "1": "1001", "2": "1002", "3": "1003", "4": "1004", "5": "1005",
@@ -299,8 +300,8 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
 
 export const fetchTransferPlatform = async (stationName: string, fromLine: string, toLine: string) => {
     const cleanStation = stationName.replace(/역$/, '');
-    const cleanFromLine = fromLine.replace(/선$/, '');
-    const cleanToLine = toLine.replace(/선$/, '');
+    const cleanFromLine = normalizeLineName(fromLine);
+    const cleanToLine = normalizeLineName(toLine);
 
     // 1. Check local DB first
     try {
@@ -330,10 +331,11 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         const json = await fetchWithFallbacks(url);
         const list = json?.CardSubwayTransferPos?.row || [];
         
-        const match = list.find((item: any) => 
-            (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM === cleanToLine) ||
-            (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM.includes(cleanToLine))
-        );
+        const match = list.find((item: any) => {
+            const apiFrom = normalizeLineName(item.LINE_NUM);
+            const apiTo = normalizeLineName(item.TRNSIT_LINE_NM);
+            return (apiFrom === cleanFromLine && apiTo === cleanToLine);
+        });
 
         const plat = match ? match.TRNSIT_PLATFORM_NO : null;
         if (plat) {
