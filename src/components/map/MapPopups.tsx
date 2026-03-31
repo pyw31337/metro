@@ -110,32 +110,46 @@ const MapPopups = ({
             offset={15}
             className="custom-station-popup"
         >
-            <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
-                <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center justify-between pointer-events-none">
-                    <div className="flex flex-col gap-1 pointer-events-auto">
-                        <span className="truncate">{selectedStationName || selectedBusStop?.name}</span>
-                        {activeTab === 'subway' && badges.length > 0 && (
-                            <div className="flex gap-1.5 p-1 bg-zinc-100 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 overflow-x-auto no-scrollbar pointer-events-auto mt-1">
-                                {badges.map((badge: {num: string, color: string}, idx: number) => (
-                                    <button 
-                                        key={idx}
-                                        onClick={(e) => { e.stopPropagation(); onActiveLineChange(badge.num); }}
-                                        className={`inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900 scale-105' : 'opacity-40 grayscale-[0.5]'}`}
-                                        style={{ backgroundColor: badge.color }}
-                                    >
-                                        {badge.num}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
+            <div className="p-4 min-w-[240px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
+                <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[140px]">
+                            {selectedStationName || selectedBusStop?.name}
+                        </h3>
+                        <button 
+                            onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
+                            className="p-1 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
+                        >
+                            <X size={14} />
+                        </button>
                     </div>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
-                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors pointer-events-auto"
-                    >
-                        <X size={16} />
-                    </button>
-                </h3>
+                    {activeTab === 'subway' && (
+                        <div className="flex items-center gap-1">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Real-time</span>
+                        </div>
+                    )}
+                </div>
+
+                {activeTab === 'subway' && badges.length > 0 && (
+                    <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5">
+                        {badges.map((badge: {num: string, color: string}, idx: number) => {
+                            const isNumbered = !isNaN(Number(badge.num));
+                            const label = isNumbered ? `${badge.num}호선` : badge.num;
+                            
+                            return (
+                                <button 
+                                    key={idx}
+                                    onClick={(e) => { e.stopPropagation(); onActiveLineChange(badge.num); }}
+                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900 scale-105' : 'opacity-40 grayscale-[0.3]'}`}
+                                    style={{ backgroundColor: badge.color }}
+                                >
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
                 
                 {/* Navigation Actions */}
                 <div className="grid grid-cols-3 gap-1.5 mb-4">

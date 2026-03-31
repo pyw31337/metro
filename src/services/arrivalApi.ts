@@ -93,58 +93,75 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
-    const cleanName = stationName.replace(/역$/, '');
-    const baseUrl = `http://swopenapi.seoul.go.kr/api/subway`;
+    const fetchUniqueArrivals = async (name: string): Promise<StationArrival[]> => {
+        const baseUrl = `http://swopenapi.seoul.go.kr/api/subway`;
+        const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(name)}`;
+        
+        try {
+            let json = await fetchWithFallbacks(primaryUrl);
+            if (json?.status === 500 && json?.code === "ERROR-338") {
+                const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/10/${encodeURIComponent(name)}`;
+                json = await fetchWithFallbacks(fallbackUrl);
+            }
 
-    // Attempt with user key first
-    const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/30/${cleanName}`;
+            const rawList: any[] = json?.realtimeArrivalList || [];
+            const trainMap = new Map<string, StationArrival>();
+            
+            rawList.forEach(item => {
+                const isReliableNo = item.btrainNo && item.btrainNo !== "0000";
+                const trainId = isReliableNo 
+                    ? `${item.subwayId}-${item.btrainNo}` 
+                    : `${item.subwayId}-${item.updnLine}-${item.trainLineNm}-${item.arvlMsg2}`;
+                
+                const arrival: StationArrival = {
+                    lineName: item.subwayNm || "",
+                    subwayId: item.subwayId || "",
+                    updnLine: item.updnLine || "",
+                    trainLineNm: item.trainLineNm || "",
+                    statnNm: item.statnNm || "",
+                    arvlMsg2: item.arvlMsg2 || "",
+                    arvlMsg3: item.arvlMsg3 || "",
+                    arvlCd: item.arvlCd || "",
+                    barvlDt: item.barvlDt || "9999",
+                    btrainNo: item.btrainNo || ""
+                };
+
+                const existing = trainMap.get(trainId);
+                if (!existing || parseInt(arrival.barvlDt) < parseInt(existing.barvlDt)) {
+                    trainMap.set(trainId, arrival);
+                }
+            });
+            return Array.from(trainMap.values());
+        } catch (e) {
+            return [];
+        }
+    };
+
+    // Naming logic: Seoul Open API is flaky about "서울" vs "서울역".
+    // 1. Try exact name (e.g., "서울역")
+    // 2. Try variant (e.g., "서울")
+    const cleanName = stationName.replace(/역+$/, '');
+    const variants = [stationName, cleanName];
+    if (cleanName === "서울") variants.unshift("서울역");
+
+    // Remove duplicates
+    const uniqueVariants = Array.from(new Set(variants));
     
     try {
-        let json = await fetchWithFallbacks(primaryUrl);
-        
-        // Fallback to sample key if user key lacks real-time permissions
-        if (json?.status === 500 && json?.code === "ERROR-338") {
-            const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/10/${cleanName}`;
-            json = await fetchWithFallbacks(fallbackUrl);
-        }
-
-        const rawList: any[] = json?.realtimeArrivalList || [];
-        
-        // Map to store unique trains by their ID
-        const trainMap = new Map<string, StationArrival>();
-        
-        rawList.forEach(item => {
-            // btrainNo is the best unique identifier, but it might be "0000" for some lines
-            const isReliableNo = item.btrainNo && item.btrainNo !== "0000";
-            const trainId = isReliableNo 
-                ? `${item.subwayId}-${item.btrainNo}` 
-                : `${item.subwayId}-${item.updnLine}-${item.trainLineNm}-${item.arvlMsg2}`;
-            
-            const arrival: StationArrival = {
-                lineName: item.subwayNm || "",
-                subwayId: item.subwayId || "",
-                updnLine: item.updnLine || "",
-                trainLineNm: item.trainLineNm || "",
-                statnNm: item.statnNm || "",
-                arvlMsg2: item.arvlMsg2 || "",
-                arvlMsg3: item.arvlMsg3 || "",
-                arvlCd: item.arvlCd || "",
-                barvlDt: item.barvlDt || "9999",
-                btrainNo: item.btrainNo || ""
-            };
-
-            const existing = trainMap.get(trainId);
-            // If we have an existing entry for this train, keep the one that is closer (smaller barvlDt)
-            if (!existing || parseInt(arrival.barvlDt) < parseInt(existing.barvlDt)) {
-                trainMap.set(trainId, arrival);
+        let allArrivals: StationArrival[] = [];
+        for (const v of uniqueVariants) {
+            const data = await fetchUniqueArrivals(v);
+            if (data.length > 0) {
+                allArrivals = data;
+                break; // Found data, stop retrying
             }
-        });
+        }
 
         // Group by direction and sort
         const upArrivals: StationArrival[] = [];
         const downArrivals: StationArrival[] = [];
 
-        trainMap.forEach(arrival => {
+        allArrivals.forEach(arrival => {
             if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선")) {
                 upArrivals.push(arrival);
             } else {

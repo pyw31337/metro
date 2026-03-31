@@ -327,17 +327,22 @@ export default function UnifiedBottomPanel({
                                         <button onClick={() => { onSelectStation?.(null); onActiveLineChange(null); }} className="p-1 text-zinc-400"><X size={14} /></button>
                                     </div>
                                     {badges.length > 0 && (
-                                        <div className="flex gap-2 p-1 bg-zinc-200/50 dark:bg-black/20 rounded-xl overflow-x-auto no-scrollbar border border-black/5 dark:border-white/5">
-                                            {badges.map((badge, idx) => (
-                                                <button 
-                                                    key={idx}
-                                                    onClick={() => onActiveLineChange(badge.num)}
-                                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black transition-all ${activeLine === badge.num ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5' : 'text-zinc-400 hover:text-zinc-600'}`}
-                                                >
-                                                    <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] text-white" style={{ backgroundColor: badge.color }}>{badge.num}</span>
-                                                    <span>{badge.num}호선</span>
-                                                </button>
-                                            ))}
+                                        <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar py-0.5">
+                                            {badges.map((badge, idx) => {
+                                                const isNumbered = !isNaN(Number(badge.num));
+                                                const label = isNumbered ? `${badge.num}호선` : badge.num;
+                                                
+                                                return (
+                                                    <button 
+                                                        key={idx}
+                                                        onClick={() => onActiveLineChange(badge.num)}
+                                                        className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'text-white' : 'opacity-40 grayscale-[0.3]'}`}
+                                                        style={{ backgroundColor: badge.color }}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
                                     )}
                                 </div>
