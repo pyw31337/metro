@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X } from "lucide-react";
 import { StationArrival } from "@/services/arrivalApi";
@@ -64,6 +65,26 @@ const MapPopups = ({
   isLoadingCongestion,
   congestionData
 }: MapPopupsProps) => {
+  const [activeLine, setActiveLine] = useState<string | null>(null);
+
+  const badges = useMemo(() => getStationBadges(selectedStationName || ""), [selectedStationName]);
+
+  useEffect(() => {
+    if (badges.length > 0 && (!activeLine || !badges.find(b => b.num === activeLine))) {
+        setActiveLine(badges[0].num);
+    } else if (badges.length === 0) {
+        setActiveLine(null);
+    }
+  }, [badges, activeLine]);
+
+  const filteredArrivals = useMemo(() => {
+    if (!activeLine) return stationArrivals;
+    return stationArrivals.filter(arr => 
+        arr.lineName.includes(activeLine) || 
+        arr.subwayId.endsWith(activeLine.padStart(2, '0'))
+    );
+  }, [stationArrivals, activeLine]);
+
   return (
     <>
       {/* 1. Station/Bus Detail Popup */}
@@ -79,20 +100,21 @@ const MapPopups = ({
             className="custom-station-popup"
         >
             <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
-                <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center justify-between">
-                    <div className="flex items-center gap-1.5">
+                <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center justify-between pointer-events-none">
+                    <div className="flex items-center gap-1.5 pointer-events-auto">
                         {activeTab === 'subway' && selectedStationName ? (
                             <>
                                 {selectedStationName}
                                 <div className="flex gap-1 ml-1.5 overflow-x-auto no-scrollbar">
-                                    {getStationBadges(selectedStationName).map((badge, idx) => (
-                                        <span 
+                                    {badges.map((badge: {num: string, color: string}, idx: number) => (
+                                        <button 
                                             key={idx}
-                                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black text-white shadow-sm shrink-0"
+                                            onClick={(e) => { e.stopPropagation(); setActiveLine(badge.num); }}
+                                            className={`inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-white scale-110' : 'opacity-60'}`}
                                             style={{ backgroundColor: badge.color }}
                                         >
                                             {badge.num}
-                                        </span>
+                                        </button>
                                     ))}
                                 </div>
                             </>
@@ -158,12 +180,12 @@ const MapPopups = ({
                             <div className="flex flex-col gap-1.5">
                                 <ArrivalHeader 
                                     defaultTitle="상행 · 내선" 
-                                    trains={stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선'))}
+                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선'))}
                                     textColor="text-blue-500 dark:text-blue-400"
                                     borderColor="border-blue-500/20"
                                 />
-                                {stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
-                                    stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr, i) => (
+                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
+                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr: any, i: number) => (
                                         <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
                                     ))
                                 ) : (
@@ -173,12 +195,12 @@ const MapPopups = ({
                             <div className="flex flex-col gap-1.5">
                                 <ArrivalHeader 
                                     defaultTitle="하행 · 외선" 
-                                    trains={stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선'))}
+                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선'))}
                                     textColor="text-orange-500 dark:text-orange-400"
                                     borderColor="border-orange-500/20"
                                 />
-                                {stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
-                                    stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr, i) => (
+                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
+                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr: any, i: number) => (
                                         <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
                                     ))
                                 ) : (

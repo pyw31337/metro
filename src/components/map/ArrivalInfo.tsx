@@ -29,9 +29,9 @@ export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: 
 export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: { arr: StationArrival, timeDisplayMode: "duration" | "arrival", onToggleTimeDisplay?: () => void }) => {
     
     let stopsLeft = "";
-    if (arr.arvlMsg2.includes("정거장") || arr.arvlMsg2.includes("역 전") || arr.arvlMsg2.includes("번째 전역")) {
+    if (arr.arvlMsg2.includes("정거장") || arr.arvlMsg2.includes("역 전") || arr.arvlMsg2.includes("번째 전역") || arr.arvlMsg2.includes("역전")) {
         const match = arr.arvlMsg2.match(/\d+/);
-        if (match) stopsLeft = `${match[0]} 정거장전`;
+        if (match) stopsLeft = `${match[0]}역전`;
     } 
 
     if (!stopsLeft && arr.arvlMsg3 && arr.statnNm) {
@@ -48,12 +48,12 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
                     break;
                 }
             }
-            if (dist > 0) stopsLeft = `${dist} 정거장전`;
+            if (dist > 0) stopsLeft = `${dist}역전`;
         }
     }
 
     if (!stopsLeft) {
-        let fallback = arr.arvlMsg2.split("(")[0].trim();
+        let fallback = arr.arvlMsg2.split("(")[0].trim().replace("정거장", "역");
         if (!fallback.includes("분") && !fallback.includes("초")) {
             stopsLeft = fallback;
         }
@@ -68,7 +68,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     
     if (timeSec === 0 && stopsLeft) {
         if (stopsLeft.includes("당역")) timeSec = 30;
-        else if (stopsLeft.includes("정거장")) {
+        else if (stopsLeft.includes("역전")) {
             const m = stopsLeft.match(/\d+/);
             if (m) timeSec = parseInt(m[0]) * 180;
         }
