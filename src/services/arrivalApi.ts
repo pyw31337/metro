@@ -151,13 +151,23 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
 };
 
 export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) => {
+    // Normalize input line name (e.g., '3' -> '3호선', '신분당' -> '신분당선')
+    let normalizedNm = subwayNm.trim();
+    if (!normalizedNm.endsWith('호선') && !normalizedNm.endsWith('선')) {
+        if (!isNaN(Number(normalizedNm))) {
+            normalizedNm = normalizedNm + '호선';
+        } else {
+            normalizedNm = normalizedNm + '선';
+        }
+    }
+
     const lineMap: { [key: string]: string } = {
         "1호선": "1001", "2호선": "1002", "3호선": "1003", "4호선": "1004", "5호선": "1005",
         "6호선": "1006", "7호선": "1007", "8호선": "1008", "9호선": "1009",
         "경의중앙선": "1063", "경춘선": "1067", "수인분당선": "1075", "신분당선": "1077"
     };
     
-    const subwayId = lineMap[subwayNm];
+    const subwayId = lineMap[normalizedNm];
     if (!subwayId) return null;
 
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
@@ -167,7 +177,9 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
     
     try {
         const json = await fetchWithFallbacks(url);
-        if (json?.status === 200) {
+        // Handle different status reporting formats from Seoul API and proxies
+        const isSuccess = json?.status === 200 || json?.errorMessage?.status === 200 || json?.RESULT?.CODE === "INFO-000";
+        if (isSuccess) {
             return json?.realtimeTrainCongestionList?.[0] || null;
         }
         return null;

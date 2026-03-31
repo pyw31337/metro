@@ -29,6 +29,13 @@ interface MapPopupsProps {
   congestionData: any;
 }
 
+const getLineInfo = (lineName: string) => {
+    if (!lineName) return { num: '?', color: '#ccc' };
+    const num = lineName.replace('호선', '').replace('서울배차', '').trim();
+    const line = SUBWAY_LINES.find(l => l.name.includes(num));
+    return { num, color: line?.color || '#ccc' };
+};
+
 const getStationBadges = (name: string) => {
     if (!name) return [];
     const cleanName = name.replace(/역+$/, '');
@@ -228,12 +235,31 @@ const MapPopups = ({
             offset={20}
             className="custom-train-popup"
         >
-            <div className="p-3 min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
-                <div className="flex items-center justify-between mb-2">
+            <div className="p-3 min-w-[200px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
+                <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5 overflow-hidden">
-                        <span className="text-[12px] font-black text-zinc-900 dark:text-white truncate">
-                            {selectedTrain.trainNo}열차 {selectedTrain.headingTo}행
-                        </span>
+                        {(() => {
+                            const info = getLineInfo(selectedTrain.lineName);
+                            return (
+                                <>
+                                    <div 
+                                        className="px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-[10px] font-black border shadow-sm shrink-0"
+                                        style={{ borderColor: info.color, color: info.color }}
+                                    >
+                                        {selectedTrain.headingTo}행
+                                    </div>
+                                    <span className="text-[12px] font-black text-zinc-900 dark:text-white truncate">
+                                        {selectedTrain.trainNo}열차
+                                    </span>
+                                    <span 
+                                        className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[9px] font-black text-white shadow-sm shrink-0"
+                                        style={{ backgroundColor: info.color }}
+                                    >
+                                        {info.num}
+                                    </span>
+                                </>
+                            );
+                        })()}
                         {selectedTrain.directAt === '1' && (
                             <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[9px] font-black shrink-0">급행</span>
                         )}
@@ -260,7 +286,6 @@ const MapPopups = ({
                             }
                         })()}
                     </div>
-                    <div className="text-[10px] text-zinc-400 font-medium">{selectedTrain.lineName}</div>
                 </div>
 
                 <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
@@ -269,7 +294,7 @@ const MapPopups = ({
                         {isLoadingCongestion && <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />}
                     </div>
                     
-                    {congestionData ? (
+                    {congestionData?.congestionTrain ? (
                         <div className="grid grid-cols-10 gap-0.5 h-6 items-end">
                             {congestionData.congestionTrain.split('|').map((val: string, idx: number) => {
                                 const v = parseInt(val);
