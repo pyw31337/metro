@@ -281,9 +281,9 @@ const MapPopups = ({
                             <div className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-white/10 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
                                 {(() => {
                                     switch(selectedTrain.trainSttus) {
-                                        case '0': return '진입중';
-                                        case '1': return '정차중';
-                                        case '2': return '출발함';
+                                        case '0': return '진입';
+                                        case '1': return '정차';
+                                        case '2': return '이동중';
                                         case '3': return '전역출발';
                                         case '4': return '전역진입';
                                         case '5': return '전역도착';
@@ -291,9 +291,11 @@ const MapPopups = ({
                                     }
                                 })()}
                             </div>
-                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">{selectedTrain.statnNm}</span>
+                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">
+                                {selectedTrain.statnNm}({selectedTrain.lineName.replace(/[^0-9]/g, '') || selectedTrain.lineName[0]})
+                            </span>
                         </div>
-                        <span className="text-[10px] font-medium text-zinc-400 dark:text-white/40">
+                        <span className="text-[10px] font-black text-zinc-900 dark:text-white">
                             {(() => {
                                 const diff = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
                                 if (timeDisplayMode === 'duration') return diff <= 0 ? '방금전' : `${diff}분전`;
@@ -306,9 +308,11 @@ const MapPopups = ({
                     <div className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
                         <div className="flex items-center gap-2">
                             <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-tighter">도착예정</span>
-                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">{selectedTrain.arrivalNm}</span>
+                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">
+                                {selectedTrain.arrivalNm}({selectedTrain.lineName.replace(/[^0-9]/g, '') || selectedTrain.lineName[0]})
+                            </span>
                         </div>
-                        <span className="text-[11px] font-black text-rose-500 dark:text-rose-400">
+                        <span className="text-[11px] font-black text-zinc-900 dark:text-white">
                             {trainArrivalDetail ? (
                                 (() => {
                                     const sec = parseInt(trainArrivalDetail.barvlDt) || 0;
