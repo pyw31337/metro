@@ -17,13 +17,13 @@ export class MetroDatabase extends Dexie {
 
   constructor() {
     super('MetroDatabase');
-    this.version(2).stores({
+    this.version(3).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, *routes',
       wc: 'id, name, station',
       facilities: '++id, stationName, category, isInsideGate',
       operational: '++id, fromStation, toStation, line',
-      timetables: '++id, stationName, line, dayType, direction',
+      timetables: '++id, stationName, line, dayType, direction, [stationName+line+dayType]',
       stationMetrics: '++id, stationName, line, hour'
     });
   }
@@ -67,9 +67,19 @@ export class MetroDatabase extends Dexie {
           await this.wc.bulkAdd(mappedWC);
         });
         console.log('✅ Basic station data loaded.');
+        
+        // Fetch official metadata (Codes, FR Codes) after loading names
+        await DataIngestionService.ingestStationMetadata();
       } catch (err) {
         console.error('❌ Failed to initialize database:', err);
       }
+    } else {
+        // Check if metadata is missing from the first station
+        const first = await this.stations.offset(0).first();
+        if (first && !first.stationCd) {
+            console.log('🆔 Missing station metadata. Refreshing in background...');
+            DataIngestionService.ingestStationMetadata();
+        }
     }
   }
 
@@ -87,6 +97,22 @@ export class MetroDatabase extends Dexie {
         .where('stationName')
         .equals(stationName)
         .toArray();
+  }
+
+  async saveTimetable(entries: TimetableEntry[]) {
+      if (entries.length === 0) return;
+      await this.timetables.bulkPut(entries);
+  }
+
+  async getStoredTimetable(stationName: string, line: string, dayType: string): Promise<TimetableEntry[]> {
+      return await this.timetables
+          .where('[stationName+line+dayType]')
+          .equals([stationName, line, dayType])
+          .toArray();
+  }
+
+  async getStationByName(name: string): Promise<Station | undefined> {
+      return await this.stations.where('name').equals(name).first();
   }
 }
 

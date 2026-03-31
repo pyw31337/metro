@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X } from "lucide-react";
-import { StationArrival, parseSeoulDate } from "@/services/arrivalApi";
+import { StationArrival } from "@/types/metro";
+import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
 import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";

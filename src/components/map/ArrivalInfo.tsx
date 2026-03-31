@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { StationArrival } from "@/services/arrivalApi";
+import { StationArrival } from "@/types/metro";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 
 export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: { defaultTitle: string, trains: StationArrival[], textColor: string, borderColor: string }) => {

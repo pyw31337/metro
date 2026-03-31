@@ -1,5 +1,19 @@
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
+export interface StationArrival {
+    lineName: string;
+    subwayId: string;
+    updnLine: string;
+    trainLineNm: string;
+    statnNm: string;
+    arvlMsg2: string;
+    arvlMsg3: string;
+    arvlCd: string;
+    barvlDt: string;
+    btrainNo: string;
+    isScheduled?: boolean;
+}
+
 export interface Station {
   id?: number;
   name: string;
@@ -7,6 +21,9 @@ export interface Station {
   lat: number;
   lng: number;
   around_stations: string[];
+  stationCd?: string;
+  lineNum?: string;
+  frCode?: string;
 }
 
 export interface BusStop {
@@ -62,6 +79,7 @@ export interface TimetableEntry {
     departureTime: string;
     trainNo: string;
     destination: string;
+    destStation?: string;
 }
 
 export interface StationMetric {

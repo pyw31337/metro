@@ -1,17 +1,6 @@
-export interface StationArrival {
-    lineName: string;
-    subwayId: string;
-    updnLine: string; // "상행" or "외선"
-    trainLineNm: string; // "방화행 - 마장방면"
-    statnNm: string;
-    arvlMsg2: string;
-    arvlMsg3: string;
-    arvlCd: string;
-    barvlDt: string;
-    btrainNo: string;
-    isScheduled?: boolean; // NEW: indicate if it's from fallback
-}
-
+import { StationArrival, TimetableEntry } from '@/types/metro';
+import { db } from './db';
+import { DataIngestionService } from './dataIngestion';
 import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
 
@@ -161,34 +150,72 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         // ─── Timetable Fallback Logic ───────────────────────────────────────────
         if (allArrivals.length === 0) {
             const now = new Date();
-            const hour = now.getHours();
-            const minutes = now.getMinutes();
-            
-            // Heuristic: Subway usually runs from 05:30 to 24:30
-            if ((hour > 5 || (hour === 5 && minutes >= 30)) && (hour < 24 || (hour === 0 && minutes <= 30))) {
-                // Generate 2 mock trains for each direction
-                const mockLineName = stationName.includes("호선") ? stationName : "지하철";
-                const directions = ["상행", "하행"];
+            const dayTypeStr = now.getDay() === 0 ? 'sun' : now.getDay() === 6 ? 'sat' : 'week';
+            const station = await db.getStationByName(stationName);
+
+            if (station && station.stationCd && station.lineNum) {
+                // Try to get from Local DB first
+                const stored = await db.getStoredTimetable(stationName, station.lineNum, dayTypeStr);
                 
-                directions.forEach(dir => {
-                    [1, 2].forEach(i => {
-                        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 20);
-                        const waitMin = i * (isPeak ? 4 : 8); 
+                if (stored.length > 0) {
+                    const hourStr = now.getHours().toString().padStart(2, '0');
+                    const minStr = now.getMinutes().toString().padStart(2, '0');
+                    const currentTime = `${hourStr}:${minStr}:00`;
+
+                    const upcoming = stored
+                        .filter(e => e.departureTime > currentTime)
+                        .sort((a, b) => a.departureTime.localeCompare(b.departureTime))
+                        .slice(0, 4);
+
+                    upcoming.forEach(e => {
+                        const [h, m] = e.departureTime.split(':').map(Number);
+                        const waitMin = (h * 60 + m) - (now.getHours() * 60 + now.getMinutes());
+
                         allArrivals.push({
-                            lineName: mockLineName,
-                            subwayId: "9999", // Mock ID
-                            updnLine: dir,
-                            trainLineNm: `${dir} 전동차`,
+                            lineName: station.lines[0] || "지하철",
+                            subwayId: "9999",
+                            updnLine: e.direction === 'up' ? '상행' : '하행',
+                            trainLineNm: `${e.destStation || e.destination}행`,
                             statnNm: stationName,
-                            arvlMsg2: `${waitMin}분 후 도착 예정`,
+                            arvlMsg2: `${waitMin}분 후 (${e.departureTime.substring(0,5)})`,
                             arvlMsg3: stationName,
                             arvlCd: "99",
+                            isScheduled: true,
                             barvlDt: (waitMin * 60).toString(),
-                            btrainNo: "SCH-" + i,
-                            isScheduled: true
+                            btrainNo: e.trainNo
                         });
                     });
-                });
+                } else {
+                    // Start background ingest for next time
+                    DataIngestionService.ingestTimetables(stationName, station.lineNum, station.stationCd);
+                }
+            }
+
+            // Heuristic Fallback as absolute last resort
+            if (allArrivals.length === 0) {
+                const hour = now.getHours();
+                const minutes = now.getMinutes();
+                if ((hour > 5 || (hour === 5 && minutes >= 30)) && (hour < 24 || (hour === 0 && minutes <= 30))) {
+                    ["상행", "하행"].forEach(dir => {
+                        [1, 2].forEach(i => {
+                            const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 20);
+                            const waitMin = i * (isPeak ? 4 : 8); 
+                            allArrivals.push({
+                                lineName: "지하철",
+                                subwayId: "9999",
+                                updnLine: dir,
+                                trainLineNm: `${dir} 전동차`,
+                                statnNm: stationName,
+                                arvlMsg2: `${waitMin}분 후 (예정)`,
+                                arvlMsg3: stationName,
+                                arvlCd: "99",
+                                isScheduled: true,
+                                barvlDt: (waitMin * 60).toString(),
+                                btrainNo: "9999"
+                            });
+                        });
+                    });
+                }
             }
         }
 

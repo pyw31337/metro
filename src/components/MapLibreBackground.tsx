@@ -2,8 +2,8 @@
 
 import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
 import { GeolocateControl, Marker, useMap } from "react-map-gl/maplibre";
-import { PathResult, WCItem, BusStop, ActiveTab, WCFilters } from "@/types/metro";
-import { StationArrival, fetchTrainCongestion } from "@/services/arrivalApi";
+import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival } from "@/types/metro";
+import { fetchTrainCongestion } from "@/services/arrivalApi";
 import { 
     convertSubwayToGeoJSON, 
     convertBusStopsToGeoJSON, 

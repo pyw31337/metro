@@ -123,10 +123,69 @@ export class DataIngestionService {
     }
 
     /**
-     * 5. Ingest Timetables
-     * Note: This is usually a massive dataset, will need chunking or specific station-based fetch.
+     * 5. Ingest Station Metadata (Universal ID Mapping)
+     * Source: OA-121 (SearchSTNBySubwayLineService)
      */
-    static async ingestTimetables(stationName: string) {
-        // Implementation for OA-22750 or OA-101
+    static async ingestStationMetadata() {
+        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
+        try {
+            const json = await fetchWithFallbacks(url);
+            const items = json.SearchSTNBySubwayLineService?.row || [];
+
+            for (const item of items) {
+                const existing = await db.getStationByName(item.STATION_NM);
+                if (existing) {
+                    await db.stations.update(existing.id!, {
+                        stationCd: item.STATION_CD,
+                        lineNum: item.LINE_NUM,
+                        frCode: item.FR_CODE
+                    });
+                }
+            }
+            console.log(`🆔 Ingested metadata for ${items.length} stations.`);
+        } catch (err) {
+            console.warn('Failed to ingest station metadata:', err);
+        }
+    }
+
+    /**
+     * 6. Ingest Timetables (Incremental)
+     * Source: OA-101 (SearchSTNTimeTableByIDService)
+     */
+    static async ingestTimetables(stationName: string, lineNum: string, stationCd: string) {
+        const dayTypes = ['1', '2', '3']; // Weekday, Saturday, Sunday
+        const directions = ['1', '2']; // Up, Down
+        const allEntries: TimetableEntry[] = [];
+
+        for (const dayType of dayTypes) {
+            for (const direction of directions) {
+                const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchSTNTimeTableByIDService/1/500/${stationCd}/${dayType}/${direction}/`;
+                try {
+                    const json = await fetchWithFallbacks(url);
+                    const rows = json.SearchSTNTimeTableByIDService?.row || [];
+                    
+                    rows.forEach((row: any) => {
+                        allEntries.push({
+                            stationName,
+                            line: lineNum,
+                            dayType: dayType === '1' ? 'week' : dayType === '2' ? 'sat' : 'sun',
+                            direction: direction === '1' ? 'up' : 'down',
+                            arrivalTime: row.ARRIVETIME,
+                            departureTime: row.LEFTTIME,
+                            trainNo: row.TRAIN_NO,
+                            destination: row.SUBWAYDESTNM,
+                            destStation: row.SUBWAYDESTNM
+                        });
+                    });
+                } catch (err) {
+                    // Silent fail for specific day/direction combos
+                }
+            }
+        }
+
+        if (allEntries.length > 0) {
+            await db.saveTimetable(allEntries);
+            console.log(`📅 Cached ${allEntries.length} timetable entries for ${stationName}.`);
+        }
     }
 }
