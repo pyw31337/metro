@@ -138,7 +138,7 @@ export function useRealtimeTrains() {
                     id: t.id,
                     lineId: t.lineId,
                     lineName: t.lineName,
-                    lineColor: line.color,
+                    lineColor: line.color.toUpperCase(),
                     status: t.status,
                     lat: pos.lat,
                     lng: pos.lng,

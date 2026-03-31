@@ -172,7 +172,8 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                 
                 directions.forEach(dir => {
                     [1, 2].forEach(i => {
-                        const waitMin = i * (hour >= 7 && hour <= 9 ? 4 : 8); // Peak vs Off-peak
+                        const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 20);
+                        const waitMin = i * (isPeak ? 4 : 8); 
                         allArrivals.push({
                             lineName: mockLineName,
                             subwayId: "9999", // Mock ID

@@ -28,10 +28,13 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
         }
         
         const data = await response.json();
+        if (!data || Object.keys(data).length === 0) {
+            console.warn(`[API Empty Response] ${url}`);
+        }
         cache.set(url, { data, timestamp: now });
         return data;
-    } catch (error) {
-        console.error(`[API Critical Failure] ${url}:`, error);
+    } catch (error: any) {
+        console.error(`[API Critical Failure] ${url}: ${error?.message || error}`);
         return null;
     }
 }
@@ -41,13 +44,13 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
  */
 export const API_ENDPOINTS = {
     SUBWAY_POSITION: (key: string, name: string) =>
-        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/100/${encodeURIComponent(name)}`,
+        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/100/${encodeURIComponent(name)}`,
     
     SUBWAY_ARRIVAL: (key: string, station: string) =>
-        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeStationArrival/0/20/${encodeURIComponent(station)}`,
+        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeStationArrival/0/20/${encodeURIComponent(station)}`,
     
     SUBWAY_CONGESTION: (key: string, subwayId: string, trainNo: string) =>
-        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`,
+        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`,
 
     TRANSFER_PLATFORM: (key: string, station: string, fromLine: string, toLine: string) =>
         `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTransferPlatform/0/10/${encodeURIComponent(station)}/${encodeURIComponent(fromLine)}/${encodeURIComponent(toLine)}`,

@@ -241,7 +241,12 @@ const MapPopups = ({
                             </div>
                         </div>
                     ) : (
-                        <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">도착 정보가 없습니다.</div>
+                        <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">
+                            {(() => {
+                                const hour = new Date().getHours();
+                                return (hour >= 1 && hour < 5) ? "운행 시간이 아닙니다." : "도착 정보가 없습니다.";
+                            })()}
+                        </div>
                     )}
                 </div>
             </div>

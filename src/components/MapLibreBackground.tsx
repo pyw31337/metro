@@ -270,7 +270,7 @@ function MapLibreBackground(props: MapLibreProps) {
             <TrainLayers 
                 trainData={trainData} 
                 activeTab={activeTab}
-                trainFilter={pathResult ? ["match", ["get", "lineName"], Array.from(new Set(pathResult.path.flatMap(s => stations.find(st => st.name.replace(/역$/, '') === s.replace(/역$/, ''))?.lines || []))), true, false] : null}
+                trainFilter={null}
             />
 
             <MapPopups 
