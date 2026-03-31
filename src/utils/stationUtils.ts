@@ -70,3 +70,31 @@ export const formatStationDisplay = (name: string, line: string = ""): string =>
     
     return suffix ? `${base} (${suffix})` : base;
 };
+
+/**
+ * Shortens subway line names for circular badges.
+ * Examples: "1호선" -> "1", "공항철도" -> "공항", "GTX-A" -> "G-A", "경의중앙선" -> "경의"
+ */
+export const getLineShortName = (lineName: string): string => {
+    if (!lineName) return "";
+    const clean = lineName.replace(/[()]/g, "").trim();
+
+    // Specific overrides
+    if (clean === "공항철도") return "공항";
+    if (clean === "GTX-A") return "G-A";
+    if (clean === "경의중앙선") return "경의";
+    if (clean === "수인분당선") return "수인";
+    if (clean === "신분당선") return "신분";
+    if (clean === "경춘선") return "경춘";
+    if (clean === "우이신설선") return "우이";
+    if (clean === "신림선") return "신림";
+    if (clean === "의정부경전철") return "의정";
+    if (clean === "에버라인") return "용인";
+    if (clean === "김포골드라인") return "김포";
+    if (clean === "서해선") return "서해";
+    if (clean === "인천1호선") return "인1";
+    if (clean === "인천2호선") return "인2";
+
+    // Default: Remove common suffixes and take first character
+    return clean.replace(/호선|철도|중앙선|분당선|인천|선/g, "").substring(0, 1).toUpperCase();
+};

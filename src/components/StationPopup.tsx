@@ -5,6 +5,7 @@ import L from "leaflet";
 import { createRoot } from "react-dom/client";
 import { useArrivalInfo, ArrivalInfo } from "@/hooks/useArrivalInfo";
 import { Train, MapPin, Navigation, Clock, Search } from "lucide-react";
+import { getLineShortName } from "@/utils/stationUtils";
 
 interface StationPopupProps {
     name: string;
@@ -53,7 +54,7 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                             <div key={i} className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
                                     <div className="w-7 h-7 rounded-lg bg-blue-600/10 dark:bg-blue-500/20 flex items-center justify-center text-[11px] font-black text-blue-600 dark:text-blue-400">
-                                        {a.lineName.replace("호선", "")}
+                                        {getLineShortName(a.lineName)}
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">

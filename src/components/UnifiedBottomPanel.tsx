@@ -11,6 +11,7 @@ import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
 import { db } from "@/services/db";
 import { Facility } from "@/types/metro";
+import { getLineShortName } from "@/utils/stationUtils";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -113,7 +114,7 @@ export default function UnifiedBottomPanel({
 
         for (const line of SUBWAY_LINES) {
             if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
-                const num = line.name.replace('호선', '').replace('서울배차', '').trim();
+                const num = getLineShortName(line.name);
                 if (!addedLines.has(num)) {
                     b.push({ num, color: line.color });
                     addedLines.add(num);
@@ -214,7 +215,7 @@ export default function UnifiedBottomPanel({
         };
         const cleanLine = lineStr.replace(/[()]/g, "").trim();
         const color = lineColors[cleanLine] || lineColors[cleanLine + "호선"] || "#999999";
-        const short = cleanLine.replace(/호선|철도|중앙선|분당선|인천|선/g, "").substring(0, 1).toUpperCase();
+        const short = getLineShortName(cleanLine);
         return (
             <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm" style={{ backgroundColor: color }}>
                 {short}
