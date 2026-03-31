@@ -41,33 +41,19 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
         type="symbol"
         filter={trainFilter ? ["all", trainFilter, ["==", ["get", "directAt"], "1"]] : ["==", ["get", "directAt"], "1"]}
         layout={{
-          "icon-image": "express-capsule",
+          "icon-image": "express-full-badge",
           "icon-size": [
             "interpolate", ["linear"], ["zoom"],
-            10, 0.25,
-            12, 0.35,
-            14, 0.55,
-            16, 0.75,
-            18, 1.1
+            10, 0.2,
+            12, 0.28,
+            14, 0.45,
+            16, 0.65,
+            18, 0.95
           ],
           "icon-anchor": "bottom",
           "icon-offset": [0, -20],
-          "text-field": "급행",
-          "text-size": [
-            "interpolate", ["linear"], ["zoom"],
-            10, 9,
-            12, 11,
-            14, 13,
-            16, 15,
-            18, 18
-          ],
-          "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]],
-          "text-anchor": "bottom",
-          "text-offset": [0, -2.2], // Adjust text position inside the 'bottom' anchored capsule
           "icon-allow-overlap": true,
-          "text-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "text-ignore-placement": true
+          "icon-ignore-placement": true
         }}
         paint={{
           "text-color": "white",

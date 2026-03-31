@@ -174,7 +174,29 @@ function MapLibreBackground(props: MapLibreProps) {
     const onMapReadyInternal = (map: any) => {
         if (onMapReady) onMapReady(map);
         
-        const colors = ["#0052A4","#00A84D","#EF7C1C","#00A5DE","#996CAC","#CD7C2F","#747F00","#E6186C","#BB8336","#B0E0E6","#003DA5","#77C4A3","#0090D2","#003499","#FFA500","#70AD11","#0092D2","#B7E032","#2ABFD0","#0052A4","#D4003B","#0031BA","#00A5DE","#ED1C24"];
+        const colors = [
+            "#0052A4", // 1호선
+            "#00A84D", // 2호선
+            "#EF7C1C", // 3호선
+            "#00A5DE", // 4호선
+            "#996CAC", // 5호선
+            "#CD7C2F", // 6호선
+            "#747F00", // 7호선
+            "#E6186C", // 8호선
+            "#BDB092", // 9호선
+            "#77C4A3", // 경의중앙선
+            "#0C8E72", // 경춘선
+            "#F5A200", // 수인분당선
+            "#D4003B", // 신분당선
+            "#0090D2", // 공항철도
+            "#81A914", // 서해선
+            "#50AD08", // 용인경전철
+            "#FDA600", // 의정부경전철
+            "#B0AD00", // 우이신설선
+            "#6789CA", // 신림선
+            "#003DA5", // 공항철도 (Alternative)
+            "#EF7C1C", "#996CAC", "#00A2D1", "#0160A2", "#E2B215"
+        ];
         colors.forEach(color => {
             const id = `train-card-${color}`;
             if (!map.hasImage(id)) {
@@ -198,10 +220,10 @@ function MapLibreBackground(props: MapLibreProps) {
             }
         });
 
-        // Register Express Capsule Background
+        // Register Express Capsule Background (Original)
         if (!map.hasImage('express-capsule')) {
             const canvas = document.createElement('canvas');
-            canvas.width = 120; canvas.height = 48; // Rectangular for pill shape
+            canvas.width = 120; canvas.height = 48;
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 ctx.fillStyle = '#ef4444';
@@ -211,6 +233,30 @@ function MapLibreBackground(props: MapLibreProps) {
                 ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.stroke();
                 const data = ctx.getImageData(0,0,120,48);
                 map.addImage('express-capsule', data, { pixelRatio: 2 });
+            }
+        }
+
+        // Register Unified Atomic Express Badge (With Text)
+        if (!map.hasImage('express-full-badge')) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 180; canvas.height = 64; 
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                // Red Capsule
+                ctx.fillStyle = '#ef4444';
+                ctx.beginPath();
+                ctx.roundRect(4, 4, 172, 56, 28);
+                ctx.fill();
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 6; ctx.stroke();
+                // "급행" Text
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 32px sans-serif'; // Use default bold first for safety
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('급행', 90, 32);
+                
+                const data = ctx.getImageData(0,0,180,64);
+                map.addImage('express-full-badge', data, { pixelRatio: 2 });
             }
         }
     };
