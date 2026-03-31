@@ -33,6 +33,17 @@ const SubwayLayers = ({
   return (
     <>
       <Source id="subway-lines" type="geojson" data={subwayData.lines}>
+        {/* Hidden interaction layer with wider selection range */}
+        <Layer
+          id="subway-line-interaction"
+          type="line"
+          beforeId="subway-line-layer"
+          layout={{ "line-join": "round", "line-cap": "round" }}
+          paint={{
+            "line-width": 25,
+            "line-opacity": 0
+          }}
+        />
         <Layer
           id="subway-line-layer"
           type="line"

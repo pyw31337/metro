@@ -225,7 +225,7 @@ function MapLibreBackground(props: MapLibreProps) {
             }
         } else if (feature.layer.id === 'train-layer') {
             handleTrainClick(feature.properties);
-        } else if (feature.layer.id === 'subway-line-layer') {
+        } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
             setFocusedLine(feature.properties.name);
         }
     }, [busStops, onStationClick, onBusStopClick]);
@@ -238,7 +238,7 @@ function MapLibreBackground(props: MapLibreProps) {
             onCenterChange={onCenterChange}
             interactiveLayerIds={[
                 'subway-station-circle', 'subway-station-label', 
-                'subway-line-layer', 'bus-unclustered', 
+                'subway-line-layer', 'subway-line-interaction', 'bus-unclustered', 
                 'bus-station-label', 'train-layer'
             ]}
         >
