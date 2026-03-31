@@ -95,6 +95,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setPopupCoords(null);
             setFocusedLine(null);
             setFocusedBubble(null);
+            setSelectedTrain(null);
             return;
         }
 
@@ -164,7 +165,7 @@ function MapLibreBackground(props: MapLibreProps) {
                     ctx.beginPath();
                     ctx.roundRect(14, 14, 100, 100, 20);
                     ctx.fill();
-                    ctx.strokeStyle = 'white'; ctx.lineWidth = 6; ctx.stroke();
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
                     // Icon
                     ctx.fillStyle = 'white';
                     ctx.beginPath(); ctx.roundRect(34, 34, 60, 40, 5); ctx.fill();

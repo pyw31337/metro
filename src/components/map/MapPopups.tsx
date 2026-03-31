@@ -1,6 +1,7 @@
 "use client";
 
 import { Popup } from "react-map-gl/maplibre";
+import { X } from "lucide-react";
 import { StationArrival } from "@/services/arrivalApi";
 import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";
@@ -72,22 +73,30 @@ const MapPopups = ({
             className="custom-station-popup"
         >
             <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
-                <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center gap-1.5">
-                    {activeTab === 'subway' && selectedStationName ? (
-                        <>
-                            {selectedStationName}
-                            {getStationBadge(selectedStationName) && (
-                                <span 
-                                    className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[11px] font-black text-white shadow-sm"
-                                    style={{ backgroundColor: getStationBadge(selectedStationName)!.color }}
-                                >
-                                    {getStationBadge(selectedStationName)!.num}
-                                </span>
-                            )}
-                        </>
-                    ) : (
-                        selectedBusStop?.name
-                    )}
+                <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-1.5">
+                        {activeTab === 'subway' && selectedStationName ? (
+                            <>
+                                {selectedStationName}
+                                {getStationBadge(selectedStationName) && (
+                                    <span 
+                                        className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[11px] font-black text-white shadow-sm"
+                                        style={{ backgroundColor: getStationBadge(selectedStationName)!.color }}
+                                    >
+                                        {getStationBadge(selectedStationName)!.num}
+                                    </span>
+                                )}
+                            </>
+                        ) : (
+                            selectedBusStop?.name
+                        )}
+                    </div>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
+                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors"
+                    >
+                        <X size={16} />
+                    </button>
                 </h3>
                 
                 {/* Navigation Actions */}
@@ -190,12 +199,20 @@ const MapPopups = ({
         >
             <div className="p-3 min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
                 <div className="flex items-center justify-between mb-2">
-                    <span className="text-[12px] font-black text-zinc-900 dark:text-white">
-                        {selectedTrain.trainNo}열차 {selectedTrain.headingTo}행
-                    </span>
-                    {selectedTrain.directAt === '1' && (
-                        <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[9px] font-black">급행</span>
-                    )}
+                    <div className="flex items-center gap-1.5 overflow-hidden">
+                        <span className="text-[12px] font-black text-zinc-900 dark:text-white truncate">
+                            {selectedTrain.trainNo}열차 {selectedTrain.headingTo}행
+                        </span>
+                        {selectedTrain.directAt === '1' && (
+                            <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[9px] font-black shrink-0">급행</span>
+                        )}
+                    </div>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setSelectedTrain(null); }}
+                        className="p-1 -mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors shrink-0"
+                    >
+                        <X size={14} />
+                    </button>
                 </div>
                 
                 <div className="flex items-center gap-2 mb-3">
