@@ -56,6 +56,7 @@ export default function Home() {
     const [timeDisplayMode, setTimeDisplayMode] = useState<"duration" | "arrival">("duration");
     const [showAllRouteBubbles, setShowAllRouteBubbles] = useState(false);
     const [busStops, setBusStops] = useState<BusStop[]>([]);
+    const [activeLine, setActiveLine] = useState<string | null>(null);
 
     const stations = useMemo(() => {
         const unique = new Map<string, SubwayStation>();
@@ -343,13 +344,15 @@ export default function Home() {
                     onSetEnd={setEndStation}
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
                     onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
-                    onMapReady={(r) => { mapRef.current = r; }}
+                    stations={stations}
+                    activeLine={activeLine}
+                    onActiveLineChange={setActiveLine}
+                    onMapReady={(m) => { mapRef.current = m; }}
                     userLocation={userLocation}
                     timeDisplayMode={timeDisplayMode}
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                     showAllRouteBubbles={showAllRouteBubbles}
                     onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
-                    stations={stations}
                 />
             </div>
 
@@ -382,6 +385,8 @@ export default function Home() {
                 selectedStationName={selectedStationName}
                 stationArrivals={stationArrivals}
                 onSelectStation={setSelectedStationName}
+                activeLine={activeLine}
+                onActiveLineChange={setActiveLine}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">

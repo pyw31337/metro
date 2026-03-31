@@ -49,6 +49,8 @@ interface MapLibreProps {
     showAllRouteBubbles: boolean;
     onToggleShowAll?: () => void;
     stations: any[];
+    activeLine: string | null;
+    onActiveLineChange: (line: string | null) => void;
 }
 
 function MapLibreBackground(props: MapLibreProps) {
@@ -57,7 +59,7 @@ function MapLibreBackground(props: MapLibreProps) {
         onStationClick, onBusStopClick, onMapReady,
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
         onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
-        showAllRouteBubbles, selectedBusStop, stations
+        showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange
     } = props;
 
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -321,6 +323,8 @@ function MapLibreBackground(props: MapLibreProps) {
                 isLoadingCongestion={isLoadingCongestion}
                 congestionData={congestionData}
                 trainArrivalDetail={trainArrivalDetail}
+                activeLine={activeLine}
+                onActiveLineChange={onActiveLineChange}
             />
 
             <GeolocateControl position="top-right" />

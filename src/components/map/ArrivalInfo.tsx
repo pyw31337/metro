@@ -11,7 +11,15 @@ export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: 
     if (trains.length > 0) {
         const dest = trains[0].trainLineNm.split('-')[0].replace('행', '').trim();
         const base = defaultTitle.split('·')[0].trim();
-        title = `${base} (${dest}행)`; 
+        
+        // Map 내선/외선 and determine 상/하/좌/우
+        let dir = base;
+        if (base.includes('내선')) dir = '좌행 (내선)';
+        else if (base.includes('외선')) dir = '우행 (외선)';
+        else if (base.includes('상행')) dir = '상행';
+        else if (base.includes('하행')) dir = '하행';
+
+        title = `${dir} (${dest}행)`; 
     }
 
     return (
@@ -19,7 +27,7 @@ export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: 
             onClick={(e) => { e.stopPropagation(); setShowSchedule(!showSchedule); }}
             className={`w-full text-left focus:outline-none transition-transform active:scale-95`}
         >
-            <div className={`text-[10px] font-black ${textColor} text-center pb-1 border-b ${borderColor}`}>
+            <div className={`text-[11px] font-black ${textColor} text-center pb-2 border-b-2 ${borderColor}`}>
                 {showSchedule ? '첫차 05:00 / 막차 12:00' : title}
             </div>
         </button>
@@ -90,15 +98,27 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     
     let displayTime = timeDisplayMode === "duration" ? relativeStr : clockStr;
 
+    // Line color mapping for status text
+    const lineColors: Record<string, string> = {
+        "1": "#0052A4", "2": "#00A84D", "3": "#EF7C1C", "4": "#00A5DE",
+        "5": "#996CAC", "6": "#CD7C2F", "7": "#747F00", "8": "#E6186C",
+        "9": "#BDB092", "수인분당": "#F5A200", "신분당": "#D4003B", "경의중앙": "#77C4A3",
+        "공항철도": "#0090D2", "경춘": "#0C8E72", "인천1": "#7CA8D5", "인천2": "#ED8B00"
+    };
+    const lineNum = arr.subwayId.slice(-1);
+    const statusColor = lineColors[lineNum] || "#000000";
+
+    const isHighlight = stopsLeft.includes("당역") || stopsLeft.includes("진입") || stopsLeft.includes("도착") || stopsLeft.includes("전역");
+
     return (
         <button 
             onClick={(e) => { e.stopPropagation(); if(onToggleTimeDisplay) onToggleTimeDisplay(); }}
-            className="w-full focus:outline-none flex items-center justify-between px-2.5 py-2 rounded-lg bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
+            className="w-full focus:outline-none flex items-center justify-between px-3 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
         >
-            <span className="text-[11px] leading-tight font-black text-zinc-900 dark:text-white">
+            <span className={`text-[12px] leading-tight font-black ${isHighlight ? '' : 'text-zinc-900 dark:text-white'}`} style={isHighlight ? { color: statusColor } : {}}>
                 {displayTime}
             </span>
-            <span className="text-[10px] font-normal text-zinc-400 dark:text-zinc-500 leading-tight">
+            <span className={`text-[11px] font-bold leading-tight ${isHighlight ? '' : 'text-zinc-400 dark:text-zinc-500'}`} style={isHighlight ? { color: statusColor } : {}}>
                 {stopsLeft}
             </span>
         </button>

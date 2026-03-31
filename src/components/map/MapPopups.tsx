@@ -28,6 +28,8 @@ interface MapPopupsProps {
   isLoadingCongestion: boolean;
   congestionData: any;
   trainArrivalDetail?: StationArrival | null;
+  activeLine: string | null;
+  onActiveLineChange: (line: string | null) => void;
 }
 
 const getLineInfo = (lineName: string) => {
@@ -72,19 +74,19 @@ const MapPopups = ({
   setSelectedTrain,
   isLoadingCongestion,
   congestionData,
-  trainArrivalDetail
+  trainArrivalDetail,
+  activeLine,
+  onActiveLineChange
 }: MapPopupsProps) => {
-  const [activeLine, setActiveLine] = useState<string | null>(null);
-
   const badges = useMemo(() => getStationBadges(selectedStationName || ""), [selectedStationName]);
 
   useEffect(() => {
     if (badges.length > 0 && (!activeLine || !badges.find(b => b.num === activeLine))) {
-        setActiveLine(badges[0].num);
-    } else if (badges.length === 0) {
-        setActiveLine(null);
+        onActiveLineChange(badges[0].num);
+    } else if (badges.length === 0 && activeLine) {
+        onActiveLineChange(null);
     }
-  }, [badges, activeLine]);
+  }, [badges, activeLine, onActiveLineChange]);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -110,30 +112,26 @@ const MapPopups = ({
         >
             <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
                 <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center justify-between pointer-events-none">
-                    <div className="flex items-center gap-1.5 pointer-events-auto">
-                        {activeTab === 'subway' && selectedStationName ? (
-                            <>
-                                {selectedStationName}
-                                <div className="flex gap-1 ml-1.5 overflow-x-auto no-scrollbar">
-                                    {badges.map((badge: {num: string, color: string}, idx: number) => (
-                                        <button 
-                                            key={idx}
-                                            onClick={(e) => { e.stopPropagation(); setActiveLine(badge.num); }}
-                                            className={`inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'ring-2 ring-offset-1 ring-zinc-400 dark:ring-white scale-110' : 'opacity-60'}`}
-                                            style={{ backgroundColor: badge.color }}
-                                        >
-                                            {badge.num}
-                                        </button>
-                                    ))}
-                                </div>
-                            </>
-                        ) : (
-                            selectedBusStop?.name
+                    <div className="flex flex-col gap-1 pointer-events-auto">
+                        <span className="truncate">{selectedStationName || selectedBusStop?.name}</span>
+                        {activeTab === 'subway' && badges.length > 0 && (
+                            <div className="flex gap-1.5 p-1 bg-zinc-100 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 overflow-x-auto no-scrollbar pointer-events-auto mt-1">
+                                {badges.map((badge: {num: string, color: string}, idx: number) => (
+                                    <button 
+                                        key={idx}
+                                        onClick={(e) => { e.stopPropagation(); onActiveLineChange(badge.num); }}
+                                        className={`inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900 scale-105' : 'opacity-40 grayscale-[0.5]'}`}
+                                        style={{ backgroundColor: badge.color }}
+                                    >
+                                        {badge.num}
+                                    </button>
+                                ))}
+                            </div>
                         )}
                     </div>
                     <button 
                         onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
-                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors"
+                        className="p-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors pointer-events-auto"
                     >
                         <X size={16} />
                     </button>

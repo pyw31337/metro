@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
-import { Station } from "@/data/subway-lines";
+import { Station, SUBWAY_LINES } from "@/data/subway-lines";
 import { THEME } from "@/theme/design-system";
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
@@ -41,6 +41,8 @@ interface UnifiedBottomPanelProps {
     selectedStationName?: string | null;
     stationArrivals?: any[];
     onSelectStation?: (name: string | null) => void;
+    activeLine: string | null;
+    onActiveLineChange: (line: string | null) => void;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -86,7 +88,9 @@ export default function UnifiedBottomPanel({
     onToggleShowAll,
     selectedStationName,
     stationArrivals,
-    onSelectStation
+    onSelectStation,
+    activeLine,
+    onActiveLineChange
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const [destination, setDestination] = useState("");
@@ -100,6 +104,30 @@ export default function UnifiedBottomPanel({
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
     const destInputRef = useRef<HTMLInputElement>(null);
+
+    const badges = useMemo(() => {
+        if (!selectedStationName) return [];
+        const cleanName = selectedStationName.replace(/역+$/, '');
+        const b: { num: string; color: string }[] = [];
+        const addedLines = new Set<string>();
+
+        for (const line of SUBWAY_LINES) {
+            if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
+                const num = line.name.replace('호선', '').replace('서울배차', '').trim();
+                if (!addedLines.has(num)) {
+                    b.push({ num, color: line.color });
+                    addedLines.add(num);
+                }
+            }
+        }
+        return b;
+    }, [selectedStationName, stations]);
+
+    useEffect(() => {
+        if (badges.length > 0 && (!activeLine || !badges.find(b => b.num === activeLine))) {
+            onActiveLineChange(badges[0].num);
+        }
+    }, [badges, activeLine, onActiveLineChange]);
 
     useEffect(() => {
         if (selectedStationName) {
@@ -149,7 +177,7 @@ export default function UnifiedBottomPanel({
                 return (b as any).lines?.length - (a as any).lines?.length;
             });
 
-        const filteredBus = busStops
+        const filteredBus = (busStops || [])
             .filter(s => s.name.toLowerCase().includes(q))
             .map(s => ({ ...s, type: 'bus' }))
             .slice(0, 3);
@@ -179,7 +207,7 @@ export default function UnifiedBottomPanel({
         };
         const cleanLine = lineStr.replace(/[()]/g, "").trim();
         const color = lineColors[cleanLine] || lineColors[cleanLine + "호선"] || "#999999";
-        const short = cleanLine.replace("호선", "").replace("철도", "").replace("중앙선", "").replace("분당선", "").substring(0, 1).toUpperCase();
+        const short = cleanLine.replace(/호선|철도|중앙선|분당선|인천|선/g, "").substring(0, 1).toUpperCase();
         return (
             <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm" style={{ backgroundColor: color }}>
                 {short}
@@ -279,27 +307,54 @@ export default function UnifiedBottomPanel({
                     {selectedStationName && (
                         <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-1 mb-2 bg-zinc-100 dark:bg-white/5 rounded-2xl overflow-hidden border border-black/5 dark:border-white/10">
                             <div className="p-3">
-                                <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-sm font-black text-zinc-900 dark:text-white">{selectedStationName}</span>
-                                        <div className="flex gap-1">
-                                            {stationFacilities.some(f => f.category === 'elevator') && <span className="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-md font-bold">L</span>}
-                                            {stationFacilities.some(f => f.category === 'locker') && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold">K</span>}
+                                <div className="flex flex-col gap-1.5 w-full mb-3">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-sm font-black text-zinc-900 dark:text-white">{selectedStationName}</span>
+                                            <div className="flex gap-1">
+                                                {stationFacilities.some(f => f.category === 'elevator') && <span className="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-md font-bold">L</span>}
+                                                {stationFacilities.some(f => f.category === 'locker') && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold">K</span>}
+                                            </div>
                                         </div>
+                                        <button onClick={() => { onSelectStation?.(null); onActiveLineChange(null); }} className="p-1 text-zinc-400"><X size={14} /></button>
                                     </div>
-                                    <button onClick={() => onSelectStation?.(null)} className="p-1 text-zinc-400"><X size={14} /></button>
+                                    {badges.length > 0 && (
+                                        <div className="flex gap-2 p-1 bg-zinc-200/50 dark:bg-black/20 rounded-xl overflow-x-auto no-scrollbar border border-black/5 dark:border-white/5">
+                                            {badges.map((badge, idx) => (
+                                                <button 
+                                                    key={idx}
+                                                    onClick={() => onActiveLineChange(badge.num)}
+                                                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black transition-all ${activeLine === badge.num ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm ring-1 ring-black/5' : 'text-zinc-400 hover:text-zinc-600'}`}
+                                                >
+                                                    <span className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[8px] text-white" style={{ backgroundColor: badge.color }}>{badge.num}</span>
+                                                    <span>{badge.num}호선</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <div className="grid grid-cols-2 gap-2 mb-2">
-                                    {(stationArrivals || []).slice(0, 4).map((arr, idx) => (
-                                        <div key={idx} className="bg-white/50 dark:bg-black/20 p-2 rounded-xl flex flex-col">
-                                            <span className="text-[9px] font-black text-zinc-400 uppercase">{arr.updnLine}</span>
+                                
+                                <div className="grid grid-cols-2 gap-2 mb-3">
+                                    {(stationArrivals || [])
+                                        .filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')))
+                                        .slice(0, 4)
+                                        .map((arr, idx) => (
+                                        <div key={idx} className="bg-white/50 dark:bg-black/20 p-2.5 rounded-xl flex flex-col border border-black/5 dark:border-white/5">
+                                            <div className="flex items-center gap-1 mb-1">
+                                                {getLineBadge(arr.lineName)}
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">{arr.updnLine.includes('상행') || arr.updnLine.includes('내선') ? '상행' : '하행'}</span>
+                                            </div>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-[11px] font-bold truncate max-w-[60px]">{arr.trainLineNm.split(' - ')[0]}</span>
-                                                <span className="text-[11px] font-black text-orange-500">{arr.arvlMsg2}</span>
+                                                <span className="text-[11px] font-bold truncate max-w-[80px]">{arr.trainLineNm.split(' - ')[0]}</span>
+                                                <span className="text-[11px] font-black text-rose-500">{arr.arvlMsg2}</span>
                                             </div>
                                         </div>
                                     ))}
+                                    {((stationArrivals || []).filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0'))).length === 0) && (
+                                        <div className="col-span-2 py-4 text-center text-zinc-400 text-[11px] font-bold">운행 정보가 없습니다.</div>
+                                    )}
                                 </div>
+                                
                                 <div className="flex gap-2">
                                     <button onClick={() => onTabChange("wc")} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-200/50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 hover:bg-zinc-200 transition-colors">
                                         <Bath size={14} className="text-zinc-500" />
