@@ -26,6 +26,7 @@ const SubwayLayers = ({
         <Layer
           id="subway-line-layer"
           type="line"
+          beforeId="subway-station-circle"
           layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
             "line-color": pathResult

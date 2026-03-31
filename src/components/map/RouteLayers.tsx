@@ -37,6 +37,7 @@ const RouteLayers = ({
           <Layer
             id="path-line-solid"
             type="line"
+            beforeId="subway-station-circle"
             layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
               "line-color": ["get", "color"],
