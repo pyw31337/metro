@@ -103,3 +103,11 @@ export interface WCFilters {
     diapers: boolean;
     emergencyBell: boolean;
 }
+
+export interface TransferInfo {
+  id?: number;
+  stationName: string;
+  fromLine: string;
+  toLine: string;
+  platform: string;
+}

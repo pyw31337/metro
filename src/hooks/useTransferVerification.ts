@@ -13,35 +13,47 @@ export const useTransferVerification = (pathResult: PathResult | null, stations:
             return;
         }
 
-        pathResult.path.forEach((curr, idx) => {
-            if (idx === 0) return;
-            const prev = pathResult.path[idx - 1];
+        const fetchAll = async () => {
+            const newPlats: Record<string, string> = { ...verifiedPlats };
+            let hasNew = false;
             
-            const getLine = (sName: string) => 
-                stations.find(s => s.name.replace(/역$/, '') === sName.replace(/역$/, ''))?.lines || [];
-            
-            const prevLines: string[] = getLine(prev);
-            const currLines: string[] = getLine(curr);
-            const common = prevLines.filter((l: string) => currLines.includes(l));
-            
-            if (common.length > 0) {
-                const next = pathResult.path[idx + 1];
-                if (next) {
-                    const nextLines: string[] = getLine(next);
-                    const outLines = currLines.filter((l: string) => nextLines.includes(l));
-                    
-                    if (outLines.length > 0 && common[0] !== outLines[0]) {
-                        const key = `${curr}-${common[0]}-${outLines[0]}`;
-                        if (!verifiedPlats[key] && !fetchingRef.current.has(key)) {
-                            fetchingRef.current.add(key);
-                            fetchTransferPlatform(curr, common[0], outLines[0]).then(plat => {
-                                setVerifiedPlats(prevPlat => ({ ...prevPlat, [key]: plat }));
-                            });
+            const promises = pathResult.path.map(async (curr, idx) => {
+                if (idx === 0) return;
+                const prev = pathResult.path[idx - 1];
+                
+                const getLine = (sName: string) => 
+                    stations.find(s => s.name.replace(/역$/, '') === sName.replace(/역$/, ''))?.lines || [];
+                
+                const prevLines: string[] = getLine(prev);
+                const currLines: string[] = getLine(curr);
+                const common = prevLines.filter((l: string) => currLines.includes(l));
+                
+                if (common.length > 0) {
+                    const next = pathResult.path[idx + 1];
+                    if (next) {
+                        const nextLines: string[] = getLine(next);
+                        const outLines = currLines.filter((l: string) => nextLines.includes(l));
+                        
+                        if (outLines.length > 0 && common[0] !== outLines[0]) {
+                            const key = `${curr}-${common[0]}-${outLines[0]}`;
+                            if (!verifiedPlats[key] && !fetchingRef.current.has(key)) {
+                                fetchingRef.current.add(key);
+                                const plat = await fetchTransferPlatform(curr, common[0], outLines[0]);
+                                newPlats[key] = plat || "정보없음";
+                                hasNew = true;
+                            }
                         }
                     }
                 }
+            });
+
+            await Promise.all(promises);
+            if (hasNew) {
+                setVerifiedPlats(newPlats);
             }
-        });
+        };
+
+        fetchAll();
     }, [pathResult, stations]);
 
     return verifiedPlats;

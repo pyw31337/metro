@@ -1,5 +1,5 @@
 import { db } from './db';
-import { Facility, WCItem, OperationalData, TimetableEntry } from '@/types/metro';
+import { Facility, WCItem, OperationalData, TimetableEntry, TransferInfo } from '@/types/metro';
 import { fetchWithFallbacks } from './arrivalApi';
 
 /**
@@ -21,7 +21,7 @@ export class DataIngestionService {
                 this.ingestElevators(),
                 this.ingestLifts(),
                 this.ingestInterStationDistances(),
-                // Add more as needed based on the 50+ list
+                this.ingestStaticTransferData(),
             ]);
             console.log('✅ All static data refreshed.');
         } catch (err) {
@@ -186,6 +186,36 @@ export class DataIngestionService {
         if (allEntries.length > 0) {
             await db.saveTimetable(allEntries);
             console.log(`📅 Cached ${allEntries.length} timetable entries for ${stationName}.`);
+        }
+    }
+
+    /**
+     * 7. Ingest Static Transfer Data
+     * Source: /data/transfer-info.json (and potentially API later)
+     */
+    static async ingestStaticTransferData() {
+        try {
+            const res = await fetch('/data/transfer-info.json');
+            const data = await res.json();
+            const allTransfers: TransferInfo[] = [];
+
+            data.forEach((station: any) => {
+                station.transfers.forEach((t: any) => {
+                    allTransfers.push({
+                        stationName: station.stationName,
+                        fromLine: t.from,
+                        toLine: t.to,
+                        platform: t.platform
+                    });
+                });
+            });
+
+            if (allTransfers.length > 0) {
+                await db.transfers.bulkPut(allTransfers);
+                console.log(`🔄 Ingested ${allTransfers.length} fast transfer platform records.`);
+            }
+        } catch (err) {
+            console.warn('Failed to ingest transfer info:', err);
         }
     }
 }

@@ -2,7 +2,8 @@ import Dexie, { type Table } from 'dexie';
 import { 
     Station, BusStop, WCItem, 
     Facility, OperationalData, 
-    TimetableEntry, StationMetric 
+    TimetableEntry, StationMetric,
+    TransferInfo
 } from '@/types/metro';
 import { DataIngestionService } from './dataIngestion';
 
@@ -14,17 +15,19 @@ export class MetroDatabase extends Dexie {
   operational!: Table<OperationalData>;
   timetables!: Table<TimetableEntry>;
   stationMetrics!: Table<StationMetric>;
+  transfers!: Table<TransferInfo>;
 
   constructor() {
     super('MetroDatabase');
-    this.version(3).stores({
+    this.version(4).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, *routes',
       wc: 'id, name, station',
       facilities: '++id, stationName, category, isInsideGate',
       operational: '++id, fromStation, toStation, line',
       timetables: '++id, stationName, line, dayType, direction, [stationName+line+dayType]',
-      stationMetrics: '++id, stationName, line, hour'
+      stationMetrics: '++id, stationName, line, hour',
+      transfers: '++id, stationName, [stationName+fromLine+toLine]'
     });
   }
 
@@ -69,7 +72,10 @@ export class MetroDatabase extends Dexie {
         console.log('✅ Basic station data loaded.');
         
         // Fetch official metadata (Codes, FR Codes) after loading names
-        await DataIngestionService.ingestStationMetadata();
+        await Promise.all([
+            DataIngestionService.ingestStationMetadata(),
+            DataIngestionService.ingestStaticTransferData()
+        ]);
       } catch (err) {
         console.error('❌ Failed to initialize database:', err);
       }
@@ -113,6 +119,17 @@ export class MetroDatabase extends Dexie {
 
   async getStationByName(name: string): Promise<Station | undefined> {
       return await this.stations.where('name').equals(name).first();
+  }
+
+  async getTransferInfo(stationName: string, fromLine: string, toLine: string): Promise<TransferInfo | undefined> {
+      return await this.transfers
+          .where('[stationName+fromLine+toLine]')
+          .equals([stationName, fromLine, toLine])
+          .first();
+  }
+
+  async saveTransferInfo(info: TransferInfo) {
+      await this.transfers.put(info);
   }
 }
 

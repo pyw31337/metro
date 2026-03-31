@@ -303,6 +303,14 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     const cleanToLine = toLine.replace(/선$/, '');
 
     // 1. Check local DB first
+    try {
+        const stored = await db.getTransferInfo(cleanStation, cleanFromLine, cleanToLine);
+        if (stored) return stored.platform;
+    } catch (e) {
+        console.warn("DB check for transfer failed:", e);
+    }
+
+    // 1.5 Legacy Static Check (Optional backup)
     const localStation = (transferData as any[]).find(s => s.stationName === cleanStation);
     if (localStation) {
         const localMatch = localStation.transfers.find((t: any) => 
@@ -327,7 +335,17 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
             (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM.includes(cleanToLine))
         );
 
-        return match ? match.TRNSIT_PLATFORM_NO : null;
+        const plat = match ? match.TRNSIT_PLATFORM_NO : null;
+        if (plat) {
+            // Save to DB for next time
+            db.saveTransferInfo({
+                stationName: cleanStation,
+                fromLine: cleanFromLine,
+                toLine: cleanToLine,
+                platform: plat
+            });
+        }
+        return plat;
     } catch (err) {
         console.warn("Transfer info fetching failed:", err);
         return null;

@@ -127,7 +127,7 @@ const RouteLayers = ({
                         const plat = verifiedPlats[key];
                         if (plat && plat !== "정보없음") return `환승 ${plat}`;
                         if (plat === "정보없음") return "정보 없음";
-                        return "환승 확인 중...";
+                        return ""; // Hide "Checking..." status per user request
                     })()}
                   </span>
                 </div>
