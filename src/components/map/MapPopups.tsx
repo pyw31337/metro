@@ -219,7 +219,12 @@ const MapPopups = ({
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
+                                    <div className="text-[10px] text-zinc-400 text-center py-2">
+                                        {(() => {
+                                            const hour = new Date().getHours();
+                                            return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
+                                        })()}
+                                    </div>
                                 )}
                             </div>
                             <div className="flex flex-col gap-1.5">
@@ -237,7 +242,12 @@ const MapPopups = ({
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
+                                    <div className="text-[10px] text-zinc-400 text-center py-2">
+                                        {(() => {
+                                            const hour = new Date().getHours();
+                                            return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
+                                        })()}
+                                    </div>
                                 )}
                             </div>
                         </div>

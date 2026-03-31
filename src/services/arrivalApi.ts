@@ -4,6 +4,14 @@ import { DataIngestionService } from './dataIngestion';
 import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
 
+const LINE_ID_MAP: { [key: string]: string } = {
+    "1": "1001", "2": "1002", "3": "1003", "4": "1004", "5": "1005",
+    "6": "1006", "7": "1007", "8": "1008", "9": "1009",
+    "1호선": "1001", "2호선": "1002", "3호선": "1003", "4호선": "1004", "5호선": "1005",
+    "6호선": "1006", "7호선": "1007", "8호선": "1008", "9호선": "1009",
+    "경의중앙": "1063", "경춘": "1067", "수인분당": "1075", "신분당": "1077", "공항철도": "1065", "GTX-A": "1032"
+};
+
 export interface TrainPosition {
     subwayId: string;
     subwayNm: string;
@@ -170,10 +178,12 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                     upcoming.forEach(e => {
                         const [h, m] = e.departureTime.split(':').map(Number);
                         const waitMin = (h * 60 + m) - (now.getHours() * 60 + now.getMinutes());
+                        const lineNumOnly = station.lineNum?.replace(/[^0-9]/g, '') || "0";
+                        const lineName = station.lines[0] || (lineNumOnly !== "0" ? `${lineNumOnly}호선` : "지하철");
 
                         allArrivals.push({
-                            lineName: station.lines[0] || "지하철",
-                            subwayId: "9999",
+                            lineName: lineName,
+                            subwayId: LINE_ID_MAP[lineNumOnly] || "9999",
                             updnLine: e.direction === 'up' ? '상행' : '하행',
                             trainLineNm: `${e.destStation || e.destination}행`,
                             statnNm: stationName,
@@ -182,7 +192,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                             arvlCd: "99",
                             isScheduled: true,
                             barvlDt: (waitMin * 60).toString(),
-                            btrainNo: e.trainNo
+                            btrainNo: "SCH-" + e.trainNo
                         });
                     });
                 } else {
@@ -192,17 +202,21 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             }
 
             // Heuristic Fallback as absolute last resort
-            if (allArrivals.length === 0) {
+            if (allArrivals.length === 0 && station) {
                 const hour = now.getHours();
                 const minutes = now.getMinutes();
                 if ((hour > 5 || (hour === 5 && minutes >= 30)) && (hour < 24 || (hour === 0 && minutes <= 30))) {
+                    const lineNumOnly = (station?.lineNum || "").replace(/[^0-9]/g, '');
+                    const lineName = station?.lines[0] || (lineNumOnly ? `${lineNumOnly}호선` : "지하철");
+                    const subwayId = LINE_ID_MAP[lineNumOnly] || "9999";
+
                     ["상행", "하행"].forEach(dir => {
                         [1, 2].forEach(i => {
                             const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 20);
                             const waitMin = i * (isPeak ? 4 : 8); 
                             allArrivals.push({
-                                lineName: "지하철",
-                                subwayId: "9999",
+                                lineName: lineName,
+                                subwayId: subwayId,
                                 updnLine: dir,
                                 trainLineNm: `${dir} 전동차`,
                                 statnNm: stationName,
