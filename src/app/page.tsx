@@ -147,6 +147,13 @@ export default function Home() {
         
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+    // Pathfinding logic cleanup timer
+    useEffect(() => {
+        if (validationError === "no_route") {
+            const timer = setTimeout(() => setValidationError(null), 5000);
+            return () => clearTimeout(timer);
+        }
+    }, [validationError]);
 
     useEffect(() => {
         const updateWCs = async () => {

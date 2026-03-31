@@ -19,7 +19,7 @@ export class MetroDatabase extends Dexie {
 
   constructor() {
     super('MetroDatabase');
-    this.version(5).stores({
+    this.version(6).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, *routes',
       wc: 'id, name, station',
@@ -86,6 +86,8 @@ export class MetroDatabase extends Dexie {
             console.log('🆔 Missing station metadata. Refreshing in background...');
             DataIngestionService.ingestStationMetadata();
         }
+        // Always ensure transfer data is synced from static JSON
+        DataIngestionService.ingestStaticTransferData();
     }
   }
 

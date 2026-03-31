@@ -298,60 +298,90 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
     }
 };
 
+/**
+ * Fetches transfer platform information (Fast Transfer) for a specific station and route.
+ * Strategy: Local DB -> Static JSON (via Ingestion) -> API with multiple name variations.
+ */
 export const fetchTransferPlatform = async (stationName: string, fromLine: string, toLine: string) => {
-    const cleanStation = stationName.replace(/역$/, '');
+    if (!stationName) return null;
+    
+    // 1. Precise Normalization
+    // Strip parentheticals like "대림(구로구청)" -> "대림"
+    const cleanStation = stationName.replace(/\(.*\)/, '').replace(/역$/, '').trim();
     const cleanFromLine = normalizeLineName(fromLine);
     const cleanToLine = normalizeLineName(toLine);
 
-    // 1. Check local DB first
+    // 2. Check local DB (which now includes expanded static data from ingestion)
     try {
         const stored = await db.getTransferInfo(cleanStation, cleanFromLine, cleanToLine);
         if (stored) return stored.platform;
+        
+        // Try with original station name just in case
+        if (stationName !== cleanStation) {
+            const storedOrig = await db.getTransferInfo(stationName.replace(/역$/, ''), cleanFromLine, cleanToLine);
+            if (storedOrig) return storedOrig.platform;
+        }
     } catch (e) {
         console.warn("DB check for transfer failed:", e);
     }
 
-    // 1.5 Legacy Static Check (Optional backup)
-    const localStation = (transferData as any[]).find(s => s.stationName === cleanStation);
-    if (localStation) {
-        const localMatch = localStation.transfers.find((t: any) => 
-            (t.from === cleanFromLine && t.to === cleanToLine)
+    // 2.5 Quick check against static import (as immediate backup)
+    const staticStation = (transferData as any[]).find(s => 
+        s.stationName === cleanStation || s.stationName === stationName.replace(/역$/, '')
+    );
+    if (staticStation) {
+        const staticMatch = staticStation.transfers.find((t: any) => 
+            normalizeLineName(t.from) === cleanFromLine && normalizeLineName(t.to) === cleanToLine
         );
-        if (localMatch) return localMatch.platform;
+        if (staticMatch) return staticMatch.platform;
     }
 
-    // 2. Fallback to API
+    // 3. Fallback to API with retry and variations
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
-
-    // CardSubwayTransferPos: [인증키]/json/CardSubwayTransferPos/1/50/[역명]
-    const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(cleanStation)}`;
     
-    try {
-        const json = await fetchWithFallbacks(url);
-        const list = json?.CardSubwayTransferPos?.row || [];
-        
-        const match = list.find((item: any) => {
-            const apiFrom = normalizeLineName(item.LINE_NUM);
-            const apiTo = normalizeLineName(item.TRNSIT_LINE_NM);
-            return (apiFrom === cleanFromLine && apiTo === cleanToLine);
-        });
-
-        const plat = match ? match.TRNSIT_PLATFORM_NO : null;
-        if (plat) {
-            // Save to DB for next time
-            db.saveTransferInfo({
-                stationName: cleanStation,
-                fromLine: cleanFromLine,
-                toLine: cleanToLine,
-                platform: plat
+    const tryFetch = async (queryName: string) => {
+        const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(queryName)}`;
+        try {
+            const json = await fetchWithFallbacks(url);
+            const list = json?.CardSubwayTransferPos?.row || [];
+            
+            const match = list.find((item: any) => {
+                const apiFrom = normalizeLineName(item.LINE_NUM);
+                const apiTo = normalizeLineName(item.TRNSIT_LINE_NM);
+                return (apiFrom === cleanFromLine && apiTo === cleanToLine);
             });
+            
+            if (match) {
+                const platform = match.TRNSIT_POS || match.PLATFORM_INFO || match.TRNSIT_PLATFORM_NO;
+                if (platform) {
+                    // Save to DB for future use
+                    db.saveTransferInfo({
+                        stationName: cleanStation,
+                        fromLine: cleanFromLine,
+                        toLine: cleanToLine,
+                        platform: String(platform)
+                    }).catch(() => {});
+                    return String(platform);
+                }
+            }
+        } catch (e) {
+            return null;
         }
-        return plat;
-    } catch (err) {
-        console.warn("Transfer info fetching failed:", err);
         return null;
+    };
+
+    // Attempt 1: Bare name (Most common in API)
+    let result = await tryFetch(cleanStation);
+    if (result) return result;
+
+    // Attempt 2: Full name if it had parentheticals
+    if (stationName !== cleanStation) {
+        result = await tryFetch(stationName.replace(/역$/, ''));
+        if (result) return result;
     }
+
+    return null;
 };
 
 /**

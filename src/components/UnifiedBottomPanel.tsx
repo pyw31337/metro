@@ -144,7 +144,7 @@ export default function UnifiedBottomPanel({
 
     useEffect(() => {
         if (validationError) {
-            const timer = setTimeout(() => setValidationError(null), 3000);
+            const timer = setTimeout(() => setValidationError(null), 5000);
             return () => clearTimeout(timer);
         }
     }, [validationError]);
