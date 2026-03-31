@@ -46,6 +46,12 @@ export const API_ENDPOINTS = {
     SUBWAY_SCHEDULE: (key: string, stationCode: string, dayTag: string, direction: string) =>
         `https://swopenapi.seoul.go.kr/api/subway/${key}/json/SearchSTNTimeTableByIDService/1/500/${stationCode}/${dayTag}/${direction}`,
 
+    SUBWAY_ALERTS: (key: string) =>
+        `http://openapi.seoul.go.kr:8088/${key}/json/CardSubwayAlertInfo/1/100/`,
+
+    SUBWAY_CONGESTION: (key: string, subwayId: string, trainNo: string) =>
+        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`,
+
     TAGO_BUS_ARRIVAL: (key: string, cityCode: string, nodeId: string) =>
         `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearnBusList?serviceKey=${key}&cityCode=${cityCode}&nodeId=${nodeId}&_type=json`
 };

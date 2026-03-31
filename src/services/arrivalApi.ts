@@ -11,6 +11,29 @@ export interface StationArrival {
     btrainNo: string;
 }
 
+import transferData from '../data/transfer-info.json';
+import { API_ENDPOINTS } from '@/utils/api-client';
+
+export interface TrainPosition {
+    subwayId: string;
+    subwayNm: string;
+    statnId: string;
+    statnNm: string;
+    trainNo: string;
+    lastRecptnDt: string;
+    updnLine: string;
+    directAt: string;
+    lstnyNm: string;
+    arrivalNm: string;
+    arvlCd: string;
+}
+
+export interface SubwayAlert {
+    title: string;
+    content: string;
+    date: string;
+}
+
 export const fetchWithFallbacks = async (targetUrl: string) => {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (!isHttps) {
@@ -72,15 +95,15 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
 
         const rawList: any[] = json?.realtimeArrivalList || [];
         
-        // Deduplicate and group
-        const upMap = new Map<string, StationArrival>();
-        const downMap = new Map<string, StationArrival>();
+        // Map to store unique trains by their ID
+        const trainMap = new Map<string, StationArrival>();
         
         rawList.forEach(item => {
-            // Use btrainNo as primary key, fallback to composite key if missing
-            const trainId = (item.btrainNo && item.btrainNo !== "0000") 
-                ? item.btrainNo 
-                : `${item.trainLineNm}-${item.arvlMsg2}-${item.updnLine}`;
+            // btrainNo is the best unique identifier, but it might be "0000" for some lines
+            const isReliableNo = item.btrainNo && item.btrainNo !== "0000";
+            const trainId = isReliableNo 
+                ? `${item.subwayId}-${item.btrainNo}` 
+                : `${item.subwayId}-${item.updnLine}-${item.trainLineNm}-${item.arvlMsg2}`;
             
             const arrival: StationArrival = {
                 lineName: item.subwayNm || "",
@@ -91,26 +114,36 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                 arvlMsg2: item.arvlMsg2 || "",
                 arvlMsg3: item.arvlMsg3 || "",
                 arvlCd: item.arvlCd || "",
-                barvlDt: item.barvlDt || "0",
+                barvlDt: item.barvlDt || "9999",
                 btrainNo: item.btrainNo || ""
             };
 
-            if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선")) {
-                if (!upMap.has(trainId)) upMap.set(trainId, arrival);
-            } else {
-                if (!downMap.has(trainId)) downMap.set(trainId, arrival);
+            const existing = trainMap.get(trainId);
+            // If we have an existing entry for this train, keep the one that is closer (smaller barvlDt)
+            if (!existing || parseInt(arrival.barvlDt) < parseInt(existing.barvlDt)) {
+                trainMap.set(trainId, arrival);
             }
         });
 
-        // Convert to arrays and sort by seconds remaining
-        const getSortedTop3 = (map: Map<string, StationArrival>) => {
-            return Array.from(map.values())
+        // Group by direction and sort
+        const upArrivals: StationArrival[] = [];
+        const downArrivals: StationArrival[] = [];
+
+        trainMap.forEach(arrival => {
+            if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선")) {
+                upArrivals.push(arrival);
+            } else {
+                downArrivals.push(arrival);
+            }
+        });
+
+        const sortAndLimit = (list: StationArrival[]) => {
+            return list
                 .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
                 .slice(0, 3);
         };
 
-        const finalArrivals = [...getSortedTop3(upMap), ...getSortedTop3(downMap)];
-        return finalArrivals;
+        return [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)];
     } catch (err) {
         console.error("Failed to fetch station arrivals:", err);
         return [];
@@ -145,12 +178,22 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
 };
 
 export const fetchTransferPlatform = async (stationName: string, fromLine: string, toLine: string) => {
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = "sample";
-
     const cleanStation = stationName.replace(/역$/, '');
     const cleanFromLine = fromLine.replace(/선$/, '');
     const cleanToLine = toLine.replace(/선$/, '');
+
+    // 1. Check local DB first
+    const localStation = (transferData as any[]).find(s => s.stationName === cleanStation);
+    if (localStation) {
+        const localMatch = localStation.transfers.find((t: any) => 
+            (t.from === cleanFromLine && t.to === cleanToLine)
+        );
+        if (localMatch) return localMatch.platform;
+    }
+
+    // 2. Fallback to API
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+    if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
     // CardSubwayTransferPos: [인증키]/json/CardSubwayTransferPos/1/50/[역명]
     const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(cleanStation)}`;
@@ -159,8 +202,6 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         const json = await fetchWithFallbacks(url);
         const list = json?.CardSubwayTransferPos?.row || [];
         
-        // Find the matching transfer route
-        // Matches like "1" (fromLine) to "2" (toLine)
         const match = list.find((item: any) => 
             (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM === cleanToLine) ||
             (item.LINE_NUM === cleanFromLine && item.TRNSIT_LINE_NM.includes(cleanToLine))
@@ -170,5 +211,55 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     } catch (err) {
         console.warn("Transfer info fetching failed:", err);
         return null;
+    }
+};
+
+/**
+ * Fetch real-time train positions for a specific line
+ */
+export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+    if (!apiKey || apiKey.length < 10) apiKey = "sample";
+
+    const url = API_ENDPOINTS.SUBWAY_POSITION(apiKey, lineName);
+    
+    try {
+        const json = await fetchWithFallbacks(url);
+        return (json?.realtimeSubwayPositionList || []).map((item: any) => ({
+            subwayId: item.subwayId,
+            subwayNm: item.subwayNm,
+            statnId: item.statnId,
+            statnNm: item.statnNm,
+            trainNo: item.trainNo,
+            lastRecptnDt: item.lastRecptnDt,
+            updnLine: item.updnLine,
+            directAt: item.directAt,
+            lstnyNm: item.lstnyNm,
+            arrivalNm: item.arrivalNm,
+            arvlCd: item.arvlCd
+        }));
+    } catch (err) {
+        console.error("Failed to fetch train positions:", err);
+        return [];
+    }
+};
+
+/**
+ * Fetch subway system alerts (delays, maintenance, etc.)
+ */
+export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
+    const url = API_ENDPOINTS.SUBWAY_ALERTS(apiKey);
+
+    try {
+        const json = await fetchWithFallbacks(url);
+        return (json?.CardSubwayAlertInfo?.row || []).map((item: any) => ({
+            title: item.TITLE,
+            content: item.CONTENT,
+            date: item.REG_DATE
+        }));
+    } catch (err) {
+        console.warn("Failed to fetch subway alerts:", err);
+        return [];
     }
 };

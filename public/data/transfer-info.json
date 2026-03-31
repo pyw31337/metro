@@ -1,0 +1,31 @@
+[
+  {
+    "stationName": "을지로3가",
+    "transfers": [
+      { "from": "2", "to": "3", "platform": "4-3" },
+      { "from": "3", "to": "2", "platform": "2-2" }
+    ]
+  },
+  {
+    "stationName": "신도림",
+    "transfers": [
+      { "from": "1", "to": "2", "platform": "4-1" },
+      { "from": "2", "to": "1", "platform": "3-2" }
+    ]
+  },
+  {
+    "stationName": "서울역",
+    "transfers": [
+      { "from": "1", "to": "4", "platform": "10-4" },
+      { "from": "4", "to": "1", "platform": "1-1" },
+      { "from": "1", "to": "공항철도", "platform": "1-1" }
+    ]
+  },
+  {
+    "stationName": "청량리",
+    "transfers": [
+      { "from": "1", "to": "경의중앙", "platform": "1-1" },
+      { "from": "경의중앙", "to": "1", "platform": "4-1" }
+    ]
+  }
+]

@@ -1,0 +1,253 @@
+"use client";
+
+import { Popup } from "react-map-gl/maplibre";
+import { StationArrival } from "@/services/arrivalApi";
+import { WCItem } from "@/components/WCLayer";
+import { BusStop } from "@/components/BusStopLayer";
+import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
+import { SUBWAY_LINES } from "@/data/subway-lines";
+
+interface MapPopupsProps {
+  popupCoords: [number, number] | null;
+  selectedStationName: string | null;
+  selectedBusStop: BusStop | null;
+  activeTab: string;
+  stationArrivals: StationArrival[];
+  timeDisplayMode: "duration" | "arrival";
+  onToggleTimeDisplay: () => void;
+  onSetStart: (name: string) => void;
+  onSetEnd: (name: string) => void;
+  onSetWaypoint: (name: string) => void;
+  startStation: string | null;
+  setPopupCoords: (coords: [number, number] | null) => void;
+  
+  selectedTrain: any;
+  setSelectedTrain: (train: any) => void;
+  isLoadingCongestion: boolean;
+  congestionData: any;
+}
+
+const getStationBadge = (name: string) => {
+    if (!name) return null;
+    const cleanName = name.replace(/역+$/, '');
+    for (const line of SUBWAY_LINES) {
+        if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
+            const num = line.name.replace('호선', '').replace('서울배차', '').trim();
+            return { num, color: line.color };
+        }
+    }
+    return null;
+};
+
+const MapPopups = ({
+  popupCoords,
+  selectedStationName,
+  selectedBusStop,
+  activeTab,
+  stationArrivals,
+  timeDisplayMode,
+  onToggleTimeDisplay,
+  onSetStart,
+  onSetEnd,
+  onSetWaypoint,
+  startStation,
+  setPopupCoords,
+  selectedTrain,
+  setSelectedTrain,
+  isLoadingCongestion,
+  congestionData
+}: MapPopupsProps) => {
+  return (
+    <>
+      {/* 1. Station/Bus Detail Popup */}
+      {popupCoords && ((activeTab === 'subway' && selectedStationName) || (activeTab === 'bus' && selectedBusStop)) && (
+        <Popup
+            longitude={popupCoords[0]}
+            latitude={popupCoords[1]}
+            closeButton={false}
+            closeOnClick={false}
+            onClose={() => setPopupCoords(null)}
+            anchor="bottom"
+            offset={15}
+            className="custom-station-popup"
+        >
+            <div className="p-3 min-w-[220px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
+                <h3 className="text-[17px] font-black mb-3 text-zinc-900 dark:text-white border-b border-zinc-100 dark:border-white/5 pb-2 flex items-center gap-1.5">
+                    {activeTab === 'subway' && selectedStationName ? (
+                        <>
+                            {selectedStationName}
+                            {getStationBadge(selectedStationName) && (
+                                <span 
+                                    className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[11px] font-black text-white shadow-sm"
+                                    style={{ backgroundColor: getStationBadge(selectedStationName)!.color }}
+                                >
+                                    {getStationBadge(selectedStationName)!.num}
+                                </span>
+                            )}
+                        </>
+                    ) : (
+                        selectedBusStop?.name
+                    )}
+                </h3>
+                
+                {/* Navigation Actions */}
+                <div className="grid grid-cols-3 gap-1.5 mb-4">
+                    {(() => {
+                        const stationName = activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name;
+                        const isStartSet = !!startStation;
+                        
+                        return (
+                            <>
+                                <button 
+                                    onClick={() => { onSetEnd(stationName); setPopupCoords(null); }} 
+                                    className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                >
+                                    도착
+                                </button>
+                                <button 
+                                    onClick={() => { onSetWaypoint(stationName); setPopupCoords(null); }} 
+                                    className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95"
+                                >
+                                    경유
+                                </button>
+                                <button 
+                                    onClick={() => { onSetStart(stationName); setPopupCoords(null); }} 
+                                    className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                >
+                                    출발
+                                </button>
+                            </>
+                        );
+                    })()}
+                </div>
+
+                <div className="space-y-2">
+                    {activeTab === 'bus' && (
+                        <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">
+                            경유 노선 정보
+                        </p>
+                    )}
+                    {activeTab === 'bus' && selectedBusStop ? (
+                        <div className="flex flex-wrap gap-1">
+                             {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
+                                <span key={i} className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/20">
+                                    {r}
+                                </span>
+                            ))}
+                        </div>
+                    ) : stationArrivals.length > 0 ? (
+                        <div className="grid grid-cols-2 gap-2 mt-1">
+                            <div className="flex flex-col gap-1.5">
+                                <ArrivalHeader 
+                                    defaultTitle="상행 · 내선" 
+                                    trains={stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선'))}
+                                    textColor="text-blue-500 dark:text-blue-400"
+                                    borderColor="border-blue-500/20"
+                                />
+                                {stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
+                                    stationArrivals.filter(arr => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr, i) => (
+                                        <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                    ))
+                                ) : (
+                                    <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
+                                )}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                <ArrivalHeader 
+                                    defaultTitle="하행 · 외선" 
+                                    trains={stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선'))}
+                                    textColor="text-orange-500 dark:text-orange-400"
+                                    borderColor="border-orange-500/20"
+                                />
+                                {stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
+                                    stationArrivals.filter(arr => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr, i) => (
+                                        <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                    ))
+                                ) : (
+                                    <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">도착 정보가 없습니다.</div>
+                    )}
+                </div>
+            </div>
+        </Popup>
+      )}
+
+      {/* 2. Train Detail Popup */}
+      {selectedTrain && (
+        <Popup
+            longitude={selectedTrain.lng}
+            latitude={selectedTrain.lat}
+            closeButton={false}
+            closeOnClick={false}
+            onClose={() => setSelectedTrain(null)}
+            anchor="bottom"
+            offset={20}
+            className="custom-train-popup"
+        >
+            <div className="p-3 min-w-[180px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
+                <div className="flex items-center justify-between mb-2">
+                    <span className="text-[12px] font-black text-zinc-900 dark:text-white">
+                        {selectedTrain.trainNo}열차 {selectedTrain.headingTo}행
+                    </span>
+                    {selectedTrain.directAt === '1' && (
+                        <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[9px] font-black">급행</span>
+                    )}
+                </div>
+                
+                <div className="flex items-center gap-2 mb-3">
+                    <div className="px-2 py-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                        {(() => {
+                            switch(selectedTrain.trainSttus) {
+                                case '0': return '진입중';
+                                case '1': return '정차중';
+                                case '2': return '출발함';
+                                case '3': return '전역출발';
+                                case '4': return '전역진입';
+                                case '5': return '전역도착';
+                                default: return '운행중';
+                            }
+                        })()}
+                    </div>
+                    <div className="text-[10px] text-zinc-400 font-medium">{selectedTrain.lineName}</div>
+                </div>
+
+                <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                    <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">칸별 혼잡도</span>
+                        {isLoadingCongestion && <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />}
+                    </div>
+                    
+                    {congestionData ? (
+                        <div className="grid grid-cols-10 gap-0.5 h-6 items-end">
+                            {congestionData.congestionTrain.split('|').map((val: string, idx: number) => {
+                                const v = parseInt(val);
+                                const color = v < 35 ? 'bg-emerald-500' : v < 70 ? 'bg-amber-500' : v < 100 ? 'bg-orange-600' : 'bg-rose-600';
+                                return (
+                                    <div key={idx} className="group relative flex flex-col items-center">
+                                        <div 
+                                            className={`w-full rounded-t-sm transition-all duration-500 ${color}`}
+                                            style={{ height: `${Math.max(10, v/2)}%` }}
+                                        />
+                                        <div className="opacity-0 group-hover:opacity-100 absolute -top-4 left-1/2 -translate-x-1/2 bg-black text-white text-[7px] px-1 rounded z-10">{v}%</div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className="text-[9px] text-zinc-400 py-1 italic">
+                            {isLoadingCongestion ? "혼잡도 불러오는 중..." : "혼잡도 데이터 없음"}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </Popup>
+      )}
+    </>
+  );
+};
+
+export default MapPopups;

@@ -1,24 +1,9 @@
-import { SUBWAY_LINES, Station, SubwayLine, getAllStations } from "@/data/subway-lines";
-import { WCItem } from "@/components/WCLayer";
-import { BusStop } from "@/components/BusStopLayer";
+import { SUBWAY_LINES, Station as SubwayStation, SubwayLine, getAllStations } from "@/data/subway-lines";
+import { WCItem, BusStop, PathResult, WCFilters } from "@/types/metro";
 
 export interface GeoJsonFeatureCollection {
   type: "FeatureCollection";
   features: any[];
-}
-
-interface FeatureProperties {
-    type: string;
-    [key: string]: any;
-}
-
-interface GeoJsonFeature {
-    type: "Feature";
-    geometry: {
-        type: "Point" | "LineString";
-        coordinates: number[] | number[][];
-    };
-    properties: FeatureProperties;
 }
 
 export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
@@ -40,7 +25,7 @@ export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, sta
     });
 
     // 2. Point Features (Stations)
-    line.stations.forEach((s: Station) => {
+    line.stations.forEach((s: any) => {
       if (stationMap.has(s.name)) {
         const existing = stationMap.get(s.name);
         if (!existing.properties.lines.includes(line.name)) {
@@ -53,7 +38,7 @@ export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, sta
           geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] },
           properties: {
             name: s.name,
-            lines: [...s.lines],
+            lines: [...(s.lines || [])],
             lineColors: [line.color],
             type: "subway"
           }
@@ -87,10 +72,17 @@ export const convertBusStopsToGeoJSON = (stops: BusStop[]): GeoJsonFeatureCollec
   };
 };
 
-export const convertWCToGeoJSON = (items: WCItem[]): GeoJsonFeatureCollection => {
+export const convertWCToGeoJSON = (items: WCItem[], filters?: WCFilters): GeoJsonFeatureCollection => {
+  const filtered = filters ? items.filter(item => {
+    if (filters.accessible && !item.accessible) return false;
+    if (filters.diapers && !item.diapers) return false;
+    if (filters.emergencyBell && !item.emergencyBell) return false;
+    return true;
+  }) : items;
+
   return {
     type: "FeatureCollection" as const,
-    features: items.map(item => ({
+    features: filtered.map(item => ({
       type: "Feature" as const,
       geometry: { type: "Point" as const, coordinates: [item.lng, item.lat] },
       properties: {
@@ -115,13 +107,11 @@ export const convertTrainsToGeoJSON = (trains: any[]): GeoJsonFeatureCollection 
   };
 };
 
-import { PathResult } from "./pathfinding";
-
 export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: number = Date.now()): { 
-    pathLines: GeoJsonFeatureCollection, 
-    routeStations: GeoJsonFeatureCollection 
+    lines: GeoJsonFeatureCollection, 
+    stations: GeoJsonFeatureCollection 
 } => {
-    if (!pathResult) return { pathLines: { type: "FeatureCollection", features: [] }, routeStations: { type: "FeatureCollection", features: [] } };
+    if (!pathResult) return { lines: { type: "FeatureCollection", features: [] }, stations: { type: "FeatureCollection", features: [] } };
     
     const path = pathResult.path;
     const weights = pathResult.weights;
@@ -136,11 +126,9 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
 
         const cumulativeWeight = weights[i] || 0;
 
-        // Arrival time for this station
         const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000); 
         const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
-        // Transfer Logic: Only show platform info at actual points where the route changes lines
         let isActualTransfer = false;
         let routeColor = "#3b82f6";
         
@@ -151,24 +139,18 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             const nextS = allStations.find(st => st.name === nextName);
             
             if (prevS && nextS) {
-                // Lines that could have been used to get here
                 const incomingLines = s.lines.filter(l => prevS.lines.includes(l));
-                // Lines that will be used to go forward
                 const outgoingLines = s.lines.filter(l => nextS.lines.includes(l));
-                
-                // Transfer Logic: Show bubble if actual line change
                 const overlappingLines = incomingLines.filter(l => outgoingLines.includes(l));
                 if (overlappingLines.length === 0 && incomingLines.length > 0 && outgoingLines.length > 0) {
                     isActualTransfer = true;
                 }
                 
-                // Set route color based on the outgoing segment
                 if (outgoingLines.length > 0) {
                     const line = SUBWAY_LINES.find(l => l.name === outgoingLines[0]);
                     if (line) routeColor = line.color;
                 }
                 
-                // Track transfer details for API fetching
                 if (isActualTransfer) {
                     const fromLine = incomingLines[0] || s.lines[0];
                     const toLine = outgoingLines[0] || s.lines[0];
@@ -176,7 +158,6 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 }
             }
         } else if (i === 0 && path.length > 1) {
-            // Start station: color based on first segment
             const nextName = path[1];
             const nextS = allStations.find(st => st.name === nextName);
             if (nextS) {
@@ -211,7 +192,6 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             const nextName = path[i+1];
             const nextS = allStations.find(st => st.name === nextName);
             if (nextS) {
-                // Add weighted segment
                 lineFeatures.push({
                     type: "Feature" as const,
                     geometry: {
@@ -228,7 +208,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
     }
 
     return {
-        pathLines: { type: "FeatureCollection" as const, features: lineFeatures },
-        routeStations: { type: "FeatureCollection" as const, features: stationFeatures }
+        lines: { type: "FeatureCollection" as const, features: lineFeatures },
+        stations: { type: "FeatureCollection" as const, features: stationFeatures }
     };
 };
