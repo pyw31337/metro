@@ -24,12 +24,10 @@ const SubwayLayers = ({
   const FADED_COLOR = isDarkMode ? "#34495E" : "#BDBDBD";
   const FADED_TEXT = isDarkMode ? "#555555" : "#AAAAAA";
 
-  // Logic: prominent if (on focused line) OR (is a transfer station)
+  // Logic: prominent if on the focused line.
+  // We removed the global transfer station protection as it was keeping unrelated stations prominent.
   const isProminentStation: any = focusedLine 
-    ? ["any", 
-        ["in", ["literal", focusedLine], ["get", "lines"]], 
-        [">", ["length", ["get", "lines"]], 1]
-      ]
+    ? ["in", ["literal", focusedLine], ["get", "lines"]]
     : true;
 
   return (
@@ -41,16 +39,16 @@ const SubwayLayers = ({
           beforeId="subway-station-circle"
           layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
-            "line-color": pathResult
-              ? (isDarkMode ? "#333333" : "#cccccc")
-              : focusedLine
+            "line-color": focusedLine
               ? ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], FADED_COLOR]
+              : pathResult
+              ? (isDarkMode ? "#333333" : "#cccccc")
               : ["get", "color"],
             "line-width": 4,
-            "line-opacity": pathResult
-              ? 0.4
-              : focusedLine
+            "line-opacity": focusedLine
               ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.3]
+              : pathResult
+              ? 0.4
               : 0.8
           }}
         />
@@ -79,15 +77,15 @@ const SubwayLayers = ({
                 isProminentStation, ["get", ["at", 0, ["get", "lineColors"]]],
                 FADED_COLOR
             ],
-            "circle-opacity": pathResult 
-                ? 0.3 
-                : focusedLine 
+            "circle-opacity": focusedLine 
                 ? ["case", isProminentStation, 1.0, 0.2]
+                : pathResult 
+                ? 0.3 
                 : 1,
-            "circle-stroke-opacity": pathResult 
-                ? 0.3 
-                : focusedLine 
+            "circle-stroke-opacity": focusedLine 
                 ? ["case", isProminentStation, 1.0, 0.2]
+                : pathResult 
+                ? 0.3 
                 : 1
           }}
         />
@@ -112,10 +110,10 @@ const SubwayLayers = ({
             ],
             "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
             "text-halo-width": 1.5,
-            "text-opacity": pathResult 
-                ? 0.3 
-                : focusedLine 
+            "text-opacity": focusedLine 
                 ? ["case", isProminentStation, 1.0, 0.2]
+                : pathResult 
+                ? 0.3 
                 : 1
           }}
         />
