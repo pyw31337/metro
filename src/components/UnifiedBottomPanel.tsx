@@ -228,7 +228,7 @@ export default function UnifiedBottomPanel({
         <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center transition-all duration-300" style={{ bottom: `${keyboardOffset}px` }}>
             <motion.div 
                 layout
-                className={`max-w-lg w-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-2xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-hidden ${isCollapsed ? 'translate-y-[calc(100%-44px)]' : 'translate-y-0'}`}
+                className={`max-w-lg w-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-2xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-visible ${isCollapsed ? 'translate-y-[calc(100%-44px)]' : 'translate-y-0'}`}
                 style={{ paddingBottom: keyboardOffset > 0 ? "8px" : "calc(env(safe-area-inset-bottom) + 8px)" }}
                 initial={{ y: 200 }}
                 animate={{ y: isCollapsed ? "calc(100% - 44px)" : 0 }}
