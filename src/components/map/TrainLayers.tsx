@@ -44,14 +44,14 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
           "icon-image": "express-full-badge",
           "icon-size": [
             "interpolate", ["linear"], ["zoom"],
-            10, 0.2,
-            12, 0.28,
-            14, 0.45,
-            16, 0.65,
-            18, 0.95
+            10, 0.15,
+            12, 0.25,
+            14, 0.38,
+            16, 0.55,
+            18, 0.85
           ],
           "icon-anchor": "bottom",
-          "icon-offset": [0, -20],
+          "icon-offset": [0, -40],
           "icon-allow-overlap": true,
           "icon-ignore-placement": true
         }}

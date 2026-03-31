@@ -239,23 +239,23 @@ function MapLibreBackground(props: MapLibreProps) {
         // Register Unified Atomic Express Badge (With Text)
         if (!map.hasImage('express-full-badge')) {
             const canvas = document.createElement('canvas');
-            canvas.width = 180; canvas.height = 64; 
+            canvas.width = 540; canvas.height = 192; 
             const ctx = canvas.getContext('2d');
             if (ctx) {
                 // Red Capsule
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath();
-                ctx.roundRect(4, 4, 172, 56, 28);
+                ctx.roundRect(12, 12, 516, 168, 84); // 3x scaled from 4,4,172,56,28
                 ctx.fill();
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 6; ctx.stroke();
+                ctx.strokeStyle = 'white'; ctx.lineWidth = 18; ctx.stroke();
                 // "급행" Text
                 ctx.fillStyle = 'white';
-                ctx.font = 'bold 32px sans-serif'; // Use default bold first for safety
+                ctx.font = 'bold 96px sans-serif'; // 3x larger than 32px
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText('급행', 90, 32);
+                ctx.fillText('급행', 270, 96);
                 
-                const data = ctx.getImageData(0,0,180,64);
+                const data = ctx.getImageData(0,0,540,192);
                 map.addImage('express-full-badge', data, { pixelRatio: 2 });
             }
         }
