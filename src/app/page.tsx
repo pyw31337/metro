@@ -10,6 +10,7 @@ import { StationArrival, fetchStationArrivals } from "@/services/arrivalApi";
 import { useDataWorker } from "@/hooks/useDataWorker";
 import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
 import { findBusPath, BusPathResult } from "@/utils/busRouting";
+import { normalizeStationName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
@@ -172,16 +173,7 @@ export default function Home() {
             setPathResults(null);
             return;
         }
-        const normalize = (s: string) => {
-            if (!s) return "";
-            let name = s.split(' : ').pop() || s;
-            name = name.replace(/\(내 위치\)|\(출발\)|\(도착\)|\(경유\)/g, '').trim();
-            if (name.endsWith("역") && name.length > 2) {
-                name = name.slice(0, -1);
-            }
-            name = name.split(' ')[0].trim();
-            return name;
-        };
+        const normalize = normalizeStationName;
         
         const nStart = normalize(start);
         const nEnd = normalize(end);

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { SUBWAY_LINES } from '@/data/subway-lines';
-import { fetchWithFallbacks } from '@/services/arrivalApi';
+import { subwayApi } from '@/utils/api-client';
+import { normalizeStationName } from '@/utils/stationUtils';
 
 export interface Train {
     id: string;
@@ -39,11 +40,8 @@ function interpolate(start: { lat: number, lng: number }, end: { lat: number, ln
 }
 
 function getDirection(updn: string): 1 | -1 {
-    return updn === '0' ? -1 : 1;
+    return updn === '0' || updn === '1001' ? 1 : -1; // 1001/상행/내선: 1, 1002/하행/외선: -1
 }
-
-// Helper to normalize station names (remove "역" suffix for better matching)
-const normalizeStationName = (name: string) => name.replace(/역$/, '').trim();
 
 export function useRealtimeTrains() {
     const [trains, setTrains] = useState<Train[]>([]);
@@ -55,16 +53,9 @@ export function useRealtimeTrains() {
             
             try {
                 const results = await Promise.all(lineNames.map(async (name) => {
-                    try {
-                        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
-                        const targetUrl = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimePosition/0/100/${name}`;
-                        
-                        const json = await fetchWithFallbacks(targetUrl);
-                        const list: RealtimePosition[] = json?.realtimePositionList || [];
-                        return { name, list };
-                    } catch (e) {
-                        return { name, list: [] };
-                    }
+                    const json = await subwayApi.getPositions(name);
+                    const list: RealtimePosition[] = json?.realtimePositionList || [];
+                    return { name, list };
                 }));
 
                 const allFetchedTrains: any[] = [];
@@ -127,6 +118,8 @@ export function useRealtimeTrains() {
 
         const animInterval = setInterval(() => {
             const now = Date.now();
+            const updated: Train[] = [];
+            
             const nextStates = trainsRef.current.map(t => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
                 if (!line) return t;
@@ -135,23 +128,13 @@ export function useRealtimeTrains() {
                 let progress = t.progress + (elapsed * 0.008); 
                 if (progress > 0.95) progress = 0.95; 
 
-                return { ...t, progress, lastUpdate: now };
-            });
-
-            trainsRef.current = nextStates;
-
-            const updated = nextStates.map(t => {
-                const line = SUBWAY_LINES.find(l => l.id === t.lineId);
-                if (!line) return null;
-                const stations = line.stations;
-
-                const currentStation = stations[t.stationIndex];
+                const currentStation = line.stations[t.stationIndex];
                 const nextStationIdx = t.stationIndex + t.direction;
-                const nextStation = stations[nextStationIdx] || currentStation;
+                const nextStation = line.stations[nextStationIdx] || currentStation;
+                const pos = interpolate(currentStation, nextStation, progress);
 
-                const pos = interpolate(currentStation, nextStation, t.progress);
-
-                return {
+                const newT = { ...t, progress, lastUpdate: now };
+                updated.push({
                     id: t.id,
                     lineId: t.lineId,
                     lineName: t.lineName,
@@ -166,9 +149,11 @@ export function useRealtimeTrains() {
                     trainNo: t.trainNo,
                     directAt: t.directAt,
                     trainSttus: t.trainSttus
-                } as Train;
-            }).filter((t): t is Train => t !== null);
+                } as Train);
+                return newT;
+            });
 
+            trainsRef.current = nextStates;
             setTrains(updated);
         }, 100); 
 

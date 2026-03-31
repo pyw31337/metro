@@ -186,13 +186,20 @@ export default function UnifiedBottomPanel({
         setActiveIndex(-1);
     };
 
-    const selectLocation = (name: string) => {
+    const selectLocation = (s: any) => {
+        const line = s.lines?.[0] || '';
+        let fullName = s.name;
+        // If the station name doesn't already contain the line info, append it cleanly
+        if (line && !s.name.includes(line.replace('호선', ''))) {
+            fullName = `${s.name} (${line.replace('호선', '')})`;
+        }
+        
         if (activeField === "dest") {
-            setDestination(name);
-            onSetDestination?.(name);
+            setDestination(fullName);
+            onSetDestination?.(fullName);
         } else {
-            setSource(name);
-            onSetSource?.(name);
+            setSource(fullName);
+            onSetSource?.(fullName);
         }
         setSearchResults([]);
         setActiveField(null);
@@ -290,7 +297,7 @@ export default function UnifiedBottomPanel({
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
                                 <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
                                     {searchResults.map((s, i) => (
-                                        <button key={i} onClick={() => selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim())} onMouseEnter={() => setActiveIndex(i)} className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${activeIndex === i ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-100/50 dark:hover:bg-white/5"}`}>
+                                        <button key={i} onClick={() => selectLocation(s)} onMouseEnter={() => setActiveIndex(i)} className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${activeIndex === i ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-100/50 dark:hover:bg-white/5"}`}>
                                             <div className="flex items-center gap-2">
                                                 {s.type === 'subway' ? <Train size={14} className={activeIndex === i ? "text-blue-500" : "text-zinc-400"} /> : <Bus size={14} className={activeIndex === i ? "text-emerald-500" : "text-zinc-400"} />}
                                                 <span className={`font-bold text-[14px] ${activeIndex === i ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"}`}>{s.name}</span>
@@ -383,7 +390,22 @@ export default function UnifiedBottomPanel({
                                 <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto">
                                         <span className="text-zinc-600 dark:text-zinc-400">내용을 확인해 주세요: </span>
-                                        {(externalValidationError || validationError) === "source" ? <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</> : (externalValidationError || validationError) === "dest" ? <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</> : <><span className="text-red-600 font-bold">경로를 찾을 수 없습니다</span></>}
+                                        {(externalValidationError || validationError) === "source" ? 
+                                            <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</> : 
+                                            (externalValidationError || validationError) === "dest" ? 
+                                            <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</> : 
+                                            (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-red-600 font-black">경로를 찾을 수 없습니다</span>
+                                                    <button 
+                                                        onClick={(e) => { e.stopPropagation(); onSearch(source, destination); }}
+                                                        className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-700 text-zinc-500 hover:text-blue-500 hover:bg-blue-500/10 transition-all font-black text-[10px]"
+                                                    >
+                                                        (재시도)
+                                                    </button>
+                                                </div>
+                                            )
+                                        }
                                     </motion.div>
                                 </div>
                             )}

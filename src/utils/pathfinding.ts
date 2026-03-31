@@ -1,4 +1,5 @@
 import { SUBWAY_LINES, Station } from "@/data/subway-lines";
+import { resolveGraphNode } from "./stationUtils";
 
 // Interface for graph node
 interface GraphNode {
@@ -58,14 +59,19 @@ export const findPathWithStrategy = (points: string[], strategy: PathStrategy): 
     if (points.length < 2) return null;
 
     const graph = buildGraph();
-    let finalPath: string[] = [points[0]];
+    const graphKeys = Array.from(graph.keys());
+    
+    // Helper to resolve varied names (e.g. "양평 (5)", "양평 5", "양평 5호선" -> "양평(5호선)")
+    const resolveName = (name: string): string => resolveGraphNode(name, graphKeys);
+
+    let finalPath: string[] = [resolveName(points[0])];
     let finalWeights: number[] = [0];
     let totalWeight = 0;
     let totalTransferCount = 0;
 
     for (let i = 0; i < points.length - 1; i++) {
-        const start = points[i];
-        const end = points[i+1];
+        const start = resolveName(points[i]);
+        const end = resolveName(points[i+1]);
 
         if (start === end) continue;
 

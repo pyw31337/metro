@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, memo, useRef, useMemo, useCallback } from "react";
-import { GeolocateControl, Marker } from "react-map-gl/maplibre";
+import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
+import { GeolocateControl, Marker, useMap } from "react-map-gl/maplibre";
 import { PathResult, WCItem, BusStop, ActiveTab, WCFilters } from "@/types/metro";
-import { StationArrival, fetchTrainCongestion, fetchTransferPlatform } from "@/services/arrivalApi";
+import { StationArrival, fetchTrainCongestion } from "@/services/arrivalApi";
 import { 
     convertSubwayToGeoJSON, 
     convertBusStopsToGeoJSON, 
@@ -19,6 +19,7 @@ import TrainLayers from "./map/TrainLayers";
 import WCLayers from "./map/WCLayers";
 import RouteLayers from "./map/RouteLayers";
 import MapPopups from "./map/MapPopups";
+import { useTransferVerification } from "@/hooks/useTransferVerification";
 
 interface MapLibreProps {
     pathResult: PathResult | null;
@@ -53,6 +54,94 @@ interface MapLibreProps {
     onActiveLineChange: (line: string | null) => void;
 }
 
+// ─── Canvas Polyfill ───────────────────────────────────────────────────────────
+const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
+    if (ctx.roundRect) {
+        ctx.roundRect(x, y, w, h, r);
+    } else {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+};
+
+// ─── Icon Registration Sub-component ──────────────────────────────────────────
+const MapIconRegister = () => {
+    const { current: mapRef } = useMap();
+    const map = mapRef?.getMap();
+
+    useEffect(() => {
+        if (!map) return;
+
+        const registerIcons = () => {
+            const colors = [
+                "#0052A4", "#00A84D", "#EF7C1C", "#00A5DE", "#996CAC", 
+                "#CD7C2F", "#747F00", "#E6186C", "#BDB092", "#77C4A3", 
+                "#0C8E72", "#F5A200", "#D4003B", "#0090D2", "#81A914", 
+                "#50AD08", "#FDA600", "#B0AD00", "#6789CA", "#003DA5", 
+                "#EF7C1C", "#996CAC", "#00A2D1", "#0160A2", "#E2B215"
+            ];
+
+            colors.forEach(color => {
+                const id = `train-card-${color}`;
+                if (map.hasImage(id)) return;
+                const canvas = document.createElement('canvas');
+                canvas.width = 128; canvas.height = 128;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = color;
+                    ctx.beginPath();
+                    safeRoundRect(ctx, 14, 14, 100, 100, 20);
+                    ctx.fill();
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath(); safeRoundRect(ctx, 34, 34, 60, 40, 5); ctx.fill();
+                    ctx.beginPath(); ctx.arc(44, 84, 8, 0, Math.PI * 2); ctx.fill();
+                    ctx.beginPath(); ctx.arc(84, 84, 8, 0, Math.PI * 2); ctx.fill();
+                    const data = ctx.getImageData(0, 0, 128, 128);
+                    map.addImage(id, data);
+                }
+            });
+
+            if (!map.hasImage('express-full-badge')) {
+                const canvas = document.createElement('canvas');
+                canvas.width = 280; canvas.height = 192;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = '#ef4444';
+                    ctx.beginPath();
+                    safeRoundRect(ctx, 12, 12, 256, 168, 84);
+                    ctx.fill();
+                    ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
+                    ctx.fillStyle = 'white';
+                    ctx.font = '1000 104px Pretentard, -apple-system, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('급행', 140, 96 + 4);
+                    const data = ctx.getImageData(0, 0, 280, 192);
+                    map.addImage('express-full-badge', data, { pixelRatio: 3 });
+                }
+            }
+        };
+
+        if (map.loaded()) {
+            registerIcons();
+        } else {
+            map.on('style.load', registerIcons);
+        }
+    }, [map]);
+
+    return null;
+};
+
 function MapLibreBackground(props: MapLibreProps) {
     const {
         pathResult, startStation, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
@@ -69,8 +158,7 @@ function MapLibreBackground(props: MapLibreProps) {
     const [congestionData, setCongestionData] = useState<any | null>(null);
     const [trainArrivalDetail, setTrainArrivalDetail] = useState<StationArrival | null>(null);
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
-    const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
-    const fetchingRef = useRef<Set<string>>(new Set());
+    const verifiedPlats = useTransferVerification(pathResult, stations);
 
     // ─── Data Conversion ────────────────────────────────────────────────────────
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
@@ -87,19 +175,13 @@ function MapLibreBackground(props: MapLibreProps) {
         setTrainArrivalDetail(null);
         
         try {
-            // 1. Fetch Congestion
-            const congestionPromise = fetchTrainCongestion(train.lineName, train.trainNo);
-            
-            // 2. Fetch Detailed Arrival Info for this specific train at its target station
-            // stationArrivals handles cleansing '역' suffix
             const { fetchStationArrivals } = await import("@/services/arrivalApi");
+            const congestionPromise = fetchTrainCongestion(train.lineName, train.trainNo);
             const arrivalPromise = fetchStationArrivals(train.arrivalNm);
             
             const [cData, aList] = await Promise.all([congestionPromise, arrivalPromise]);
-            
             setCongestionData(cData);
             
-            // Cross-reference trainNo to find precise arrival seconds
             const matchingArrival = aList.find(a => a.btrainNo === train.trainNo);
             if (matchingArrival) {
                 setTrainArrivalDetail(matchingArrival);
@@ -142,131 +224,10 @@ function MapLibreBackground(props: MapLibreProps) {
         }
     }, [busStops, onStationClick, onBusStopClick]);
 
-    // ─── Transfer Verification Loop ──────────────────────────────────────────────
-    useEffect(() => {
-        if (!pathResult) return;
-        pathResult.path.forEach((curr, idx) => {
-            if (idx === 0) return;
-            const prev = pathResult.path[idx - 1];
-            const getLine = (sName: string) => stations.find(s => s.name.replace(/역$/, '') === sName.replace(/역$/, ''))?.lines || [];
-            const prevLines: string[] = getLine(prev);
-            const currLines: string[] = getLine(curr);
-            const common = prevLines.filter((l: string) => currLines.includes(l));
-            
-            if (common.length > 0) {
-                const next = pathResult.path[idx + 1];
-                if (next) {
-                    const nextLines: string[] = getLine(next);
-                    const outLines = currLines.filter((l: string) => nextLines.includes(l));
-                    if (outLines.length > 0 && common[0] !== outLines[0]) {
-                        const key = `${curr}-${common[0]}-${outLines[0]}`;
-                        if (!verifiedPlats[key] && !fetchingRef.current.has(key)) {
-                            fetchingRef.current.add(key);
-                            fetchTransferPlatform(curr, common[0], outLines[0]).then(plat => {
-                                setVerifiedPlats(prevPlat => ({ ...prevPlat, [key]: plat }));
-                            });
-                        }
-                    }
-                }
-            }
-        });
-    }, [pathResult, stations, verifiedPlats]);
-
-    // ─── Icon Initialization ─────────────────────────────────────────────────────
-    const onMapReadyInternal = (map: any) => {
-        if (onMapReady) onMapReady(map);
-        
-        const colors = [
-            "#0052A4", // 1호선
-            "#00A84D", // 2호선
-            "#EF7C1C", // 3호선
-            "#00A5DE", // 4호선
-            "#996CAC", // 5호선
-            "#CD7C2F", // 6호선
-            "#747F00", // 7호선
-            "#E6186C", // 8호선
-            "#BDB092", // 9호선
-            "#77C4A3", // 경의중앙선
-            "#0C8E72", // 경춘선
-            "#F5A200", // 수인분당선
-            "#D4003B", // 신분당선
-            "#0090D2", // 공항철도
-            "#81A914", // 서해선
-            "#50AD08", // 용인경전철
-            "#FDA600", // 의정부경전철
-            "#B0AD00", // 우이신설선
-            "#6789CA", // 신림선
-            "#003DA5", // 공항철도 (Alternative)
-            "#EF7C1C", "#996CAC", "#00A2D1", "#0160A2", "#E2B215"
-        ];
-        colors.forEach(color => {
-            const id = `train-card-${color}`;
-            if (!map.hasImage(id)) {
-                const canvas = document.createElement('canvas');
-                canvas.width = 128; canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.fillStyle = color;
-                    ctx.beginPath();
-                    ctx.roundRect(14, 14, 100, 100, 20);
-                    ctx.fill();
-                    ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
-                    // Icon
-                    ctx.fillStyle = 'white';
-                    ctx.beginPath(); ctx.roundRect(34, 34, 60, 40, 5); ctx.fill();
-                    ctx.beginPath(); ctx.arc(44, 84, 8, 0, Math.PI*2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(84, 84, 8, 0, Math.PI*2); ctx.fill();
-                    const data = ctx.getImageData(0,0,128,128);
-                    map.addImage(id, data);
-                }
-            }
-        });
-
-        // Register Express Capsule Background (Original)
-        if (!map.hasImage('express-capsule')) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 120; canvas.height = 48;
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.roundRect(4, 4, 112, 40, 20); // Capsule shape
-                ctx.fill();
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 4; ctx.stroke();
-                const data = ctx.getImageData(0,0,120,48);
-                map.addImage('express-capsule', data, { pixelRatio: 2 });
-            }
-        }
-
-        // Register Unified Atomic Express Badge (With Text)
-        if (!map.hasImage('express-full-badge')) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 540; canvas.height = 192; 
-            const ctx = canvas.getContext('2d');
-            if (ctx) {
-                // Red Capsule
-                ctx.fillStyle = '#ef4444';
-                ctx.beginPath();
-                ctx.roundRect(12, 12, 516, 168, 84); // 3x scaled from 4,4,172,56,28
-                ctx.fill();
-                ctx.strokeStyle = 'white'; ctx.lineWidth = 18; ctx.stroke();
-                // "급행" Text
-                ctx.fillStyle = 'white';
-                ctx.font = 'bold 96px sans-serif'; // 3x larger than 32px
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('급행', 270, 96);
-                
-                const data = ctx.getImageData(0,0,540,192);
-                map.addImage('express-full-badge', data, { pixelRatio: 2 });
-            }
-        }
-    };
-
     return (
         <MapBase
             isDarkMode={isDarkMode}
-            onMapReady={onMapReadyInternal}
+            onMapReady={onMapReady}
             onClick={handleMapClick}
             onCenterChange={onCenterChange}
             interactiveLayerIds={[
@@ -275,6 +236,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 'bus-station-label', 'train-layer'
             ]}
         >
+            <MapIconRegister />
             <SubwayLayers 
                 subwayData={subwayData} 
                 activeTab={activeTab} 
