@@ -65,6 +65,7 @@ function MapLibreBackground(props: MapLibreProps) {
     const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
     const [selectedTrain, setSelectedTrain] = useState<any | null>(null);
     const [congestionData, setCongestionData] = useState<any | null>(null);
+    const [trainArrivalDetail, setTrainArrivalDetail] = useState<StationArrival | null>(null);
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
     const fetchingRef = useRef<Set<string>>(new Set());
@@ -81,21 +82,41 @@ function MapLibreBackground(props: MapLibreProps) {
         setSelectedTrain(train);
         setIsLoadingCongestion(true);
         setCongestionData(null);
+        setTrainArrivalDetail(null);
+        
         try {
-            const data = await fetchTrainCongestion(train.lineName, train.trainNo);
-            setCongestionData(data);
-        } catch (err) { console.error(err); } 
-        finally { setIsLoadingCongestion(false); }
+            // 1. Fetch Congestion
+            const congestionPromise = fetchTrainCongestion(train.lineName, train.trainNo);
+            
+            // 2. Fetch Detailed Arrival Info for this specific train at its target station
+            // stationArrivals handles cleansing '역' suffix
+            const { fetchStationArrivals } = await import("@/services/arrivalApi");
+            const arrivalPromise = fetchStationArrivals(train.arrivalNm);
+            
+            const [cData, aList] = await Promise.all([congestionPromise, arrivalPromise]);
+            
+            setCongestionData(cData);
+            
+            // Cross-reference trainNo to find precise arrival seconds
+            const matchingArrival = aList.find(a => a.btrainNo === train.trainNo);
+            if (matchingArrival) {
+                setTrainArrivalDetail(matchingArrival);
+            }
+        } catch (err) { 
+            console.error(err); 
+        } finally { 
+            setIsLoadingCongestion(false); 
+        }
     };
 
     // ─── Interaction Handlers ───────────────────────────────────────────────────
     const handleMapClick = useCallback((e: any) => {
         const feature = e.features?.[0];
         if (!feature) {
-            setPopupCoords(null);
             setFocusedLine(null);
             setFocusedBubble(null);
             setSelectedTrain(null);
+            setTrainArrivalDetail(null);
             return;
         }
 
@@ -218,12 +239,6 @@ function MapLibreBackground(props: MapLibreProps) {
             
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
             
-            <TrainLayers 
-                trainData={trainData} 
-                activeTab={activeTab}
-                trainFilter={pathResult ? ["match", ["get", "lineName"], Array.from(new Set(pathResult.path.flatMap(s => stations.find(st => st.name.replace(/역$/, '') === s.replace(/역$/, ''))?.lines || []))), true, false] : null}
-            />
-
             <RouteLayers 
                 activeTab={activeTab}
                 pathLineData={pathGeoJSON.lines}
@@ -234,6 +249,12 @@ function MapLibreBackground(props: MapLibreProps) {
                 timeDisplayMode={timeDisplayMode}
                 onToggleTimeDisplay={onToggleTimeDisplay}
                 verifiedPlats={verifiedPlats}
+            />
+            
+            <TrainLayers 
+                trainData={trainData} 
+                activeTab={activeTab}
+                trainFilter={pathResult ? ["match", ["get", "lineName"], Array.from(new Set(pathResult.path.flatMap(s => stations.find(st => st.name.replace(/역$/, '') === s.replace(/역$/, ''))?.lines || []))), true, false] : null}
             />
 
             <MapPopups 
@@ -253,6 +274,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 setSelectedTrain={setSelectedTrain}
                 isLoadingCongestion={isLoadingCongestion}
                 congestionData={congestionData}
+                trainArrivalDetail={trainArrivalDetail}
             />
 
             <GeolocateControl position="top-right" />

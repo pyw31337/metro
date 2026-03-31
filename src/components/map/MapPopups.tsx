@@ -27,6 +27,7 @@ interface MapPopupsProps {
   setSelectedTrain: (train: any) => void;
   isLoadingCongestion: boolean;
   congestionData: any;
+  trainArrivalDetail?: StationArrival | null;
 }
 
 const getLineInfo = (lineName: string) => {
@@ -70,7 +71,8 @@ const MapPopups = ({
   selectedTrain,
   setSelectedTrain,
   isLoadingCongestion,
-  congestionData
+  congestionData,
+  trainArrivalDetail
 }: MapPopupsProps) => {
   const [activeLine, setActiveLine] = useState<string | null>(null);
 
@@ -272,29 +274,65 @@ const MapPopups = ({
                     </button>
                 </div>
                 
-                <div className="flex items-center gap-2 mb-3">
-                    <div className="px-2 py-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
-                        {(() => {
-                            switch(selectedTrain.trainSttus) {
-                                case '0': return '진입중';
-                                case '1': return '정차중';
-                                case '2': return '출발함';
-                                case '3': return '전역출발';
-                                case '4': return '전역진입';
-                                case '5': return '전역도착';
-                                default: return '운행중';
-                            }
-                        })()}
+                <div className="space-y-3 mb-4">
+                    {/* Row 1: Current Status & Station */}
+                    <div className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
+                        <div className="flex items-center gap-2">
+                            <div className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-white/10 text-[10px] font-bold text-zinc-600 dark:text-zinc-300">
+                                {(() => {
+                                    switch(selectedTrain.trainSttus) {
+                                        case '0': return '진입중';
+                                        case '1': return '정차중';
+                                        case '2': return '출발함';
+                                        case '3': return '전역출발';
+                                        case '4': return '전역진입';
+                                        case '5': return '전역도착';
+                                        default: return '운행중';
+                                    }
+                                })()}
+                            </div>
+                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">{selectedTrain.statnNm}</span>
+                        </div>
+                        <span className="text-[10px] font-medium text-zinc-400 dark:text-white/40">
+                            {(() => {
+                                // Simplified relative time for current status based on last update
+                                const diff = Math.floor((Date.now() - new Date(selectedTrain.lastRecptnDt).getTime()) / 60000);
+                                if (timeDisplayMode === 'duration') return diff <= 0 ? '방금전' : `${diff}분전`;
+                                return new Date(selectedTrain.lastRecptnDt).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                            })()}
+                        </span>
+                    </div>
+
+                    {/* Row 2: Expected Arrival */}
+                    <div className="flex items-center justify-between px-2.5 py-2 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
+                        <div className="flex items-center gap-2">
+                            <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[9px] font-black uppercase tracking-tighter">도착예정</span>
+                            <span className="text-[11px] font-black text-zinc-900 dark:text-white">{selectedTrain.arrivalNm}</span>
+                        </div>
+                        <span className="text-[11px] font-black text-rose-500 dark:text-rose-400">
+                            {trainArrivalDetail ? (
+                                (() => {
+                                    const sec = parseInt(trainArrivalDetail.barvlDt) || 0;
+                                    if (timeDisplayMode === 'duration') {
+                                        const m = Math.floor(sec / 60);
+                                        return m > 0 ? `${m}분후` : `곧 도착`;
+                                    } else {
+                                        const d = new Date(Date.now() + sec * 1000);
+                                        return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                    }
+                                })()
+                            ) : '정보없음'}
+                        </span>
                     </div>
                 </div>
 
-                <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
-                    <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">칸별 혼잡도</span>
-                        {isLoadingCongestion && <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />}
-                    </div>
-                    
-                    {congestionData?.congestionTrain ? (
+                {congestionData?.congestionTrain && (
+                    <div className="mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                        <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">칸별 혼잡도</span>
+                            {isLoadingCongestion && <div className="w-2 h-2 rounded-full bg-blue-500 animate-ping" />}
+                        </div>
+                        
                         <div className="grid grid-cols-10 gap-0.5 h-6 items-end">
                             {congestionData.congestionTrain.split('|').map((val: string, idx: number) => {
                                 const v = parseInt(val);
@@ -310,12 +348,8 @@ const MapPopups = ({
                                 );
                             })}
                         </div>
-                    ) : (
-                        <div className="text-[9px] text-zinc-400 py-1 italic">
-                            {isLoadingCongestion ? "혼잡도 불러오는 중..." : "혼잡도 데이터 없음"}
-                        </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </Popup>
       )}
