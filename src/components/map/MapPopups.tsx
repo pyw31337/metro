@@ -28,16 +28,22 @@ interface MapPopupsProps {
   congestionData: any;
 }
 
-const getStationBadge = (name: string) => {
-    if (!name) return null;
+const getStationBadges = (name: string) => {
+    if (!name) return [];
     const cleanName = name.replace(/역+$/, '');
+    const badges: { num: string; color: string }[] = [];
+    const addedLines = new Set<string>();
+
     for (const line of SUBWAY_LINES) {
         if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
             const num = line.name.replace('호선', '').replace('서울배차', '').trim();
-            return { num, color: line.color };
+            if (!addedLines.has(num)) {
+                badges.push({ num, color: line.color });
+                addedLines.add(num);
+            }
         }
     }
-    return null;
+    return badges;
 };
 
 const MapPopups = ({
@@ -78,14 +84,17 @@ const MapPopups = ({
                         {activeTab === 'subway' && selectedStationName ? (
                             <>
                                 {selectedStationName}
-                                {getStationBadge(selectedStationName) && (
-                                    <span 
-                                        className="inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full text-[11px] font-black text-white shadow-sm"
-                                        style={{ backgroundColor: getStationBadge(selectedStationName)!.color }}
-                                    >
-                                        {getStationBadge(selectedStationName)!.num}
-                                    </span>
-                                )}
+                                <div className="flex gap-1 ml-1.5 overflow-x-auto no-scrollbar">
+                                    {getStationBadges(selectedStationName).map((badge, idx) => (
+                                        <span 
+                                            key={idx}
+                                            className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-black text-white shadow-sm shrink-0"
+                                            style={{ backgroundColor: badge.color }}
+                                        >
+                                            {badge.num}
+                                        </span>
+                                    ))}
+                                </div>
                             </>
                         ) : (
                             selectedBusStop?.name
