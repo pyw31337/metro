@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
-import { GeolocateControl, Marker, useMap } from "react-map-gl/maplibre";
+import { Marker, useMap } from "react-map-gl/maplibre";
 import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival } from "@/types/metro";
 import { fetchTrainCongestion } from "@/services/arrivalApi";
 import { 
@@ -207,6 +207,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setFocusedBubble(null);
             setSelectedTrain(null);
             setTrainArrivalDetail(null);
+            onActiveLineChange(null);
             return;
         }
 
@@ -295,7 +296,6 @@ function MapLibreBackground(props: MapLibreProps) {
                 onActiveLineChange={onActiveLineChange}
             />
 
-            <GeolocateControl position="top-right" />
             
             {userLocation && (
                 <Marker longitude={userLocation[1]} latitude={userLocation[0]}>

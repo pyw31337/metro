@@ -56,9 +56,9 @@ const MapBase = ({
             if (onMapReady) onMapReady(r.getMap());
           }
         }}
+        attributionControl={false}
       >
         {children}
-        <NavigationControl position="bottom-right" />
       </Map>
     </div>
   );
