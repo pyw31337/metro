@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X } from "lucide-react";
 import { StationArrival, parseSeoulDate } from "@/services/arrivalApi";
+import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
 import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
@@ -42,15 +43,18 @@ const getLineInfo = (lineName: string) => {
 const getStationBadges = (name: string) => {
     if (!name) return [];
     const cleanName = name.replace(/역+$/, '');
-    const badges: { num: string; color: string }[] = [];
+    const badges: { num: string; color: string; lineName: string }[] = [];
     const addedLines = new Set<string>();
 
     for (const line of SUBWAY_LINES) {
         if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
-            const num = line.name.replace('호선', '').replace('서울배차', '').trim();
-            if (!addedLines.has(num)) {
-                badges.push({ num, color: line.color });
-                addedLines.add(num);
+            if (!addedLines.has(line.name)) {
+                badges.push({ 
+                    num: getLineShortName(line.name), 
+                    color: line.color,
+                    lineName: line.name 
+                });
+                addedLines.add(line.name);
             }
         }
     }
@@ -133,9 +137,8 @@ const MapPopups = ({
 
                 {activeTab === 'subway' && badges.length > 0 && (
                     <div className="flex gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5">
-                        {badges.map((badge: {num: string, color: string}, idx: number) => {
-                            const isNumbered = !isNaN(Number(badge.num));
-                            const label = isNumbered ? `${badge.num}호선` : badge.num;
+                        {badges.map((badge, idx) => {
+                            const label = getLineLongName(badge.lineName);
                             
                             return (
                                 <button 

@@ -5,13 +5,13 @@ import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, Rotate
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
+import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
 import { THEME } from "@/theme/design-system";
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
 import { db } from "@/services/db";
 import { Facility } from "@/types/metro";
-import { getLineShortName } from "@/utils/stationUtils";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -109,15 +109,18 @@ export default function UnifiedBottomPanel({
     const badges = useMemo(() => {
         if (!selectedStationName) return [];
         const cleanName = selectedStationName.replace(/역+$/, '');
-        const b: { num: string; color: string }[] = [];
+        const b: { num: string; color: string; lineName: string }[] = [];
         const addedLines = new Set<string>();
 
         for (const line of SUBWAY_LINES) {
             if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
-                const num = getLineShortName(line.name);
-                if (!addedLines.has(num)) {
-                    b.push({ num, color: line.color });
-                    addedLines.add(num);
+                if (!addedLines.has(line.name)) {
+                    b.push({ 
+                        num: getLineShortName(line.name), 
+                        color: line.color,
+                        lineName: line.name
+                    });
+                    addedLines.add(line.name);
                 }
             }
         }
@@ -329,8 +332,7 @@ export default function UnifiedBottomPanel({
                                     {badges.length > 0 && (
                                         <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar py-0.5">
                                             {badges.map((badge, idx) => {
-                                                const isNumbered = !isNaN(Number(badge.num));
-                                                const label = isNumbered ? `${badge.num}호선` : badge.num;
+                                                const label = getLineLongName(badge.lineName);
                                                 
                                                 return (
                                                     <button 
