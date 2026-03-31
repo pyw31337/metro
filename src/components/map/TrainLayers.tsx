@@ -46,6 +46,7 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
             14, 0.45,
             18, 0.95
           ],
+          "icon-offset": [0, -30],
           "text-field": "급행",
           "text-size": [
             "interpolate", ["linear"], ["zoom"],
@@ -53,9 +54,11 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
             16, 11
           ],
           "text-font": ["literal", ["Standard-Bold", "Noto Sans KR Bold", "Standard-Regular", "Noto Sans KR Regular", "Arial Unicode MS Regular"]],
-          "text-offset": [1.4, -1.4],
+          "text-offset": [0, -2.6],
           "text-anchor": "center",
           "icon-allow-overlap": true,
+          "text-allow-overlap": true,
+          "icon-ignore-placement": true,
           "text-ignore-placement": true
         }}
         paint={{
