@@ -129,8 +129,10 @@ const MapPopups = ({
                     </div>
                     {activeTab === 'subway' && (
                         <div className="flex items-center gap-1">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-tighter">Real-time</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${stationArrivals?.some(a => a.isScheduled) ? 'bg-zinc-400' : 'bg-emerald-500 animate-pulse'}`} />
+                            <span className={`text-[10px] font-black uppercase tracking-tighter ${stationArrivals?.some(a => a.isScheduled) ? 'text-zinc-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                {stationArrivals?.some(a => a.isScheduled) ? 'Scheduled' : 'Real-time'}
+                            </span>
                         </div>
                     )}
                 </div>
@@ -204,13 +206,16 @@ const MapPopups = ({
                             <div className="flex flex-col gap-1.5">
                                 <ArrivalHeader 
                                     defaultTitle="상행 · 내선" 
-                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선'))}
+                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'))}
                                     textColor="text-blue-500 dark:text-blue-400"
                                     borderColor="border-blue-500/20"
                                 />
-                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).length > 0 ? (
-                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선')).slice(0, 3).map((arr: any, i: number) => (
-                                        <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).length > 0 ? (
+                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).slice(0, 3).map((arr: any, i: number) => (
+                                        <div key={i} className="flex items-center gap-1">
+                                            <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                            {arr.isScheduled && <span className="text-[8px] px-1 py-0.5 rounded bg-zinc-200 dark:bg-white/10 text-zinc-500 font-black">예정</span>}
+                                        </div>
                                     ))
                                 ) : (
                                     <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>
@@ -219,13 +224,16 @@ const MapPopups = ({
                             <div className="flex flex-col gap-1.5">
                                 <ArrivalHeader 
                                     defaultTitle="하행 · 외선" 
-                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선'))}
+                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'))}
                                     textColor="text-orange-500 dark:text-orange-400"
                                     borderColor="border-orange-500/20"
                                 />
-                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).length > 0 ? (
-                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선')).slice(0, 3).map((arr: any, i: number) => (
-                                        <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).length > 0 ? (
+                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).slice(0, 3).map((arr: any, i: number) => (
+                                        <div key={i} className="flex items-center gap-1">
+                                            <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                            {arr.isScheduled && <span className="text-[8px] px-1 py-0.5 rounded bg-zinc-200 dark:bg-white/10 text-zinc-500 font-black">예정</span>}
+                                        </div>
                                     ))
                                 ) : (
                                     <div className="text-[10px] text-zinc-400 text-center py-2">운행 종료</div>

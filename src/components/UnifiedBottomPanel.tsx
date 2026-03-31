@@ -351,21 +351,22 @@ export default function UnifiedBottomPanel({
                                 
                                 <div className="grid grid-cols-2 gap-2 mb-3">
                                     {(stationArrivals || [])
-                                        .filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')))
+                                        .filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')) || arr.subwayId === "9999")
                                         .slice(0, 4)
                                         .map((arr, idx) => (
                                         <div key={idx} className="bg-white/50 dark:bg-black/20 p-2.5 rounded-xl flex flex-col border border-black/5 dark:border-white/5">
                                             <div className="flex items-center gap-1 mb-1">
                                                 {getLineBadge(arr.lineName)}
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">{arr.updnLine.includes('상행') || arr.updnLine.includes('내선') ? '상행' : '하행'}</span>
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">{arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선') ? '상행' : '하행'}</span>
+                                                {arr.isScheduled && <span className="text-[8px] px-1 py-0.5 rounded bg-black/5 dark:bg-white/5 text-zinc-500 font-black ml-auto">예정</span>}
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[11px] font-bold truncate max-w-[80px]">{arr.trainLineNm.split(' - ')[0]}</span>
-                                                <span className="text-[11px] font-black text-rose-500">{arr.arvlMsg2}</span>
+                                                <span className={`text-[11px] font-black ${arr.isScheduled ? 'text-zinc-500' : 'text-rose-500'}`}>{arr.arvlMsg2}</span>
                                             </div>
                                         </div>
                                     ))}
-                                    {((stationArrivals || []).filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0'))).length === 0) && (
+                                    {((stationArrivals || []).filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')) || arr.subwayId === "9999").length === 0) && (
                                         <div className="col-span-2 py-4 text-center text-zinc-400 text-[11px] font-bold">운행 정보가 없습니다.</div>
                                     )}
                                 </div>

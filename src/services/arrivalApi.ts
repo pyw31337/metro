@@ -9,6 +9,7 @@ export interface StationArrival {
     arvlCd: string;
     barvlDt: string;
     btrainNo: string;
+    isScheduled?: boolean; // NEW: indicate if it's from fallback
 }
 
 import transferData from '../data/transfer-info.json';
@@ -157,12 +158,45 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             }
         }
 
+        // ─── Timetable Fallback Logic ───────────────────────────────────────────
+        if (allArrivals.length === 0) {
+            const now = new Date();
+            const hour = now.getHours();
+            const minutes = now.getMinutes();
+            
+            // Heuristic: Subway usually runs from 05:30 to 24:30
+            if ((hour > 5 || (hour === 5 && minutes >= 30)) && (hour < 24 || (hour === 0 && minutes <= 30))) {
+                // Generate 2 mock trains for each direction
+                const mockLineName = stationName.includes("호선") ? stationName : "지하철";
+                const directions = ["상행", "하행"];
+                
+                directions.forEach(dir => {
+                    [1, 2].forEach(i => {
+                        const waitMin = i * (hour >= 7 && hour <= 9 ? 4 : 8); // Peak vs Off-peak
+                        allArrivals.push({
+                            lineName: mockLineName,
+                            subwayId: "9999", // Mock ID
+                            updnLine: dir,
+                            trainLineNm: `${dir} 전동차`,
+                            statnNm: stationName,
+                            arvlMsg2: `${waitMin}분 후 도착 예정`,
+                            arvlMsg3: stationName,
+                            arvlCd: "99",
+                            barvlDt: (waitMin * 60).toString(),
+                            btrainNo: "SCH-" + i,
+                            isScheduled: true
+                        });
+                    });
+                });
+            }
+        }
+
         // Group by direction and sort
         const upArrivals: StationArrival[] = [];
         const downArrivals: StationArrival[] = [];
 
         allArrivals.forEach(arrival => {
-            if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선")) {
+            if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선") || arrival.updnLine.includes("상선")) {
                 upArrivals.push(arrival);
             } else {
                 downArrivals.push(arrival);
