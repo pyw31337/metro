@@ -63,6 +63,7 @@ export default function Home() {
     const [busStops, setBusStops] = useState<BusStop[]>([]);
     const [activeLine, setActiveLine] = useState<string | null>(null);
     const [selectedBusRoute, setSelectedBusRoute] = useState<string | null>(null);
+    const [nearestStation, setNearestStation] = useState<Station | null>(null);
 
     const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute);
 
@@ -184,6 +185,19 @@ export default function Home() {
             setStationArrivals(hookArrivals);
         }
     }, [hookArrivals]);
+
+    // ─── Nearest Station Logic ──────────────────────────────────────────────────
+    useEffect(() => {
+        const updateNearest = async () => {
+            if (userLocation && stations.length > 0) {
+                const nearest = await findNearestStation(userLocation[0], userLocation[1], stations);
+                if (nearest) setNearestStation(nearest as Station);
+            } else {
+                setNearestStation(null);
+            }
+        };
+        updateNearest();
+    }, [userLocation, stations, findNearestStation]);
 
     // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
     const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
@@ -386,6 +400,7 @@ export default function Home() {
                     onActiveLineChange={handleActiveLineChange}
                     onMapReady={(m) => { mapRef.current = m; }}
                     userLocation={userLocation}
+                    nearestStation={nearestStation}
                     timeDisplayMode={timeDisplayMode}
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                     showAllRouteBubbles={showAllRouteBubbles}

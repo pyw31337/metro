@@ -2,8 +2,9 @@
 
 import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
 import { Marker, useMap } from "react-map-gl/maplibre";
-import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival } from "@/types/metro";
+import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival, Station } from "@/types/metro";
 import { fetchTrainCongestion } from "@/services/arrivalApi";
+import { Train } from "lucide-react";
 import { 
     convertSubwayToGeoJSON, 
     convertBusStopsToGeoJSON, 
@@ -56,6 +57,7 @@ interface MapLibreProps {
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
     buses: any[];
+    nearestStation: Station | null;
 }
 
 // ─── Canvas Polyfill ───────────────────────────────────────────────────────────
@@ -159,7 +161,7 @@ function MapLibreBackground(props: MapLibreProps) {
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
         onCenterChange, onBoundsChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
-        buses
+        buses, nearestStation
     } = props;
 
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -306,6 +308,23 @@ function MapLibreBackground(props: MapLibreProps) {
             {userLocation && (
                 <Marker longitude={userLocation[1]} latitude={userLocation[0]}>
                     <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" />
+                </Marker>
+            )}
+
+            {nearestStation && (
+                <Marker longitude={nearestStation.lng} latitude={nearestStation.lat}>
+                    <div className="relative group cursor-pointer" onClick={() => onStationClick?.(nearestStation.name, [nearestStation.lat, nearestStation.lng])}>
+                        {/* Outer Glow/Halo */}
+                        <div className="absolute inset-[-6px] rounded-full bg-red-500/30 animate-ping" />
+                        {/* Black Core with Red Border */}
+                        <div className="relative w-8 h-8 bg-black rounded-full border-[3px] border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)] flex items-center justify-center transition-transform hover:scale-110 active:scale-95">
+                            <Train className="w-4 h-4 text-white" />
+                        </div>
+                        {/* Label */}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+                            가장 가까운 역: {nearestStation.name}
+                        </div>
+                    </div>
                 </Marker>
             )}
         </MapBase>

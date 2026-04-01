@@ -29,10 +29,10 @@ const SubwayLayers = ({
     : true;
 
   // Logic: prominent if on the focused line or in the active path.
-  const isProminentStation: any = pathResult?.path
-    ? isStationInPath
-    : focusedLine 
+  const isProminentStation: any = focusedLine
     ? ["in", ["literal", focusedLine], ["get", "lines"]]
+    : pathResult?.path
+    ? isStationInPath
     : true;
 
   return (
@@ -53,16 +53,16 @@ const SubwayLayers = ({
           type="line"
           layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
-            "line-color": pathResult?.path
-              ? FADED_COLOR
-              : focusedLine
+            "line-color": focusedLine
               ? ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], FADED_COLOR]
+              : pathResult?.path
+              ? FADED_COLOR
               : ["get", "color"],
             "line-width": 4,
-            "line-opacity": pathResult?.path
+            "line-opacity": focusedLine
+              ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.1]
+              : pathResult?.path
               ? 0.15
-              : focusedLine
-              ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.3]
               : 0.8
           }}
         />
