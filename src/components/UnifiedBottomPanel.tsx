@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw } from "lucide-react";
+import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
@@ -12,6 +12,8 @@ import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
 import { db } from "@/services/db";
 import { Facility } from "@/types/metro";
+import { useIngestion } from "@/hooks/useIngestion";
+import IngestionProgress from "./IngestionProgress";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -41,6 +43,7 @@ interface UnifiedBottomPanelProps {
     onToggleShowAll: () => void;
     selectedStationName?: string | null;
     stationArrivals?: any[];
+    schedules?: Record<string, any>;
     onSelectStation?: (name: string | null) => void;
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
@@ -89,6 +92,7 @@ export default function UnifiedBottomPanel({
     onToggleShowAll,
     selectedStationName,
     stationArrivals,
+    schedules,
     onSelectStation,
     activeLine,
     onActiveLineChange
@@ -102,6 +106,7 @@ export default function UnifiedBottomPanel({
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [stationFacilities, setStationFacilities] = useState<Facility[]>([]);
+    const { tasks, isIngesting } = useIngestion();
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
     const destInputRef = useRef<HTMLInputElement>(null);
@@ -280,7 +285,7 @@ export default function UnifiedBottomPanel({
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
                     {activeTab === "subway" && pathResults && pathResults.time && pathResults.transfer && (
                         <div className="flex flex-col gap-2 mb-2">
-                            <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 border border-black/5 dark:border-white/5">
+                            <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 border border-black/5 dark:border-white/5 relative">
                                 <button onClick={() => { if (selectedStrategy === "time") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("time"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
                                     <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
@@ -294,6 +299,10 @@ export default function UnifiedBottomPanel({
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${showAllRouteBubbles ? "opacity-80" : "opacity-60"}`}>{showAllRouteBubbles ? "축소" : "상세"}</span>
                                     <Navigation size={12} className={showAllRouteBubbles ? "animate-pulse" : ""} />
                                 </button>
+                            </div>
+                            
+                            <div className="px-1 py-1">
+                                <IngestionProgress tasks={tasks} isVisible={isIngesting} />
                             </div>
 
                             {/* Premium Route Timeline */}
@@ -329,11 +338,14 @@ export default function UnifiedBottomPanel({
                                                                     {stationName}
                                                                 </span>
                                                                 {transfer && (
-                                                                    <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                                                                    <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-full border border-blue-500/20 shadow-sm">
                                                                         <span className="text-[9px] font-black text-blue-500">환승</span>
-                                                                        <span className="text-[9px] font-black text-blue-600 truncate max-w-[40px]">{getLineShortName(transfer.toLine)}</span>
+                                                                        <span className="text-[9px] font-black text-blue-600 truncate max-w-[40px] uppercase tracking-tighter">{getLineShortName(transfer.toLine)}</span>
                                                                         {transfer.fastTransfer && (
-                                                                            <span className="text-[8px] bg-yellow-400 text-black px-1 rounded-sm font-black ml-0.5">빠른 {transfer.fastTransfer}</span>
+                                                                            <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-blue-500/20">
+                                                                                <Clock size={10} className="text-yellow-500 fill-yellow-500/10" />
+                                                                                <span className="text-[9px] text-zinc-900 dark:text-white font-black">{transfer.fastTransfer}</span>
+                                                                            </div>
                                                                         )}
                                                                     </div>
                                                                 )}
@@ -383,9 +395,10 @@ export default function UnifiedBottomPanel({
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <span className="text-sm font-black text-zinc-900 dark:text-white">{selectedStationName}</span>
-                                            <div className="flex gap-1">
-                                                {stationFacilities.some(f => f.category === 'elevator') && <span className="text-[10px] bg-blue-500/10 text-blue-600 px-1.5 py-0.5 rounded-md font-bold">L</span>}
-                                                {stationFacilities.some(f => f.category === 'locker') && <span className="text-[10px] bg-emerald-500/10 text-emerald-600 px-1.5 py-0.5 rounded-md font-bold">K</span>}
+                                            <div className="flex gap-1.5 items-center">
+                                                {stationFacilities.some(f => f.category === 'elevator') && <div className="p-1 rounded-lg bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20" title="엘리베이터"><Accessibility size={14} strokeWidth={3} /></div>}
+                                                {stationFacilities.some(f => f.category === 'lift') && <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20" title="휠체어 리프트"><Accessibility size={14} strokeWidth={3} /></div>}
+                                                <div className="p-1 rounded-lg bg-zinc-500/10 text-zinc-500 ring-1 ring-zinc-500/20 opacity-40"><Baby size={14} /></div>
                                             </div>
                                         </div>
                                         <button onClick={() => { onSelectStation?.(null); onActiveLineChange(null); }} className="p-1 text-zinc-400"><X size={14} /></button>
@@ -406,6 +419,23 @@ export default function UnifiedBottomPanel({
                                                     </button>
                                                 );
                                             })}
+                                        </div>
+                                    )}
+                                    
+                                    {schedules && schedules["기본"] && (
+                                        <div className="flex items-center gap-3 px-3 py-2 bg-zinc-200/40 dark:bg-black/20 rounded-xl border border-black/5 dark:border-white/5 mb-3">
+                                            <div className="flex flex-col text-left">
+                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-0.5 mb-0.5">첫차</span>
+                                                <span className="text-[12px] font-black text-blue-500 font-mono tracking-tight">{schedules["기본"].firstTrain}</span>
+                                            </div>
+                                            <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+                                            <div className="flex flex-col text-left">
+                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-0.5 mb-0.5">막차</span>
+                                                <span className="text-[12px] font-black text-rose-500 font-mono tracking-tight">{schedules["기본"].lastTrain}</span>
+                                            </div>
+                                            <div className="ml-auto flex items-center gap-1.5 opacity-60">
+                                                <span className="text-[10px] font-bold text-zinc-500">평일 기준</span>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -487,7 +517,7 @@ export default function UnifiedBottomPanel({
                                 <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                     {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatStationDisplay(destination, true)}</div>)}
-                                    <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim()); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
+                                    <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                     {destination && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
@@ -498,7 +528,7 @@ export default function UnifiedBottomPanel({
                                 <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                     {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatStationDisplay(source)}</div>)}
-                                    <input ref={sourceInputRef} type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(`${s.name} ${s.lines?.[0] || ''}`.trim()); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
+                                    <input ref={sourceInputRef} type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                     {source && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}

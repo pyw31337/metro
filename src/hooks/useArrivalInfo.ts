@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { fetchWithCache } from '@/utils/api-client';
 import { getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { StationArrival } from '@/types/metro';
+import { db } from '@/services/db';
+import { DataIngestionService } from '@/services/dataIngestion';
 
 export interface ArrivalInfo extends StationArrival {
     arrivalTime: number; // seconds
@@ -24,7 +26,7 @@ export function useArrivalInfo(stationName: string | null) {
             return;
         }
 
-        const apiKey = "53517344677079773531694a786f6a"; 
+        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || "53517344677079773531694a786f6a"; // Fallback if env is missing
         const cleanName = stationName.replace(/역+$/, '');
 
         const fetchData = async () => {
@@ -60,13 +62,34 @@ export function useArrivalInfo(stationName: string | null) {
 
                 setArrivals(processedArrivals);
 
-                // 3. Dummy Schedule fallback (Static)
-                setSchedules({
-                    "기본": {
-                        firstTrain: "05:30",
-                        lastTrain: "24:00"
+                // 3. Timetable lookup/fallback
+                try {
+                    let stored = await db.getStoredTimetable(cleanName, "기본", "week");
+                    
+                    const updateScheduleState = (data: any[]) => {
+                        if (data.length > 0) {
+                            setSchedules({
+                                "기본": {
+                                    firstTrain: data[0].departureTime || "05:30",
+                                    lastTrain: data[data.length - 1].departureTime || "24:00"
+                                }
+                            });
+                        } else {
+                            setSchedules({ "기본": { firstTrain: "05:30", lastTrain: "24:00" } });
+                        }
+                    };
+
+                    if (!stored || stored.length === 0) {
+                        DataIngestionService.triggerTimetableByStationName(cleanName).then(async () => {
+                            const newStored = await db.getStoredTimetable(cleanName, "기본", "week");
+                            updateScheduleState(newStored);
+                        });
+                    } else {
+                        updateScheduleState(stored);
                     }
-                });
+                } catch (e) {
+                    setSchedules({ "기본": { firstTrain: "05:30", lastTrain: "24:00" } });
+                }
             } catch (error) {
                 console.error("Arrival fetch error", error);
                 // Final fallback on error

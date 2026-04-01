@@ -29,11 +29,15 @@ function reconstructPath(state: DijkstraState) {
     let current: DijkstraState | null = state;
     
     while (current) {
-        path.unshift(current.nodeId);
-        weights.unshift(current.weight);
-        if (current.lineUsed) linePath.unshift(current.lineUsed);
+        path.push(current.nodeId);
+        weights.push(current.weight);
+        if (current.lineUsed) linePath.push(current.lineUsed);
         current = current.parent;
     }
+    
+    path.reverse();
+    weights.reverse();
+    linePath.reverse();
     
     return { path, weights, linePath };
 }
@@ -70,6 +74,68 @@ function buildGraph(): Map<string, GraphNode> {
     return graph;
 }
 
+class MinHeap<T> {
+    private heap: { priority: number; value: T }[] = [];
+
+    push(value: T, priority: number) {
+        this.heap.push({ priority, value });
+        this.bubbleUp();
+    }
+
+    pop(): T | undefined {
+        if (this.size() === 0) return undefined;
+        if (this.size() === 1) return this.heap.pop()?.value;
+
+        const top = this.heap[0].value;
+        this.heap[0] = this.heap.pop()!;
+        this.bubbleDown();
+        return top;
+    }
+
+    size() {
+        return this.heap.length;
+    }
+
+    private bubbleUp() {
+        let index = this.heap.length - 1;
+        while (index > 0) {
+            let parentIndex = Math.floor((index - 1) / 2);
+            if (this.heap[parentIndex].priority <= this.heap[index].priority) break;
+            [this.heap[parentIndex], this.heap[index]] = [this.heap[index], this.heap[parentIndex]];
+            index = parentIndex;
+        }
+    }
+
+    private bubbleDown() {
+        let index = 0;
+        const length = this.heap.length;
+        while (true) {
+            let leftChildIndex = 2 * index + 1;
+            let rightChildIndex = 2 * index + 2;
+            let swapIndex = null;
+
+            if (leftChildIndex < length) {
+                if (this.heap[leftChildIndex].priority < this.heap[index].priority) {
+                    swapIndex = leftChildIndex;
+                }
+            }
+
+            if (rightChildIndex < length) {
+                if (
+                    (swapIndex === null && this.heap[rightChildIndex].priority < this.heap[index].priority) ||
+                    (swapIndex !== null && this.heap[rightChildIndex].priority < this.heap[leftChildIndex].priority)
+                ) {
+                    swapIndex = rightChildIndex;
+                }
+            }
+
+            if (swapIndex === null) break;
+            [this.heap[index], this.heap[swapIndex]] = [this.heap[swapIndex], this.heap[index]];
+            index = swapIndex;
+        }
+    }
+}
+
 type PathStrategy = "time" | "transfer";
 
 function dijkstra(
@@ -78,10 +144,10 @@ function dijkstra(
     graph: Map<string, GraphNode>, 
     strategy: PathStrategy
 ): (PathResult & { linePath: string[] }) | null {
-    const pq: DijkstraState[] = [];
+    const heap = new MinHeap<DijkstraState>();
     const minCosts = new Map<string, number>();
 
-    pq.push({ 
+    heap.push({ 
         nodeId: startName, 
         cost: 0, 
         weight: 0, 
@@ -89,12 +155,10 @@ function dijkstra(
         transfers: 0, 
         parent: null,
         lineUsed: null
-    });
+    }, 0);
 
-    while (pq.length > 0) {
-        // Simple priority queue (could be optimized with a true heap)
-        pq.sort((a, b) => a.cost - b.cost);
-        const state = pq.shift()!;
+    while (heap.size() > 0) {
+        const state = heap.pop()!;
         const { nodeId, cost, weight, lastLine, transfers } = state;
 
         if (nodeId === endName) {
@@ -102,7 +166,8 @@ function dijkstra(
             return { path, totalWeight: weight, weights, transferCount: transfers, linePath, transfers: [] };
         }
 
-        if (cost > (minCosts.get(nodeId) ?? Infinity)) continue;
+        const currentMin = minCosts.get(nodeId) ?? Infinity;
+        if (cost > currentMin) continue;
         minCosts.set(nodeId, cost);
 
         const node = graph.get(nodeId);
@@ -121,9 +186,10 @@ function dijkstra(
 
             const newCost = cost + edgeCost;
             const newWeight = weight + edgeWeight;
+            const targetMin = minCosts.get(conn.nodeId) ?? Infinity;
             
-            if (newCost < (minCosts.get(conn.nodeId) ?? Infinity)) {
-                pq.push({
+            if (newCost < targetMin) {
+                heap.push({
                     nodeId: conn.nodeId,
                     cost: newCost,
                     weight: newWeight,
@@ -131,7 +197,7 @@ function dijkstra(
                     transfers: transfers + (isTransfer ? 1 : 0),
                     parent: state,
                     lineUsed: conn.lineId
-                });
+                }, newCost);
             }
         }
     }

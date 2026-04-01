@@ -12,6 +12,7 @@ import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
 import { findBusPath, BusPathResult } from "@/utils/busRouting";
 import { normalizeStationName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
+import { useArrivalInfo } from "@/hooks/useArrivalInfo";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
@@ -169,14 +170,14 @@ export default function Home() {
         updateWCs();
     }, [activeTab, userLocation, wcItems, sortWCs]);
 
-    // Fetch station arrivals when selected
+    // Fetch station arrivals and schedules using hook
+    const { arrivals: hookArrivals, schedules: hookSchedules, loading: arrivalLoading } = useArrivalInfo(selectedStationName);
+
     useEffect(() => {
-        if (selectedStationName) {
-            fetchStationArrivals(selectedStationName).then(setStationArrivals);
-        } else {
-            setStationArrivals([]);
+        if (hookArrivals) {
+            setStationArrivals(hookArrivals);
         }
-    }, [selectedStationName]);
+    }, [hookArrivals]);
 
     // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
     const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
@@ -386,7 +387,8 @@ export default function Home() {
                 showAllRouteBubbles={showAllRouteBubbles}
                 onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
                 selectedStationName={selectedStationName}
-                stationArrivals={stationArrivals}
+                stationArrivals={hookArrivals}
+                schedules={hookSchedules}
                 onSelectStation={setSelectedStationName}
                 activeLine={activeLine}
                 onActiveLineChange={handleActiveLineChange}

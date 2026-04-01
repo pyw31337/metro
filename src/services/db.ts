@@ -44,9 +44,9 @@ export class MetroDatabase extends Dexie {
       console.log('🚄 Initializing Metro Database for the first time...');
       try {
         const [stations, busStops, wc] = await Promise.all([
-          fetch('/data/capitalStations.json').then(res => res.json()),
-          fetch('/data/bus-stops.json').then(res => res.json()),
-          fetch('/data/wc.json').then(res => res.json())
+          fetch('/metro/data/capitalStations.json').then(res => res.json()),
+          fetch('/metro/data/bus-stops.json').then(res => res.json()),
+          fetch('/metro/data/wc.json').then(res => res.json())
         ]);
 
         await this.transaction('rw', [this.stations, this.busStops, this.wc], async () => {
