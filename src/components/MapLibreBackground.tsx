@@ -9,7 +9,8 @@ import {
     convertBusStopsToGeoJSON, 
     convertWCToGeoJSON, 
     convertTrainsToGeoJSON, 
-    convertPathToGeoJSON 
+    convertPathToGeoJSON,
+    convertBusPositionsToGeoJSON
 } from "@/utils/geoJsonUtils";
 
 import MapBase from "./map/MapBase";
