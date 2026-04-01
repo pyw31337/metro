@@ -59,6 +59,10 @@ export default function Home() {
     const [busStops, setBusStops] = useState<BusStop[]>([]);
     const [activeLine, setActiveLine] = useState<string | null>(null);
 
+    const handleActiveLineChange = useCallback((line: string | null) => {
+        setActiveLine(prev => prev === line ? null : (line || null));
+    }, []);
+
     const stations = useMemo(() => {
         const unique = new Map<string, SubwayStation>();
         SUBWAY_LINES.forEach(line => {
@@ -345,7 +349,7 @@ export default function Home() {
                     onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
                     stations={stations}
                     activeLine={activeLine}
-                    onActiveLineChange={setActiveLine}
+                    onActiveLineChange={handleActiveLineChange}
                     onMapReady={(m) => { mapRef.current = m; }}
                     userLocation={userLocation}
                     timeDisplayMode={timeDisplayMode}
@@ -385,7 +389,7 @@ export default function Home() {
                 stationArrivals={stationArrivals}
                 onSelectStation={setSelectedStationName}
                 activeLine={activeLine}
-                onActiveLineChange={setActiveLine}
+                onActiveLineChange={handleActiveLineChange}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">

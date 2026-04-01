@@ -158,7 +158,6 @@ function MapLibreBackground(props: MapLibreProps) {
     } = props;
 
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
-    const [focusedLine, setFocusedLine] = useState<string | null>(null);
     const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
     const [selectedTrain, setSelectedTrain] = useState<any | null>(null);
     const [congestionData, setCongestionData] = useState<any | null>(null);
@@ -203,7 +202,6 @@ function MapLibreBackground(props: MapLibreProps) {
     const handleMapClick = useCallback((e: any) => {
         const feature = e.features?.[0];
         if (!feature) {
-            setFocusedLine(null);
             setFocusedBubble(null);
             setSelectedTrain(null);
             setTrainArrivalDetail(null);
@@ -217,7 +215,6 @@ function MapLibreBackground(props: MapLibreProps) {
             const name = feature.properties.name;
             onStationClick?.(name, [coords.lat, coords.lng]);
             setPopupCoords([coords.lng, coords.lat]);
-            setFocusedLine(null);
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label') {
             const stop = busStops.find(s => s.id === feature.properties.id);
             if (stop) {
@@ -227,7 +224,8 @@ function MapLibreBackground(props: MapLibreProps) {
         } else if (feature.layer.id === 'train-layer') {
             handleTrainClick(feature.properties);
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
-            setFocusedLine(feature.properties.name);
+            const lineName = feature.properties.name;
+            onActiveLineChange(lineName);
         }
     }, [busStops, onStationClick, onBusStopClick]);
 
@@ -249,7 +247,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 activeTab={activeTab} 
                 isDarkMode={isDarkMode} 
                 pathResult={pathResult}
-                focusedLine={focusedLine || activeLine}
+                focusedLine={activeLine}
             />
             
             <BusLayers busData={busGeoJSON} activeTab={activeTab} isDarkMode={isDarkMode} />
