@@ -13,6 +13,7 @@ import { findBusPath, BusPathResult } from "@/utils/busRouting";
 import { normalizeStationName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
 import { useArrivalInfo } from "@/hooks/useArrivalInfo";
+import { useBusPositions } from "@/hooks/useBusPositions";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
@@ -59,6 +60,9 @@ export default function Home() {
     const [showAllRouteBubbles, setShowAllRouteBubbles] = useState(false);
     const [busStops, setBusStops] = useState<BusStop[]>([]);
     const [activeLine, setActiveLine] = useState<string | null>(null);
+    const [selectedBusRoute, setSelectedBusRoute] = useState<string | null>(null);
+
+    const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute);
 
     const handleActiveLineChange = useCallback((line: string | null) => {
         setActiveLine(prev => prev === line ? null : (line || null));
@@ -357,6 +361,7 @@ export default function Home() {
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                     showAllRouteBubbles={showAllRouteBubbles}
                     onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
+                    buses={buses}
                 />
             </div>
 

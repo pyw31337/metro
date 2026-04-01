@@ -214,14 +214,18 @@ export class DataIngestionService {
             this.updateTask('transfers', { progress: 50 }, callback);
             const items = json.data || [];
 
-            const mappedTransfers: TransferInfo[] = items.map((item: any) => ({
-                stationName: item.STIN_NM,
-                fromLine: normalizeLineName(item.LN_NM),
-                toLine: normalizeLineName(item.CHTN_LN_CD),
-                platform: `${item.CAR_ORDR}-${item.CAR_ETRC_NO}`, // 1-1 형식
-                fastCar: String(item.CAR_ORDR),
-                fastDoor: String(item.CAR_ETRC_NO)
-            }));
+            const mappedTransfers: TransferInfo[] = items.map((item: any) => {
+                const car = item.CAR_ORDR || item['차량번호'] || item['CAR_NO'];
+                const door = item.CAR_ETRC_NO || item['문번호'] || item['ED_NO'] || item['CAR_ETRC_NM'];
+                return {
+                    stationName: item.STIN_NM || item['역명'] || item['STN_NM'],
+                    fromLine: normalizeLineName(item.LN_NM || item['호선'] || item['LINE_NM']),
+                    toLine: normalizeLineName(item.CHTN_LN_CD || item['환승호선'] || item['TRNSIT_LN_NM']),
+                    platform: `${car}-${door}`,
+                    fastCar: car ? String(car) : undefined,
+                    fastDoor: door ? String(door) : undefined
+                };
+            });
 
             await db.transfers.bulkPut(mappedTransfers);
             this.updateTask('transfers', { status: 'completed', progress: 100 }, callback);

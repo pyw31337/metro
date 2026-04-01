@@ -204,13 +204,19 @@ function dijkstra(
     return null;
 }
 
+let cachedGraph: Map<string, GraphNode> | null = null;
+
 self.onmessage = async (e: MessageEvent) => {
     const { type, payload } = e.data;
 
     switch (type) {
         case "FIND_PATH": {
             const { points } = payload;
-            const graph = buildGraph();
+            if (!cachedGraph) {
+                console.log('🏗️ Building subway graph specifically for pathfinding...');
+                cachedGraph = buildGraph();
+            }
+            const graph = cachedGraph;
             const strategies: PathStrategy[] = ["time", "transfer"];
             const results: Record<string, any> = {};
 

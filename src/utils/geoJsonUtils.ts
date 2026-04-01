@@ -107,6 +107,20 @@ export const convertTrainsToGeoJSON = (trains: any[]): GeoJsonFeatureCollection 
   };
 };
 
+export const convertBusPositionsToGeoJSON = (buses: any[]): GeoJsonFeatureCollection => {
+  return {
+    type: "FeatureCollection" as const,
+    features: buses.map(b => ({
+      type: "Feature" as const,
+      geometry: { type: "Point" as const, coordinates: [b.lng, b.lat] },
+      properties: {
+        ...b,
+        type: "bus_realtime"
+      }
+    }))
+  };
+};
+
 export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: number = Date.now()): { 
     lines: GeoJsonFeatureCollection, 
     stations: GeoJsonFeatureCollection 

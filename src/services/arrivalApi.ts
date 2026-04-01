@@ -50,9 +50,11 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (!isHttps) {
         try {
-            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(3000) });
-            return await res.json();
-        } catch (e) {}
+            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(5000) });
+            if (res.ok) return await res.json();
+        } catch (e) {
+            console.warn(`Direct fetch failed for ${targetUrl}, trying proxies...`);
+        }
     }
 
     const proxies = [
@@ -61,22 +63,18 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         `https://thingproxy.freeboard.io/fetch/${targetUrl}`
     ];
 
-    try {
-        const res = await Promise.any(
-            proxies.map(async (proxy) => {
-                const response = await fetch(proxy, { signal: AbortSignal.timeout(4000) });
-                if (!response.ok) throw new Error("Proxy response not ok");
-                const json = await response.json();
-                if (json?.RESULT?.CODE?.includes("ERROR-500")) {
-                     throw new Error("Target API 500 Error");
-                }
-                return json;
-            })
-        );
-        return res;
-    } catch (err) {
-        throw new Error("All proxies failed");
+    for (const proxy of proxies) {
+        try {
+            const res = await fetch(proxy, { signal: AbortSignal.timeout(6000) });
+            if (res.ok) {
+                const json = await res.json();
+                if (!json?.RESULT?.CODE?.includes("ERROR-500")) return json;
+            }
+        } catch (e) {
+            console.warn(`Proxy ${proxy} failed for ${targetUrl}`);
+        }
     }
+    throw new Error(`All fetch attempts failed for ${targetUrl}`);
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {

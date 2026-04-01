@@ -106,6 +106,7 @@ export default function UnifiedBottomPanel({
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [stationFacilities, setStationFacilities] = useState<Facility[]>([]);
+    const [hasDiapers, setHasDiapers] = useState(false);
     const { tasks, isIngesting } = useIngestion();
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
@@ -142,8 +143,18 @@ export default function UnifiedBottomPanel({
         if (selectedStationName) {
             const cleanName = selectedStationName.replace(/역$/, '');
             db.getStationFacilities(cleanName).then(setStationFacilities);
+            
+            // Try matching station name in WC table with flexibility
+            db.wc.where('station').startsWith(cleanName).first().then(wc => {
+                if (wc) setHasDiapers(!!wc.diapers);
+                else {
+                    // Try another variant if direct query fails
+                    db.wc.filter(x => x.name.includes(cleanName)).first().then(w => setHasDiapers(!!w?.diapers));
+                }
+            });
         } else {
             setStationFacilities([]);
+            setHasDiapers(false);
         }
     }, [selectedStationName]);
 
@@ -398,7 +409,7 @@ export default function UnifiedBottomPanel({
                                             <div className="flex gap-1.5 items-center">
                                                 {stationFacilities.some(f => f.category === 'elevator') && <div className="p-1 rounded-lg bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20" title="엘리베이터"><Accessibility size={14} strokeWidth={3} /></div>}
                                                 {stationFacilities.some(f => f.category === 'lift') && <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20" title="휠체어 리프트"><Accessibility size={14} strokeWidth={3} /></div>}
-                                                <div className="p-1 rounded-lg bg-zinc-500/10 text-zinc-500 ring-1 ring-zinc-500/20 opacity-40"><Baby size={14} /></div>
+                                                <div className={`p-1 rounded-lg bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20 ${!hasDiapers ? 'opacity-20 grayscale' : 'animate-pulse'}`} title="기저귀 교환대/수유실"><Baby size={14} /></div>
                                             </div>
                                         </div>
                                         <button onClick={() => { onSelectStation?.(null); onActiveLineChange(null); }} className="p-1 text-zinc-400"><X size={14} /></button>

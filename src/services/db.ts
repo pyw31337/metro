@@ -96,8 +96,12 @@ export class MetroDatabase extends Dexie {
         // Orchestrate full public data refresh if facilities or parking are empty
         const facilityCount = await this.facilities.count();
         if (facilityCount === 0) {
-            console.log('📡 Triggering first-run public data ingestion...');
-            DataIngestionService.refreshStaticData();
+            console.log('📡 Triggering first-run public data ingestion (staggered)...');
+            setTimeout(() => {
+                DataIngestionService.refreshStaticData().catch(err => {
+                    console.warn('Background ingestion failed:', err);
+                });
+            }, 2000);
         }
     }
   }

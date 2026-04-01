@@ -15,6 +15,7 @@ import {
 import MapBase from "./map/MapBase";
 import SubwayLayers from "./map/SubwayLayers";
 import BusLayers from "./map/BusLayers";
+import BusRealtimeLayers from "./map/BusRealtimeLayers";
 import TrainLayers from "./map/TrainLayers";
 import WCLayers from "./map/WCLayers";
 import RouteLayers from "./map/RouteLayers";
@@ -52,6 +53,7 @@ interface MapLibreProps {
     stations: any[];
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
+    buses: any[];
 }
 
 // ─── Canvas Polyfill ───────────────────────────────────────────────────────────
@@ -154,7 +156,8 @@ function MapLibreBackground(props: MapLibreProps) {
         onStationClick, onBusStopClick, onMapReady,
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
         onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
-        showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange
+        showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
+        buses
     } = props;
 
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
@@ -171,6 +174,7 @@ function MapLibreBackground(props: MapLibreProps) {
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
     const trainData = useMemo(() => convertTrainsToGeoJSON(trains), [trains]);
     const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult), [pathResult]);
+    const busRealtimeData = useMemo(() => convertBusPositionsToGeoJSON(buses), [buses]);
 
     // ─── Train Logic ────────────────────────────────────────────────────────────
     const handleTrainClick = async (train: any) => {
@@ -251,6 +255,7 @@ function MapLibreBackground(props: MapLibreProps) {
             />
             
             <BusLayers busData={busGeoJSON} activeTab={activeTab} isDarkMode={isDarkMode} />
+            <BusRealtimeLayers busData={busRealtimeData} activeTab={activeTab} />
             
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
             
