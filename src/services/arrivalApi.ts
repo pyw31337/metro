@@ -1,7 +1,7 @@
 import { StationArrival, TimetableEntry } from '@/types/metro';
 import { db } from './db';
 import { DataIngestionService } from './dataIngestion';
-import { getStaticTimetable } from '@/data/static-timetables';
+import { getStaticTimetable, getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
 import { normalizeLineName } from '@/utils/stationUtils';
@@ -146,84 +146,8 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         }
 
         if (allArrivals.length === 0) {
-            const now = new Date();
-            const dayTypeStr = now.getDay() === 0 ? 'sun' : now.getDay() === 6 ? 'sat' : 'week';
-            const station = await db.getStationByName(stationName);
-
-            if (station && station.lineNum) {
-                let stored: TimetableEntry[] = [];
-                if (station.stationCd) {
-                    stored = await db.getStoredTimetable(stationName, station.lineNum, dayTypeStr);
-                }
-                
-                if (stored.length === 0) {
-                    stored = getStaticTimetable(stationName, station.lineNum, dayTypeStr);
-                }
-
-                if (stored.length > 0) {
-                    const hourStr = now.getHours().toString().padStart(2, '0');
-                    const minStr = now.getMinutes().toString().padStart(2, '0');
-                    const currentTime = `${hourStr}:${minStr}:00`;
-
-                    const upcoming = stored
-                        .filter(e => e.departureTime > currentTime)
-                        .sort((a, b) => a.departureTime.localeCompare(b.departureTime))
-                        .slice(0, 4);
-
-                    upcoming.forEach(e => {
-                        const [h, m] = e.departureTime.split(':').map(Number);
-                        const waitMin = (h * 60 + m) - (now.getHours() * 60 + now.getMinutes());
-                        const lineNumOnly = station.lineNum?.replace(/[^0-9]/g, '') || "0";
-                        const lineName = station.lines[0] || (lineNumOnly !== "0" ? `${lineNumOnly}호선` : "지하철");
-
-                        allArrivals.push({
-                            lineName: lineName,
-                            subwayId: LINE_ID_MAP[lineNumOnly] || "9999",
-                            updnLine: e.direction === 'up' ? '상행' : '하행',
-                            trainLineNm: `${e.destStation || e.destination}행`,
-                            statnNm: stationName,
-                            arvlMsg2: `${waitMin}분 후 (${e.departureTime.substring(0,5)})`,
-                            arvlMsg3: stationName,
-                            arvlCd: "99",
-                            isScheduled: true,
-                            barvlDt: (waitMin * 60).toString(),
-                            btrainNo: "SCH-" + e.trainNo
-                        });
-                    });
-                } else if (station.stationCd) {
-                    DataIngestionService.ingestTimetables(stationName, station.lineNum, station.stationCd);
-                }
-            }
-
-            if (allArrivals.length === 0 && station) {
-                const hour = now.getHours();
-                const minutes = now.getMinutes();
-                if ((hour > 5 || (hour === 5 && minutes >= 30)) && (hour < 24 || (hour === 0 && minutes <= 30))) {
-                    const lineNumOnly = (station?.lineNum || "").replace(/[^0-9]/g, '');
-                    const lineName = station?.lines[0] || (lineNumOnly ? `${lineNumOnly}호선` : "지하철");
-                    const subwayId = LINE_ID_MAP[lineNumOnly] || "9999";
-
-                    ["상행", "하행"].forEach(dir => {
-                        [1, 2].forEach(i => {
-                            const isPeak = (hour >= 7 && hour <= 9) || (hour >= 17 && hour <= 20);
-                            const waitMin = i * (isPeak ? 4 : 8); 
-                            allArrivals.push({
-                                lineName: lineName,
-                                subwayId: subwayId,
-                                updnLine: dir,
-                                trainLineNm: `${dir} 전동차`,
-                                statnNm: stationName,
-                                arvlMsg2: `${Math.max(1, waitMin)}분 후 (예정)`,
-                                arvlMsg3: stationName,
-                                arvlCd: "99",
-                                isScheduled: true,
-                                barvlDt: (waitMin * 60).toString(),
-                                btrainNo: "9999"
-                            });
-                        });
-                    });
-                }
-            }
+            console.log(`No real-time data for ${cleanName}, falling back to static...`);
+            allArrivals = getEstimatedArrivalsFromStatic(cleanName);
         }
 
         const upArrivals: StationArrival[] = [];

@@ -118,24 +118,16 @@ const MapPopups = ({
             <div className="p-4 min-w-[240px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)]">
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
                     <div className="flex items-center gap-2 overflow-hidden">
-                        <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[140px]">
+                        <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[170px]">
                             {selectedStationName || selectedBusStop?.name}
                         </h3>
-                        <button 
-                            onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
-                            className="p-1 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
-                        >
-                            <X size={14} />
-                        </button>
                     </div>
-                    {activeTab === 'subway' && (
-                        <div className="flex items-center gap-1">
-                            <div className={`w-1.5 h-1.5 rounded-full ${stationArrivals?.some(a => a.isScheduled) ? 'bg-zinc-400' : 'bg-emerald-500 animate-pulse'}`} />
-                            <span className={`text-[10px] font-black uppercase tracking-tighter ${stationArrivals?.some(a => a.isScheduled) ? 'text-zinc-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                {stationArrivals?.some(a => a.isScheduled) ? 'Scheduled' : 'Real-time'}
-                            </span>
-                        </div>
-                    )}
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
+                        className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
+                    >
+                        <X size={16} />
+                    </button>
                 </div>
 
                 {activeTab === 'subway' && badges.length > 0 && (

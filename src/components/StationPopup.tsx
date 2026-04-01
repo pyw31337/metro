@@ -58,13 +58,13 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200">
-                                            {a.direction}
+                                            {a.trainLineNm}
                                         </span>
                                         <span className="text-[11px] text-zinc-500 font-medium">실시간 도착 정보</span>
                                     </div>
                                 </div>
-                                <span className={`text-[13px] font-black ${a.arrivalMsg.includes('전') ? 'text-rose-500 animate-pulse' : 'text-zinc-800 dark:text-white'}`}>
-                                    {a.arrivalMsg}
+                                <span className={`text-[13px] font-black ${a.arvlMsg2.includes('전') ? 'text-rose-500 animate-pulse' : 'text-zinc-800 dark:text-white'}`}>
+                                    {a.arvlMsg2}
                                 </span>
                             </div>
                         ))}
