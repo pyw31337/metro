@@ -45,6 +45,7 @@ interface MapLibreProps {
     selectedStationName: string | null;
     stationArrivals: any[];
     onCenterChange?: (lat: number, lng: number) => void;
+    onBoundsChange?: (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => void;
     onMapReady?: (map: any) => void;
     userLocation: [number, number] | null;
     timeDisplayMode: "duration" | "arrival";
@@ -156,7 +157,7 @@ function MapLibreBackground(props: MapLibreProps) {
         pathResult, startStation, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
         onStationClick, onBusStopClick, onMapReady,
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-        onCenterChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
+        onCenterChange, onBoundsChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
         buses
     } = props;
@@ -240,6 +241,7 @@ function MapLibreBackground(props: MapLibreProps) {
             onMapReady={onMapReady}
             onClick={handleMapClick}
             onCenterChange={onCenterChange}
+            onBoundsChange={onBoundsChange}
             interactiveLayerIds={[
                 'subway-station-circle', 'subway-station-label', 
                 'subway-line-layer', 'subway-line-interaction', 'bus-unclustered', 

@@ -14,6 +14,8 @@ import { normalizeStationName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
 import { useArrivalInfo } from "@/hooks/useArrivalInfo";
 import { useBusPositions } from "@/hooks/useBusPositions";
+import { DataIngestionService } from "@/services/dataIngestion";
+import { getCityCodeByCoords } from "@/utils/regionUtils";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
@@ -327,6 +329,32 @@ export default function Home() {
         }
     };
 
+    const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
+        if (activeTab !== "bus" && activeTab !== "subway+bus") return;
+
+        // 1. Query local DB for existing stops in this box
+        const existingStops = await db.busStops
+            .where('lat').between(bounds.minLat, bounds.maxLat)
+            .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
+            .limit(1)
+            .count();
+
+        // 2. If NO stops found, try to discover region and fetch
+        if (existingStops === 0) {
+            const centerLat = (bounds.minLat + bounds.maxLat) / 2;
+            const centerLng = (bounds.minLng + bounds.maxLng) / 2;
+            const cityCode = getCityCodeByCoords(centerLat, centerLng);
+            
+            if (cityCode) {
+                console.log(`🌍 New region discovered: ${cityCode}. Fetching stops...`);
+                await DataIngestionService.fetchRegionalBusStops(cityCode);
+                // Refresh local state
+                const allBusStops = await db.busStops.toArray() as BusStop[];
+                setBusStops(allBusStops);
+            }
+        }
+    }, [activeTab]);
+
     return (
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
             <div className="absolute inset-0 z-10">
@@ -352,6 +380,7 @@ export default function Home() {
                     onSetEnd={setEndStation}
                     onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
                     onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
+                    onBoundsChange={handleBoundsChange}
                     stations={stations}
                     activeLine={activeLine}
                     onActiveLineChange={handleActiveLineChange}

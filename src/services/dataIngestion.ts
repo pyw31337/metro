@@ -31,6 +31,7 @@ export class DataIngestionService {
         { id: 'details', label: '역 주소 및 전화번호', progress: 0, status: 'waiting' },
         { id: 'parking', label: '환승 주차장', progress: 0, status: 'waiting' },
         { id: 'metadata', label: '역 코드 메타데이터', progress: 0, status: 'waiting' },
+        { id: 'bus_expansion', label: '버스 노선도 확장(서울/경기/강원/충청)', progress: 0, status: 'waiting' },
     ];
 
     private static updateTask(id: string, updates: Partial<IngestionTask>, callback?: ProgressCallback) {
@@ -64,6 +65,7 @@ export class DataIngestionService {
             await this.ingestDetailedStationInfo(onProgress);
             await this.ingestParkingLots(onProgress);
             await this.ingestStationMetadata(onProgress);
+            await this.ingestMajorBusHubs(onProgress);
 
             console.log('✅ All data refreshed.');
         } catch (err) {
@@ -431,6 +433,78 @@ export class DataIngestionService {
             if (callback) this.updateTask('transfers', { status: 'completed', progress: 100 }, callback);
         } catch (err) {
             if (callback) this.updateTask('transfers', { status: 'failed', error: String(err) }, callback);
+        }
+    }
+
+    /**
+     * 8. Ingest Major Bus Hubs (Stops within 500m of subway exits)
+     * For all capital and regional subway stations.
+     */
+    static async ingestMajorBusHubs(callback?: ProgressCallback) {
+        this.updateTask('bus_expansion', { status: 'running', progress: 5 }, callback);
+        const stations = await db.stations.toArray();
+        const total = stations.length;
+        let processed = 0;
+
+        console.log(`🚌 Finding bus hubs for ${total} subway stations...`);
+
+        // Use a pool or limit concurrency to avoid API rate limits
+        for (const station of stations) {
+            try {
+                // TAGO getBusSttnListByPosInqire API
+                const url = `http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getBusSttnListByPosInqire?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&gpsLati=${station.lat}&gpsLong=${station.lng}`;
+                
+                const res = await fetch(url);
+                const json = await res.json();
+                const items = json.response?.body?.items?.item;
+                
+                if (items) {
+                    const busStops = (Array.isArray(items) ? items : [items]).map((item: any) => ({
+                        id: String(item.nodeid),
+                        name: item.nodenm,
+                        lat: parseFloat(item.gpslati),
+                        lng: parseFloat(item.gpslong),
+                        region: '수도권/광역',
+                        routes: [], // To be populated on request
+                        cityCode: String(item.citycode || '')
+                    }));
+                    await db.busStops.bulkPut(busStops);
+                }
+            } catch (err) {
+                // Ignore individual failures
+            }
+            processed++;
+            if (processed % 10 === 0 || processed === total) {
+                this.updateTask('bus_expansion', { progress: 5 + (processed / total) * 95 }, callback);
+            }
+        }
+        this.updateTask('bus_expansion', { status: 'completed', progress: 100 }, callback);
+        console.log('✅ Major bus hubs ingested.');
+    }
+
+    /**
+     * Fetch all bus stops for a specific city on-demand.
+     */
+    static async fetchRegionalBusStops(cityCode: string, callback?: ProgressCallback) {
+        const url = `http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&cityCode=${cityCode}&pageNo=1&numOfRows=10000`;
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+            const items = json.response?.body?.items?.item || [];
+            
+            const busStops = items.map((item: any) => ({
+                id: String(item.nodeid),
+                name: item.nodenm,
+                lat: parseFloat(item.gpslati),
+                lng: parseFloat(item.gpslong),
+                region: '광역',
+                routes: [],
+                cityCode: cityCode
+            }));
+            await db.busStops.bulkPut(busStops);
+            console.log(`📍 Ingested ${busStops.length} bus stops for city ${cityCode}.`);
+        } catch (err) {
+            console.warn(`Failed to ingest bus stops for city ${cityCode}:`, err);
         }
     }
 

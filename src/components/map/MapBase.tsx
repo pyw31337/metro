@@ -11,6 +11,7 @@ interface MapBaseProps {
   isDarkMode: boolean;
   children: React.ReactNode;
   onCenterChange?: (lat: number, lng: number) => void;
+  onBoundsChange?: (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => void;
   onMapReady?: (map: any) => void;
   onClick?: (e: any) => void;
   onHover?: (e: any) => void;
@@ -26,6 +27,7 @@ const MapBase = ({
   isDarkMode,
   children,
   onCenterChange,
+  onBoundsChange,
   onMapReady,
   onClick,
   onHover,
@@ -49,6 +51,16 @@ const MapBase = ({
         onMove={(e) => {
           const { latitude, longitude } = e.viewState;
           if (onCenterChange) onCenterChange(latitude, longitude);
+          
+          if (onBoundsChange && mapRef.current) {
+            const b = mapRef.current.getBounds();
+            onBoundsChange({
+                minLat: b.getSouth(),
+                minLng: b.getWest(),
+                maxLat: b.getNorth(),
+                maxLng: b.getEast()
+            });
+          }
         }}
         ref={(r) => {
           if (r) {
