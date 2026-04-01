@@ -8,6 +8,36 @@ import { TimetableEntry } from '@/types/metro';
  * This ensures "No Information" (정보 없음) is never shown for these stations.
  */
 export const STATIC_TIMETABLE_REGISTRY: Record<string, TimetableEntry[]> = {
+    "독립문": [
+        ...generatePattern("독립문", "3호선", "up", "대화", "05:35", "23:58", 7),
+        ...generatePattern("독립문", "3호선", "down", "오금", "05:42", "24:05", 7),
+    ],
+    "강남": [
+        ...generatePattern("강남", "2호선", "inner", "내선순환", "05:30", "24:10", 3),
+        ...generatePattern("강남", "2호선", "outer", "외선순환", "05:35", "24:15", 3),
+        ...generatePattern("강남", "신분당선", "up", "광교", "05:30", "24:00", 5),
+    ],
+    "서울역": [
+        ...generatePattern("서울역", "1호선", "up", "소요산", "05:10", "23:50", 5),
+        ...generatePattern("서울역", "1호선", "down", "인천/서동탄", "05:15", "24:05", 5),
+        ...generatePattern("서울역", "4호선", "up", "진접", "05:30", "23:55", 6),
+        ...generatePattern("서울역", "4호선", "down", "오이도", "05:40", "24:10", 6),
+    ],
+    "홍대입구": [
+        ...generatePattern("홍대입구", "2호선", "inner", "내선순환", "05:30", "24:10", 4),
+        ...generatePattern("홍대입구", "2호선", "outer", "외선순환", "05:35", "24:15", 4),
+    ],
+    "잠실": [
+        ...generatePattern("잠실", "2호선", "inner", "내선순환", "05:30", "24:10", 3),
+        ...generatePattern("잠실", "2호선", "outer", "외선순환", "05:35", "24:15", 3),
+        ...generatePattern("잠실", "8호선", "up", "암사", "05:40", "24:10", 6),
+        ...generatePattern("잠실", "8호선", "down", "모란", "05:45", "24:15", 6),
+    ],
+    "신도림": [
+        ...generatePattern("신도림", "1호선", "up", "소요산", "05:00", "24:00", 4),
+        ...generatePattern("신도림", "1호선", "down", "인천/서동탄", "05:05", "24:10", 4),
+        ...generatePattern("신도림", "2호선", "inner", "내선순환", "05:30", "24:15", 3),
+    ],
     "남부터미널": [
         ...generatePattern("남부터미널", "3호선", "up", "대화", "05:42", "23:55", 7),
         ...generatePattern("남부터미널", "3호선", "down", "오금", "05:45", "24:10", 7),

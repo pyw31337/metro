@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { fetchWithCache } from '@/utils/api-client';
-import { getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
+import { fetchStationArrivals } from '@/services/arrivalApi';
 import { StationArrival } from '@/types/metro';
 import { db } from '@/services/db';
 import { DataIngestionService } from '@/services/dataIngestion';
@@ -26,43 +25,16 @@ export function useArrivalInfo(stationName: string | null) {
             return;
         }
 
-        const apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || "53517344677079773531694a786f6a"; // Fallback if env is missing
         const cleanName = stationName.replace(/역+$/, '');
 
         const fetchData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Real-time Arrivals
-                const arrivalUrl = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/0/20/${encodeURIComponent(cleanName)}`;
-                const rawArrivals = await fetchWithCache<any>(arrivalUrl);
-                
-                let processedArrivals: StationArrival[] = [];
-
-                if (rawArrivals?.realtimeStationArrival && rawArrivals.realtimeStationArrival.length > 0) {
-                    processedArrivals = rawArrivals.realtimeStationArrival.map((a: any) => ({
-                        lineName: a.subwayNm || "",
-                        subwayId: a.subwayId || "",
-                        updnLine: a.updnLine || "",
-                        trainLineNm: a.trainLineNm || "",
-                        statnNm: a.statnNm || "",
-                        arvlMsg2: a.arvlMsg2 || "",
-                        arvlMsg3: a.arvlMsg3 || "",
-                        arvlCd: a.arvlCd || "",
-                        barvlDt: a.barvlDt || "0",
-                        btrainNo: a.btrainNo || "",
-                        isScheduled: false
-                    }));
-                }
-
-                // 2. Fallback to Static if no real-time data
-                if (processedArrivals.length === 0) {
-                    console.log(`No real-time data for ${cleanName}, falling back to static...`);
-                    processedArrivals = getEstimatedArrivalsFromStatic(cleanName);
-                }
-
+                // 1. Fetch Arrivals using the robust service
+                const processedArrivals = await fetchStationArrivals(cleanName);
                 setArrivals(processedArrivals);
 
-                // 3. Timetable lookup/fallback
+                // 2. Timetable lookup/fallback
                 try {
                     let stored = await db.getStoredTimetable(cleanName, "기본", "week");
                     
@@ -92,8 +64,6 @@ export function useArrivalInfo(stationName: string | null) {
                 }
             } catch (error) {
                 console.error("Arrival fetch error", error);
-                // Final fallback on error
-                setArrivals(getEstimatedArrivalsFromStatic(cleanName));
             } finally {
                 setLoading(false);
             }

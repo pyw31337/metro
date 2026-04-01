@@ -132,6 +132,9 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     if (cleanName === "서울") variants.unshift("서울역");
     if (cleanName === "남부터미널") variants.push("남부터미널(예술의전당)");
     if (cleanName === "교대") variants.push("교대(법원.검찰청)");
+    if (cleanName === "독립문") variants.push("독립문역"); // Just in case
+    if (cleanName === "쌍용") variants.push("쌍용(나사렛대)");
+    if (cleanName === "신촌" && !stationName.includes("경의중앙선")) variants.push("신촌(지하)");
 
     const uniqueVariants = Array.from(new Set(variants));
     
