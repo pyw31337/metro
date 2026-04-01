@@ -100,6 +100,16 @@ export class MetroDatabase extends Dexie {
       .toArray();
   }
 
+  /**
+   * Station metadata override for critical reliability
+   */
+  private static STATION_METADATA_OVERRIDE: Record<string, any> = {
+    "남부터미널": { stationCd: "0331", lineNum: "03호선", frCode: "341" },
+    "서울": { stationCd: "0150", lineNum: "01호선", frCode: "133" },
+    "교대": { stationCd: "0330", lineNum: "03호선", frCode: "340" },
+    "양재": { stationCd: "0332", lineNum: "03호선", frCode: "342" }
+  };
+
   async getStationFacilities(stationName: string) {
       return await this.facilities
         .where('stationName')
@@ -120,7 +130,19 @@ export class MetroDatabase extends Dexie {
   }
 
   async getStationByName(name: string): Promise<Station | undefined> {
-      return await this.stations.where('name').equals(name).first();
+      const station = await this.stations.where('name').equals(name).first();
+      
+      // Apply hardcoded overrides for 100% reliability on key stations
+      if (station && !station.stationCd && MetroDatabase.STATION_METADATA_OVERRIDE[name]) {
+          const override = MetroDatabase.STATION_METADATA_OVERRIDE[name];
+          station.stationCd = override.stationCd;
+          station.lineNum = override.lineNum;
+          station.frCode = override.frCode;
+          // Asynchronously update DB
+          this.stations.update(station.id!, override).catch(() => {});
+      }
+      
+      return station;
   }
 
   async getTransferInfo(stationName: string, fromLine: string, toLine: string): Promise<TransferInfo | undefined> {

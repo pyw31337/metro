@@ -17,7 +17,7 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
       <Layer
         id="train-layer"
         type="symbol"
-        filter={trainFilter || null}
+        filter={trainFilter || undefined}
         layout={{
           "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
           "icon-size": [

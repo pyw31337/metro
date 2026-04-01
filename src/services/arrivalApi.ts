@@ -1,6 +1,7 @@
 import { StationArrival, TimetableEntry } from '@/types/metro';
 import { db } from './db';
 import { DataIngestionService } from './dataIngestion';
+import { getStaticTimetable } from '@/data/static-timetables';
 import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
 import { normalizeLineName } from '@/utils/stationUtils';
@@ -22,7 +23,7 @@ export interface TrainPosition {
     lastRecptnDt: string;
     updnLine: string;
     directAt: string;
-    trainSttus: string; // 0: Entering, 1: Stopped, 2: Departed ...
+    trainSttus: string; 
     lstnyNm: string;
     arrivalNm: string;
     arvlCd: string;
@@ -36,11 +37,8 @@ export interface SubwayAlert {
 
 export const parseSeoulDate = (dateStr: string): number => {
     if (!dateStr) return Date.now();
-    // Try standard YYYY-MM-DD HH:mm:ss
     const d = new Date(dateStr);
     if (!isNaN(d.getTime())) return d.getTime();
-    
-    // Fallback for YYYYMMDDHHmmss
     const match = dateStr.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
     if (match) {
         return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`).getTime();
@@ -54,12 +52,9 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         try {
             const res = await fetch(targetUrl, { signal: AbortSignal.timeout(3000) });
             return await res.json();
-        } catch (e) {
-            // handle abort
-        }
+        } catch (e) {}
     }
 
-    // Multiple free CORS proxies to ensure high availability on static sites
     const proxies = [
         `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
         `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
@@ -67,14 +62,11 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     ];
 
     try {
-        // Run all proxy requests in parallel and return the first successful JSON response
         const res = await Promise.any(
             proxies.map(async (proxy) => {
                 const response = await fetch(proxy, { signal: AbortSignal.timeout(4000) });
                 if (!response.ok) throw new Error("Proxy response not ok");
                 const json = await response.json();
-                
-                // If it's a wrapped openapi 500 ERROR, throw to try next or fail fast
                 if (json?.RESULT?.CODE?.includes("ERROR-500")) {
                      throw new Error("Target API 500 Error");
                 }
@@ -83,8 +75,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         );
         return res;
     } catch (err) {
-        console.warn("All fetch proxies failed or timed out for", targetUrl);
-        throw new Error("All proxies failed or API returned 500");
+        throw new Error("All proxies failed");
     }
 };
 
@@ -136,14 +127,12 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         }
     };
 
-    // Naming logic: Seoul Open API is flaky about "서울" vs "서울역".
-    // 1. Try exact name (e.g., "서울역")
-    // 2. Try variant (e.g., "서울")
     const cleanName = stationName.replace(/역+$/, '');
     const variants = [stationName, cleanName];
     if (cleanName === "서울") variants.unshift("서울역");
+    if (cleanName === "남부터미널") variants.push("남부터미널(예술의전당)");
+    if (cleanName === "교대") variants.push("교대(법원.검찰청)");
 
-    // Remove duplicates
     const uniqueVariants = Array.from(new Set(variants));
     
     try {
@@ -152,20 +141,25 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             const data = await fetchUniqueArrivals(v);
             if (data.length > 0) {
                 allArrivals = data;
-                break; // Found data, stop retrying
+                break;
             }
         }
 
-        // ─── Timetable Fallback Logic ───────────────────────────────────────────
         if (allArrivals.length === 0) {
             const now = new Date();
             const dayTypeStr = now.getDay() === 0 ? 'sun' : now.getDay() === 6 ? 'sat' : 'week';
             const station = await db.getStationByName(stationName);
 
-            if (station && station.stationCd && station.lineNum) {
-                // Try to get from Local DB first
-                const stored = await db.getStoredTimetable(stationName, station.lineNum, dayTypeStr);
+            if (station && station.lineNum) {
+                let stored: TimetableEntry[] = [];
+                if (station.stationCd) {
+                    stored = await db.getStoredTimetable(stationName, station.lineNum, dayTypeStr);
+                }
                 
+                if (stored.length === 0) {
+                    stored = getStaticTimetable(stationName, station.lineNum, dayTypeStr);
+                }
+
                 if (stored.length > 0) {
                     const hourStr = now.getHours().toString().padStart(2, '0');
                     const minStr = now.getMinutes().toString().padStart(2, '0');
@@ -196,13 +190,11 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                             btrainNo: "SCH-" + e.trainNo
                         });
                     });
-                } else {
-                    // Start background ingest for next time
+                } else if (station.stationCd) {
                     DataIngestionService.ingestTimetables(stationName, station.lineNum, station.stationCd);
                 }
             }
 
-            // Heuristic Fallback as absolute last resort
             if (allArrivals.length === 0 && station) {
                 const hour = now.getHours();
                 const minutes = now.getMinutes();
@@ -221,7 +213,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                                 updnLine: dir,
                                 trainLineNm: `${dir} 전동차`,
                                 statnNm: stationName,
-                                arvlMsg2: `${waitMin}분 후 (예정)`,
+                                arvlMsg2: `${Math.max(1, waitMin)}분 후 (예정)`,
                                 arvlMsg3: stationName,
                                 arvlCd: "99",
                                 isScheduled: true,
@@ -234,7 +226,6 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             }
         }
 
-        // Group by direction and sort
         const upArrivals: StationArrival[] = [];
         const downArrivals: StationArrival[] = [];
 
@@ -254,13 +245,11 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
 
         return [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)];
     } catch (err) {
-        console.error("Failed to fetch station arrivals:", err);
         return [];
     }
 };
 
 export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) => {
-    // Normalize input line name (e.g., '3' -> '3호선', '신분당' -> '신분당선')
     let normalizedNm = subwayNm.trim();
     if (!normalizedNm.endsWith('호선') && !normalizedNm.endsWith('선')) {
         if (!isNaN(Number(normalizedNm))) {
@@ -286,46 +275,31 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
     
     try {
         const json = await fetchWithFallbacks(url);
-        // Handle different status reporting formats from Seoul API and proxies
         const isSuccess = json?.status === 200 || json?.errorMessage?.status === 200 || json?.RESULT?.CODE === "INFO-000";
         if (isSuccess) {
             return json?.realtimeTrainCongestionList?.[0] || null;
         }
         return null;
     } catch (err) {
-        console.warn("Congestion fetching skipped or failed:", err);
         return null;
     }
 };
 
-/**
- * Fetches transfer platform information (Fast Transfer) for a specific station and route.
- * Strategy: Local DB -> Static JSON (via Ingestion) -> API with multiple name variations.
- */
 export const fetchTransferPlatform = async (stationName: string, fromLine: string, toLine: string) => {
     if (!stationName) return null;
-    
-    // 1. Precise Normalization
-    // Strip parentheticals like "대림(구로구청)" -> "대림"
     const cleanStation = stationName.replace(/\(.*\)/, '').replace(/역$/, '').trim();
     const cleanFromLine = normalizeLineName(fromLine);
     const cleanToLine = normalizeLineName(toLine);
 
-    // 2. Check local DB (which now includes expanded static data from ingestion)
     try {
         const stored = await db.getTransferInfo(cleanStation, cleanFromLine, cleanToLine);
         if (stored) return stored.platform;
-        
-        // Try with original station name just in case
         if (stationName !== cleanStation) {
             const storedOrig = await db.getTransferInfo(stationName.replace(/역$/, ''), cleanFromLine, cleanToLine);
             if (storedOrig) return storedOrig.platform;
         }
-    } catch (e) {
-        console.warn("DB check for transfer failed:", e);
-    }
+    } catch (e) {}
 
-    // 2.5 Quick check against static import (as immediate backup)
     const staticStation = (transferData as any[]).find(s => 
         s.stationName === cleanStation || s.stationName === stationName.replace(/역$/, '')
     );
@@ -336,7 +310,6 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         if (staticMatch) return staticMatch.platform;
     }
 
-    // 3. Fallback to API with retry and variations
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
     
@@ -345,17 +318,14 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         try {
             const json = await fetchWithFallbacks(url);
             const list = json?.CardSubwayTransferPos?.row || [];
-            
             const match = list.find((item: any) => {
                 const apiFrom = normalizeLineName(item.LINE_NUM);
                 const apiTo = normalizeLineName(item.TRNSIT_LINE_NM);
                 return (apiFrom === cleanFromLine && apiTo === cleanToLine);
             });
-            
             if (match) {
                 const platform = match.TRNSIT_POS || match.PLATFORM_INFO || match.TRNSIT_PLATFORM_NO;
                 if (platform) {
-                    // Save to DB for future use
                     db.saveTransferInfo({
                         stationName: cleanStation,
                         fromLine: cleanFromLine,
@@ -371,28 +341,19 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         return null;
     };
 
-    // Attempt 1: Bare name (Most common in API)
     let result = await tryFetch(cleanStation);
     if (result) return result;
-
-    // Attempt 2: Full name if it had parentheticals
     if (stationName !== cleanStation) {
         result = await tryFetch(stationName.replace(/역$/, ''));
         if (result) return result;
     }
-
     return null;
 };
 
-/**
- * Fetch real-time train positions for a specific line
- */
 export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
-
     const url = API_ENDPOINTS.SUBWAY_POSITION(apiKey, lineName);
-    
     try {
         const json = await fetchWithFallbacks(url);
         return (json?.realtimeSubwayPositionList || []).map((item: any) => ({
@@ -410,18 +371,13 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
             arvlCd: item.arvlCd
         }));
     } catch (err) {
-        console.error("Failed to fetch train positions:", err);
         return [];
     }
 };
 
-/**
- * Fetch subway system alerts (delays, maintenance, etc.)
- */
 export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
     const url = API_ENDPOINTS.SUBWAY_ALERTS(apiKey);
-
     try {
         const json = await fetchWithFallbacks(url);
         return (json?.CardSubwayAlertInfo?.row || []).map((item: any) => ({
@@ -430,7 +386,6 @@ export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {
             date: item.REG_DATE
         }));
     } catch (err) {
-        console.warn("Failed to fetch subway alerts:", err);
         return [];
     }
 };

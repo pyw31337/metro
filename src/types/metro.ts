@@ -96,6 +96,9 @@ export interface PathResult {
     weights: number[]; 
     transferCount: number;
     strategy: "time" | "transfer";
+    fare: number;
+    transfers: any[];
+    linePath?: string[];
 }
 
 export interface WCFilters {

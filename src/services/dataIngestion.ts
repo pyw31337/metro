@@ -134,7 +134,13 @@ export class DataIngestionService {
             const items = json.SearchSTNBySubwayLineService?.row || [];
 
             for (const item of items) {
-                const existing = await db.getStationByName(item.STATION_NM);
+                // Try exact match then fuzzy (strip parentheses)
+                let existing = await db.getStationByName(item.STATION_NM);
+                if (!existing) {
+                    const cleanName = item.STATION_NM.replace(/\(.*\)/, '').replace(/역$/, '').trim();
+                    existing = await db.getStationByName(cleanName);
+                }
+
                 if (existing) {
                     await db.stations.update(existing.id!, {
                         stationCd: item.STATION_CD,

@@ -279,20 +279,81 @@ export default function UnifiedBottomPanel({
 
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
                     {activeTab === "subway" && pathResults && pathResults.time && pathResults.transfer && (
-                        <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 mb-0.5 border border-black/5 dark:border-white/5">
-                            <button onClick={() => { if (selectedStrategy === "time") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("time"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
-                                <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
-                                <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                            </button>
-                            <button onClick={() => { if (selectedStrategy === "transfer") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("transfer"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
-                                <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
-                                <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                            </button>
-                            <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
-                            <button onClick={onToggleShowAll} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${showAllRouteBubbles ? "bg-zinc-800 dark:bg-white text-white dark:text-black shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
-                                <span className={`text-[10px] font-black uppercase tracking-tight ${showAllRouteBubbles ? "opacity-80" : "opacity-60"}`}>{showAllRouteBubbles ? "상세 닫기" : "상세 경로"}</span>
-                                <Navigation size={12} className={showAllRouteBubbles ? "animate-pulse" : ""} />
-                            </button>
+                        <div className="flex flex-col gap-2 mb-2">
+                            <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 border border-black/5 dark:border-white/5">
+                                <button onClick={() => { if (selectedStrategy === "time") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("time"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
+                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                </button>
+                                <button onClick={() => { if (selectedStrategy === "transfer") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("transfer"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
+                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                </button>
+                                <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+                                <button onClick={onToggleShowAll} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${showAllRouteBubbles ? "bg-zinc-800 dark:bg-white text-white dark:text-black shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
+                                    <span className={`text-[10px] font-black uppercase tracking-tight ${showAllRouteBubbles ? "opacity-80" : "opacity-60"}`}>{showAllRouteBubbles ? "축소" : "상세"}</span>
+                                    <Navigation size={12} className={showAllRouteBubbles ? "animate-pulse" : ""} />
+                                </button>
+                            </div>
+
+                            {/* Premium Route Timeline */}
+                            {showAllRouteBubbles && activePath && (
+                                <motion.div 
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: "auto", opacity: 1 }}
+                                    className="bg-zinc-50 dark:bg-black/10 rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden"
+                                >
+                                    <div className="max-h-[240px] overflow-y-auto no-scrollbar p-4 flex flex-col">
+                                        {activePath.path.map((stationName, idx) => {
+                                            const isStart = idx === 0;
+                                            const isEnd = idx === activePath.path.length - 1;
+                                            const weight = activePath.weights[idx];
+                                            const arrivalTime = new Date(Date.now() + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                            const transfer = activePath.transfers.find(t => t.stationName === stationName);
+                                            
+                                            return (
+                                                <div key={idx} className="flex gap-4">
+                                                    {/* Timeline Bar */}
+                                                    <div className="flex flex-col items-center w-4 relative">
+                                                        {!isEnd && (
+                                                            <div className={`absolute top-2 bottom-0 w-[3px] rounded-full ${transfer ? 'bg-zinc-300 dark:bg-zinc-700' : 'bg-blue-500/30'}`} />
+                                                        )}
+                                                        <div className={`z-10 w-[10px] h-[10px] rounded-full border-2 bg-white dark:bg-zinc-900 mt-1.5 ${isStart || isEnd ? 'border-blue-500 h-[12px] w-[12px] ring-2 ring-blue-500/20' : 'border-zinc-400'}`} />
+                                                    </div>
+
+                                                    {/* Station Info */}
+                                                    <div className={`flex-1 flex items-center justify-between pb-4 ${!isEnd ? 'border-b border-black/[0.03] dark:border-white/[0.03]' : ''}`}>
+                                                        <div className="flex flex-col">
+                                                            <div className="flex items-center gap-2">
+                                                                <span className={`text-[13px] font-bold ${isStart || isEnd ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}>
+                                                                    {stationName}
+                                                                </span>
+                                                                {transfer && (
+                                                                    <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
+                                                                        <span className="text-[9px] font-black text-blue-500">환승</span>
+                                                                        <span className="text-[9px] font-black text-blue-600 truncate max-w-[40px]">{getLineShortName(transfer.toLine)}</span>
+                                                                        {transfer.fastTransfer && (
+                                                                            <span className="text-[8px] bg-yellow-400 text-black px-1 rounded-sm font-black ml-0.5">빠른 {transfer.fastTransfer}</span>
+                                                                        )}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <span className="text-[11px] font-black text-zinc-400 font-mono tracking-tight">
+                                                            {isStart ? '출발' : arrivalTime}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                        {/* Fare Information */}
+                                        <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-zinc-500 dark:text-zinc-400 font-bold">
+                                            <span className="text-[11px]">성인 교통카드 기준</span>
+                                            <span className="text-[13px] text-zinc-900 dark:text-white font-black">{activePath.fare?.toLocaleString()}원</span>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            )}
                         </div>
                     )}
 
@@ -354,20 +415,35 @@ export default function UnifiedBottomPanel({
                                         .filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')) || arr.subwayId === "9999")
                                         .slice(0, 4)
                                         .map((arr, idx) => (
-                                        <div key={idx} className="bg-white/50 dark:bg-black/20 p-2.5 rounded-xl flex flex-col border border-black/5 dark:border-white/5">
+                                        <div key={idx} className={`p-2.5 rounded-xl flex flex-col border ${arr.isScheduled ? 'bg-zinc-50 dark:bg-black/10 border-black/5 dark:border-white/5' : 'bg-white dark:bg-black/30 border-rose-500/10 dark:border-rose-500/20'}`}>
                                             <div className="flex items-center gap-1 mb-1">
                                                 {getLineBadge(arr.lineName)}
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">{arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선') ? '상행' : '하행'}</span>
-                                                {arr.isScheduled && <span className="text-[8px] px-1 py-0.5 rounded bg-black/5 dark:bg-white/5 text-zinc-500 font-black ml-auto">예정</span>}
+                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">
+                                                    {arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선') ? '상행' : '하행'}
+                                                </span>
+                                                {arr.isScheduled && (
+                                                    <span className="text-[8px] px-1 py-0.5 rounded-md bg-zinc-200 dark:bg-white/10 text-zinc-500 font-black ml-auto ring-1 ring-black/5">예정</span>
+                                                )}
                                             </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[11px] font-bold truncate max-w-[80px]">{arr.trainLineNm.split(' - ')[0]}</span>
-                                                <span className={`text-[11px] font-black ${arr.isScheduled ? 'text-zinc-500' : 'text-rose-500'}`}>{arr.arvlMsg2}</span>
+                                                <span className={`text-[11px] font-black ${arr.isScheduled ? 'text-zinc-500' : 'text-rose-500'}`}>
+                                                    {arr.arvlMsg2}
+                                                </span>
                                             </div>
                                         </div>
                                     ))}
-                                    {((stationArrivals || []).filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')) || arr.subwayId === "9999").length === 0) && (
-                                        <div className="col-span-2 py-4 text-center text-zinc-400 text-[11px] font-bold">운행 정보가 없습니다.</div>
+                                    {(!stationArrivals) && (
+                                        <div className="col-span-2 py-6 flex flex-col items-center justify-center gap-2">
+                                            <div className="w-4 h-4 border-2 border-zinc-200 border-t-zinc-400 rounded-full animate-spin" />
+                                            <span className="text-zinc-400 text-[10px] font-bold">정보를 불러오는 중입니다...</span>
+                                        </div>
+                                    )}
+                                    {(stationArrivals && stationArrivals.filter(arr => !activeLine || arr.lineName.includes(activeLine)).length === 0) && (
+                                        <div className="col-span-2 py-4 text-center bg-zinc-100/50 dark:bg-black/20 rounded-xl border border-dashed border-black/5 dark:border-white/5">
+                                            <p className="text-zinc-500 text-[11px] font-bold">현재 운행 정보가 없습니다.</p>
+                                            <p className="text-zinc-400 text-[9px] mt-1 italic">실시간 및 시간표 데이터를 찾을 수 없습니다.</p>
+                                        </div>
                                     )}
                                 </div>
                                 
@@ -398,22 +474,11 @@ export default function UnifiedBottomPanel({
                             {(externalValidationError || validationError) && (
                                 <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto">
-                                        <span className="text-zinc-600 dark:text-zinc-400">내용을 확인해 주세요: </span>
                                         {(externalValidationError || validationError) === "source" ? 
                                             <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</> : 
                                             (externalValidationError || validationError) === "dest" ? 
                                             <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</> : 
-                                            (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-red-600 font-black">경로를 찾을 수 없습니다</span>
-                                                    <button 
-                                                        onClick={(e) => { e.stopPropagation(); onSearch(source, destination); }}
-                                                        className="px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-700 text-zinc-500 hover:text-blue-500 hover:bg-blue-500/10 transition-all font-black text-[10px]"
-                                                    >
-                                                        (재시도)
-                                                    </button>
-                                                </div>
-                                            )
+                                            <span className="text-red-600 font-black">경로를 찾을 수 없습니다</span>
                                         }
                                     </motion.div>
                                 </div>

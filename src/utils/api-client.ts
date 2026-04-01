@@ -27,6 +27,12 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
             return null;
         }
         
+        const contentType = response.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+            console.warn(`[API Warning] ${url}: Expected JSON but got ${contentType}`);
+            return null;
+        }
+
         const data = await response.json();
         if (!data || Object.keys(data).length === 0) {
             console.warn(`[API Empty Response] ${url}`);

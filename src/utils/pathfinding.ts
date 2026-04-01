@@ -44,12 +44,22 @@ export const buildGraph = (): Map<string, GraphNode> => {
 
 export type PathStrategy = "time" | "transfer";
 
+export interface PathTransfer {
+    stationName: string;
+    fromLine: string;
+    toLine: string;
+    fastTransfer?: string; // e.g., "2-4"
+}
+
 export interface PathResult {
     path: string[]; // List of station names
     totalWeight: number; // Actual time in minutes
     weights: number[]; // Cumulative physical time at each station in the path
     transferCount: number;
     strategy: PathStrategy;
+    fare: number;
+    transfers: PathTransfer[];
+    linePath?: string[]; // Added this line
 }
 
 /**
@@ -89,14 +99,63 @@ export const findPathWithStrategy = (points: string[], strategy: PathStrategy): 
         totalTransferCount += segment.transferCount;
     }
 
+    // Calculate distance-based fare (approx 1.2km per station)
+    const distanceKm = finalPath.length * 1.2;
+    let fare = 1400;
+    if (distanceKm > 10) {
+        const extraDist = Math.min(distanceKm - 10, 40);
+        fare += Math.ceil(extraDist / 5) * 100;
+        if (distanceKm > 50) {
+            fare += Math.ceil((distanceKm - 50) / 8) * 100;
+        }
+    }
+
     return { 
         path: finalPath, 
         totalWeight, 
         weights: finalWeights,
         transferCount: totalTransferCount,
-        strategy
+        strategy,
+        fare,
+        transfers: points.length === 2 ? calculateTransfers(finalPath) : []
     };
 };
+
+function calculateTransfers(path: string[]): PathTransfer[] {
+    const transfers: PathTransfer[] = [];
+    if (path.length < 3) return transfers;
+
+    for (let i = 1; i < path.length - 1; i++) {
+        const station = path[i];
+        const prevStation = path[i-1];
+        const nextStation = path[i+1];
+
+        // Find line for [prev, station] and [station, next]
+        const lineBefore = findLineBetween(prevStation, station);
+        const lineAfter = findLineBetween(station, nextStation);
+
+        if (lineBefore && lineAfter && lineBefore !== lineAfter) {
+            transfers.push({
+                stationName: station,
+                fromLine: lineBefore,
+                toLine: lineAfter,
+                fastTransfer: "2-4" // Placeholder for demonstration
+            });
+        }
+    }
+    return transfers;
+}
+
+function findLineBetween(s1: string, s2: string): string | null {
+    for (const line of SUBWAY_LINES) {
+        const idx1 = line.stations.findIndex(s => s.name === s1);
+        const idx2 = line.stations.findIndex(s => s.name === s2);
+        if (idx1 !== -1 && idx2 !== -1 && Math.abs(idx1 - idx2) === 1) {
+            return line.name;
+        }
+    }
+    return null;
+}
 
 /**
  * Enhanced Dijkstra supporting strategies.
@@ -108,17 +167,17 @@ function dijkstra(
     strategy: PathStrategy
 ): Omit<PathResult, "strategy"> | null {
     // Priority queue uses 'cost' for Dijkstra, but we track 'weight' for actual time
-    const pq: { nodeId: string; cost: number; weight: number; path: string[]; weights: number[]; lastLine: string | null; transfers: number }[] = [];
+    const pq: { nodeId: string; cost: number; weight: number; path: string[]; weights: number[]; lastLine: string | null; transfers: number; linePath: string[] }[] = [];
     const minCosts = new Map<string, number>();
 
-    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], weights: [0], lastLine: null, transfers: 0 });
+    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], weights: [0], lastLine: null, transfers: 0, linePath: [] });
 
     while (pq.length > 0) {
         pq.sort((a, b) => a.cost - b.cost);
         const { nodeId, cost, weight, path, weights: weightPath, lastLine, transfers } = pq.shift()!;
 
         if (nodeId === endName) {
-            return { path, totalWeight: weight, weights: weightPath, transferCount: transfers };
+            return { path, totalWeight: weight, weights: weightPath, transferCount: transfers, fare: 0, transfers: [] };
         }
 
         if (cost > (minCosts.get(nodeId) ?? Infinity)) continue;
@@ -130,17 +189,16 @@ function dijkstra(
         for (const conn of node.connections) {
             const isTransfer = lastLine !== null && lastLine !== conn.lineId;
             
-            let edgeCost = 2.5; // Average 2.5 mins hop (more realistic for Seoul)
-            let edgeWeight = 2.5; // Actual time hop
+            let edgeCost = 2.5;
+            let edgeWeight = 2.5;
 
             if (isTransfer) {
-                // For Dijkstra cost optimization
                 if (strategy === "transfer") {
-                    edgeCost += 1000; // Massively penalize transfers locally
+                    edgeCost += 2000;
                 } else {
-                    edgeCost += 8; // standard time penalty (walking + waiting)
+                    edgeCost += 10;
                 }
-                edgeWeight += 8; // Add 8 mins physical transfer time
+                edgeWeight += 10;
             }
 
             const newCost = cost + edgeCost;
@@ -152,6 +210,7 @@ function dijkstra(
                 weight: newWeight,
                 path: [...path, conn.nodeId],
                 weights: [...weightPath, newWeight],
+                linePath: [...(pq.find(item => item.nodeId === nodeId)?.linePath || []), conn.lineId], // Track lines
                 lastLine: conn.lineId,
                 transfers: transfers + (isTransfer ? 1 : 0)
             });

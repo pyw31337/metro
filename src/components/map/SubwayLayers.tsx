@@ -24,9 +24,14 @@ const SubwayLayers = ({
   const FADED_COLOR = isDarkMode ? "#34495E" : "#BDBDBD";
   const FADED_TEXT = isDarkMode ? "#555555" : "#AAAAAA";
 
-  // Logic: prominent if on the focused line.
-  // We removed the global transfer station protection as it was keeping unrelated stations prominent.
-  const isProminentStation: any = focusedLine 
+  const isStationInPath = pathResult?.path
+    ? ["in", ["get", "name"], ["literal", pathResult.path]]
+    : true;
+
+  // Logic: prominent if on the focused line or in the active path.
+  const isProminentStation: any = pathResult?.path
+    ? isStationInPath
+    : focusedLine 
     ? ["in", ["literal", focusedLine], ["get", "lines"]]
     : true;
 
@@ -37,7 +42,6 @@ const SubwayLayers = ({
         <Layer
           id="subway-line-interaction"
           type="line"
-          beforeId="subway-line-layer"
           layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
             "line-width": 25,
@@ -47,22 +51,39 @@ const SubwayLayers = ({
         <Layer
           id="subway-line-layer"
           type="line"
-          beforeId="subway-station-circle"
           layout={{ "line-join": "round", "line-cap": "round" }}
           paint={{
-            "line-color": focusedLine
+            "line-color": pathResult?.path
+              ? FADED_COLOR
+              : focusedLine
               ? ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], FADED_COLOR]
-              : pathResult
-              ? (isDarkMode ? "#333333" : "#cccccc")
               : ["get", "color"],
             "line-width": 4,
-            "line-opacity": focusedLine
+            "line-opacity": pathResult?.path
+              ? 0.15
+              : focusedLine
               ? ["case", ["==", ["get", "name"], focusedLine], 1.0, 0.3]
-              : pathResult
-              ? 0.4
               : 0.8
           }}
         />
+        {/* Active Route Highlight Layer */}
+        {pathResult?.path && (
+          <Layer
+            id="subway-active-route-layer"
+            type="line"
+            layout={{ "line-join": "round", "line-cap": "round" }}
+            paint={{
+              "line-color": isDarkMode ? "#3498DB" : "#2980B9",
+              "line-width": 6,
+              "line-opacity": 1.0,
+              "line-blur": 1
+            }}
+            filter={["all", 
+                ["in", ["get", "name"], ["literal", pathResult.path]],
+                ["in", ["get", "id"], ["literal", pathResult.linePath || []]]
+            ]}
+          />
+        )}
       </Source>
 
       <Source id="subway-stations" type="geojson" data={subwayData.stations}>
@@ -88,15 +109,15 @@ const SubwayLayers = ({
                 isProminentStation, ["get", ["at", 0, ["get", "lineColors"]]],
                 FADED_COLOR
             ],
-            "circle-opacity": focusedLine 
+            "circle-opacity": pathResult?.path 
+                ? ["case", isStationInPath, 1.0, 0.15]
+                : focusedLine 
                 ? ["case", isProminentStation, 1.0, 0.2]
-                : pathResult 
-                ? 0.3 
                 : 1,
-            "circle-stroke-opacity": focusedLine 
+            "circle-stroke-opacity": pathResult?.path 
+                ? ["case", isStationInPath, 1.0, 0.15]
+                : focusedLine 
                 ? ["case", isProminentStation, 1.0, 0.2]
-                : pathResult 
-                ? 0.3 
                 : 1
           }}
         />
@@ -121,10 +142,10 @@ const SubwayLayers = ({
             ],
             "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
             "text-halo-width": 1.5,
-            "text-opacity": focusedLine 
+            "text-opacity": pathResult?.path 
+                ? ["case", isStationInPath, 1.0, 0.1]
+                : focusedLine 
                 ? ["case", isProminentStation, 1.0, 0.2]
-                : pathResult 
-                ? 0.3 
                 : 1
           }}
         />
