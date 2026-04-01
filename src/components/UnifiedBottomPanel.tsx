@@ -134,8 +134,8 @@ export default function UnifiedBottomPanel({
     }, [selectedStationName, stations]);
 
     useEffect(() => {
-        if (badges.length > 0 && (!activeLine || !badges.find(b => b.num === activeLine))) {
-            onActiveLineChange(badges[0].num);
+        if (badges.length > 0 && (!activeLine || !badges.find(b => b.lineName === activeLine))) {
+            onActiveLineChange(badges[0].lineName);
         }
     }, [badges, activeLine, onActiveLineChange]);
 
@@ -422,8 +422,8 @@ export default function UnifiedBottomPanel({
                                                 return (
                                                     <button 
                                                         key={idx}
-                                                        onClick={() => onActiveLineChange(badge.num)}
-                                                        className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'text-white' : 'opacity-40 grayscale-[0.3]'}`}
+                                                        onClick={() => onActiveLineChange(badge.lineName)}
+                                                        className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.lineName ? 'text-white' : 'opacity-40 grayscale-[0.3]'}`}
                                                         style={{ backgroundColor: badge.color }}
                                                     >
                                                         {label}
@@ -453,7 +453,13 @@ export default function UnifiedBottomPanel({
                                 
                                 <div className="grid grid-cols-2 gap-2 mb-3">
                                     {(stationArrivals || [])
-                                        .filter(arr => !activeLine || arr.lineName.includes(activeLine) || arr.subwayId.endsWith(activeLine.padStart(2, '0')) || arr.subwayId === "9999")
+                                        .filter(arr => {
+                                            if (!activeLine) return true;
+                                            const shortActive = activeLine.replace(/[^0-9]/g, '');
+                                            return arr.lineName.includes(activeLine) || 
+                                                   arr.lineName.includes(shortActive) ||
+                                                   (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
+                                        })
                                         .slice(0, 4)
                                         .map((arr, idx) => (
                                         <div key={idx} className={`p-2.5 rounded-xl flex flex-col border ${arr.isScheduled ? 'bg-zinc-50 dark:bg-black/10 border-black/5 dark:border-white/5' : 'bg-white dark:bg-black/30 border-rose-500/10 dark:border-rose-500/20'}`}>

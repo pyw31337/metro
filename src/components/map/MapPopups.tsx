@@ -86,8 +86,8 @@ const MapPopups = ({
   const badges = useMemo(() => getStationBadges(selectedStationName || ""), [selectedStationName]);
 
   useEffect(() => {
-    if (badges.length > 0 && (!activeLine || !badges.find(b => b.num === activeLine))) {
-        onActiveLineChange(badges[0].num);
+    if (badges.length > 0 && (!activeLine || !badges.find(b => b.lineName === activeLine))) {
+        onActiveLineChange(badges[0].lineName);
     } else if (badges.length === 0 && activeLine) {
         onActiveLineChange(null);
     }
@@ -95,9 +95,11 @@ const MapPopups = ({
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
+    const shortActive = activeLine.replace(/[^0-9]/g, '');
     return stationArrivals.filter(arr => 
         arr.lineName.includes(activeLine) || 
-        arr.subwayId.endsWith(activeLine.padStart(2, '0'))
+        arr.lineName.includes(shortActive) ||
+        (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')))
     );
   }, [stationArrivals, activeLine]);
 
@@ -138,8 +140,8 @@ const MapPopups = ({
                             return (
                                 <button 
                                     key={idx}
-                                    onClick={(e) => { e.stopPropagation(); onActiveLineChange(badge.num); }}
-                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.num ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900 scale-105' : 'opacity-40 grayscale-[0.3]'}`}
+                                    onClick={(e) => { e.stopPropagation(); onActiveLineChange(badge.lineName); }}
+                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.lineName ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900 scale-105' : 'opacity-40 grayscale-[0.3]'}`}
                                     style={{ backgroundColor: badge.color }}
                                 >
                                     {label}
