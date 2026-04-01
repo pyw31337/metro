@@ -1,4 +1,4 @@
-// data-worker.ts
+import { db } from "@/services/db";
 import { SUBWAY_LINES, Station, SubwayLine } from "@/data/subway-lines";
 
 interface GraphConnection {
@@ -14,16 +14,35 @@ interface GraphNode {
 
 interface DijkstraState {
     nodeId: string;
+    cost: number;
     weight: number;
-    path: string[];
-    lines: string[];
+    lastLine: string | null;
+    transfers: number;
+    parent: DijkstraState | null;
+    lineUsed: string | null;
 }
 
+function reconstructPath(state: DijkstraState) {
+    const path: string[] = [];
+    const weights: number[] = [];
+    const linePath: string[] = [];
+    let current: DijkstraState | null = state;
+    
+    while (current) {
+        path.unshift(current.nodeId);
+        weights.unshift(current.weight);
+        if (current.lineUsed) linePath.unshift(current.lineUsed);
+        current = current.parent;
+    }
+    
+    return { path, weights, linePath };
+}
 interface PathResult {
     path: string[];
     totalWeight: number;
     transferCount: number;
     weights: number[];
+    transfers: any[];
 }
 
 // Simplified Dijkstra for Worker
@@ -58,19 +77,29 @@ function dijkstra(
     endName: string, 
     graph: Map<string, GraphNode>, 
     strategy: PathStrategy
-): PathResult | null {
-    // Priority queue uses 'cost' for Dijkstra, but we track 'weight' for actual time
-    const pq: { nodeId: string; cost: number; weight: number; path: string[]; weights: number[]; lastLine: string | null; transfers: number }[] = [];
+): (PathResult & { linePath: string[] }) | null {
+    const pq: DijkstraState[] = [];
     const minCosts = new Map<string, number>();
 
-    pq.push({ nodeId: startName, cost: 0, weight: 0, path: [startName], weights: [0], lastLine: null, transfers: 0 });
+    pq.push({ 
+        nodeId: startName, 
+        cost: 0, 
+        weight: 0, 
+        lastLine: null, 
+        transfers: 0, 
+        parent: null,
+        lineUsed: null
+    });
 
     while (pq.length > 0) {
+        // Simple priority queue (could be optimized with a true heap)
         pq.sort((a, b) => a.cost - b.cost);
-        const { nodeId, cost, weight, path, weights: weightPath, lastLine, transfers } = pq.shift()!;
+        const state = pq.shift()!;
+        const { nodeId, cost, weight, lastLine, transfers } = state;
 
         if (nodeId === endName) {
-            return { path, totalWeight: weight, weights: weightPath, transferCount: transfers };
+            const { path, weights, linePath } = reconstructPath(state);
+            return { path, totalWeight: weight, weights, transferCount: transfers, linePath, transfers: [] };
         }
 
         if (cost > (minCosts.get(nodeId) ?? Infinity)) continue;
@@ -82,37 +111,34 @@ function dijkstra(
         for (const conn of node.connections) {
             const isTransfer = lastLine !== null && lastLine !== conn.lineId;
             
-            let edgeCost = 2; // Default 2 mins hop
-            let edgeWeight = 2; // Actual time hop
+            let edgeCost = 2; 
+            let edgeWeight = 2; 
 
             if (isTransfer) {
-                // For Dijkstra cost optimization
-                if (strategy === "transfer") {
-                    edgeCost += 1000; // Massively penalize transfers in the algorithm
-                } else {
-                    edgeCost += 5; // standard time penalty
-                }
-                edgeWeight += 5; // Add 5 mins physical transfer time
+                edgeCost += (strategy === "transfer") ? 1000 : 5;
+                edgeWeight += 5; 
             }
 
             const newCost = cost + edgeCost;
             const newWeight = weight + edgeWeight;
             
-            pq.push({
-                nodeId: conn.nodeId,
-                cost: newCost,
-                weight: newWeight,
-                path: [...path, conn.nodeId],
-                weights: [...weightPath, newWeight],
-                lastLine: conn.lineId,
-                transfers: transfers + (isTransfer ? 1 : 0)
-            });
+            if (newCost < (minCosts.get(conn.nodeId) ?? Infinity)) {
+                pq.push({
+                    nodeId: conn.nodeId,
+                    cost: newCost,
+                    weight: newWeight,
+                    lastLine: conn.lineId,
+                    transfers: transfers + (isTransfer ? 1 : 0),
+                    parent: state,
+                    lineUsed: conn.lineId
+                });
+            }
         }
     }
     return null;
 }
 
-self.onmessage = (e: MessageEvent) => {
+self.onmessage = async (e: MessageEvent) => {
     const { type, payload } = e.data;
 
     switch (type) {
@@ -125,6 +151,7 @@ self.onmessage = (e: MessageEvent) => {
             for (const strategy of strategies) {
                 let finalPath: string[] = [points[0]];
                 let finalWeights: number[] = [0];
+                let finalLinePath: string[] = [];
                 let totalWeight = 0;
                 let totalTransferCount = 0;
                 let failed = false;
@@ -142,16 +169,40 @@ self.onmessage = (e: MessageEvent) => {
 
                     finalPath = [...finalPath, ...segmentPath];
                     finalWeights = [...finalWeights, ...segmentWeights];
+                    finalLinePath = [...finalLinePath, ...res.linePath];
                     totalWeight += res.totalWeight;
                     totalTransferCount += res.transferCount;
                 }
                 
                 if (!failed) {
+                    // Enrich transfer metadata
+                    const pathTransfers = [];
+                    for (let i = 1; i < finalLinePath.length; i++) {
+                        const fromLine = finalLinePath[i-1];
+                        const toLine = finalLinePath[i];
+                        if (fromLine !== toLine) {
+                            const stationName = finalPath[i];
+                            const tInfo = await db.getTransferInfo(stationName, fromLine, toLine);
+                            let fastStr = null;
+                            if (tInfo && (tInfo.fastCar || tInfo.fastDoor)) {
+                                fastStr = [tInfo.fastCar, tInfo.fastDoor].filter(Boolean).join('-');
+                            }
+                            
+                            pathTransfers.push({
+                                stationName,
+                                fromLine,
+                                toLine,
+                                fastTransfer: fastStr
+                            });
+                        }
+                    }
+
                     results[strategy] = { 
                         path: finalPath, 
                         totalWeight, 
                         weights: finalWeights,
                         transferCount: totalTransferCount,
+                        transfers: pathTransfers,
                         strategy 
                     };
                 }

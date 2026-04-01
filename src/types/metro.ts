@@ -113,4 +113,42 @@ export interface TransferInfo {
   fromLine: string;
   toLine: string;
   platform: string;
+  fastCar?: string;
+  fastDoor?: string;
+  transferDistance?: number;
+}
+
+export interface Station {
+  id?: number;
+  name: string;
+  lines: string[];
+  lat: number;
+  lng: number;
+  around_stations: string[];
+  stationCd?: string;
+  lineNum?: string;
+  frCode?: string;
+  address?: string;
+  tel?: string;
+  parkingCount?: number;
+  hasNursingRoom?: boolean;
+}
+
+export interface StationExit {
+  id?: number;
+  stationName: string;
+  exitNo: string;
+  lat: number;
+  lng: number;
+  landmarks: string[];
+}
+
+export interface ParkingLot {
+  id?: number;
+  name: string;
+  stationName: string;
+  address: string;
+  capacity: number;
+  feeInfo: string;
+  location: [number, number];
 }

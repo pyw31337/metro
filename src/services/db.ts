@@ -3,7 +3,7 @@ import {
     Station, BusStop, WCItem, 
     Facility, OperationalData, 
     TimetableEntry, StationMetric,
-    TransferInfo
+    TransferInfo, StationExit, ParkingLot
 } from '@/types/metro';
 import { DataIngestionService } from './dataIngestion';
 
@@ -16,10 +16,12 @@ export class MetroDatabase extends Dexie {
   timetables!: Table<TimetableEntry>;
   stationMetrics!: Table<StationMetric>;
   transfers!: Table<TransferInfo>;
+  stationExits!: Table<StationExit>;
+  parkingLots!: Table<ParkingLot>;
 
   constructor() {
     super('MetroDatabase');
-    this.version(6).stores({
+    this.version(7).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, *routes',
       wc: 'id, name, station',
@@ -27,7 +29,9 @@ export class MetroDatabase extends Dexie {
       operational: '++id, fromStation, toStation, line',
       timetables: '++id, stationName, line, dayType, direction, [stationName+line+dayType]',
       stationMetrics: '++id, stationName, line, hour',
-      transfers: '++id, stationName, [stationName+fromLine+toLine]'
+      transfers: '++id, stationName, [stationName+fromLine+toLine]',
+      stationExits: '++id, stationName, exitNo',
+      parkingLots: '++id, stationName, name'
     });
   }
 
@@ -86,8 +90,15 @@ export class MetroDatabase extends Dexie {
             console.log('🆔 Missing station metadata. Refreshing in background...');
             DataIngestionService.ingestStationMetadata();
         }
-        // Always ensure transfer data is synced from static JSON
+        // Always ensure transfer data and additional public data are synced
         DataIngestionService.ingestStaticTransferData();
+        
+        // Orchestrate full public data refresh if facilities or parking are empty
+        const facilityCount = await this.facilities.count();
+        if (facilityCount === 0) {
+            console.log('📡 Triggering first-run public data ingestion...');
+            DataIngestionService.refreshStaticData();
+        }
     }
   }
 
