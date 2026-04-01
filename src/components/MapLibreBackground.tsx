@@ -311,7 +311,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 </Marker>
             )}
 
-            {nearestStation && (
+            {nearestStation && nearestStation.lat !== undefined && nearestStation.lng !== undefined && (
                 <Marker longitude={nearestStation.lng} latitude={nearestStation.lat}>
                     <div className="relative group cursor-pointer" onClick={() => onStationClick?.(nearestStation.name, [nearestStation.lat, nearestStation.lng])}>
                         {/* Outer Glow/Halo */}

@@ -286,19 +286,17 @@ self.onmessage = async (e: MessageEvent) => {
 
         case "FIND_NEAREST_STATION": {
             const { lat, lng, stations } = payload;
-            let nearestName = "";
+            let nearestStation = null;
             let minDist = Infinity;
-            let nearestLine = "";
             
             stations.forEach((s: Station) => {
                 const d = Math.sqrt(Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2));
                 if (d < minDist) {
                     minDist = d;
-                    nearestName = s.name;
-                    nearestLine = s.lines ? s.lines[0] : "";
+                    nearestStation = s;
                 }
             });
-            self.postMessage({ type: "NEAREST_STATION_RESULT", payload: { name: nearestName, line: nearestLine } });
+            self.postMessage({ type: "NEAREST_STATION_RESULT", payload: nearestStation });
             break;
         }
 
