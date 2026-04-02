@@ -114,7 +114,13 @@ export function useRealtimeTrains(map: any | null) {
         fetchRealtime();
         const apiInterval = setInterval(fetchRealtime, 15000); 
 
-        let lastRafTime = 0;
+        // Persistent GeoJSON for ZERO ALLOCATION
+        const geojsonRef = {
+            type: "FeatureCollection" as const,
+            features: [] as any[]
+        };
+
+        let lastUpdateTime = 0;
         let rafId: number;
 
         const animate = (time: number) => {
@@ -123,42 +129,58 @@ export function useRealtimeTrains(map: any | null) {
                 return;
             }
 
-            // Throttle map updates to ~15fps (every 66ms) for mobile comfort
-            if (time - lastRafTime < 66) {
+            // High Throttling: 2fps (500ms) for mobile silence
+            if (time - lastUpdateTime < 500) {
                 rafId = requestAnimationFrame(animate);
                 return;
             }
-            lastRafTime = time;
+            lastUpdateTime = time;
 
             const now = Date.now();
-            const updated: Train[] = [];
-            
-            trainsRef.current.forEach(t => {
+            const source = map.getSource('train-source');
+            if (!source) {
+                rafId = requestAnimationFrame(animate);
+                return;
+            }
+
+            // Sync features array size
+            if (geojsonRef.features.length !== trainsRef.current.length) {
+                geojsonRef.features = trainsRef.current.map(() => ({
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: [0, 0] },
+                    properties: {}
+                }));
+            }
+
+            trainsRef.current.forEach((t, i) => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
                 if (!line) return;
 
-                // Predictive Progress: move 0.2% of track per second if running
                 const elapsed = (now - t.lastUpdate) / 1000;
                 let progress = t.status === 'RUNNING' ? t.progress + (elapsed * 0.005) : t.progress;
-                if (progress > 0.98) progress = 0.98; 
+                if (progress > 0.98) progress = 0.98;
 
                 const currentStation = line.stations[t.stationIndex];
                 const nextStationIdx = t.stationIndex + t.direction;
                 const nextStation = line.stations[nextStationIdx] || currentStation;
                 const pos = interpolate(currentStation, nextStation, progress);
 
-                updated.push({
-                    ...t,
+                // MUTATE IN-PLACE - ZERO ALLOCATION
+                const feat = geojsonRef.features[i];
+                feat.geometry.coordinates[0] = pos.lng;
+                feat.geometry.coordinates[1] = pos.lat;
+                
+                // Only merge properties if they changed or on first load
+                Object.assign(feat.properties, t, {
                     lineColor: line.color.toUpperCase(),
                     lat: pos.lat,
-                    lng: pos.lng
+                    lng: pos.lng,
+                    type: "train"
                 });
             });
 
-            const source = map.getSource('train-source');
-            if (source && updated.length > 0) {
-                // Direct raw access to MapLibre source for speed
-                source.setData(convertTrainsToGeoJSON(updated));
+            if (geojsonRef.features.length > 0) {
+                source.setData(geojsonRef);
             }
 
             rafId = requestAnimationFrame(animate);

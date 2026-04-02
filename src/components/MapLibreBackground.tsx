@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
-import { Marker, useMap } from "react-map-gl/maplibre";
+import { Marker, useMap, Source, Layer } from "react-map-gl/maplibre";
 import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival, Station } from "@/types/metro";
 import { fetchTrainCongestion } from "@/services/arrivalApi";
 import { Train } from "lucide-react";
@@ -79,7 +79,7 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 };
 
 // ─── Icon Registration Sub-component ──────────────────────────────────────────
-const MapIconRegister = ({ stations }: { stations: any[] }) => {
+const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
     const { current: mapRef } = useMap();
     const map = mapRef?.getMap();
 
@@ -155,7 +155,7 @@ const MapIconRegister = ({ stations }: { stations: any[] }) => {
     }, [map, stations]);
 
     return null;
-};
+});
 
 function MapLibreBackground(props: MapLibreProps) {
     const {
@@ -344,21 +344,41 @@ function MapLibreBackground(props: MapLibreProps) {
                 </Marker>
             )}
 
-            {nearestStation && nearestStation.lat !== undefined && nearestStation.lng !== undefined && (
-                <Marker longitude={nearestStation.lng} latitude={nearestStation.lat}>
-                    <div className="relative group cursor-pointer" onClick={() => onStationClick?.(nearestStation.name, [nearestStation.lat, nearestStation.lng])}>
-                        {/* Outer Glow/Halo */}
-                        <div className="absolute inset-[-6px] rounded-full bg-red-500/30 animate-ping" />
-                        {/* Black Core with Red Border */}
-                        <div className="relative w-8 h-8 bg-black rounded-full border-[3px] border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.6)] flex items-center justify-center transition-transform hover:scale-110 active:scale-95">
-                            <Train className="w-4 h-4 text-white" />
-                        </div>
-                        {/* Label */}
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-black/80 backdrop-blur-sm text-white text-[10px] font-bold rounded shadow-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                            가장 가까운 역: {nearestStation.name}
-                        </div>
-                    </div>
-                </Marker>
+            {/* Nearest Station Layer (GPU Rendered) */}
+            {mapInstance && (
+                <Source
+                    id="nearest-station-source"
+                    type="geojson"
+                    data={{
+                        type: "FeatureCollection",
+                        features: nearestStation ? [{
+                            type: "Feature",
+                            geometry: { type: "Point", coordinates: [nearestStation.lng, nearestStation.lat] },
+                            properties: { name: nearestStation.name }
+                        }] : []
+                    }}
+                >
+                    <Layer
+                        id="nearest-station-glow"
+                        type="circle"
+                        paint={{
+                            "circle-radius": 15,
+                            "circle-color": "#ef4444",
+                            "circle-opacity": 0.3,
+                            "circle-stroke-width": 0
+                        }}
+                    />
+                    <Layer
+                        id="nearest-station-core"
+                        type="circle"
+                        paint={{
+                            "circle-radius": 8,
+                            "circle-color": "#000000",
+                            "circle-stroke-width": 3,
+                            "circle-stroke-color": "#ef4444"
+                        }}
+                    />
+                </Source>
             )}
         </MapBase>
     );

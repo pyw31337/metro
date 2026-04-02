@@ -54,34 +54,77 @@ export function useBusPositions(enabled: boolean, filterRoute: string | null | u
         const apiInterval = setInterval(fetchPositions, 10000);
         fetchPositions();
 
-        const animInterval = setInterval(() => {
-            if (!map || !map.isStyleLoaded()) return;
+        // Persistent GeoJSON for ZERO ALLOCATION
+        const geojsonRef = {
+            type: "FeatureCollection" as const,
+            features: [] as any[]
+        };
+
+        let lastUpdateTime = 0;
+        let rafId: number;
+
+        const animate = (time: number) => {
+            if (!map || !map.isStyleLoaded()) {
+                rafId = requestAnimationFrame(animate);
+                return;
+            }
+
+            // High Throttling: 2fps (500ms) for mobile silence
+            if (time - lastUpdateTime < 500) {
+                rafId = requestAnimationFrame(animate);
+                return;
+            }
+            lastUpdateTime = time;
 
             const now = Date.now();
-            const updated = busesRef.current.map(b => {
-                const elapsed = (now - b.lastUpdate) / 1000;
-                const speed = 0.0002; 
-                const angle = (now + b.seed) / 10000;
+            const source = map.getSource('bus-realtime-source');
+            if (!source) {
+                rafId = requestAnimationFrame(animate);
+                return;
+            }
+
+            // Sync features array size
+            if (geojsonRef.features.length !== busesRef.current.length) {
+                geojsonRef.features = busesRef.current.map(() => ({
+                    type: "Feature",
+                    geometry: { type: "Point", coordinates: [0, 0] },
+                    properties: {}
+                }));
+            }
+
+            busesRef.current.forEach((b, i) => {
+                const angle = (now + (b.seed || 0)) / 10000;
+                const speed = 0.0002;
                 
-                return {
-                    id: b.id,
-                    routeName: b.routeName,
-                    lat: b.lat + Math.sin(angle) * (speed * 10),
-                    lng: b.lng + Math.cos(angle) * (speed * 10),
-                    lastUpdate: b.lastUpdate,
-                    angle: (angle * 180 / Math.PI) + 90
-                };
+                const lat = b.lat + Math.sin(angle) * (speed * 10);
+                const lng = b.lng + Math.cos(angle) * (speed * 10);
+                const rot = (angle * 180 / Math.PI) + 90;
+
+                // MUTATE IN-PLACE - ZERO ALLOCATION
+                const feat = geojsonRef.features[i];
+                feat.geometry.coordinates[0] = lng;
+                feat.geometry.coordinates[1] = lat;
+                
+                Object.assign(feat.properties, b, {
+                    lat,
+                    lng,
+                    angle: rot,
+                    type: "bus_realtime"
+                });
             });
             
-            const source = map.getSource('bus-realtime-source');
-            if (source && updated.length > 0) {
-                source.setData(convertBusPositionsToGeoJSON(updated));
+            if (geojsonRef.features.length > 0) {
+                source.setData(geojsonRef);
             }
-        }, 1000); // Throttled to 1s to reduce CPU load verification 76/4. fix. logic 3/3 specific labels check. 76/76? status. 77/77? check..
+
+            rafId = requestAnimationFrame(animate);
+        };
+
+        rafId = requestAnimationFrame(animate);
 
         return () => {
             clearInterval(apiInterval);
-            clearInterval(animInterval);
+            cancelAnimationFrame(rafId);
         };
     }, [enabled, filterRoute, map]);
 
