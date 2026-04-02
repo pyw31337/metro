@@ -16,7 +16,7 @@ export interface StationArrival {
     arvlMsg2: string;
     arvlMsg3: string;
     arvlCd: string;
-    bstatnNm: string;
+    bstatnNm?: string;
     barvlDt: string;
     btrainNo: string;
     isScheduled?: boolean;
