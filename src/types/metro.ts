@@ -1,5 +1,12 @@
 export type ActiveTab = "subway" | "bus" | "subway+bus" | "wc";
 
+export interface StationCode {
+    id?: number;
+    name: string;
+    line: string;
+    stationCd: string;
+}
+
 export interface StationArrival {
     lineName: string;
     subwayId: string;

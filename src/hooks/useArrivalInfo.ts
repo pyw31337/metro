@@ -3,6 +3,7 @@ import { StationArrival, TimetableEntry } from '@/types/metro';
 import { db } from '@/services/db';
 import { fetchStationArrivals, mergeLiveAndScheduled, convertTimetableToArrival } from '@/services/arrivalApi';
 import { DataIngestionService } from '@/services/dataIngestion';
+import { normalizeLineName } from '@/utils/stationUtils';
 
 export interface ArrivalInfo extends StationArrival {
     arrivalTime: number; // seconds
@@ -34,12 +35,39 @@ export function useArrivalInfo(stationName: string | null) {
                 const dayType = now.getDay() === 0 ? "sun" : (now.getDay() === 6 ? "sat" : "week");
                 const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-                // 1. Instant Baseline: Fetch from Local DB first
-                const storedTimetable = await db.getStoredTimetable(cleanName, "기본", dayType).catch(() => [] as TimetableEntry[]);
+                // 1. Fetch Station Data to get Lines
+                const station = await db.getStationByName(cleanName);
+                if (!station) {
+                    setLoading(false);
+                    return;
+                }
+
+                // 2. Instant Baseline: Fetch from Local DB for all lines
+                const targetLines = station.lines.map(normalizeLineName);
                 
+                let combinedTimetable: TimetableEntry[] = [];
+                const lineSchedules: Record<string, ScheduleInfo> = {};
+
+                for (const line of targetLines) {
+                    const entries = await db.getStoredTimetable(cleanName, line, dayType).catch(() => [] as TimetableEntry[]);
+                    if (entries.length > 0) {
+                        combinedTimetable = [...combinedTimetable, ...entries];
+                        lineSchedules[line] = {
+                            firstTrain: entries[0].departureTime || entries[0].arrivalTime || "05:30",
+                            lastTrain: entries[entries.length - 1].departureTime || entries[entries.length - 1].arrivalTime || "24:00"
+                        };
+                    } else {
+                        // Trigger background ingestion for this specific line
+                        const code = await db.getStationCode(cleanName, line);
+                        if (code) {
+                            DataIngestionService.ingestTimetables(cleanName, line, code).catch(() => {});
+                        }
+                    }
+                }
+
                 let scheduledArrivals: StationArrival[] = [];
-                if (storedTimetable && storedTimetable.length > 0) {
-                    scheduledArrivals = storedTimetable
+                if (combinedTimetable.length > 0) {
+                    scheduledArrivals = combinedTimetable
                         .map(entry => {
                             const [h, m, s] = (entry.departureTime || entry.arrivalTime).split(':').map(Number);
                             const entrySeconds = h * 3600 + m * 60 + (s || 0);
@@ -53,14 +81,9 @@ export function useArrivalInfo(stationName: string | null) {
                     
                     // Show baseline immediately
                     setArrivals(scheduledArrivals);
-                    setSchedules({
-                        "기본": {
-                            firstTrain: storedTimetable[0].departureTime || "05:30",
-                            lastTrain: storedTimetable[storedTimetable.length - 1].departureTime || "24:00"
-                        }
-                    });
+                    setSchedules(lineSchedules);
                 } else {
-                    // Start background ingestion if missing
+                    // Start background ingestion if missing (full station trigger)
                     DataIngestionService.triggerTimetableByStationName(cleanName).catch(() => {});
                 }
 

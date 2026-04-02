@@ -19,7 +19,8 @@ export type ProgressCallback = (tasks: IngestionTask[]) => void;
  * into the optimized local IndexedDB schema.
  */
 export class DataIngestionService {
-    private static API_KEY = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || 'sample';
+    private static API_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
+    private static BUS_API_KEY = process.env.NEXT_PUBLIC_BUS_API_KEY || 'sample';
     private static DATA_GO_KR_KEY = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || 'sample';
 
     private static tasks: IngestionTask[] = [
@@ -344,13 +345,25 @@ export class DataIngestionService {
                 }
 
                 if (existing) {
-                    await db.stations.update(existing.id!, {
-                        stationCd: item.STATION_CD,
-                        lineNum: item.LINE_NUM,
-                        frCode: item.FR_CODE
-                    });
+                    const lineName = normalizeLineName(item.LINE_NUM);
+                    
+                    // Save to specialized metadata table for transfer support
+                    await db.saveStationCode({
+                        name: existing.name,
+                        line: lineName,
+                        stationCd: item.STATION_CD
+                    }).catch(() => {});
+
+                    // Keep legacy field for single-line stations for backward compat
+                    if (!existing.stationCd || existing.lineNum === item.LINE_NUM) {
+                        await db.stations.update(existing.id!, {
+                            stationCd: item.STATION_CD,
+                            lineNum: item.LINE_NUM,
+                            frCode: item.FR_CODE
+                        });
+                    }
+                    count++;
                 }
-                count++;
                 if (count % 100 === 0) {
                     this.updateTask('metadata', { progress: 30 + (count / items.length) * 70 }, callback);
                 }
@@ -513,11 +526,25 @@ export class DataIngestionService {
      */
     static async triggerTimetableByStationName(stationName: string) {
         try {
-            const cleanName = stationName.replace(/역$/, '').trim();
+            const cleanName = stationName.replace(/역+$/, '').trim();
             const station = await db.getStationByName(cleanName);
-            if (station && station.stationCd) {
-                const line = station.lines?.[0] || '01호선'; 
-                await this.ingestTimetables(station.name, line, station.stationCd);
+            if (!station) return;
+
+            // Trigger ingestion for ALL lines of this station
+            for (const line of station.lines) {
+                const normalized = normalizeLineName(line);
+                let code = await db.getStationCode(cleanName, normalized);
+                
+                // Fallback for metadata not yet synced for this specific line
+                if (!code && (station.lineNum === line || station.lineNum === normalized)) {
+                    code = station.stationCd;
+                }
+
+                if (code) {
+                    this.ingestTimetables(cleanName, normalized, code).catch(err => {
+                        console.debug(`Failed to auto-ingest timetable for ${cleanName} (${line}):`, err);
+                    });
+                }
             }
         } catch (err) {
             console.debug(`Failed to trigger timetable for ${stationName}:`, err);

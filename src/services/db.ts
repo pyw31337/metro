@@ -3,7 +3,7 @@ import {
     Station, BusStop, WCItem, 
     Facility, OperationalData, 
     TimetableEntry, StationMetric,
-    TransferInfo, StationExit, ParkingLot
+    TransferInfo, StationExit, ParkingLot, StationCode
 } from '@/types/metro';
 import { DataIngestionService } from './dataIngestion';
 
@@ -18,10 +18,11 @@ export class MetroDatabase extends Dexie {
   transfers!: Table<TransferInfo>;
   stationExits!: Table<StationExit>;
   parkingLots!: Table<ParkingLot>;
+  stationCodes!: Table<StationCode>;
 
   constructor() {
     super('MetroDatabase');
-    this.version(8).stores({
+    this.version(10).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, cityCode, *routes',
       wc: 'id, name, station',
@@ -31,7 +32,8 @@ export class MetroDatabase extends Dexie {
       stationMetrics: '++id, stationName, line, hour',
       transfers: '++id, stationName, [stationName+fromLine+toLine]',
       stationExits: '++id, stationName, exitNo',
-      parkingLots: '++id, stationName, name'
+      parkingLots: '++id, stationName, name',
+      stationCodes: '++id, name, line, stationCd'
     });
   }
 
@@ -169,6 +171,17 @@ export class MetroDatabase extends Dexie {
 
   async saveTransferInfo(info: TransferInfo) {
       await this.transfers.put(info);
+  }
+
+  async getStationCode(name: string, line: string): Promise<string | undefined> {
+      const entry = await this.stationCodes
+          .where({ name, line })
+          .first();
+      return entry?.stationCd;
+  }
+
+  async saveStationCode(entry: StationCode) {
+      await this.stationCodes.put(entry);
   }
 }
 

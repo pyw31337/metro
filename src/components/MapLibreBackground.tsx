@@ -213,6 +213,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setFocusedBubble(null);
             setSelectedTrain(null);
             setTrainArrivalDetail(null);
+            setPopupCoords(null);
             onActiveLineChange(null);
             return;
         }
@@ -228,11 +229,15 @@ function MapLibreBackground(props: MapLibreProps) {
             if (stop) {
                 onBusStopClick(stop, [coords.lat, coords.lng]);
                 setPopupCoords([coords.lng, coords.lat]);
+                onActiveLineChange(null);
             }
         } else if (feature.layer.id === 'train-layer') {
+            setPopupCoords(null);
+            onActiveLineChange(null);
             handleTrainClick(feature.properties);
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
             const lineName = feature.properties.name;
+            setPopupCoords(null);
             onActiveLineChange(lineName);
         }
     }, [busStops, onStationClick, onBusStopClick]);

@@ -125,7 +125,10 @@ const MapPopups = ({
             latitude={popupCoords[1]}
             closeButton={false}
             closeOnClick={false}
-            onClose={() => setPopupCoords(null)}
+            onClose={() => {
+                setPopupCoords(null);
+                onActiveLineChange(null);
+            }}
             anchor="bottom"
             offset={15}
             className="custom-station-popup"
@@ -138,7 +141,11 @@ const MapPopups = ({
                         </h3>
                     </div>
                     <button 
-                        onClick={(e) => { e.stopPropagation(); setPopupCoords(null); }}
+                        onClick={(e) => { 
+                            e.stopPropagation(); 
+                            setPopupCoords(null);
+                            onActiveLineChange(null);
+                        }}
                         className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
                     >
                         <X size={16} />
