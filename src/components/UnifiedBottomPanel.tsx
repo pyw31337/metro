@@ -5,8 +5,8 @@ import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, Rotate
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
-import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
-import { THEME } from "@/theme/design-system";
+import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
+import { ArrivalHeader, ArrivalItemListItem } from "./map/ArrivalInfo";
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
@@ -451,52 +451,86 @@ export default function UnifiedBottomPanel({
                                     )}
                                 </div>
                                 
-                                <div className="grid grid-cols-2 gap-2 mb-3">
-                                    {(stationArrivals || [])
-                                        .filter(arr => {
-                                            if (!activeLine) return true;
-                                            const shortActive = activeLine.replace(/[^0-9]/g, '');
-                                            return arr.lineName.includes(activeLine) || 
-                                                   arr.lineName.includes(shortActive) ||
-                                                   (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
-                                        })
-                                        .slice(0, 4)
-                                        .map((arr, idx) => (
-                                        <div key={idx} className={`p-2.5 rounded-xl flex flex-col border ${arr.isScheduled ? 'bg-zinc-50 dark:bg-black/10 border-black/5 dark:border-white/5' : 'bg-white dark:bg-black/30 border-rose-500/10 dark:border-rose-500/20'}`}>
-                                                <div className="flex items-center gap-1 mb-1 w-full">
-                                                    {getLineBadge(arr.lineName)}
-                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">
-                                                        {arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선') ? '상행' : '하행'}
-                                                    </span>
-                                                    {arr.isScheduled ? (
-                                                        <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-white/5 text-zinc-400 font-bold ml-auto border border-black/5 dark:border-white/5">예정</span>
-                                                    ) : (
-                                                        <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-500 font-black ml-auto border border-rose-500/20 flex items-center gap-1">
-                                                            <span className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
-                                                            실시간
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-[11px] font-bold truncate max-w-[80px]">{arr.trainLineNm.split(' - ')[0]}</span>
-                                                <span className={`text-[11px] font-black ${arr.isScheduled ? 'text-zinc-500' : 'text-rose-500'}`}>
-                                                    {arr.arvlMsg2}
-                                                </span>
-                                            </div>
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    {/* Up / Inner Column */}
+                                    <div className="flex flex-col gap-2">
+                                        <ArrivalHeader 
+                                            defaultTitle="상행 · 내선" 
+                                            trains={(stationArrivals || [])
+                                                .filter(arr => {
+                                                    if (!activeLine) return true;
+                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
+                                                    const isMatch = arr.lineName.includes(activeLine) || 
+                                                           arr.lineName.includes(shortActive) ||
+                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
+                                                    if (!isMatch) return false;
+                                                    return arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선');
+                                                })}
+                                            textColor="text-blue-500 dark:text-blue-400"
+                                            borderColor="border-blue-500/20"
+                                        />
+                                        <div className="flex flex-col gap-2">
+                                            {(stationArrivals || [])
+                                                .filter(arr => {
+                                                    if (!activeLine) return true;
+                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
+                                                    const isMatch = arr.lineName.includes(activeLine) || 
+                                                           arr.lineName.includes(shortActive) ||
+                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
+                                                    if (!isMatch) return false;
+                                                    return arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선');
+                                                })
+                                                .slice(0, 3)
+                                                .map((arr, idx) => (
+                                                    <ArrivalItemListItem 
+                                                        key={idx} 
+                                                        arr={arr} 
+                                                        timeDisplayMode={timeDisplayMode} 
+                                                        onToggleTimeDisplay={() => setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration")} 
+                                                    />
+                                                ))}
                                         </div>
-                                    ))}
-                                    {(!stationArrivals) && (
-                                        <div className="col-span-2 py-6 flex flex-col items-center justify-center gap-2">
-                                            <div className="w-4 h-4 border-2 border-zinc-200 border-t-zinc-400 rounded-full animate-spin" />
-                                            <span className="text-zinc-400 text-[10px] font-bold">정보를 불러오는 중입니다...</span>
+                                    </div>
+
+                                    {/* Down / Outer Column */}
+                                    <div className="flex flex-col gap-2">
+                                        <ArrivalHeader 
+                                            defaultTitle="하행 · 외선" 
+                                            trains={(stationArrivals || [])
+                                                .filter(arr => {
+                                                    if (!activeLine) return true;
+                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
+                                                    const isMatch = arr.lineName.includes(activeLine) || 
+                                                           arr.lineName.includes(shortActive) ||
+                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
+                                                    if (!isMatch) return false;
+                                                    return arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선');
+                                                })}
+                                            textColor="text-orange-500 dark:text-orange-400"
+                                            borderColor="border-orange-500/20"
+                                        />
+                                        <div className="flex flex-col gap-2">
+                                            {(stationArrivals || [])
+                                                .filter(arr => {
+                                                    if (!activeLine) return true;
+                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
+                                                    const isMatch = arr.lineName.includes(activeLine) || 
+                                                           arr.lineName.includes(shortActive) ||
+                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
+                                                    if (!isMatch) return false;
+                                                    return arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선');
+                                                })
+                                                .slice(0, 3)
+                                                .map((arr, idx) => (
+                                                    <ArrivalItemListItem 
+                                                        key={idx} 
+                                                        arr={arr} 
+                                                        timeDisplayMode={timeDisplayMode} 
+                                                        onToggleTimeDisplay={() => setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration")} 
+                                                    />
+                                                ))}
                                         </div>
-                                    )}
-                                    {(stationArrivals && stationArrivals.filter(arr => !activeLine || arr.lineName.includes(activeLine)).length === 0) && (
-                                        <div className="col-span-2 py-4 text-center bg-zinc-100/50 dark:bg-black/20 rounded-xl border border-dashed border-black/5 dark:border-white/5">
-                                            <p className="text-zinc-500 text-[11px] font-bold">현재 운행 정보가 없습니다.</p>
-                                            <p className="text-zinc-400 text-[9px] mt-1 italic">실시간 및 시간표 데이터를 찾을 수 없습니다.</p>
-                                        </div>
-                                    )}
+                                    </div>
                                 </div>
                                 
                                 <div className="flex gap-2">
