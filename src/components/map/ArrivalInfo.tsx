@@ -103,10 +103,13 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
     // Clean up stopsLeft if displayTime already mentions "도착" to avoid redundancy
     let finalStopsLeft = stopsLeft;
-    if (displayTime === "곧 도착" && finalStopsLeft.includes("당역")) {
-        finalStopsLeft = finalStopsLeft.replace(" 도착", "").replace("도착", "")
-                                     .replace(" 진입", "").replace("진입", "")
-                                     .trim();
+    if (arr.arvlCd === "1" || finalStopsLeft.includes("당역도착") || (displayTime === "곧 도착" && finalStopsLeft.includes("당역"))) {
+        finalStopsLeft = "당역";
+    } else if (arr.arvlCd === "0" || finalStopsLeft.includes("당역진입")) {
+        finalStopsLeft = "진입";
+    } else if (displayTime === "곧 도착" && finalStopsLeft.includes("곧 도착")) {
+        finalStopsLeft = finalStopsLeft.replace("곧 도착", "").trim();
+        if (finalStopsLeft === "") finalStopsLeft = "당역";
     }
 
     const destination = arr.trainLineNm.split('-')[0].replace('행', '').trim();
