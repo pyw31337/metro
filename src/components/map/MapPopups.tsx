@@ -133,7 +133,12 @@ const MapPopups = ({
             offset={15}
             className="custom-station-popup"
         >
-            <div className="p-4 min-w-[320px] max-w-[400px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div 
+                className="p-4 min-w-[320px] max-w-[400px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[170px]">
@@ -198,19 +203,19 @@ const MapPopups = ({
                         return (
                             <>
                                 <button 
-                                    onClick={() => { onSetEnd(stationName); setPopupCoords(null); }} 
+                                    onClick={(e) => { e.stopPropagation(); onSetEnd(stationName); setPopupCoords(null); }} 
                                     className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
                                     도착
                                 </button>
                                 <button 
-                                    onClick={() => { onSetWaypoint(stationName); setPopupCoords(null); }} 
+                                    onClick={(e) => { e.stopPropagation(); onSetWaypoint(stationName); setPopupCoords(null); }} 
                                     className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95"
                                 >
                                     경유
                                 </button>
                                 <button 
-                                    onClick={() => { onSetStart(stationName); setPopupCoords(null); }} 
+                                    onClick={(e) => { e.stopPropagation(); onSetStart(stationName); setPopupCoords(null); }} 
                                     className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
                                     출발
@@ -310,7 +315,12 @@ const MapPopups = ({
             offset={20}
             className="custom-train-popup"
         >
-            <div className="p-3 min-w-[200px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl">
+            <div 
+                className="p-3 min-w-[200px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-xl rounded-2xl border border-white/20 dark:border-white/10 shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-1.5 overflow-hidden">
                         {(() => {

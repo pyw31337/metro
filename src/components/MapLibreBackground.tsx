@@ -215,6 +215,8 @@ function MapLibreBackground(props: MapLibreProps) {
             setTrainArrivalDetail(null);
             setPopupCoords(null);
             onActiveLineChange(null);
+            // Also notify that the station selection should be cleared
+            onStationClick?.("", undefined);
             return;
         }
 
@@ -222,8 +224,17 @@ function MapLibreBackground(props: MapLibreProps) {
 
         if (feature.layer.id === 'subway-station-circle' || feature.layer.id === 'subway-station-label') {
             const name = feature.properties.name;
+            const lines = typeof feature.properties.lines === 'string' ? JSON.parse(feature.properties.lines) : feature.properties.lines;
+            
             onStationClick?.(name, [coords.lat, coords.lng]);
             setPopupCoords([coords.lng, coords.lat]);
+
+            // Auto-activate the line if needed
+            if (lines && Array.isArray(lines) && lines.length > 0) {
+                if (!activeLine || !lines.includes(activeLine)) {
+                    onActiveLineChange(lines[0]);
+                }
+            }
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label') {
             const stop = busStops.find(s => s.id === feature.properties.id);
             if (stop) {
@@ -238,9 +249,10 @@ function MapLibreBackground(props: MapLibreProps) {
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
             const lineName = feature.properties.name;
             setPopupCoords(null);
+            // Toggle logic is handled in the callback in page.tsx
             onActiveLineChange(lineName);
         }
-    }, [busStops, onStationClick, onBusStopClick]);
+    }, [busStops, onStationClick, onBusStopClick, activeLine, onActiveLineChange]);
 
     return (
         <MapBase

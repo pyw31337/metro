@@ -68,7 +68,10 @@ export default function Home() {
     const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute);
 
     const handleActiveLineChange = useCallback((line: string | null) => {
-        setActiveLine(prev => prev === line ? null : (line || null));
+        setActiveLine(prev => {
+            if (line === null) return null;
+            return prev === line ? null : line;
+        });
     }, []);
 
     const stations = useMemo(() => {
