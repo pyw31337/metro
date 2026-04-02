@@ -211,11 +211,22 @@ export class DataIngestionService {
      */
     static async ingestInterStationDistances(callback?: ProgressCallback) {
         this.updateTask('distances', { status: 'running', progress: 10 }, callback);
-        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchStationDistance/1/1000/`;
         try {
-            const json = await fetchWithFallbacks(url);
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-distances.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0) {
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchStationDistance/1/1000/`;
+                const json = await fetchWithFallbacks(url);
+                items = json.SearchStationDistance?.row || [];
+            }
+
             this.updateTask('distances', { progress: 50 }, callback);
-            const items = json.SearchStationDistance?.row || [];
 
             const mapped: OperationalData[] = items.map((item: any) => ({
                 fromStation: item.STATION_NM,
@@ -238,19 +249,26 @@ export class DataIngestionService {
      * Source: data.go.kr 15151816
      */
     static async ingestFastTransfers(callback?: ProgressCallback) {
-        if (this.DATA_GO_KR_KEY === 'sample') {
-            console.warn('⚠️ DATA_GO_KR_KEY is "sample". Skipping fast transfer ingestion.');
-            this.updateTask('transfers', { status: 'completed', progress: 100 }, callback);
-            return;
-        }
         this.updateTask('transfers', { status: 'running', progress: 10 }, callback);
-        const url = `https://api.odcloud.kr/api/15151816/v1/uddi:e9c2bb71-05e8-4767-8397-9df787ee70f6?page=1&perPage=5000&serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}`;
         try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-            const json = await res.json();
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-transfers.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0 && this.DATA_GO_KR_KEY !== 'sample') {
+                const url = `https://api.odcloud.kr/api/15151816/v1/uddi:e9c2bb71-05e8-4767-8397-9df787ee70f6?page=1&perPage=5000&serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    const json = await res.json();
+                    items = json.data || [];
+                }
+            }
+
             this.updateTask('transfers', { progress: 50 }, callback);
-            const items = json.data || [];
 
             const mappedTransfers: TransferInfo[] = items.map((item: any) => {
                 const car = item.CAR_ORDR || item['차량번호'] || item['CAR_NO'];
@@ -279,11 +297,22 @@ export class DataIngestionService {
      */
     static async ingestDetailedStationInfo(callback?: ProgressCallback) {
         this.updateTask('details', { status: 'running', progress: 10 }, callback);
-        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/StationAdresTelno/1/1000/`;
         try {
-            const json = await fetchWithFallbacks(url);
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-details.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0) {
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/StationAdresTelno/1/1000/`;
+                const json = await fetchWithFallbacks(url);
+                items = json.StationAdresTelno?.row || [];
+            }
+
             this.updateTask('details', { progress: 30 }, callback);
-            const items = json.StationAdresTelno?.row || [];
 
             // Fetch all stations first to avoid O(N) sequential queries
             const allStations = await db.stations.toArray();
@@ -319,19 +348,26 @@ export class DataIngestionService {
      * Source: data.go.kr 15086929
      */
     static async ingestParkingLots(callback?: ProgressCallback) {
-        if (this.DATA_GO_KR_KEY === 'sample') {
-            console.warn('⚠️ DATA_GO_KR_KEY is "sample". Skipping parking lot ingestion.');
-            this.updateTask('parking', { status: 'completed', progress: 100 }, callback);
-            return;
-        }
         this.updateTask('parking', { status: 'running', progress: 10 }, callback);
-        const url = `https://api.odcloud.kr/api/15086929/v1/uddi:5e2b02a7-5735-464a-85b5-779836365735?page=1&perPage=1000&serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}`;
         try {
-            const res = await fetch(url);
-            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-            const json = await res.json();
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-parking.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0 && this.DATA_GO_KR_KEY !== 'sample') {
+                const url = `https://api.odcloud.kr/api/15086929/v1/uddi:5e2b02a7-5735-464a-85b5-779836365735?page=1&perPage=1000&serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}`;
+                const res = await fetch(url);
+                if (res.ok) {
+                    const json = await res.json();
+                    items = json.data || [];
+                }
+            }
+
             this.updateTask('parking', { progress: 50 }, callback);
-            const items = json.data || [];
 
             const mapped: ParkingLot[] = items.map((item: any) => ({
                 name: item['주차장명'] || item.PKLT_NM,

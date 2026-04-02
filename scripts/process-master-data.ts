@@ -67,12 +67,57 @@ async function processLifts() {
     const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`;
     const json = await fetchJson(url);
     items = json?.SearchSubwayStationWheelchairLift?.row || [];
-    
     if (items.length > 0) {
         fs.writeFileSync(path.join(DATA_DIR, 'master-lifts.json'), JSON.stringify(items, null, 2));
         console.log(`✅ Saved ${items.length} lifts.`);
-    } else {
-        console.warn('⚠️ No lift data found.');
+    }
+}
+
+async function processDistances() {
+    console.log('📏 Processing Distances...');
+    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchStationDistance/1/1000/`;
+    const json = await fetchJson(url);
+    const items = json?.SearchStationDistance?.row || [];
+    if (items.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-distances.json'), JSON.stringify(items, null, 2));
+        console.log(`✅ Saved ${items.length} distance records.`);
+    }
+}
+
+async function processDetails() {
+    console.log('📞 Processing Detailed Info...');
+    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/StationAdresTelno/1/1000/`;
+    const json = await fetchJson(url);
+    const items = json?.StationAdresTelno?.row || [];
+    if (items.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-details.json'), JSON.stringify(items, null, 2));
+        console.log(`✅ Saved ${items.length} detailed station records.`);
+    }
+}
+
+async function processTransfers() {
+    const DATA_GO_KR_KEY = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || 'sample';
+    if (DATA_GO_KR_KEY === 'sample') return;
+    console.log('⚡ Processing Fast Transfers...');
+    const url = `https://api.odcloud.kr/api/15151816/v1/uddi:e9c2bb71-05e8-4767-8397-9df787ee70f6?page=1&perPage=5000&serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}`;
+    const json = await fetchJson(url);
+    const items = json?.data || [];
+    if (items.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-transfers.json'), JSON.stringify(items, null, 2));
+        console.log(`✅ Saved ${items.length} fast transfer records.`);
+    }
+}
+
+async function processParking() {
+    const DATA_GO_KR_KEY = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || 'sample';
+    if (DATA_GO_KR_KEY === 'sample') return;
+    console.log('🚗 Processing Parking Lots...');
+    const url = `https://api.odcloud.kr/api/15086929/v1/uddi:5e2b02a7-5735-464a-85b5-779836365735?page=1&perPage=1000&serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}`;
+    const json = await fetchJson(url);
+    const items = json?.data || [];
+    if (items.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-parking.json'), JSON.stringify(items, null, 2));
+        console.log(`✅ Saved ${items.length} parking lots.`);
     }
 }
 
@@ -98,6 +143,10 @@ async function main() {
     await processToilets();
     await processElevators();
     await processLifts();
+    await processDistances();
+    await processDetails();
+    await processTransfers();
+    await processParking();
     await processMetadata();
 
     console.log('✨ Master data processing cycle complete.');
