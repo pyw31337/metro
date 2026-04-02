@@ -10,16 +10,7 @@ export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: 
     let title = defaultTitle;
     if (trains.length > 0) {
         const dest = trains[0].trainLineNm.split('-')[0].replace('행', '').trim();
-        const base = defaultTitle.split('·')[0].trim();
-        
-        // Map 내선/외선 and determine 상/하/좌/우
-        let dir = base;
-        if (base.includes('내선')) dir = '좌행 (내선)';
-        else if (base.includes('외선')) dir = '우행 (외선)';
-        else if (base.includes('상행')) dir = '상행';
-        else if (base.includes('하행')) dir = '하행';
-
-        title = `${dir} (${dest}행)`; 
+        title = `${dest}행`;
     }
 
     return (
@@ -118,14 +109,24 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
                                      .trim();
     }
 
+    const destination = arr.trainLineNm.split('-')[0].trim();
+    const isDivergent = destination.includes("인천") || destination.includes("서동탄") || destination.includes("병점") || destination.includes("신창") || destination.includes("고색");
+
     return (
         <button 
             onClick={(e) => { e.stopPropagation(); if(onToggleTimeDisplay) onToggleTimeDisplay(); }}
-            className="w-full focus:outline-none flex items-center justify-between px-3 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5 active:scale-95 transition-transform"
+            className={`w-full focus:outline-none flex items-center justify-between px-3 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border ${isDivergent ? 'border-red-500/50' : 'border-black/5 dark:border-white/5'} active:scale-95 transition-transform`}
         >
-            <span className={`text-[12px] leading-tight font-black ${isHighlight ? '' : 'text-zinc-900 dark:text-white'}`} style={isHighlight ? { color: statusColor } : {}}>
-                {displayTime}
-            </span>
+            <div className="flex items-center gap-1.5">
+                <span className={`text-[12px] leading-tight font-black ${isHighlight ? '' : 'text-zinc-900 dark:text-white'}`} style={isHighlight ? { color: statusColor } : {}}>
+                    {displayTime}
+                </span>
+                {isDivergent && (
+                    <span className="text-[9px] px-1 py-0.5 border border-red-500 text-red-500 rounded font-black leading-none">
+                        분기
+                    </span>
+                 )}
+            </div>
             <span className={`text-[11px] font-bold leading-tight ${isHighlight ? '' : 'text-zinc-400 dark:text-zinc-500'}`} style={isHighlight ? { color: statusColor } : {}}>
                 {finalStopsLeft}
             </span>

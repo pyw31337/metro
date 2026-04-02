@@ -10,6 +10,8 @@ import { WCItem } from "@/components/WCLayer";
 import { BusStop } from "@/components/BusStopLayer";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
 import { SUBWAY_LINES } from "@/data/subway-lines";
+import { useCongestion } from "@/hooks/useCongestion";
+import CongestionInfo from "./CongestionInfo";
 
 interface MapPopupsProps {
   popupCoords: [number, number] | null;
@@ -24,7 +26,6 @@ interface MapPopupsProps {
   onSetWaypoint: (name: string) => void;
   startStation: string | null;
   setPopupCoords: (coords: [number, number] | null) => void;
-  
   selectedTrain: any;
   setSelectedTrain: (train: any) => void;
   isLoadingCongestion: boolean;
@@ -83,15 +84,7 @@ const MapPopups = ({
   activeLine,
   onActiveLineChange
 }: MapPopupsProps) => {
-  const badges = useMemo(() => getStationBadges(selectedStationName || ""), [selectedStationName]);
-
-  useEffect(() => {
-    if (badges.length > 0 && (!activeLine || !badges.find(b => b.lineName === activeLine))) {
-        onActiveLineChange(badges[0].lineName);
-    } else if (badges.length === 0 && activeLine) {
-        onActiveLineChange(null);
-    }
-  }, [badges, activeLine, onActiveLineChange]);
+  const { data: realTimeCongestion, loading: isStationCongestionLoading } = useCongestion(selectedStationName);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -102,6 +95,25 @@ const MapPopups = ({
         (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')))
     );
   }, [stationArrivals, activeLine]);
+
+  // Default line selection on popup open
+  const badges = useMemo(() => {
+    if (activeTab !== 'subway' || !selectedStationName) return [];
+    const lines = SUBWAY_LINES.filter(l => l.stations.some(s => s.name === selectedStationName));
+    return lines.map(l => ({ lineName: l.name, color: l.color }));
+  }, [activeTab, selectedStationName]);
+
+  useEffect(() => {
+    if (popupCoords && activeTab === 'subway' && !activeLine && badges.length > 0) {
+      onActiveLineChange(badges[0].lineName);
+    }
+  }, [popupCoords, activeTab, activeLine, badges, onActiveLineChange]);
+
+  useEffect(() => {
+    if (popupCoords && activeTab === 'subway' && !activeLine && badges.length > 0) {
+      onActiveLineChange(badges[0].lineName);
+    }
+  }, [popupCoords, activeTab, activeLine, badges, onActiveLineChange]);
 
   return (
     <>
@@ -134,22 +146,35 @@ const MapPopups = ({
                 </div>
 
                 {activeTab === 'subway' && badges.length > 0 && (
-                    <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5 w-full min-w-0 scroll-smooth touch-pan-x">
+                    <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5 w-full min-w-0 scroll-smooth touch-pan-x pointer-events-auto cursor-grab active:cursor-grabbing">
                         {badges.map((badge, idx) => {
                             const label = getLineLongName(badge.lineName);
+                            const isActive = activeLine === badge.lineName;
                             
                             return (
                                 <button 
                                     key={idx}
-                                    onClick={(e) => { e.stopPropagation(); onActiveLineChange(badge.lineName); }}
-                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black text-white shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.lineName ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-zinc-900 scale-105' : 'opacity-40 grayscale-[0.3]'}`}
-                                    style={{ backgroundColor: badge.color }}
-                                >
+                                    onClick={(e) => { 
+                                      e.stopPropagation(); 
+                                      e.preventDefault();
+                                      onActiveLineChange(badge.lineName); 
+                                    }}
+                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
+                                    style={{ 
+                                      backgroundColor: isActive ? badge.color : 'transparent',
+                                      borderColor: isActive ? 'transparent' : badge.color,
+                                      color: isActive ? 'white' : badge.color
+                                    }}
+                                  >
                                     {label}
                                 </button>
                             );
                         })}
                     </div>
+                )}
+                
+                {activeTab === 'subway' && realTimeCongestion && (
+                    <CongestionInfo data={realTimeCongestion} />
                 )}
                 
                 {/* Navigation Actions */}
