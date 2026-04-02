@@ -110,6 +110,12 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
     const isHighlight = stopsLeft.includes("당역") || stopsLeft.includes("진입") || stopsLeft.includes("도착") || stopsLeft.includes("전역");
 
+    // Clean up stopsLeft if displayTime already mentions "도착" to avoid redundancy (e.g., "곧 도착 - 당역 도착" -> "곧 도착 - 당역")
+    let finalStopsLeft = stopsLeft;
+    if (displayTime === "곧 도착" && finalStopsLeft.includes("당역")) {
+        finalStopsLeft = finalStopsLeft.replace(" 도착", "").replace("도착", "").trim();
+    }
+
     return (
         <button 
             onClick={(e) => { e.stopPropagation(); if(onToggleTimeDisplay) onToggleTimeDisplay(); }}
@@ -119,7 +125,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
                 {displayTime}
             </span>
             <span className={`text-[11px] font-bold leading-tight ${isHighlight ? '' : 'text-zinc-400 dark:text-zinc-500'}`} style={isHighlight ? { color: statusColor } : {}}>
-                {stopsLeft}
+                {finalStopsLeft}
             </span>
         </button>
     );
