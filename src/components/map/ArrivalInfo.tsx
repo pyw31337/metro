@@ -18,7 +18,7 @@ export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: 
             onClick={(e) => { e.stopPropagation(); setShowSchedule(!showSchedule); }}
             className={`w-full text-left focus:outline-none transition-transform active:scale-95`}
         >
-            <div className={`text-[11px] font-black ${textColor} text-center pb-2 border-b-2 ${borderColor}`}>
+            <div className={`text-[11px] font-black ${textColor} text-center pb-2 border-b-2 ${borderColor} whitespace-nowrap`}>
                 {showSchedule ? '첫차 05:00 / 막차 12:00' : title}
             </div>
         </button>

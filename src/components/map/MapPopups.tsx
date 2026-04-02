@@ -133,7 +133,7 @@ const MapPopups = ({
             offset={15}
             className="custom-station-popup"
         >
-            <div className="p-4 min-w-[240px] max-w-[320px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden">
+            <div className="p-4 min-w-[240px] max-w-[400px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden">
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[170px]">
