@@ -114,57 +114,61 @@ export function useRealtimeTrains(map: any | null) {
         fetchRealtime();
         const apiInterval = setInterval(fetchRealtime, 15000); 
 
-        const animInterval = setInterval(() => {
-            if (!map || !map.isStyleLoaded()) return;
+        let lastRafTime = 0;
+        let rafId: number;
+
+        const animate = (time: number) => {
+            if (!map || !map.isStyleLoaded()) {
+                rafId = requestAnimationFrame(animate);
+                return;
+            }
+
+            // Throttle map updates to ~15fps (every 66ms) for mobile comfort
+            if (time - lastRafTime < 66) {
+                rafId = requestAnimationFrame(animate);
+                return;
+            }
+            lastRafTime = time;
 
             const now = Date.now();
             const updated: Train[] = [];
             
-            const nextStates = trainsRef.current.map(t => {
+            trainsRef.current.forEach(t => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
-                if (!line) return t;
+                if (!line) return;
 
-                const elapsed = (now - t.lastUpdate) / 1000; 
-                let progress = t.progress + (elapsed * 0.008); 
-                if (progress > 0.95) progress = 0.95; 
+                // Predictive Progress: move 0.2% of track per second if running
+                const elapsed = (now - t.lastUpdate) / 1000;
+                let progress = t.status === 'RUNNING' ? t.progress + (elapsed * 0.005) : t.progress;
+                if (progress > 0.98) progress = 0.98; 
 
                 const currentStation = line.stations[t.stationIndex];
                 const nextStationIdx = t.stationIndex + t.direction;
                 const nextStation = line.stations[nextStationIdx] || currentStation;
                 const pos = interpolate(currentStation, nextStation, progress);
 
-                const newT = { ...t, progress, lastUpdate: now };
                 updated.push({
-                    id: t.id,
-                    lineId: t.lineId,
-                    lineName: t.lineName,
+                    ...t,
                     lineColor: line.color.toUpperCase(),
-                    status: t.status,
                     lat: pos.lat,
-                    lng: pos.lng,
-                    headingTo: t.headingTo,
-                    direction: t.direction,
-                    stationIndex: t.stationIndex,
-                    isRealtime: true,
-                    trainNo: t.trainNo,
-                    directAt: t.directAt,
-                    trainSttus: t.trainSttus
-                } as Train);
-                return newT;
+                    lng: pos.lng
+                });
             });
 
-            trainsRef.current = nextStates;
-            
-            // Direct update to map source
             const source = map.getSource('train-source');
             if (source && updated.length > 0) {
+                // Direct raw access to MapLibre source for speed
                 source.setData(convertTrainsToGeoJSON(updated));
             }
-        }, 1000); // Throttled to 1s to drastically reduce CPU load (kernel_task) on mobile
+
+            rafId = requestAnimationFrame(animate);
+        };
+
+        rafId = requestAnimationFrame(animate);
 
         return () => {
             clearInterval(apiInterval);
-            clearInterval(animInterval);
+            cancelAnimationFrame(rafId);
         };
     }, [map]);
 

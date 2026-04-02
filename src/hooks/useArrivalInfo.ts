@@ -33,17 +33,16 @@ export function useArrivalInfo(stationName: string | null) {
             try {
                 const now = new Date();
                 const dayType = now.getDay() === 0 ? "sun" : (now.getDay() === 6 ? "sat" : "week");
+                const { getCanonicalName, getAllStationNames } = await import("@/utils/stationRegistry");
+                const canonical = getCanonicalName(cleanName);
+                const queryNames = getAllStationNames(cleanName);
                 const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
                 // 1. Instant Baseline: Fetch from Local DB
-                let station = await db.getStationByName(cleanName);
-                
-                // Special Alias for Seoul Station (서울 <-> 서울역 mismatch)
-                if (!station && cleanName === "서울") {
-                    station = await db.getStationByName("서울역");
-                }
-                if (!station && cleanName === "서울역") {
-                    station = await db.getStationByName("서울");
+                let station = null;
+                for (const qName of queryNames) {
+                    station = await db.getStationByName(qName);
+                    if (station) break;
                 }
 
                 if (!station) {
@@ -56,12 +55,13 @@ export function useArrivalInfo(stationName: string | null) {
                 const lineSchedules: Record<string, ScheduleInfo> = {};
 
                 for (const line of targetLines) {
-                    // Try original name then alias for each line's timetable
-                    let entries = await db.getStoredTimetable(station.name, line, dayType).catch(() => [] as TimetableEntry[]);
-                    
-                    if (entries.length === 0 && station.name.includes("서울")) {
-                        const altName = station.name === "서울" ? "서울역" : "서울";
-                        entries = await db.getStoredTimetable(altName, line, dayType).catch(() => [] as TimetableEntry[]);
+                    let entries: TimetableEntry[] = [];
+                    for (const qName of queryNames) {
+                        const results = await db.getStoredTimetable(qName, line, dayType).catch(() => []);
+                        if (results.length > 0) {
+                            entries = results;
+                            break;
+                        }
                     }
                     if (entries.length > 0) {
                         combinedTimetable = [...combinedTimetable, ...entries];
@@ -98,7 +98,13 @@ export function useArrivalInfo(stationName: string | null) {
 
                 // 2. Real-time Augmentation: Non-blocking parallel fetch
                 fetchStationArrivals(cleanName)
-                    .then(liveArrivals => {
+                    .then(async (liveArrivals) => {
+                        const { useDataWorker } = await import("@/hooks/useDataWorker");
+                        // We can't really use hooks inside .then() easily, 
+                        // so we assume useDataWorker is already initialized in the component if needed.
+                        // Or we can just use the provided mergeArrivals from props/context if we had one.
+                        // Actually, I'll pass useDataWorker to the hook or just import the worker logic.
+                        const { mergeLiveAndScheduled } = await import("@/services/arrivalApi");
                         const combined = mergeLiveAndScheduled(liveArrivals, scheduledArrivals);
                         setArrivals(combined);
                     })

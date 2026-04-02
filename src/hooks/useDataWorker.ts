@@ -60,5 +60,21 @@ export function useDataWorker() {
         });
     }, []);
 
-    return { findPath, findNearestStation, sortWCs };
+    const mergeArrivals = useCallback((live: any[], scheduled: any[]) => {
+        return new Promise<any[]>((resolve) => {
+            if (!workerRef.current) return resolve([]);
+            
+            const handleMessage = (e: MessageEvent) => {
+                if (e.data.type === "MERGE_ARRIVALS_RESULT") {
+                    workerRef.current?.removeEventListener("message", handleMessage);
+                    resolve(e.data.payload);
+                }
+            };
+            
+            workerRef.current.addEventListener("message", handleMessage);
+            workerRef.current.postMessage({ type: "MERGE_ARRIVALS", payload: { live, scheduled } });
+        });
+    }, []);
+
+    return { findPath, findNearestStation, sortWCs, mergeArrivals };
 }

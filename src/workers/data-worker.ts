@@ -302,12 +302,41 @@ self.onmessage = async (e: MessageEvent) => {
 
         case "SORT_WC": {
             const { items, userLat, userLng } = payload;
-            const sorted = [...items].sort((a: any, b: any) => {
-                const distA = Math.sqrt(Math.pow(a.lat - userLat, 2) + Math.pow(a.lng - userLng, 2));
-                const distB = Math.sqrt(Math.pow(b.lat - userLat, 2) + Math.pow(b.lng - userLng, 2));
-                return distA - distB;
-            }).slice(0, 3);
+            const sorted = [...items]
+                .map((a: any) => ({
+                    ...a,
+                    dist: Math.sqrt(Math.pow(a.lat - (userLat || 0), 2) + Math.pow(a.lng - (userLng || 0), 2))
+                }))
+                .sort((a, b) => a.dist - b.dist)
+                .slice(0, 3);
             self.postMessage({ type: "SORTED_WC_RESULT", payload: sorted });
+            break;
+        }
+
+        case "MERGE_ARRIVALS": {
+            const { live, scheduled } = payload;
+            
+            const upLive = live.filter((l: any) => l.updnLine.includes('상행') || l.updnLine.includes('내선'));
+            const downLive = live.filter((l: any) => !l.updnLine.includes('상행') && !l.updnLine.includes('내선'));
+
+            const upSched = scheduled.filter((s: any) => s.updnLine.includes('상행') || s.updnLine.includes('내선'));
+            const downSched = scheduled.filter((s: any) => !s.updnLine.includes('상행') && !s.updnLine.includes('내선'));
+
+            const mergeSide = (lSide: any[], sSide: any[]) => {
+                const side = [...lSide];
+                sSide.forEach(s => {
+                    if (side.length < 3) {
+                        const lastLiveDt = side.length > 0 ? parseInt(side[side.length - 1].barvlDt) : -1;
+                        if (parseInt(s.barvlDt) > lastLiveDt + 30) { 
+                            side.push(s);
+                        }
+                    }
+                });
+                return side.sort((a,b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 3);
+            };
+
+            const result = [...mergeSide(upLive, upSched), ...mergeSide(downLive, downSched)];
+            self.postMessage({ type: "MERGE_ARRIVALS_RESULT", payload: result });
             break;
         }
     }
