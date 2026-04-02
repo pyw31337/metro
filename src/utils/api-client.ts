@@ -50,19 +50,19 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
  */
 export const API_ENDPOINTS = {
     SUBWAY_POSITION: (key: string, name: string) =>
-        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/100/${encodeURIComponent(name)}`,
+        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/100/${encodeURIComponent(name)}`,
     
     SUBWAY_ARRIVAL: (key: string, station: string) =>
-        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeStationArrival/0/20/${encodeURIComponent(station)}`,
+        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeStationArrival/0/20/${encodeURIComponent(station)}`,
     
     SUBWAY_CONGESTION: (key: string, subwayId: string, trainNo: string) =>
-        `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`,
+        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`,
 
     TRANSFER_PLATFORM: (key: string, station: string, fromLine: string, toLine: string) =>
         `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTransferPlatform/0/10/${encodeURIComponent(station)}/${encodeURIComponent(fromLine)}/${encodeURIComponent(toLine)}`,
 
     SUBWAY_ALERTS: (key: string) =>
-        `http://openapi.seoul.go.kr:8088/${key}/json/CardSubwayAlertInfo/1/100/`,
+        `https://openapi.seoul.go.kr:443/${key}/json/CardSubwayAlertInfo/1/100/`,
 
     TAGO_BUS_ARRIVAL: (key: string, cityCode: string, nodeId: string) =>
         `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearnBusList?serviceKey=${key}&cityCode=${cityCode}&nodeId=${nodeId}&_type=json`

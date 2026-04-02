@@ -146,7 +146,12 @@ const MapPopups = ({
                 </div>
 
                 {activeTab === 'subway' && badges.length > 0 && (
-                    <div className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5 w-full min-w-0 scroll-smooth touch-pan-x pointer-events-auto cursor-grab active:cursor-grabbing">
+                    <div 
+                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5 w-full min-w-0 scroll-smooth touch-pan-x pointer-events-auto cursor-grab active:cursor-grabbing"
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onWheel={(e) => e.stopPropagation()}
+                    >
                         {badges.map((badge, idx) => {
                             const label = getLineLongName(badge.lineName);
                             const isActive = activeLine === badge.lineName;

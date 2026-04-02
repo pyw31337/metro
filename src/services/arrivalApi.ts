@@ -82,7 +82,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
     const fetchUniqueArrivals = async (name: string): Promise<StationArrival[]> => {
-        const baseUrl = `http://swopenapi.seoul.go.kr/api/subway`;
+        const baseUrl = `https://swopenapi.seoul.go.kr/api/subway`;
         const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(name)}`;
         
         try {
@@ -247,7 +247,7 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
-    const url = `http://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`;
+    const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`;
     
     try {
         const json = await fetchWithFallbacks(url);
@@ -290,7 +290,7 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
     
     const tryFetch = async (queryName: string) => {
-        const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(queryName)}`;
+        const url = `https://openapi.seoul.go.kr:443/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(queryName)}`;
         try {
             const json = await fetchWithFallbacks(url);
             const list = json?.CardSubwayTransferPos?.row || [];

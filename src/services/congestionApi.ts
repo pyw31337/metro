@@ -121,7 +121,7 @@ export const fetchStationCongestion = async (stationName: string): Promise<Conge
     if (!areaName) return null;
 
     const apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || 'sample';
-    const url = `http://openapi.seoul.go.kr:8088/${apiKey}/json/citydata/1/1/${encodeURIComponent(areaName)}`;
+    const url = `https://openapi.seoul.go.kr:443/${apiKey}/json/citydata/1/1/${encodeURIComponent(areaName)}`;
 
     try {
         const json = await fetchWithFallbacks(url);

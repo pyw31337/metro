@@ -79,7 +79,7 @@ export class DataIngestionService {
      */
     static async ingestStationToilets(callback?: ProgressCallback) {
         this.updateTask('toilets', { status: 'running', progress: 10 }, callback);
-        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
+        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
         try {
             const json = await fetchWithFallbacks(url);
             this.updateTask('toilets', { progress: 50 }, callback);
@@ -114,7 +114,7 @@ export class DataIngestionService {
      */
     static async ingestElevators(callback?: ProgressCallback) {
         this.updateTask('elevators', { status: 'running', progress: 10 }, callback);
-        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchSubwayStationElevator/1/1000/`;
+        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSubwayStationElevator/1/1000/`;
         try {
             const json = await fetchWithFallbacks(url);
             this.updateTask('elevators', { progress: 50 }, callback);
@@ -147,7 +147,7 @@ export class DataIngestionService {
      */
     static async ingestLifts(callback?: ProgressCallback) {
         this.updateTask('lifts', { status: 'running', progress: 10 }, callback);
-        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`;
+        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`;
         try {
             const json = await fetchWithFallbacks(url);
             this.updateTask('lifts', { progress: 50 }, callback);
@@ -180,7 +180,7 @@ export class DataIngestionService {
      */
     static async ingestInterStationDistances(callback?: ProgressCallback) {
         this.updateTask('distances', { status: 'running', progress: 10 }, callback);
-        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchStationDistance/1/1000/`;
+        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchStationDistance/1/1000/`;
         try {
             const json = await fetchWithFallbacks(url);
             this.updateTask('distances', { progress: 50 }, callback);
@@ -244,7 +244,7 @@ export class DataIngestionService {
      */
     static async ingestDetailedStationInfo(callback?: ProgressCallback) {
         this.updateTask('details', { status: 'running', progress: 10 }, callback);
-        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/StationAdresTelno/1/1000/`;
+        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/StationAdresTelno/1/1000/`;
         try {
             const json = await fetchWithFallbacks(url);
             this.updateTask('details', { progress: 30 }, callback);
@@ -328,7 +328,7 @@ export class DataIngestionService {
      */
     static async ingestStationMetadata(callback?: ProgressCallback) {
         this.updateTask('metadata', { status: 'running', progress: 10 }, callback);
-        const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
+        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
         try {
             const json = await fetchWithFallbacks(url);
             this.updateTask('metadata', { progress: 30 }, callback);
@@ -374,7 +374,7 @@ export class DataIngestionService {
 
         for (const dayType of dayTypes) {
             for (const direction of directions) {
-                const url = `http://openapi.seoul.go.kr:8088/${this.API_KEY}/json/SearchSTNTimeTableByIDService/1/500/${stationCd}/${dayType}/${direction}/`;
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSTNTimeTableByIDService/1/500/${stationCd}/${dayType}/${direction}/`;
                 try {
                     const json = await fetchWithFallbacks(url);
                     const rows = json.SearchSTNTimeTableByIDService?.row || [];
@@ -452,7 +452,7 @@ export class DataIngestionService {
         for (const station of stations) {
             try {
                 // TAGO getBusSttnListByPosInqire API
-                const url = `http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getBusSttnListByPosInqire?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&gpsLati=${station.lat}&gpsLong=${station.lng}`;
+                const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getBusSttnListByPosInqire?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&gpsLati=${station.lat}&gpsLong=${station.lng}`;
                 
                 const res = await fetch(url);
                 const json = await res.json();
@@ -486,7 +486,7 @@ export class DataIngestionService {
      * Fetch all bus stops for a specific city on-demand.
      */
     static async fetchRegionalBusStops(cityCode: string, callback?: ProgressCallback) {
-        const url = `http://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&cityCode=${cityCode}&pageNo=1&numOfRows=10000`;
+        const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&cityCode=${cityCode}&pageNo=1&numOfRows=10000`;
         try {
             const res = await fetch(url);
             const json = await res.json();
