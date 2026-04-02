@@ -34,7 +34,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
         if (match) stopsLeft = `${match[0]}역전`;
     } 
 
-    if (!stopsLeft && arr.arvlMsg3 && arr.statnNm) {
+    if (!arr.isScheduled && !stopsLeft && arr.arvlMsg3 && arr.statnNm) {
         const cleanTrainLoc = arr.arvlMsg3.replace(/역$/, '');
         const cleanUserLoc = arr.statnNm.replace(/역$/, '');
         
@@ -104,6 +104,18 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
     // Clean up stopsLeft if displayTime already mentions "도착" to avoid redundancy
     let finalStopsLeft = stopsLeft;
+    
+    // Sanity check: If distance is too high for the short wait time, suppress it
+    const minutesMatch = relativeStr.match(/(\d+)분/);
+    if (minutesMatch) {
+       const mins = parseInt(minutesMatch[1]);
+       const distMatch = finalStopsLeft.match(/(\d+)역/);
+       if (distMatch) {
+           const dist = parseInt(distMatch[1]);
+           if (mins < 5 && dist > 10) finalStopsLeft = ""; // Hide contradictory distance
+       }
+    }
+
     if (arr.arvlCd === "1" || finalStopsLeft.includes("당역도착") || (displayTime === "곧 도착" && finalStopsLeft.includes("당역"))) {
         finalStopsLeft = "당역";
     } else if (arr.arvlCd === "0" || finalStopsLeft.includes("당역진입")) {

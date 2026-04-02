@@ -142,7 +142,7 @@ export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?:
                 trainLineNm: `${e.destination}행`,
                 statnNm: e.stationName,
                 arvlMsg2: waitTime < 60 ? "곧 도착" : `${Math.floor(waitTime / 60)}분 후`,
-                arvlMsg3: e.destination,
+                arvlMsg3: "",
                 arvlCd: "99",
                 bstatnNm: e.destination,
                 barvlDt: waitTime.toString(),

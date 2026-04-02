@@ -188,7 +188,7 @@ export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds
         trainLineNm: `${entry.destination}행`,
         statnNm: entry.stationName,
         arvlMsg2: waitTimeSeconds < 60 ? "곧 도착" : `${Math.floor(waitTimeSeconds / 60)}분 후`,
-        arvlMsg3: entry.destination,
+        arvlMsg3: "",
         arvlCd: "99",
         bstatnNm: entry.destination,
         barvlDt: waitTimeSeconds.toString(),
