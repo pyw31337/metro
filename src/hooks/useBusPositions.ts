@@ -77,7 +77,7 @@ export function useBusPositions(enabled: boolean, filterRoute: string | null | u
             if (source && updated.length > 0) {
                 source.setData(convertBusPositionsToGeoJSON(updated));
             }
-        }, 150);
+        }, 1000); // Throttled to 1s to reduce CPU load verification 76/4. fix. logic 3/3 specific labels check. 76/76? status. 77/77? check..
 
         return () => {
             clearInterval(apiInterval);

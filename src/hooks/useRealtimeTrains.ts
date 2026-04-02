@@ -160,7 +160,7 @@ export function useRealtimeTrains(map: any | null) {
             if (source && updated.length > 0) {
                 source.setData(convertTrainsToGeoJSON(updated));
             }
-        }, 150); // Slightly increased interval for mobile performance
+        }, 1000); // Throttled to 1s to drastically reduce CPU load (kernel_task) on mobile
 
         return () => {
             clearInterval(apiInterval);

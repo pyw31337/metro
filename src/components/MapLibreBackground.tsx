@@ -87,16 +87,20 @@ const MapIconRegister = ({ stations }: { stations: any[] }) => {
         if (!map) return;
 
         const registerIcons = () => {
-            // Find all unique subway line colors from the current data
+            const { SUBWAY_LINES } = require('@/data/subway-lines');
             const uniqueColors = new Set<string>();
+            
+            // Pre-load all known line colors first
+            SUBWAY_LINES.forEach((line: any) => {
+                if (line.color) uniqueColors.add(line.color.toUpperCase());
+            });
+
+            // Add dynamic station colors as well
             stations.forEach(s => {
                 if (s.lineColors) {
                     s.lineColors.forEach((color: string) => uniqueColors.add(color.toUpperCase()));
                 }
             });
-
-            // Ensure common fallback/data colors are present just in case
-            uniqueColors.add("#0052A4"); uniqueColors.add("#00A84D"); uniqueColors.add("#EF7C1C");
 
             uniqueColors.forEach(color => {
                 const id = `train-card-${color}`;

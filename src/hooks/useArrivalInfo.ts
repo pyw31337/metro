@@ -36,7 +36,16 @@ export function useArrivalInfo(stationName: string | null) {
                 const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
                 // 1. Instant Baseline: Fetch from Local DB
-                const station = await db.getStationByName(cleanName);
+                let station = await db.getStationByName(cleanName);
+                
+                // Special Alias for Seoul Station (서울 <-> 서울역 mismatch)
+                if (!station && cleanName === "서울") {
+                    station = await db.getStationByName("서울역");
+                }
+                if (!station && cleanName === "서울역") {
+                    station = await db.getStationByName("서울");
+                }
+
                 if (!station) {
                     setLoading(false);
                     return;
@@ -47,7 +56,13 @@ export function useArrivalInfo(stationName: string | null) {
                 const lineSchedules: Record<string, ScheduleInfo> = {};
 
                 for (const line of targetLines) {
-                    const entries = await db.getStoredTimetable(cleanName, line, dayType).catch(() => [] as TimetableEntry[]);
+                    // Try original name then alias for each line's timetable
+                    let entries = await db.getStoredTimetable(station.name, line, dayType).catch(() => [] as TimetableEntry[]);
+                    
+                    if (entries.length === 0 && station.name.includes("서울")) {
+                        const altName = station.name === "서울" ? "서울역" : "서울";
+                        entries = await db.getStoredTimetable(altName, line, dayType).catch(() => [] as TimetableEntry[]);
+                    }
                     if (entries.length > 0) {
                         combinedTimetable = [...combinedTimetable, ...entries];
                         lineSchedules[line] = {
