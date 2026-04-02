@@ -66,7 +66,7 @@ export class DataIngestionService {
             await this.ingestDetailedStationInfo(onProgress);
             await this.ingestParkingLots(onProgress);
             await this.ingestStationMetadata(onProgress);
-            await this.ingestMajorBusHubs(onProgress);
+            // await this.ingestMajorBusHubs(onProgress); // 🚨 DISABLED: Causes 8000+ errors due to CORS/Rate-limiting
 
             console.log('✅ All data refreshed.');
         } catch (err) {
@@ -209,10 +209,16 @@ export class DataIngestionService {
      * Source: data.go.kr 15151816
      */
     static async ingestFastTransfers(callback?: ProgressCallback) {
+        if (this.DATA_GO_KR_KEY === 'sample') {
+            console.warn('⚠️ DATA_GO_KR_KEY is "sample". Skipping fast transfer ingestion.');
+            this.updateTask('transfers', { status: 'completed', progress: 100 }, callback);
+            return;
+        }
         this.updateTask('transfers', { status: 'running', progress: 10 }, callback);
-        const url = `https://api.odcloud.kr/api/15151816/v1/uddi:e9c2bb71-05e8-4767-8397-9df787ee70f6?page=1&perPage=5000&serviceKey=${this.DATA_GO_KR_KEY}`;
+        const url = `https://api.odcloud.kr/api/15151816/v1/uddi:e9c2bb71-05e8-4767-8397-9df787ee70f6?page=1&perPage=5000&serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}`;
         try {
             const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
             const json = await res.json();
             this.updateTask('transfers', { progress: 50 }, callback);
             const items = json.data || [];
@@ -286,10 +292,16 @@ export class DataIngestionService {
      * Source: data.go.kr 15086929
      */
     static async ingestParkingLots(callback?: ProgressCallback) {
+        if (this.DATA_GO_KR_KEY === 'sample') {
+            console.warn('⚠️ DATA_GO_KR_KEY is "sample". Skipping parking lot ingestion.');
+            this.updateTask('parking', { status: 'completed', progress: 100 }, callback);
+            return;
+        }
         this.updateTask('parking', { status: 'running', progress: 10 }, callback);
-        const url = `https://api.odcloud.kr/api/15086929/v1/uddi:5e2b02a7-5735-464a-85b5-779836365735?page=1&perPage=1000&serviceKey=${this.DATA_GO_KR_KEY}`;
+        const url = `https://api.odcloud.kr/api/15086929/v1/uddi:5e2b02a7-5735-464a-85b5-779836365735?page=1&perPage=1000&serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}`;
         try {
             const res = await fetch(url);
+            if (!res.ok) throw new Error(`HTTP error ${res.status}`);
             const json = await res.json();
             this.updateTask('parking', { progress: 50 }, callback);
             const items = json.data || [];
@@ -454,6 +466,11 @@ export class DataIngestionService {
      * For all capital and regional subway stations.
      */
     static async ingestMajorBusHubs(callback?: ProgressCallback) {
+        if (this.DATA_GO_KR_KEY === 'sample') {
+            console.warn('⚠️ DATA_GO_KR_KEY is "sample". Manual bus hub ingestion disabled.');
+            this.updateTask('bus_expansion', { status: 'completed', progress: 100 }, callback);
+            return;
+        }
         this.updateTask('bus_expansion', { status: 'running', progress: 5 }, callback);
         const stations = await db.stations.toArray();
         const total = stations.length;
@@ -465,9 +482,10 @@ export class DataIngestionService {
         for (const station of stations) {
             try {
                 // TAGO getBusSttnListByPosInqire API
-                const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getBusSttnListByPosInqire?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&gpsLati=${station.lat}&gpsLong=${station.lng}`;
+                const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getBusSttnListByPosInqire?serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}&_type=json&gpsLati=${station.lat}&gpsLong=${station.lng}`;
                 
                 const res = await fetch(url);
+                if (!res.ok) continue; // Skip failed ones
                 const json = await res.json();
                 const items = json.response?.body?.items?.item;
                 
@@ -499,7 +517,8 @@ export class DataIngestionService {
      * Fetch all bus stops for a specific city on-demand.
      */
     static async fetchRegionalBusStops(cityCode: string, callback?: ProgressCallback) {
-        const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${this.DATA_GO_KR_KEY}&_type=json&cityCode=${cityCode}&pageNo=1&numOfRows=10000`;
+        if (this.DATA_GO_KR_KEY === 'sample') return;
+        const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${encodeURIComponent(this.DATA_GO_KR_KEY)}&_type=json&cityCode=${cityCode}&pageNo=1&numOfRows=10000`;
         try {
             const res = await fetch(url);
             const json = await res.json();
