@@ -35,16 +35,14 @@ export function useArrivalInfo(stationName: string | null) {
                 const dayType = now.getDay() === 0 ? "sun" : (now.getDay() === 6 ? "sat" : "week");
                 const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-                // 1. Fetch Station Data to get Lines
+                // 1. Instant Baseline: Fetch from Local DB
                 const station = await db.getStationByName(cleanName);
                 if (!station) {
                     setLoading(false);
                     return;
                 }
 
-                // 2. Instant Baseline: Fetch from Local DB for all lines
                 const targetLines = station.lines.map(normalizeLineName);
-                
                 let combinedTimetable: TimetableEntry[] = [];
                 const lineSchedules: Record<string, ScheduleInfo> = {};
 
@@ -57,11 +55,9 @@ export function useArrivalInfo(stationName: string | null) {
                             lastTrain: entries[entries.length - 1].departureTime || entries[entries.length - 1].arrivalTime || "24:00"
                         };
                     } else {
-                        // Trigger background ingestion for this specific line
+                        // Background ingestion trigger
                         const code = await db.getStationCode(cleanName, line);
-                        if (code) {
-                            DataIngestionService.ingestTimetables(cleanName, line, code).catch(() => {});
-                        }
+                        if (code) DataIngestionService.ingestTimetables(cleanName, line, code).catch(() => {});
                     }
                 }
 
@@ -79,24 +75,27 @@ export function useArrivalInfo(stationName: string | null) {
                         .sort((a, b) => a.waitTime - b.waitTime)
                         .map(item => convertTimetableToArrival(item.entry, item.waitTime));
                     
-                    // Show baseline immediately
+                    // Update UI immediately with baseline
                     setArrivals(scheduledArrivals);
                     setSchedules(lineSchedules);
-                } else {
-                    // Start background ingestion if missing (full station trigger)
-                    DataIngestionService.triggerTimetableByStationName(cleanName).catch(() => {});
+                    setLoading(false); // Stop main loading early
                 }
 
-                // 2. Real-time Augmentation: Fetch from API in background
-                const liveArrivals = await fetchStationArrivals(cleanName).catch(() => [] as StationArrival[]);
-                
-                // 3. Final Merge
-                const combined = mergeLiveAndScheduled(liveArrivals, scheduledArrivals);
-                setArrivals(combined);
+                // 2. Real-time Augmentation: Non-blocking parallel fetch
+                fetchStationArrivals(cleanName)
+                    .then(liveArrivals => {
+                        const combined = mergeLiveAndScheduled(liveArrivals, scheduledArrivals);
+                        setArrivals(combined);
+                    })
+                    .catch(err => {
+                        console.warn("Live fetch failed, staying with scheduled", err);
+                    })
+                    .finally(() => {
+                        setLoading(false);
+                    });
 
             } catch (error) {
                 console.error("Hybrid arrival fetch error", error);
-            } finally {
                 setLoading(false);
             }
         };

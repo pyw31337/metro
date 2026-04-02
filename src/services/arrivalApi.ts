@@ -168,7 +168,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         const sortAndLimit = (list: StationArrival[]) => {
             return list
                 .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
-                .slice(0, 4);
+                .slice(0, 3);
         };
 
         return [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)];
@@ -201,13 +201,6 @@ export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds
  * Merges live API data with scheduled DB data to ensure no "정보 없음" states.
  */
 export const mergeLiveAndScheduled = (live: StationArrival[], scheduled: StationArrival[]): StationArrival[] => {
-    if (live.length === 0) return scheduled;
-    
-    const result: StationArrival[] = [...live];
-    const liveKeys = new Set(live.map(l => `${l.updnLine}-${l.trainLineNm}`));
-
-    // Add scheduled items only if they don't overlap too closely with live ones
-    // and we have room (max 4 per direction)
     const upLive = live.filter(l => l.updnLine.includes('상행') || l.updnLine.includes('내선'));
     const downLive = live.filter(l => !l.updnLine.includes('상행') && !l.updnLine.includes('내선'));
 
@@ -216,16 +209,21 @@ export const mergeLiveAndScheduled = (live: StationArrival[], scheduled: Station
 
     const mergeSide = (lSide: StationArrival[], sSide: StationArrival[]) => {
         const side = [...lSide];
+        
+        // Ensure we have exactly 3 (or as many as possible)
         sSide.forEach(s => {
-            if (side.length < 4) {
-                // If this scheduled train is significantly later than the last live train, add it
+            if (side.length < 3) {
+                // Check if this scheduled train is significantly later than the last live train
                 const lastLiveDt = side.length > 0 ? parseInt(side[side.length - 1].barvlDt) : -1;
-                if (parseInt(s.barvlDt) > lastLiveDt + 120) { // 2 mins gap
+                // Reduce gap to 30s so we don't accidentally skip valid upcoming trains
+                if (parseInt(s.barvlDt) > lastLiveDt + 30) { 
                     side.push(s);
                 }
             }
         });
-        return side.sort((a,b) => parseInt(a.barvlDt) - parseInt(b.barvlDt));
+        
+        // Final trim and sort
+        return side.sort((a,b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 3);
     };
 
     return [...mergeSide(upLive, upSched), ...mergeSide(downLive, downSched)];
