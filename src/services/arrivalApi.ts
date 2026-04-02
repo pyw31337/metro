@@ -50,7 +50,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
     if (!isHttps) {
         try {
-            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(5000) });
+            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(3000) });
             if (res.ok) return await res.json();
         } catch (e) {
             // Silently try proxies
@@ -58,14 +58,12 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     }
 
     const proxies = [
-        `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`,
-        `https://thingproxy.freeboard.io/fetch/${targetUrl}`
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
     ];
 
     for (const proxy of proxies) {
         try {
-            const res = await fetch(proxy, { signal: AbortSignal.timeout(6000) });
+            const res = await fetch(proxy, { signal: AbortSignal.timeout(3000) });
             if (res.ok) {
                 const json = await res.json();
                 if (!json?.RESULT?.CODE?.includes("ERROR-500")) return json;

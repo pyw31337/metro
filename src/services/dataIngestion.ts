@@ -104,8 +104,7 @@ export class DataIngestionService {
             this.updateTask('toilets', { status: 'completed', progress: 100 }, callback);
             console.log(`🚽 Ingested ${mapped.length} station toilets.`);
         } catch (err) {
-            this.updateTask('toilets', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest toilets:', err);
+            this.updateTask('toilets', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -137,8 +136,7 @@ export class DataIngestionService {
             this.updateTask('elevators', { status: 'completed', progress: 100 }, callback);
             console.log(`🛗 Ingested ${mapped.length} elevators.`);
         } catch (err) {
-            this.updateTask('elevators', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest elevators:', err);
+            this.updateTask('elevators', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -170,8 +168,7 @@ export class DataIngestionService {
             this.updateTask('lifts', { status: 'completed', progress: 100 }, callback);
             console.log(`♿ Ingested ${mapped.length} wheelchair lifts.`);
         } catch (err) {
-            this.updateTask('lifts', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest lifts:', err);
+            this.updateTask('lifts', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -199,8 +196,7 @@ export class DataIngestionService {
             this.updateTask('distances', { status: 'completed', progress: 100 }, callback);
             console.log(`📏 Ingested ${mapped.length} inter-station distance records.`);
         } catch (err) {
-            this.updateTask('distances', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest distances:', err);
+            this.updateTask('distances', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -240,8 +236,7 @@ export class DataIngestionService {
             this.updateTask('transfers', { status: 'completed', progress: 100 }, callback);
             console.log(`⚡ Ingested ${mappedTransfers.length} fast transfer records.`);
         } catch (err) {
-            this.updateTask('transfers', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest fast transfers:', err);
+            this.updateTask('transfers', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -282,8 +277,7 @@ export class DataIngestionService {
             this.updateTask('details', { status: 'completed', progress: 100 }, callback);
             console.log(`✅ Detailed info updated.`);
         } catch (err) {
-            this.updateTask('details', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest station info:', err);
+            this.updateTask('details', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -321,8 +315,7 @@ export class DataIngestionService {
             this.updateTask('parking', { status: 'completed', progress: 100 }, callback);
             console.log(`🚗 Ingested ${valid.length} parking lots.`);
         } catch (err) {
-            this.updateTask('parking', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest parking lots:', err);
+            this.updateTask('parking', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -383,8 +376,7 @@ export class DataIngestionService {
             this.updateTask('metadata', { status: 'completed', progress: 100 }, callback);
             console.log(`🆔 Ingested metadata for ${items.length} stations.`);
         } catch (err) {
-            this.updateTask('metadata', { status: 'failed', error: String(err) }, callback);
-            console.debug('Failed to ingest station metadata:', err);
+            this.updateTask('metadata', { status: 'failed', error: 'API unreachable' }, callback);
         }
     }
 
@@ -560,13 +552,11 @@ export class DataIngestionService {
                 }
 
                 if (code) {
-                    this.ingestTimetables(cleanName, normalized, code).catch(err => {
-                        console.debug(`Failed to auto-ingest timetable for ${cleanName} (${line}):`, err);
-                    });
+                    this.ingestTimetables(cleanName, normalized, code).catch(() => {});
                 }
             }
         } catch (err) {
-            console.debug(`Failed to trigger timetable for ${stationName}:`, err);
+            // silent fail
         }
     }
 }

@@ -20,8 +20,13 @@ export function useIngestion() {
     // Check if ingestion is needed on mount
     useEffect(() => {
         const checkAndStart = async () => {
+            // Guard: Only attempt once per session to avoid infinite error loops
+            const hasAttempted = sessionStorage.getItem('metro_ingestion_attempted');
+            if (hasAttempted) return;
+
             const count = await db.facilities.count();
             if (count === 0) {
+                sessionStorage.setItem('metro_ingestion_attempted', 'true');
                 startIngestion();
             }
         };
