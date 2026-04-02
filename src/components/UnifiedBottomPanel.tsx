@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
 import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
-import { ArrivalHeader, ArrivalItemListItem } from "./map/ArrivalInfo";
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
@@ -405,7 +404,20 @@ export default function UnifiedBottomPanel({
                                 <div className="flex flex-col gap-1.5 w-full mb-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
-                                            <span className="text-sm font-black text-zinc-900 dark:text-white">{selectedStationName}</span>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-sm font-black text-zinc-900 dark:text-white">{selectedStationName}</span>
+                                                <div className="flex gap-1 items-center">
+                                                    {badges.map((badge, idx) => (
+                                                        <div 
+                                                            key={idx}
+                                                            className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm"
+                                                            style={{ backgroundColor: badge.color }}
+                                                        >
+                                                            {badge.lineName.replace(/[^0-9]/g, '') || badge.lineName[0]}
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
                                             <div className="flex gap-1.5 items-center">
                                                 {stationFacilities.some(f => f.category === 'elevator') && <div className="p-1 rounded-lg bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20" title="엘리베이터"><Accessibility size={14} strokeWidth={3} /></div>}
                                                 {stationFacilities.some(f => f.category === 'lift') && <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20" title="휠체어 리프트"><Accessibility size={14} strokeWidth={3} /></div>}
@@ -432,116 +444,6 @@ export default function UnifiedBottomPanel({
                                             })}
                                         </div>
                                     )}
-                                    
-                                    {schedules && schedules["기본"] && (
-                                        <div className="flex items-center gap-3 px-3 py-2 bg-zinc-200/40 dark:bg-black/20 rounded-xl border border-black/5 dark:border-white/5 mb-3">
-                                            <div className="flex flex-col text-left">
-                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-0.5 mb-0.5">첫차</span>
-                                                <span className="text-[12px] font-black text-blue-500 font-mono tracking-tight">{schedules["기본"].firstTrain}</span>
-                                            </div>
-                                            <div className="w-px h-5 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
-                                            <div className="flex flex-col text-left">
-                                                <span className="text-[8px] font-black text-zinc-400 uppercase tracking-widest pl-0.5 mb-0.5">막차</span>
-                                                <span className="text-[12px] font-black text-rose-500 font-mono tracking-tight">{schedules["기본"].lastTrain}</span>
-                                            </div>
-                                            <div className="ml-auto flex items-center gap-1.5 opacity-60">
-                                                <span className="text-[10px] font-bold text-zinc-500">평일 기준</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    {/* Up / Inner Column */}
-                                    <div className="flex flex-col gap-2">
-                                        <ArrivalHeader 
-                                            defaultTitle="상행 · 내선" 
-                                            trains={(stationArrivals || [])
-                                                .filter(arr => {
-                                                    if (!activeLine) return true;
-                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
-                                                    const isMatch = arr.lineName.includes(activeLine) || 
-                                                           arr.lineName.includes(shortActive) ||
-                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
-                                                    if (!isMatch) return false;
-                                                    return arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선');
-                                                })}
-                                            textColor="text-blue-500 dark:text-blue-400"
-                                            borderColor="border-blue-500/20"
-                                        />
-                                        <div className="flex flex-col gap-2">
-                                            {(stationArrivals || [])
-                                                .filter(arr => {
-                                                    if (!activeLine) return true;
-                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
-                                                    const isMatch = arr.lineName.includes(activeLine) || 
-                                                           arr.lineName.includes(shortActive) ||
-                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
-                                                    if (!isMatch) return false;
-                                                    return arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선');
-                                                })
-                                                .slice(0, 3)
-                                                .map((arr, idx) => (
-                                                    <ArrivalItemListItem 
-                                                        key={idx} 
-                                                        arr={arr} 
-                                                        timeDisplayMode={timeDisplayMode} 
-                                                        onToggleTimeDisplay={() => setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration")} 
-                                                    />
-                                                ))}
-                                        </div>
-                                    </div>
-
-                                    {/* Down / Outer Column */}
-                                    <div className="flex flex-col gap-2">
-                                        <ArrivalHeader 
-                                            defaultTitle="하행 · 외선" 
-                                            trains={(stationArrivals || [])
-                                                .filter(arr => {
-                                                    if (!activeLine) return true;
-                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
-                                                    const isMatch = arr.lineName.includes(activeLine) || 
-                                                           arr.lineName.includes(shortActive) ||
-                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
-                                                    if (!isMatch) return false;
-                                                    return arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선');
-                                                })}
-                                            textColor="text-orange-500 dark:text-orange-400"
-                                            borderColor="border-orange-500/20"
-                                        />
-                                        <div className="flex flex-col gap-2">
-                                            {(stationArrivals || [])
-                                                .filter(arr => {
-                                                    if (!activeLine) return true;
-                                                    const shortActive = activeLine.replace(/[^0-9]/g, '');
-                                                    const isMatch = arr.lineName.includes(activeLine) || 
-                                                           arr.lineName.includes(shortActive) ||
-                                                           (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')));
-                                                    if (!isMatch) return false;
-                                                    return arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선');
-                                                })
-                                                .slice(0, 3)
-                                                .map((arr, idx) => (
-                                                    <ArrivalItemListItem 
-                                                        key={idx} 
-                                                        arr={arr} 
-                                                        timeDisplayMode={timeDisplayMode} 
-                                                        onToggleTimeDisplay={() => setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration")} 
-                                                    />
-                                                ))}
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div className="flex gap-2">
-                                    <button onClick={() => onTabChange("wc")} className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-200/50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 hover:bg-zinc-200 transition-colors">
-                                        <Bath size={14} className="text-zinc-500" />
-                                        <span className="text-[11px] font-black">화장실 정보</span>
-                                    </button>
-                                    <button className="flex-1 flex items-center justify-center gap-2 py-2 bg-zinc-200/50 dark:bg-white/5 rounded-xl border border-black/5 dark:border-white/5 hover:bg-zinc-200 transition-colors">
-                                        <MapIcon size={14} className="text-zinc-500" />
-                                        <span className="text-[11px] font-black">역내도</span>
-                                    </button>
                                 </div>
                             </div>
                         </motion.div>
