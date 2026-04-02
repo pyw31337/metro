@@ -12,7 +12,7 @@
  *   GET https://openapi.seoul.go.kr:8088/{KEY}/json/subwayStationMaster/1/1000/
  */
 
-import type { WCItem } from "@/components/WCLayer";
+import type { WCItem } from "@/types/metro";
 import mockData from "@/data/wc.json";
 
 // ─── data.go.kr 응답 타입 ────────────────────────────────────────────────────
@@ -229,7 +229,7 @@ export async function fetchWCData(): Promise<WCItem[]> {
       const nationalData = await fetchNationalWC(nationalKey);
       // 서울/인천만 필터링 (경기도는 위에서 별도로 받음)
       const filtered = nationalData.filter((i: WCItem) => 
-        i.address.includes("서울") || i.address.includes("인천")
+        i.address?.includes("서울") || i.address?.includes("인천")
       );
       allItems = [...allItems, ...filtered];
     } catch (err) {

@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { fetchWithCache } from "@/utils/api-client";
+import { useEffect, useRef } from "react";
+import { convertBusPositionsToGeoJSON } from "@/utils/geoJsonUtils";
 
 export interface BusPosition {
     id: string;
@@ -10,14 +10,11 @@ export interface BusPosition {
     angle?: number;
 }
 
-export function useBusPositions(enabled: boolean, filterRoute?: string | null) {
-    const [buses, setBuses] = useState<BusPosition[]>([]);
+export function useBusPositions(enabled: boolean, filterRoute: string | null | undefined, map: any | null) {
     const busesRef = useRef<any[]>([]);
-    const lastFetchRef = useRef<number>(0);
 
     useEffect(() => {
-        if (!enabled) {
-            setBuses([]);
+        if (!enabled || !map) {
             busesRef.current = [];
             return;
         }
@@ -27,11 +24,9 @@ export function useBusPositions(enabled: boolean, filterRoute?: string | null) {
         const fetchPositions = async () => {
             const now = Date.now();
             
-            // If no API key, use an enhanced mock generator (20 buses)
             if (!apiKey || apiKey.length < 10) {
                 const mockRoutes = ["143", "150", "160", "273", "300", "421", "501", "700", "740", "심야N13"];
                 const newMocks = mockRoutes.flatMap((route, i) => {
-                    // Create 2 buses per route
                     return [1, 2].map(j => {
                         const id = `mock-bus-${route}-${j}`;
                         const seed = (i * 10 + j) * 1000;
@@ -53,27 +48,19 @@ export function useBusPositions(enabled: boolean, filterRoute?: string | null) {
                 return;
             }
 
-            // Real API Fetch Logic (Simplified for stability)
-            try {
-                // Focus on high-frequency routes if none filtered
-                const targetRoutes = filterRoute ? [filterRoute] : ["143", "150", "160"]; 
-                // Note: In a full app, we'd map routeName to routeId first.
-                // For this overhaul, we'll focus on the Mock + Interpolation being perfect.
-            } catch (error) {
-                console.error("Bus fetch error", error);
-            }
+            // Real API logic would go here
         };
 
         const apiInterval = setInterval(fetchPositions, 10000);
         fetchPositions();
 
-        // Interpolation loop (100ms for performance, 16ms for 60fps)
         const animInterval = setInterval(() => {
+            if (!map || !map.isStyleLoaded()) return;
+
             const now = Date.now();
             const updated = busesRef.current.map(b => {
-                // Smooth circular/path-like movement simulation
                 const elapsed = (now - b.lastUpdate) / 1000;
-                const speed = 0.0002; // Speed factor
+                const speed = 0.0002; 
                 const angle = (now + b.seed) / 10000;
                 
                 return {
@@ -82,17 +69,21 @@ export function useBusPositions(enabled: boolean, filterRoute?: string | null) {
                     lat: b.lat + Math.sin(angle) * (speed * 10),
                     lng: b.lng + Math.cos(angle) * (speed * 10),
                     lastUpdate: b.lastUpdate,
-                    angle: (angle * 180 / Math.PI) + 90 // For icon rotation
+                    angle: (angle * 180 / Math.PI) + 90
                 };
             });
-            setBuses(updated);
-        }, 100);
+            
+            const source = map.getSource('bus-realtime-source');
+            if (source && updated.length > 0) {
+                source.setData(convertBusPositionsToGeoJSON(updated));
+            }
+        }, 150);
 
         return () => {
             clearInterval(apiInterval);
             clearInterval(animInterval);
         };
-    }, [enabled, filterRoute]);
+    }, [enabled, filterRoute, map]);
 
-    return buses;
+    return null;
 }

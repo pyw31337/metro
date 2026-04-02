@@ -37,7 +37,6 @@ interface MapLibreProps {
     wcItems: WCItem[];
     wcFilters: WCFilters;
     busStops: BusStop[];
-    trains: any[];
     selectedBusStopId: string | null;
     onWCClick: (item: WCItem) => void;
     onBusStopClick: (stop: BusStop, latlng?: [number, number]) => void;
@@ -56,8 +55,8 @@ interface MapLibreProps {
     stations: any[];
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
-    buses: any[];
     nearestStation: Station | null;
+    selectedBusRoute?: string | null;
 }
 
 // ─── Canvas Polyfill ───────────────────────────────────────────────────────────
@@ -156,14 +155,15 @@ const MapIconRegister = ({ stations }: { stations: any[] }) => {
 
 function MapLibreBackground(props: MapLibreProps) {
     const {
-        pathResult, startStation, activeTab, isDarkMode, wcItems, wcFilters, busStops, trains,
+        pathResult, startStation, activeTab, isDarkMode, wcItems, wcFilters, busStops,
         onStationClick, onBusStopClick, onMapReady,
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
         onCenterChange, onBoundsChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
-        buses, nearestStation
+        nearestStation, selectedBusRoute
     } = props;
 
+    const [mapInstance, setMapInstance] = useState<any | null>(null);
     const [popupCoords, setPopupCoords] = useState<[number, number] | null>(null);
     const [focusedBubble, setFocusedBubble] = useState<string | null>(null);
     const [selectedTrain, setSelectedTrain] = useState<any | null>(null);
@@ -172,13 +172,22 @@ function MapLibreBackground(props: MapLibreProps) {
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
     const verifiedPlats = useTransferVerification(pathResult, stations);
 
+    // Call high-performance hooks internally
+    const { useRealtimeTrains } = require("@/hooks/useRealtimeTrains");
+    const { useBusPositions } = require("@/hooks/useBusPositions");
+    
+    useRealtimeTrains(mapInstance);
+    useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute, mapInstance);
+
     // ─── Data Conversion ────────────────────────────────────────────────────────
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
     const filteredWCs = useMemo(() => convertWCToGeoJSON(wcItems, wcFilters), [wcItems, wcFilters]);
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
-    const trainData = useMemo(() => convertTrainsToGeoJSON(trains), [trains]);
     const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult), [pathResult]);
-    const busRealtimeData = useMemo(() => convertBusPositionsToGeoJSON(buses), [buses]);
+    
+    // Static empty sources for real-time layers to be populated via hooks
+    const trainData = useMemo(() => ({ type: "FeatureCollection" as const, features: [] }), []);
+    const busRealtimeData = useMemo(() => ({ type: "FeatureCollection" as const, features: [] }), []);
 
     // ─── Train Logic ────────────────────────────────────────────────────────────
     const handleTrainClick = async (train: any) => {
@@ -257,7 +266,10 @@ function MapLibreBackground(props: MapLibreProps) {
     return (
         <MapBase
             isDarkMode={isDarkMode}
-            onMapReady={onMapReady}
+            onMapReady={(map) => {
+                setMapInstance(map);
+                if (onMapReady) onMapReady(map);
+            }}
             onClick={handleMapClick}
             onCenterChange={onCenterChange}
             onBoundsChange={onBoundsChange}

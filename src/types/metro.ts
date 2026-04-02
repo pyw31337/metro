@@ -49,8 +49,8 @@ export interface WCItem {
   lat: number;
   lng: number;
   accessible: boolean;
-  diapers: boolean;
-  emergencyBell: boolean;
+  diapers?: boolean;
+  emergencyBell?: boolean;
   address?: string;
   station?: string;
   line?: string;

@@ -1,4 +1,4 @@
-import { BusStop } from "@/components/BusStopLayer";
+import { BusStop } from "@/types/metro";
 
 export interface BusPathResult {
     commonRoutes: string[];

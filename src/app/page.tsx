@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import dynamic from "next/dynamic";
-import L from "leaflet";
+
 import { Train, Bus, Bath } from "lucide-react";
 import { SUBWAY_LINES, Station as SubwayStation } from "@/data/subway-lines";
 import { ActiveTab, BusStop, Station, WCItem, PathResult, WCFilters, StationArrival } from "@/types/metro";
@@ -27,7 +27,7 @@ type PathStrategy = "time" | "transfer";
 
 export default function Home() {
     const { findPath, findNearestStation, sortWCs } = useDataWorker();
-    const rawTrains = useRealtimeTrains();
+
     
     const [pathResults, setPathResults] = useState<Record<string, PathResult> | null>(null);
     const [selectedStrategy, setSelectedStrategy] = useState<PathStrategy>("time");
@@ -65,7 +65,7 @@ export default function Home() {
     const [selectedBusRoute, setSelectedBusRoute] = useState<string | null>(null);
     const [nearestStation, setNearestStation] = useState<Station | null>(null);
 
-    const buses = useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute);
+
 
     const handleActiveLineChange = useCallback((line: string | null) => {
         setActiveLine(prev => {
@@ -84,18 +84,7 @@ export default function Home() {
         return Array.from(unique.values());
     }, []);
 
-    const filteredTrains = useMemo(() => {
-        if (!activePath) return rawTrains;
-        const pathLineNames = new Set<string>();
-        const normalize = (n: string) => n.replace(/역$/, '').trim();
-        
-        activePath.path.forEach(name => {
-            const cleanName = normalize(name);
-            const s = stations.find(st => normalize(st.name) === cleanName);
-            s?.lines.forEach(l => pathLineNames.add(l));
-        });
-        return rawTrains.filter(t => pathLineNames.has(t.lineName));
-    }, [rawTrains, activePath, stations]);
+
 
     const mapRef = useRef<any>(null);
 
@@ -383,9 +372,9 @@ export default function Home() {
                     wcItems={wcItems}
                     wcFilters={wcFilters}
                     busStops={busStops}
-                    trains={filteredTrains}
                     activeTab={activeTab}
                     selectedBusStopId={selectedBusStop?.id ?? null}
+                    selectedBusRoute={selectedBusRoute}
                     onWCClick={setSelectedWC}
                     onBusStopClick={setSelectedBusStop}
                     onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number])}
@@ -408,7 +397,6 @@ export default function Home() {
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                     showAllRouteBubbles={showAllRouteBubbles}
                     onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
-                    buses={buses}
                 />
             </div>
 

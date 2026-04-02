@@ -1,7 +1,8 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { subwayApi } from '@/utils/api-client';
 import { normalizeStationName } from '@/utils/stationUtils';
+import { convertTrainsToGeoJSON } from '@/utils/geoJsonUtils';
 
 export interface Train {
     id: string;
@@ -43,8 +44,7 @@ function getDirection(updn: string): 1 | -1 {
     return updn === '0' || updn === '1001' ? 1 : -1; // 1001/상행/내선: 1, 1002/하행/외선: -1
 }
 
-export function useRealtimeTrains() {
-    const [trains, setTrains] = useState<Train[]>([]);
+export function useRealtimeTrains(map: any | null) {
     const trainsRef = useRef<any[]>([]);
 
     useEffect(() => {
@@ -64,16 +64,15 @@ export function useRealtimeTrains() {
                         const targetLines = SUBWAY_LINES.filter(l => l.name === name);
                         const normalizedStatnNm = normalizeStationName(rt.statnNm);
 
-                        // Check ALL segments for a match
                         for (const line of targetLines) {
                             const stationIdx = line.stations.findIndex(s => normalizeStationName(s.name) === normalizedStatnNm);
                             
                             if (stationIdx !== -1) {
                                 const dir = getDirection(rt.updnLine);
                                 let initialProgress = 0.05;
-                                if (rt.trainSttus === '0') initialProgress = 0.8; // Entering
-                                if (rt.trainSttus === '1') initialProgress = 0.95; // Arrived
-                                if (rt.trainSttus === '2') initialProgress = 0.1; // Departed
+                                if (rt.trainSttus === '0') initialProgress = 0.8; 
+                                if (rt.trainSttus === '1') initialProgress = 0.95; 
+                                if (rt.trainSttus === '2') initialProgress = 0.1; 
 
                                 allFetchedTrains.push({
                                     id: `real-${rt.trainNo}-${name}`,
@@ -89,7 +88,7 @@ export function useRealtimeTrains() {
                                     directAt: rt.directAt,
                                     trainSttus: rt.trainSttus
                                 });
-                                break; // Only add once per train
+                                break; 
                             }
                         }
                     });
@@ -99,7 +98,6 @@ export function useRealtimeTrains() {
                 const mergedTrains = allFetchedTrains.map(newT => {
                     const existing = oldMap.get(newT.id);
                     if (existing && existing.stationIndex === newT.stationIndex) {
-                        // Same station, keep moving from where we are
                         return { ...newT, progress: existing.progress, lastUpdate: existing.lastUpdate };
                     }
                     return newT;
@@ -117,6 +115,8 @@ export function useRealtimeTrains() {
         const apiInterval = setInterval(fetchRealtime, 15000); 
 
         const animInterval = setInterval(() => {
+            if (!map || !map.isStyleLoaded()) return;
+
             const now = Date.now();
             const updated: Train[] = [];
             
@@ -154,14 +154,20 @@ export function useRealtimeTrains() {
             });
 
             trainsRef.current = nextStates;
-            setTrains(updated);
-        }, 100); 
+            
+            // Direct update to map source
+            const source = map.getSource('train-source');
+            if (source && updated.length > 0) {
+                source.setData(convertTrainsToGeoJSON(updated));
+            }
+        }, 150); // Slightly increased interval for mobile performance
 
         return () => {
             clearInterval(apiInterval);
             clearInterval(animInterval);
         };
-    }, []);
+    }, [map]);
 
-    return trains;
+    return null; // Return nothing as we update the map directly
 }
+
