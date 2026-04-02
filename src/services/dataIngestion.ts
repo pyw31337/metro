@@ -80,11 +80,22 @@ export class DataIngestionService {
      */
     static async ingestStationToilets(callback?: ProgressCallback) {
         this.updateTask('toilets', { status: 'running', progress: 10 }, callback);
-        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
         try {
-            const json = await fetchWithFallbacks(url);
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-toilets.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0) {
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
+                const json = await fetchWithFallbacks(url);
+                items = json.SearchPublicToiletAndStation?.row || [];
+            }
+
             this.updateTask('toilets', { progress: 50 }, callback);
-            const items = json.SearchPublicToiletAndStation?.row || [];
 
             const mapped: WCItem[] = items.map((item: any) => ({
                 id: `seoul-wc-${item.STATION_NM}-${item.GU_NM}`,
@@ -114,11 +125,22 @@ export class DataIngestionService {
      */
     static async ingestElevators(callback?: ProgressCallback) {
         this.updateTask('elevators', { status: 'running', progress: 10 }, callback);
-        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSubwayStationElevator/1/1000/`;
         try {
-            const json = await fetchWithFallbacks(url);
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-elevators.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0) {
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSubwayStationElevator/1/1000/`;
+                const json = await fetchWithFallbacks(url);
+                items = json.SearchSubwayStationElevator?.row || [];
+            }
+
             this.updateTask('elevators', { progress: 50 }, callback);
-            const items = json.SearchSubwayStationElevator?.row || [];
 
             const mapped: Facility[] = items.map((item: any) => ({
                 id: `el-${item.STATION_NM}-${item.ELEVATOR_ID}`,
@@ -146,11 +168,22 @@ export class DataIngestionService {
      */
     static async ingestLifts(callback?: ProgressCallback) {
         this.updateTask('lifts', { status: 'running', progress: 10 }, callback);
-        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`;
         try {
-            const json = await fetchWithFallbacks(url);
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-lifts.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0) {
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`;
+                const json = await fetchWithFallbacks(url);
+                items = json.SearchSubwayStationWheelchairLift?.row || [];
+            }
+
             this.updateTask('lifts', { progress: 50 }, callback);
-            const items = json.SearchSubwayStationWheelchairLift?.row || [];
 
             const mapped: Facility[] = items.map((item: any) => ({
                 id: `lift-${item.STATION_NM}-${item.STATION_ID}`,
@@ -334,11 +367,22 @@ export class DataIngestionService {
      */
     static async ingestStationMetadata(callback?: ProgressCallback) {
         this.updateTask('metadata', { status: 'running', progress: 10 }, callback);
-        const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
         try {
-            const json = await fetchWithFallbacks(url);
+            // Priority 1: Local Master Data
+            let items: any[] = [];
+            try {
+                const localRes = await fetch('/metro/data/master-metadata.json');
+                if (localRes.ok) items = await localRes.json();
+            } catch (e) {}
+
+            // Priority 2: Remote API (Fallback)
+            if (items.length === 0) {
+                const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
+                const json = await fetchWithFallbacks(url);
+                items = json.SearchSTNBySubwayLineService?.row || [];
+            }
+
             this.updateTask('metadata', { progress: 30 }, callback);
-            const items = json.SearchSTNBySubwayLineService?.row || [];
 
             let count = 0;
             for (const item of items) {

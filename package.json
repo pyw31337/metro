@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "process-data": "npx ts-node scripts/process-master-data.ts",
     "start": "next start",
     "lint": "eslint"
   },
