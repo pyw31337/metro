@@ -19,7 +19,8 @@ export const STATIC_TIMETABLE_REGISTRY: Record<string, TimetableEntry[]> = {
     ],
     "서울역": [
         ...generatePattern("서울역", "1호선", "up", "소요산", "05:10", "23:50", 5),
-        ...generatePattern("서울역", "1호선", "down", "인천/서동탄", "05:15", "24:05", 5),
+        ...generatePattern("서울역", "1호선", "down", "인천", "05:15", "24:05", 10),
+        ...generatePattern("서울역", "1호선", "down", "서동탄", "05:20", "24:05", 10),
         ...generatePattern("서울역", "4호선", "up", "진접", "05:30", "23:55", 6),
         ...generatePattern("서울역", "4호선", "down", "오이도", "05:40", "24:10", 6),
         ...generatePattern("서울역", "공항철도", "down", "인천공항2터미널", "05:20", "23:40", 12),
@@ -28,7 +29,8 @@ export const STATIC_TIMETABLE_REGISTRY: Record<string, TimetableEntry[]> = {
     ],
     "서울": [
         ...generatePattern("서울역", "1호선", "up", "소요산", "05:10", "23:50", 5),
-        ...generatePattern("서울역", "1호선", "down", "인천/서동탄", "05:15", "24:05", 5),
+        ...generatePattern("서울역", "1호선", "down", "인천", "05:15", "24:05", 10),
+        ...generatePattern("서울역", "1호선", "down", "서동탄", "05:20", "24:05", 10),
         ...generatePattern("서울역", "4호선", "up", "진접", "05:30", "23:55", 6),
         ...generatePattern("서울역", "4호선", "down", "오이도", "05:40", "24:10", 6),
         ...generatePattern("서울역", "공항철도", "down", "인천공항2터미널", "05:20", "23:40", 12),
@@ -47,7 +49,8 @@ export const STATIC_TIMETABLE_REGISTRY: Record<string, TimetableEntry[]> = {
     ],
     "신도림": [
         ...generatePattern("신도림", "1호선", "up", "소요산", "05:00", "24:00", 4),
-        ...generatePattern("신도림", "1호선", "down", "인천/서동탄", "05:05", "24:10", 4),
+        ...generatePattern("신도림", "1호선", "down", "인천", "05:05", "24:10", 8),
+        ...generatePattern("신도림", "1호선", "down", "서동탄", "05:09", "24:10", 8),
         ...generatePattern("신도림", "2호선", "inner", "내선순환", "05:30", "24:15", 3),
     ],
     "남부터미널": [
