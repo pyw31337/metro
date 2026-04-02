@@ -321,7 +321,7 @@ const MapPopups = ({
                                         className="px-2 py-0.5 rounded-full bg-white dark:bg-zinc-800 text-[10px] font-black border shadow-sm shrink-0"
                                         style={{ borderColor: info.color, color: info.color }}
                                     >
-                                        {selectedTrain.headingTo}행
+                                        {selectedTrain.headingTo.replace('행', '')}
                                     </div>
                                     <span className="text-[12px] font-black text-zinc-900 dark:text-white truncate">
                                         {selectedTrain.trainNo}열차

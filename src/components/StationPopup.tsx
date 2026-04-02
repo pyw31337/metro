@@ -138,7 +138,7 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                                         </div>
                                         <div className="flex flex-col">
                                             <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 leading-tight">
-                                                {a.trainLineNm}
+                                                {a.trainLineNm.split('-')[0].replace('행', '').trim()}
                                             </span>
                                             <span className="text-[10px] text-zinc-500 font-medium tracking-tight">
                                                 {a.isScheduled ? "예정 스케줄" : "실시간 도착"}

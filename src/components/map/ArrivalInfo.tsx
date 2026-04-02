@@ -10,7 +10,7 @@ export const ArrivalHeader = ({ defaultTitle, trains, textColor, borderColor }: 
     let title = defaultTitle;
     if (trains.length > 0) {
         const dest = trains[0].trainLineNm.split('-')[0].replace('행', '').trim();
-        title = `${dest}행`;
+        title = `${dest}`;
     }
 
     return (
@@ -109,7 +109,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
                                      .trim();
     }
 
-    const destination = arr.trainLineNm.split('-')[0].trim();
+    const destination = arr.trainLineNm.split('-')[0].replace('행', '').trim();
     const isDivergent = destination.includes("인천") || destination.includes("서동탄") || destination.includes("병점") || destination.includes("신창") || destination.includes("고색");
 
     return (
@@ -123,7 +123,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
                 </span>
                 {isDivergent && (
                     <span className="text-[9px] px-1 py-0.5 border border-red-500 text-red-500 rounded font-black leading-none">
-                        분기
+                        {destination}
                     </span>
                  )}
             </div>

@@ -358,7 +358,7 @@ export default function RoutePlanner({
                     startStation: s1, endStation: s2, duration: 2, stationCount: 1,
                     stations: [s1, s2],
                     startTime: getTime(new Date(now.getTime() - 120000), 0), endTime: getTime(now, 0),
-                    headsign: `${path[path.length - 1]}행`, nextStation: s2
+                    headsign: `${path[path.length - 1]}`, nextStation: s2
                 };
             } else {
                 cur.endStation = s2; cur.duration! += 2; cur.stationCount! += 1;
