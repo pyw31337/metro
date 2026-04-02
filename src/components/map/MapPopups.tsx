@@ -209,7 +209,14 @@ const MapPopups = ({
                                     filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).slice(0, 3).map((arr: any, i: number) => (
                                         <div key={i} className="flex items-center gap-1">
                                             <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
-                                            {arr.isScheduled && <span className="text-[8px] px-1 py-0.5 rounded bg-zinc-200 dark:bg-white/10 text-zinc-500 font-black">예정</span>}
+                                            {arr.isScheduled ? (
+                                                <span className="text-[7px] px-1 py-0.5 rounded bg-zinc-100 dark:bg-white/5 text-zinc-400 font-bold border border-black/5 dark:border-white/5">예정</span>
+                                            ) : (
+                                                <span className="text-[7px] px-1 py-0.5 rounded bg-rose-500/10 text-rose-500 font-bold border border-rose-500/20 flex items-center gap-0.5 ml-auto">
+                                                    <span className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
+                                                    LIVE
+                                                </span>
+                                            )}
                                         </div>
                                     ))
                                 ) : (
@@ -232,7 +239,14 @@ const MapPopups = ({
                                     filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).slice(0, 3).map((arr: any, i: number) => (
                                         <div key={i} className="flex items-center gap-1">
                                             <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
-                                            {arr.isScheduled && <span className="text-[8px] px-1 py-0.5 rounded bg-zinc-200 dark:bg-white/10 text-zinc-500 font-black">예정</span>}
+                                            {arr.isScheduled ? (
+                                                <span className="text-[7px] px-1 py-0.5 rounded bg-zinc-100 dark:bg-white/5 text-zinc-400 font-bold border border-black/5 dark:border-white/5">예정</span>
+                                            ) : (
+                                                <span className="text-[7px] px-1 py-0.5 rounded bg-rose-500/10 text-rose-500 font-bold border border-rose-500/20 flex items-center gap-0.5 ml-auto">
+                                                    <span className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
+                                                    LIVE
+                                                </span>
+                                            )}
                                         </div>
                                     ))
                                 ) : (

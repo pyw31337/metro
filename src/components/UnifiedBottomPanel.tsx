@@ -463,15 +463,20 @@ export default function UnifiedBottomPanel({
                                         .slice(0, 4)
                                         .map((arr, idx) => (
                                         <div key={idx} className={`p-2.5 rounded-xl flex flex-col border ${arr.isScheduled ? 'bg-zinc-50 dark:bg-black/10 border-black/5 dark:border-white/5' : 'bg-white dark:bg-black/30 border-rose-500/10 dark:border-rose-500/20'}`}>
-                                            <div className="flex items-center gap-1 mb-1">
-                                                {getLineBadge(arr.lineName)}
-                                                <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">
-                                                    {arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선') ? '상행' : '하행'}
-                                                </span>
-                                                {arr.isScheduled && (
-                                                    <span className="text-[8px] px-1 py-0.5 rounded-md bg-zinc-200 dark:bg-white/10 text-zinc-500 font-black ml-auto ring-1 ring-black/5">예정</span>
-                                                )}
-                                            </div>
+                                                <div className="flex items-center gap-1 mb-1 w-full">
+                                                    {getLineBadge(arr.lineName)}
+                                                    <span className="text-[9px] font-black text-zinc-400 uppercase tracking-tighter">
+                                                        {arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선') ? '상행' : '하행'}
+                                                    </span>
+                                                    {arr.isScheduled ? (
+                                                        <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-zinc-100 dark:bg-white/5 text-zinc-400 font-bold ml-auto border border-black/5 dark:border-white/5">예정</span>
+                                                    ) : (
+                                                        <span className="text-[8px] px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-500 font-black ml-auto border border-rose-500/20 flex items-center gap-1">
+                                                            <span className="w-1 h-1 bg-rose-500 rounded-full animate-pulse" />
+                                                            실시간
+                                                        </span>
+                                                    )}
+                                                </div>
                                             <div className="flex items-center justify-between">
                                                 <span className="text-[11px] font-bold truncate max-w-[80px]">{arr.trainLineNm.split(' - ')[0]}</span>
                                                 <span className={`text-[11px] font-black ${arr.isScheduled ? 'text-zinc-500' : 'text-rose-500'}`}>

@@ -146,8 +146,8 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             }
         }
 
+        // If API fails or returns nothing, check static fallback immediately
         if (allArrivals.length === 0) {
-            console.log(`No real-time data for ${cleanName}, falling back to static...`);
             allArrivals = getEstimatedArrivalsFromStatic(cleanName);
         }
 
@@ -155,23 +155,74 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         const downArrivals: StationArrival[] = [];
 
         allArrivals.forEach(arrival => {
-            if (arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선") || arrival.updnLine.includes("상선")) {
-                upArrivals.push(arrival);
-            } else {
-                downArrivals.push(arrival);
-            }
+            const isUp = arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선") || arrival.updnLine.includes("상선");
+            if (isUp) upArrivals.push(arrival);
+            else downArrivals.push(arrival);
         });
 
         const sortAndLimit = (list: StationArrival[]) => {
             return list
                 .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
-                .slice(0, 3);
+                .slice(0, 4);
         };
 
         return [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)];
     } catch (err) {
-        return [];
+        return getEstimatedArrivalsFromStatic(cleanName);
     }
+};
+
+/**
+ * Converts a DB TimetableEntry into a StationArrival object for UI consistency
+ */
+export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds: number): StationArrival => {
+    return {
+        lineName: entry.line,
+        subwayId: "", 
+        updnLine: (entry.direction === 'up' || entry.direction === 'inner') ? '상행' : '하행',
+        trainLineNm: `${entry.destination}행`,
+        statnNm: entry.stationName,
+        arvlMsg2: waitTimeSeconds < 60 ? "곧 도착" : `${Math.floor(waitTimeSeconds / 60)}분 후`,
+        arvlMsg3: entry.destination,
+        arvlCd: "99",
+        barvlDt: waitTimeSeconds.toString(),
+        btrainNo: entry.trainNo,
+        isScheduled: true
+    };
+};
+
+/**
+ * Merges live API data with scheduled DB data to ensure no "정보 없음" states.
+ */
+export const mergeLiveAndScheduled = (live: StationArrival[], scheduled: StationArrival[]): StationArrival[] => {
+    if (live.length === 0) return scheduled;
+    
+    const result: StationArrival[] = [...live];
+    const liveKeys = new Set(live.map(l => `${l.updnLine}-${l.trainLineNm}`));
+
+    // Add scheduled items only if they don't overlap too closely with live ones
+    // and we have room (max 4 per direction)
+    const upLive = live.filter(l => l.updnLine.includes('상행') || l.updnLine.includes('내선'));
+    const downLive = live.filter(l => !l.updnLine.includes('상행') && !l.updnLine.includes('내선'));
+
+    const upSched = scheduled.filter(s => s.updnLine.includes('상행') || s.updnLine.includes('내선'));
+    const downSched = scheduled.filter(s => !s.updnLine.includes('상행') && !s.updnLine.includes('내선'));
+
+    const mergeSide = (lSide: StationArrival[], sSide: StationArrival[]) => {
+        const side = [...lSide];
+        sSide.forEach(s => {
+            if (side.length < 4) {
+                // If this scheduled train is significantly later than the last live train, add it
+                const lastLiveDt = side.length > 0 ? parseInt(side[side.length - 1].barvlDt) : -1;
+                if (parseInt(s.barvlDt) > lastLiveDt + 120) { // 2 mins gap
+                    side.push(s);
+                }
+            }
+        });
+        return side.sort((a,b) => parseInt(a.barvlDt) - parseInt(b.barvlDt));
+    };
+
+    return [...mergeSide(upLive, upSched), ...mergeSide(downLive, downSched)];
 };
 
 export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) => {

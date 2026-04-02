@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { fetchStationArrivals } from '@/services/arrivalApi';
-import { StationArrival } from '@/types/metro';
+import { StationArrival, TimetableEntry } from '@/types/metro';
 import { db } from '@/services/db';
+import { fetchStationArrivals, mergeLiveAndScheduled, convertTimetableToArrival } from '@/services/arrivalApi';
 import { DataIngestionService } from '@/services/dataIngestion';
 
 export interface ArrivalInfo extends StationArrival {
@@ -30,40 +30,49 @@ export function useArrivalInfo(stationName: string | null) {
         const fetchData = async () => {
             setLoading(true);
             try {
-                // 1. Fetch Arrivals using the robust service
-                const processedArrivals = await fetchStationArrivals(cleanName);
-                setArrivals(processedArrivals);
+                const now = new Date();
+                const dayType = now.getDay() === 0 ? "sun" : (now.getDay() === 6 ? "sat" : "week");
+                const currentSeconds = now.getHours() * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
-                // 2. Timetable lookup/fallback
-                try {
-                    let stored = await db.getStoredTimetable(cleanName, "기본", "week");
+                // 1. Instant Baseline: Fetch from Local DB first
+                const storedTimetable = await db.getStoredTimetable(cleanName, "기본", dayType).catch(() => [] as TimetableEntry[]);
+                
+                let scheduledArrivals: StationArrival[] = [];
+                if (storedTimetable && storedTimetable.length > 0) {
+                    scheduledArrivals = storedTimetable
+                        .map(entry => {
+                            const [h, m, s] = (entry.departureTime || entry.arrivalTime).split(':').map(Number);
+                            const entrySeconds = h * 3600 + m * 60 + (s || 0);
+                            let waitTime = entrySeconds - currentSeconds;
+                            if (waitTime < -36000) waitTime += 86400; 
+                            return { entry, waitTime };
+                        })
+                        .filter(item => item.waitTime > 0 && item.waitTime < 7200)
+                        .sort((a, b) => a.waitTime - b.waitTime)
+                        .map(item => convertTimetableToArrival(item.entry, item.waitTime));
                     
-                    const updateScheduleState = (data: any[]) => {
-                        if (data.length > 0) {
-                            setSchedules({
-                                "기본": {
-                                    firstTrain: data[0].departureTime || "05:30",
-                                    lastTrain: data[data.length - 1].departureTime || "24:00"
-                                }
-                            });
-                        } else {
-                            setSchedules({ "기본": { firstTrain: "05:30", lastTrain: "24:00" } });
+                    // Show baseline immediately
+                    setArrivals(scheduledArrivals);
+                    setSchedules({
+                        "기본": {
+                            firstTrain: storedTimetable[0].departureTime || "05:30",
+                            lastTrain: storedTimetable[storedTimetable.length - 1].departureTime || "24:00"
                         }
-                    };
-
-                    if (!stored || stored.length === 0) {
-                        DataIngestionService.triggerTimetableByStationName(cleanName).then(async () => {
-                            const newStored = await db.getStoredTimetable(cleanName, "기본", "week");
-                            updateScheduleState(newStored);
-                        });
-                    } else {
-                        updateScheduleState(stored);
-                    }
-                } catch (e) {
-                    setSchedules({ "기본": { firstTrain: "05:30", lastTrain: "24:00" } });
+                    });
+                } else {
+                    // Start background ingestion if missing
+                    DataIngestionService.triggerTimetableByStationName(cleanName).catch(() => {});
                 }
+
+                // 2. Real-time Augmentation: Fetch from API in background
+                const liveArrivals = await fetchStationArrivals(cleanName).catch(() => [] as StationArrival[]);
+                
+                // 3. Final Merge
+                const combined = mergeLiveAndScheduled(liveArrivals, scheduledArrivals);
+                setArrivals(combined);
+
             } catch (error) {
-                console.error("Arrival fetch error", error);
+                console.error("Hybrid arrival fetch error", error);
             } finally {
                 setLoading(false);
             }
