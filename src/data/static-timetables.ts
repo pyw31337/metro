@@ -22,6 +22,18 @@ export const STATIC_TIMETABLE_REGISTRY: Record<string, TimetableEntry[]> = {
         ...generatePattern("서울역", "1호선", "down", "인천/서동탄", "05:15", "24:05", 5),
         ...generatePattern("서울역", "4호선", "up", "진접", "05:30", "23:55", 6),
         ...generatePattern("서울역", "4호선", "down", "오이도", "05:40", "24:10", 6),
+        ...generatePattern("서울역", "공항철도", "down", "인천공항2터미널", "05:20", "23:40", 12),
+        ...generatePattern("서울역", "GTX-A", "up", "운정중앙", "05:30", "24:00", 15),
+        ...generatePattern("서울역", "GTX-A", "down", "동탄", "05:30", "24:00", 15),
+    ],
+    "서울": [
+        ...generatePattern("서울역", "1호선", "up", "소요산", "05:10", "23:50", 5),
+        ...generatePattern("서울역", "1호선", "down", "인천/서동탄", "05:15", "24:05", 5),
+        ...generatePattern("서울역", "4호선", "up", "진접", "05:30", "23:55", 6),
+        ...generatePattern("서울역", "4호선", "down", "오이도", "05:40", "24:10", 6),
+        ...generatePattern("서울역", "공항철도", "down", "인천공항2터미널", "05:20", "23:40", 12),
+        ...generatePattern("서울역", "GTX-A", "up", "운정중앙", "05:30", "24:00", 15),
+        ...generatePattern("서울역", "GTX-A", "down", "동탄", "05:30", "24:00", 15),
     ],
     "홍대입구": [
         ...generatePattern("홍대입구", "2호선", "inner", "내선순환", "05:30", "24:10", 4),

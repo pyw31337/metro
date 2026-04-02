@@ -138,13 +138,17 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     
     try {
         let allArrivals: StationArrival[] = [];
-        for (const v of uniqueVariants) {
-            const data = await fetchUniqueArrivals(v);
-            if (data.length > 0) {
-                allArrivals = data;
-                break;
-            }
-        }
+        const variantResults = await Promise.all(uniqueVariants.map(v => fetchUniqueArrivals(v).catch(() => [])));
+        const seenTrains = new Set<string>();
+        variantResults.forEach(data => {
+            data.forEach(arrival => {
+                const key = `${arrival.subwayId}-${arrival.updnLine}-${arrival.btrainNo || arrival.trainLineNm}`;
+                if (!seenTrains.has(key)) {
+                    allArrivals.push(arrival);
+                    seenTrains.add(key);
+                }
+            });
+        });
 
         // If API fails or returns nothing, check static fallback immediately
         if (allArrivals.length === 0) {

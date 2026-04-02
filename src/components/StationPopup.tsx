@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import L from "leaflet";
 import { createRoot } from "react-dom/client";
-import { useArrivalInfo, ArrivalInfo } from "@/hooks/useArrivalInfo";
-import { Train, MapPin, Navigation, Clock, Search, Phone, Map, Baby, Accessibility, Info } from "lucide-react";
+import { useArrivalInfo } from "@/hooks/useArrivalInfo";
+import { StationArrival } from "@/types/metro";
+import { Train, MapPin, Navigation, Clock, Search, Phone, Map as StationMap, Baby, Accessibility, Info } from "lucide-react";
 import { getLineShortName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
 import { Station, Facility } from "@/types/metro";
@@ -49,7 +50,7 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                     </h2>
                     {stationMeta?.address && (
                         <div className="flex items-center gap-1 mt-1.5 opacity-50">
-                            <Map size={10} className="text-zinc-900 dark:text-white" />
+                            <StationMap size={10} className="text-zinc-900 dark:text-white" />
                             <span className="text-[10px] font-bold truncate max-w-[180px]">{stationMeta.address}</span>
                         </div>
                     )}
@@ -104,20 +105,47 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                 <div className="px-5 py-4 bg-zinc-50/50 dark:bg-black/20">
                     {arrivals.length > 0 ? (
                         <div className="flex flex-col gap-3">
-                            {arrivals.slice(0, 3).map((a, i) => (
+                            {/* Prioritize diversity: at least one per line if possible */}
+                            {(() => {
+                                const grouped = new Map<string, StationArrival[]>();
+                                arrivals.forEach(a => {
+                                    if (!grouped.has(a.lineName)) grouped.set(a.lineName, []);
+                                    grouped.get(a.lineName)!.push(a);
+                                });
+                                
+                                const diverseList: StationArrival[] = [];
+                                const lines = Array.from(grouped.keys());
+                                let idx = 0;
+                                while (diverseList.length < 6 && lines.some(l => (grouped.get(l)?.length || 0) > idx)) {
+                                    lines.forEach(l => {
+                                        const list = grouped.get(l);
+                                        if (list && list[idx]) diverseList.push(list[idx]);
+                                    });
+                                    idx++;
+                                }
+                                return diverseList.slice(0, 6);
+                            })().map((a, i) => (
                                 <div key={i} className="flex items-center justify-between group">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 flex items-center justify-center text-[12px] font-black text-blue-600 dark:text-blue-400">
+                                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[12px] font-black shadow-sm ${
+                                            a.lineName.includes('1') ? 'bg-blue-900/20 text-blue-700' :
+                                            a.lineName.includes('4') ? 'bg-sky-500/20 text-sky-600' :
+                                            a.lineName.includes('공항') ? 'bg-blue-400/20 text-blue-500' :
+                                            a.lineName.includes('A') ? 'bg-purple-600/20 text-purple-600' :
+                                            'bg-zinc-500/20 text-zinc-500'
+                                        }`}>
                                             {getLineShortName(a.lineName)}
                                         </div>
                                         <div className="flex flex-col">
-                                            <span className="text-[14px] font-bold text-zinc-800 dark:text-zinc-200 leading-tight">
+                                            <span className="text-[13px] font-bold text-zinc-800 dark:text-zinc-200 leading-tight">
                                                 {a.trainLineNm}
                                             </span>
-                                            <span className="text-[11px] text-zinc-500 font-medium tracking-tight">실시간 도착 정보</span>
+                                            <span className="text-[10px] text-zinc-500 font-medium tracking-tight">
+                                                {a.isScheduled ? "예정 스케줄" : "실시간 도착"}
+                                            </span>
                                         </div>
                                     </div>
-                                    <span className={`text-[14px] font-black ${a.arvlMsg2.includes('전') ? 'text-rose-500 animate-pulse' : 'text-zinc-800 dark:text-white'}`}>
+                                    <span className={`text-[13px] font-black ${a.arvlMsg2.includes('전') || a.arvlMsg2.includes('곧') ? 'text-rose-500 animate-pulse' : 'text-zinc-800 dark:text-white'}`}>
                                         {a.arvlMsg2}
                                     </span>
                                 </div>
