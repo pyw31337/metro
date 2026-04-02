@@ -4,15 +4,16 @@ import path from 'path';
 /**
  * process-master-data.ts
  * Purpose: Fetch and Pre-process ALL subway materials at BUILD TIME.
- * Priority: 1. Build a local JSON DB from APIs. 2. Handle failures gracefully with partial data.
+ * Final Edition: Includes Gyeonggi, National, Weak Accessibility, and Bus Hubs.
  */
 
-const API_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
+const SEOUL_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
 const DATA_GO_KR_KEY = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || 'sample';
-const DATA_DIR = path.join(process.cwd(), 'public', 'data');
-const RAW_DIR = path.join(process.cwd(), 'src', 'data', 'raw');
+const GG_KEY = process.env.NEXT_PUBLIC_GG_API_KEY || 'bb76ade40706413f977749ddd28d5e38'; // Default fallback
 
-async function fetchWithRetry(url: string, retries = 3, timeout = 10000) {
+const DATA_DIR = path.join(process.cwd(), 'public', 'data');
+
+async function fetchWithRetry(url: string, retries = 3, timeout = 15000) {
     for (let i = 0; i < retries; i++) {
         try {
             const controller = new AbortController();
@@ -22,134 +23,131 @@ async function fetchWithRetry(url: string, retries = 3, timeout = 10000) {
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             return await res.json();
         } catch (e) {
-            console.warn(`[Retry ${i + 1}/${retries}] Failed to fetch ${url}:`, e instanceof Error ? e.message : String(e));
             if (i === retries - 1) return null;
-            await new Promise(r => setTimeout(r, 1000 * (i + 1))); // Exponential backoff
+            await new Promise(r => setTimeout(r, 2000 * (i + 1))); 
         }
     }
 }
 
-async function processToilets() {
-    console.log('🚽 Processing Seoul Toilets (OA-22726/POI)...');
-    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
+async function processSeoulToilets() {
+    console.log('🚽 Processing Seoul Toilets...');
+    const url = `https://openapi.seoul.go.kr:443/${SEOUL_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
     const json = await fetchWithRetry(url);
     const items = json?.SearchPublicToiletAndStation?.row || [];
     if (items.length > 0) {
         fs.writeFileSync(path.join(DATA_DIR, 'master-toilets.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} Seoul toilets.`);
+    }
+}
+
+async function processGyeonggiToilets() {
+    console.log('🏙️ Processing Gyeonggi Toilets...');
+    const url = `https://openapi.gg.go.kr/PubToilet?KEY=${GG_KEY}&Type=json&pIndex=1&pSize=1000`;
+    const json = await fetchWithRetry(url);
+    const items = json?.PubToilet?.[1]?.row || [];
+    if (items.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-gg-toilets.json'), JSON.stringify(items, null, 2));
     }
 }
 
 async function processNationalToilets() {
     if (DATA_GO_KR_KEY === 'sample') return;
-    console.log('🌍 Processing National Toilets (15012892)...');
-    const url = `https://api.odcloud.kr/api/15012892/v1/uddi:25c8ddd6-c0a4-4abb-bece-d9b6b0ce85a0?page=1&perPage=1000&serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}`;
+    console.log('🌍 Processing National Toilets...');
+    // 전국공중화장실표준데이터
+    const uuid = '9893d932-b677-4b18-b26a-986a4225e365';
+    const url = `https://api.odcloud.kr/api/15013116/v1/uddi:${uuid}?page=1&perPage=2000&serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}`;
     const json = await fetchWithRetry(url);
     const items = json?.data || [];
     if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-national-toilets.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} National toilets.`);
+        fs.writeFileSync(path.join(DATA_DIR, 'master-nat-toilets.json'), JSON.stringify(items, null, 2));
     }
 }
 
-async function processElevators() {
-    console.log('🛗 Processing Elevators...');
-    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchSubwayStationElevator/1/1000/`;
+async function processTrafficWeak() {
+    console.log('♿ Processing Traffic Weak Accessibility (Toilets)...');
+    const url = `https://openapi.seoul.go.kr/${SEOUL_KEY}/json/tbTraficWheelChrAdit/1/1000/`;
     const json = await fetchWithRetry(url);
-    const items = json?.SearchSubwayStationElevator?.row || [];
+    const items = json?.tbTraficWheelChrAdit?.row || [];
     if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-elevators.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} elevators.`);
+        fs.writeFileSync(path.join(DATA_DIR, 'master-weak-toilets.json'), JSON.stringify(items, null, 2));
     }
 }
 
-async function processLifts() {
-    console.log('♿ Processing Lifts...');
-    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`;
-    const json = await fetchWithRetry(url);
-    const items = json?.SearchSubwayStationWheelchairLift?.row || [];
-    if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-lifts.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} lifts.`);
+async function processFacilities() {
+    console.log('🛗 Processing Elevators & Lifts...');
+    const [el, lift] = await Promise.all([
+        fetchWithRetry(`https://openapi.seoul.go.kr:443/${SEOUL_KEY}/json/SearchSubwayStationElevator/1/1000/`),
+        fetchWithRetry(`https://openapi.seoul.go.kr:443/${SEOUL_KEY}/json/SearchSubwayStationWheelchairLift/1/1000/`)
+    ]);
+    if (el?.SearchSubwayStationElevator?.row) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-elevators.json'), JSON.stringify(el.SearchSubwayStationElevator.row, null, 2));
+    }
+    if (lift?.SearchSubwayStationWheelchairLift?.row) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-lifts.json'), JSON.stringify(lift.SearchSubwayStationWheelchairLift.row, null, 2));
     }
 }
 
-async function processDistances() {
-    console.log('📏 Processing Distances...');
-    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchStationDistance/1/1000/`;
-    const json = await fetchWithRetry(url);
-    const items = json?.SearchStationDistance?.row || [];
-    if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-distances.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} distance records.`);
-    }
-}
-
-async function processDetails() {
-    console.log('📞 Processing Detailed Info (Adres/Tel)...');
-    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/StationAdresTelno/1/1000/`;
-    const json = await fetchWithRetry(url);
-    const items = json?.StationAdresTelno?.row || [];
-    if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-details.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} detailed station records.`);
-    }
-}
-
-async function processTransfers() {
-    if (DATA_GO_KR_KEY === 'sample') return;
-    console.log('⚡ Processing Fast Transfers (15151816)...');
-    const url = `https://api.odcloud.kr/api/15151816/v1/uddi:e9c2bb71-05e8-4767-8397-9df787ee70f6?page=1&perPage=5000&serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}`;
-    const json = await fetchWithRetry(url);
-    const items = json?.data || [];
-    if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-transfers.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} fast transfer records.`);
-    }
-}
-
-async function processParking() {
-    if (DATA_GO_KR_KEY === 'sample') return;
-    console.log('🚗 Processing Parking Lots (15086929)...');
-    const url = `https://api.odcloud.kr/api/15086929/v1/uddi:5e2b02a7-5735-464a-85b5-779836365735?page=1&perPage=1000&serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}`;
-    const json = await fetchWithRetry(url);
-    const items = json?.data || [];
-    if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-parking.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} parking lots.`);
-    }
+async function processOperational() {
+    console.log('📏 Processing Distances & Details...');
+    const [dist, det] = await Promise.all([
+        fetchWithRetry(`https://openapi.seoul.go.kr:443/${SEOUL_KEY}/json/SearchStationDistance/1/1000/`),
+        fetchWithRetry(`https://openapi.seoul.go.kr:443/${SEOUL_KEY}/json/StationAdresTelno/1/1000/`)
+    ]);
+    if (dist?.SearchStationDistance?.row) fs.writeFileSync(path.join(DATA_DIR, 'master-distances.json'), JSON.stringify(dist.SearchStationDistance.row, null, 2));
+    if (det?.StationAdresTelno?.row) fs.writeFileSync(path.join(DATA_DIR, 'master-details.json'), JSON.stringify(det.StationAdresTelno.row, null, 2));
 }
 
 async function processMetadata() {
-    console.log('🆔 Processing Universal Station Metadata...');
-    const url = `https://openapi.seoul.go.kr:443/${API_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
+    console.log('🆔 Processing Station Metadata...');
+    const url = `https://openapi.seoul.go.kr/443/${SEOUL_KEY}/json/SearchSTNBySubwayLineService/1/1000/`;
     const json = await fetchWithRetry(url);
-    const items = json?.SearchSTNBySubwayLineService?.row || [];
-    if (items.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-metadata.json'), JSON.stringify(items, null, 2));
-        console.log(`✅ Saved ${items.length} metadata records.`);
+    if (json?.SearchSTNBySubwayLineService?.row) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-metadata.json'), JSON.stringify(json.SearchSTNBySubwayLineService.row, null, 2));
+    }
+}
+
+async function processBusHubs() {
+    if (DATA_GO_KR_KEY === 'sample') return;
+    console.log('🚌 Processing Major Bus Hubs (Proof of Concept)...');
+    // Top 5 Busiest Transfer Hubs (Coords approximate)
+    const hubs = [
+        { name: '강남', lat: 37.4979, lng: 127.0276 },
+        { name: '잠실', lat: 37.5133, lng: 127.1001 },
+        { name: '서울역', lat: 37.5546, lng: 126.9706 },
+        { name: '홍대입구', lat: 37.5575, lng: 126.9245 },
+        { name: '고속터미널', lat: 37.5045, lng: 127.0049 }
+    ];
+
+    let allStops: any[] = [];
+    for (const hub of hubs) {
+        const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getBusSttnListByPosInqire?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY)}&_type=json&gpsLati=${hub.lat}&gpsLong=${hub.lng}`;
+        const json = await fetchWithRetry(url);
+        const items = json?.response?.body?.items?.item || [];
+        if (Array.isArray(items)) allStops = [...allStops, ...items];
+        else if (items) allStops.push(items);
+    }
+
+    if (allStops.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-hubs.json'), JSON.stringify(allStops, null, 2));
+        console.log(`✅ Saved ${allStops.length} major bus stops.`);
     }
 }
 
 async function main() {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    if (!fs.existsSync(RAW_DIR)) fs.mkdirSync(RAW_DIR, { recursive: true });
 
-    // Run parallel categorization tasks
     const tasks = [
-        processToilets(),
+        processSeoulToilets(),
+        processGyeonggiToilets(),
         processNationalToilets(),
-        processElevators(),
-        processLifts(),
-        processDistances(),
-        processDetails(),
-        processTransfers(),
-        processParking(),
-        processMetadata()
+        processTrafficWeak(),
+        processFacilities(),
+        processOperational(),
+        processMetadata(),
+        processBusHubs()
     ];
 
     await Promise.all(tasks);
-    console.log('✨ Full Master Database Build Cycle Complete.');
+    console.log('✨ Complete Master Database Build Cycle Finished.');
 }
 
 main().catch(console.error);

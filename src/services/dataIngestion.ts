@@ -81,41 +81,60 @@ export class DataIngestionService {
     static async ingestStationToilets(callback?: ProgressCallback) {
         this.updateTask('toilets', { status: 'running', progress: 10 }, callback);
         try {
-            // Priority 1: Local Master Data
-            let items: any[] = [];
-            try {
-                const localRes = await fetch('/metro/data/master-toilets.json');
-                if (localRes.ok) items = await localRes.json();
-            } catch (e) {}
+            // Priority 1: Merge Local Master Data (Seoul, GG, National, Weak)
+            let allItems: any[] = [];
+            const masterFiles = [
+                '/metro/data/master-toilets.json',
+                '/metro/data/master-gg-toilets.json',
+                '/metro/data/master-nat-toilets.json',
+                '/metro/data/master-weak-toilets.json'
+            ];
 
-            // Priority 2: Remote API (Fallback)
-            if (items.length === 0) {
+            for (const file of masterFiles) {
+                try {
+                    const res = await fetch(file);
+                    if (res.ok) {
+                        const data = await res.json();
+                        allItems = [...allItems, ...(Array.isArray(data) ? data : [])];
+                    }
+                } catch (e) {}
+            }
+
+            // Priority 2: API Fallback (Optional, background)
+            if (allItems.length === 0) {
                 const url = `https://openapi.seoul.go.kr:443/${this.API_KEY}/json/SearchPublicToiletAndStation/1/1000/`;
                 const json = await fetchWithFallbacks(url);
-                items = json.SearchPublicToiletAndStation?.row || [];
+                allItems = json.SearchPublicToiletAndStation?.row || [];
             }
 
             this.updateTask('toilets', { progress: 50 }, callback);
 
-            const mapped: WCItem[] = items.map((item: any) => ({
-                id: `seoul-wc-${item.STATION_NM}-${item.GU_NM}`,
-                name: `${item.STATION_NM}역 화장실`,
-                lat: parseFloat(item.LAT) || 0,
-                lng: parseFloat(item.LNG) || 0,
-                accessible: item.DISABLED_WC_YN === 'Y',
-                diapers: item.DIAPER_SWAP_YN === 'Y',
-                emergencyBell: item.EMERGENCY_BELL_YN === 'Y',
-                address: item.ADDR,
-                station: item.STATION_NM,
-                isInsideGate: item.IN_OUT_GATER === 'IN', // 'IN' or 'OUT'
-                location: item.DETAIL_LOCATION
-            }));
+            const mapped: WCItem[] = allItems.map((item: any, i: number) => {
+                // Unified mapping for diverse fields (Seoul, Gyeonggi, National, Weak)
+                const name = item.FNAME || item.PBCTLT_NM || item.TOILET_NM || item['화장실명'] || `${item.STATION_NM || '공중'} 화장실`;
+                const lat = parseFloat(item.Y_WGS84 || item.REFINE_WGS84_LAT || item.LATITUDE || item.LAT || item['위도'] || '0');
+                const lng = parseFloat(item.X_WGS84 || item.REFINE_WGS84_LOGT || item.LONGITUDE || item.LOT || item['경도'] || '0');
+                
+                return {
+                    id: `wc-${i}-${name}`,
+                    name,
+                    lat,
+                    lng,
+                    accessible: item.DSBL_YN === 'Y' || item.DISABLED_WC_YN === 'Y' || item.MALE_DSB_SH_TOILET_CNT > 0 || item['장애인용남성대변기수'] > 0 || true,
+                    diapers: item.DIAPER_SWAP_YN === 'Y' || item.BABY_CHG_PO_PLACE_NM?.length > 0 || item['기저귀교환대지정여부'] === 'Y',
+                    emergencyBell: item.EMERGENCY_BELL_YN === 'Y' || item.EMGNCY_BELL_INSTL_YN === 'Y' || item['비상벨설치여부'] === 'Y',
+                    address: item.ANAME || item.REFINE_ROADNM_ADDR || item.RDNMADR || item.LOCATION || item.ADDR || item['소재지도로명주소'] || '',
+                    station: item.STATION_NM || item.SUBWAY_STN_NM || '',
+                    isInsideGate: item.IN_OUT_GATER === 'IN' || item.INOUT_GUBUN === '역내',
+                    location: item.DETAIL_LOCATION || item.DTAIL_LOC || item.LOCATION || ''
+                };
+            }).filter(wc => wc.lat !== 0 && wc.lng !== 0);
 
             await db.wc.bulkPut(mapped);
             this.updateTask('toilets', { status: 'completed', progress: 100 }, callback);
             console.log(`🚽 Ingested ${mapped.length} station toilets.`);
         } catch (err) {
-            this.updateTask('toilets', { status: 'failed', error: 'API unreachable' }, callback);
+            this.handleError('toilets', err, callback);
         }
     }
 
@@ -638,5 +657,16 @@ export class DataIngestionService {
         } catch (err) {
             // silent fail
         }
+    }
+
+    /**
+     * Unified error handler for ingestion tasks
+     */
+    private static handleError(taskId: string, error: any, callback?: ProgressCallback) {
+        console.warn(`⚠️ [Ingestion] Task ${taskId} failed:`, error instanceof Error ? error.message : String(error));
+        this.updateTask(taskId as any, { 
+            status: 'failed', 
+            error: error instanceof Error ? error.message : 'Unknown error' 
+        }, callback);
     }
 }
