@@ -110,10 +110,12 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
     const isHighlight = stopsLeft.includes("당역") || stopsLeft.includes("진입") || stopsLeft.includes("도착") || stopsLeft.includes("전역");
 
-    // Clean up stopsLeft if displayTime already mentions "도착" to avoid redundancy (e.g., "곧 도착 - 당역 도착" -> "곧 도착 - 당역")
+    // Clean up stopsLeft if displayTime already mentions "도착" to avoid redundancy
     let finalStopsLeft = stopsLeft;
     if (displayTime === "곧 도착" && finalStopsLeft.includes("당역")) {
-        finalStopsLeft = finalStopsLeft.replace(" 도착", "").replace("도착", "").trim();
+        finalStopsLeft = finalStopsLeft.replace(" 도착", "").replace("도착", "")
+                                     .replace(" 진입", "").replace("진입", "")
+                                     .trim();
     }
 
     return (
