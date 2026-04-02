@@ -398,56 +398,6 @@ export default function UnifiedBottomPanel({
                         )}
                     </AnimatePresence>
 
-                    {selectedStationName && (
-                        <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-1 mb-2 bg-zinc-100 dark:bg-white/5 rounded-2xl overflow-hidden border border-black/5 dark:border-white/10">
-                            <div className="p-3">
-                                <div className="flex flex-col gap-1.5 w-full mb-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-baseline gap-2">
-                                                <span className="text-sm font-black text-zinc-900 dark:text-white">{selectedStationName}</span>
-                                                <div className="flex gap-1 items-center">
-                                                    {badges.map((badge, idx) => (
-                                                        <div 
-                                                            key={idx}
-                                                            className="w-[18px] h-[18px] rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm"
-                                                            style={{ backgroundColor: badge.color }}
-                                                        >
-                                                            {badge.lineName.replace(/[^0-9]/g, '') || badge.lineName[0]}
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-1.5 items-center">
-                                                {stationFacilities.some(f => f.category === 'elevator') && <div className="p-1 rounded-lg bg-blue-500/10 text-blue-500 ring-1 ring-blue-500/20" title="엘리베이터"><Accessibility size={14} strokeWidth={3} /></div>}
-                                                {stationFacilities.some(f => f.category === 'lift') && <div className="p-1 rounded-lg bg-emerald-500/10 text-emerald-500 ring-1 ring-emerald-500/20" title="휠체어 리프트"><Accessibility size={14} strokeWidth={3} /></div>}
-                                                <div className={`p-1 rounded-lg bg-amber-500/10 text-amber-500 ring-1 ring-amber-500/20 ${!hasDiapers ? 'opacity-20 grayscale' : 'animate-pulse'}`} title="기저귀 교환대/수유실"><Baby size={14} /></div>
-                                            </div>
-                                        </div>
-                                        <button onClick={() => { onSelectStation?.(null); onActiveLineChange(null); }} className="p-1 text-zinc-400"><X size={14} /></button>
-                                    </div>
-                                    {badges.length > 0 && (
-                                        <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar py-0.5">
-                                            {badges.map((badge, idx) => {
-                                                const label = getLineLongName(badge.lineName);
-                                                
-                                                return (
-                                                    <button 
-                                                        key={idx}
-                                                        onClick={() => onActiveLineChange(badge.lineName)}
-                                                        className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${activeLine === badge.lineName ? 'text-white' : 'opacity-40 grayscale-[0.3]'}`}
-                                                        style={{ backgroundColor: badge.color }}
-                                                    >
-                                                        {label}
-                                                    </button>
-                                                );
-                                            })}
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </motion.div>
-                    )}
 
                     {activeTab !== "wc" && (
                         <div className="grid grid-cols-2 gap-2 mt-0.5 relative">
