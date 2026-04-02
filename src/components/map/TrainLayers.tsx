@@ -17,7 +17,7 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
       <Layer
         id="train-layer"
         type="symbol"
-        filter={(Array.isArray(trainFilter) ? trainFilter : undefined) as any}
+        filter={(Array.isArray(trainFilter) ? trainFilter : ["all"]) as any}
         layout={{
           "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
           "icon-size": [
@@ -39,7 +39,7 @@ const TrainLayers = ({ trainData, trainFilter, activeTab }: TrainLayersProps) =>
       <Layer
         id="train-express-badge"
         type="symbol"
-        filter={trainFilter ? ["all", trainFilter, ["==", ["get", "directAt"], "1"]] : ["==", ["get", "directAt"], "1"]}
+        filter={(Array.isArray(trainFilter) ? ["all", trainFilter, ["==", ["get", "directAt"], "1"]] : ["==", ["get", "directAt"], "1"]) as any}
         layout={{
           "icon-image": "express-full-badge",
           "icon-size": [

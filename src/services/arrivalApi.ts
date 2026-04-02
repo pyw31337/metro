@@ -53,7 +53,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
             const res = await fetch(targetUrl, { signal: AbortSignal.timeout(5000) });
             if (res.ok) return await res.json();
         } catch (e) {
-            console.warn(`Direct fetch failed for ${targetUrl}, trying proxies...`);
+            // Silently try proxies
         }
     }
 
@@ -71,7 +71,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
                 if (!json?.RESULT?.CODE?.includes("ERROR-500")) return json;
             }
         } catch (e) {
-            console.warn(`Proxy ${proxy} failed for ${targetUrl}`);
+            // Silently try next proxy
         }
     }
     throw new Error(`All fetch attempts failed for ${targetUrl}`);

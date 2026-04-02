@@ -104,7 +104,7 @@ export class DataIngestionService {
             console.log(`🚽 Ingested ${mapped.length} station toilets.`);
         } catch (err) {
             this.updateTask('toilets', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest toilets:', err);
+            console.debug('Failed to ingest toilets:', err);
         }
     }
 
@@ -137,7 +137,7 @@ export class DataIngestionService {
             console.log(`🛗 Ingested ${mapped.length} elevators.`);
         } catch (err) {
             this.updateTask('elevators', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest elevators:', err);
+            console.debug('Failed to ingest elevators:', err);
         }
     }
 
@@ -170,7 +170,7 @@ export class DataIngestionService {
             console.log(`♿ Ingested ${mapped.length} wheelchair lifts.`);
         } catch (err) {
             this.updateTask('lifts', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest lifts:', err);
+            console.debug('Failed to ingest lifts:', err);
         }
     }
 
@@ -199,7 +199,7 @@ export class DataIngestionService {
             console.log(`📏 Ingested ${mapped.length} inter-station distance records.`);
         } catch (err) {
             this.updateTask('distances', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest distances:', err);
+            console.debug('Failed to ingest distances:', err);
         }
     }
 
@@ -234,7 +234,7 @@ export class DataIngestionService {
             console.log(`⚡ Ingested ${mappedTransfers.length} fast transfer records.`);
         } catch (err) {
             this.updateTask('transfers', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest fast transfers:', err);
+            console.debug('Failed to ingest fast transfers:', err);
         }
     }
 
@@ -276,7 +276,7 @@ export class DataIngestionService {
             console.log(`✅ Detailed info updated.`);
         } catch (err) {
             this.updateTask('details', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest station info:', err);
+            console.debug('Failed to ingest station info:', err);
         }
     }
 
@@ -309,7 +309,7 @@ export class DataIngestionService {
             console.log(`🚗 Ingested ${valid.length} parking lots.`);
         } catch (err) {
             this.updateTask('parking', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest parking lots:', err);
+            console.debug('Failed to ingest parking lots:', err);
         }
     }
 
@@ -359,7 +359,7 @@ export class DataIngestionService {
             console.log(`🆔 Ingested metadata for ${items.length} stations.`);
         } catch (err) {
             this.updateTask('metadata', { status: 'failed', error: String(err) }, callback);
-            console.warn('Failed to ingest station metadata:', err);
+            console.debug('Failed to ingest station metadata:', err);
         }
     }
 
@@ -504,7 +504,7 @@ export class DataIngestionService {
             await db.busStops.bulkPut(busStops);
             console.log(`📍 Ingested ${busStops.length} bus stops for city ${cityCode}.`);
         } catch (err) {
-            console.warn(`Failed to ingest bus stops for city ${cityCode}:`, err);
+            console.debug(`Failed to ingest bus stops for city ${cityCode}:`, err);
         }
     }
 
@@ -520,7 +520,7 @@ export class DataIngestionService {
                 await this.ingestTimetables(station.name, line, station.stationCd);
             }
         } catch (err) {
-            console.warn(`Failed to trigger timetable for ${stationName}:`, err);
+            console.debug(`Failed to trigger timetable for ${stationName}:`, err);
         }
     }
 }
