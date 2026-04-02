@@ -110,6 +110,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                     arvlMsg2: item.arvlMsg2 || "",
                     arvlMsg3: item.arvlMsg3 || "",
                     arvlCd: item.arvlCd || "",
+                    bstatnNm: item.bstatnNm || "",
                     barvlDt: item.barvlDt || "9999",
                     btrainNo: item.btrainNo || ""
                 };
@@ -189,6 +190,7 @@ export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds
         arvlMsg2: waitTimeSeconds < 60 ? "곧 도착" : `${Math.floor(waitTimeSeconds / 60)}분 후`,
         arvlMsg3: entry.destination,
         arvlCd: "99",
+        bstatnNm: entry.destination,
         barvlDt: waitTimeSeconds.toString(),
         btrainNo: entry.trainNo,
         isScheduled: true
