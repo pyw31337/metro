@@ -17,7 +17,16 @@ if (fs.existsSync(envPath)) {
 const DATA_GO_KR_KEY_ENCODED = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || '';
 const DATA_GO_KR_KEY_DECODED = "+wF9V/FmtnPwFyVA23nnj8bPMr6408AqX7SOvjeKVxwn/9NdHD9lY3vlQ0SckYijlvhHdjIPmDttxD4bd9YvwQ==";
 const SEOUL_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
-const DATA_DIR = path.join(process.cwd(), 'public/data');
+const DATA_GO_KR_KEY = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || 'sample';
+
+const DATA_DIR = path.resolve(process.cwd(), 'public', 'data');
+const METRO_DATA_FILE = path.resolve(process.cwd(), 'src', 'data', 'capitalStations.json');
+
+// Pre-load stations for matching
+let subwayStations = [];
+if (fs.existsSync(METRO_DATA_FILE)) {
+    subwayStations = JSON.parse(fs.readFileSync(METRO_DATA_FILE, 'utf8'));
+}
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
@@ -122,15 +131,35 @@ async function ingestNationwideToilets() {
                     if (!Array.isArray(rows) && rows) rows = [rows];
 
                     if (rows.length > 0) {
-                        const mapped = rows.map(it => ({
-                            id: String(it.MNG_NO || it.id || Math.random()),
-                            name: String(it.RSTRM_NM || it.fcltyNm || '화장실'),
-                            lat: parseFloat(String(it.WGS84_LAT || it.la || '0').trim()),
-                            lng: parseFloat(String(it.WGS84_LOT || it.lo || '0').trim()),
-                            address: String(it.LCTN_ROAD_NM_ADDR || it.LCTN_LOTNO_ADDR || ''),
-                            type: 'WC',
-                            source: 'MOIS'
-                        })).filter(it => it.lat > 30 && it.lng > 120);
+                        const mapped = rows.map(it => {
+                            let lat = parseFloat(String(it.WGS84_LAT || it.la || '0').trim());
+                            let lng = parseFloat(String(it.WGS84_LOT || it.lo || '0').trim());
+                            const name = String(it.RSTRM_NM || it.fcltyNm || '화장실');
+                            const mng = String(it.MNG_INST_NM || '');
+
+                            // Rescue Station Toilets without coordinates
+                            if (!(lat > 30 && lng > 120)) {
+                                const match = subwayStations.find(s => 
+                                    name.includes(s.name) || 
+                                    mng.includes(s.name) ||
+                                    (s.name.length > 1 && (name.includes(s.name.replace(/역+$/, '')) || mng.includes(s.name.replace(/역+$/, ''))))
+                                );
+                                if (match) {
+                                    lat = match.latitude || match.lat;
+                                    lng = match.longitude || match.lng;
+                                }
+                            }
+
+                            return {
+                                id: String(it.MNG_NO || it.id || Math.random()),
+                                name,
+                                lat,
+                                lng,
+                                address: String(it.LCTN_ROAD_NM_ADDR || it.LCTN_LOTNO_ADDR || ''),
+                                type: 'WC',
+                                source: 'MOIS'
+                            };
+                        }).filter(it => it.lat > 30 && it.lng > 120);
                         allToilets.push(...mapped);
                     }
                 }

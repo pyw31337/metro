@@ -46,6 +46,8 @@ interface UnifiedBottomPanelProps {
     onSelectStation?: (name: string | null) => void;
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
+    selectedBusStop?: any | null;
+    onSelectBusRoute?: (routeNum: string, cityCode?: string) => void;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -94,7 +96,9 @@ export default function UnifiedBottomPanel({
     schedules,
     onSelectStation,
     activeLine,
-    onActiveLineChange
+    onActiveLineChange,
+    selectedBusStop,
+    onSelectBusRoute
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const [destination, setDestination] = useState("");
@@ -137,6 +141,13 @@ export default function UnifiedBottomPanel({
             onActiveLineChange(badges[0].lineName);
         }
     }, [badges, activeLine, onActiveLineChange]);
+
+    // Auto-locate on Bus tab switch
+    useEffect(() => {
+        if (activeTab === "bus" && !source && onLocate) {
+            onLocate("source");
+        }
+    }, [activeTab, onLocate]);
 
     useEffect(() => {
         if (selectedStationName) {
@@ -463,7 +474,55 @@ export default function UnifiedBottomPanel({
                         )}
                     </div>
 
-                    {activeTab === 'bus' && busPathResult && (
+                    {activeTab === 'bus' && selectedBusStop && (
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative group">
+                            <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => onSelectStation?.(null)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                                        <Bus size={18} />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <h3 className="text-[16px] font-black">{selectedBusStop.name}</h3>
+                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{selectedBusStop.region || '경기'} · {selectedBusStop.id}</span>
+                                    </div>
+                                </div>
+
+                                <div className="flex flex-wrap gap-1.5">
+                                    {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
+                                        <button 
+                                            key={i} 
+                                            onClick={() => onSelectBusRoute?.(r, selectedBusStop.cityCode)}
+                                            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 dark:text-emerald-400 hover:text-white text-[12px] font-black border border-emerald-500/20 transition-all active:scale-95"
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2 mt-1">
+                                    <button 
+                                        onClick={() => { onSetSource?.(selectedBusStop.name); onSetDestination?.(""); }} 
+                                        className="h-9 rounded-xl bg-blue-500 text-white text-[12px] font-black shadow-sm active:scale-95 transition-all"
+                                    >
+                                        출발지로 설정
+                                    </button>
+                                    <button 
+                                        onClick={() => { onSetDestination?.(selectedBusStop.name); }} 
+                                        className="h-9 rounded-xl bg-rose-500 text-white text-[12px] font-black shadow-sm active:scale-95 transition-all"
+                                    >
+                                        도착지로 설정
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+
+                    {activeTab === 'bus' && busPathResult && !selectedBusStop && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 backdrop-blur-md">
                             <div className="flex items-center justify-between mb-3"><span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">직행 버스 추천</span><span className="text-[12px] font-bold text-zinc-900 dark:text-white">약 {Math.round(busPathResult.distanceWeight)}분</span></div>
                             <div className="flex flex-wrap gap-1.5">{busPathResult.commonRoutes.map((r, i) => (<span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">{r}</span>))}</div>

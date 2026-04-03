@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import { X } from "lucide-react";
+import { X, MapPin, Accessibility, Bell, Baby } from "lucide-react";
 import { StationArrival } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
@@ -32,6 +32,8 @@ interface MapPopupsProps {
   trainArrivalDetail?: StationArrival | null;
   activeLine: string | null;
   onActiveLineChange: (line: string | null) => void;
+  selectedWC?: WCItem | null;
+  isDarkMode?: boolean;
 }
 
 const getLineInfo = (lineName: string) => {
@@ -81,7 +83,9 @@ const MapPopups = ({
   congestionData,
   trainArrivalDetail,
   activeLine,
-  onActiveLineChange
+  onActiveLineChange,
+  selectedWC,
+  isDarkMode
 }: MapPopupsProps) => {
   const { data: realTimeCongestion, loading: isStationCongestionLoading } = useCongestion(selectedStationName);
 
@@ -117,7 +121,7 @@ const MapPopups = ({
   return (
     <>
       {/* 1. Station/Bus Detail Popup */}
-      {popupCoords && ((activeTab === 'subway' && selectedStationName) || (activeTab === 'bus' && selectedBusStop)) && (
+      {popupCoords && (activeTab === 'subway' && selectedStationName) && (
         <Popup
             key={selectedStationName || selectedBusStop?.id}
             longitude={popupCoords[0]}
@@ -225,20 +229,7 @@ const MapPopups = ({
                 </div>
 
                 <div className="space-y-2">
-                    {activeTab === 'bus' && (
-                        <p className="text-[9px] font-black text-zinc-400 dark:text-white/40 uppercase tracking-widest mb-1">
-                            경유 노선 정보
-                        </p>
-                    )}
-                    {activeTab === 'bus' && selectedBusStop ? (
-                        <div className="flex flex-wrap gap-1">
-                             {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
-                                <span key={i} className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black border border-emerald-500/20">
-                                    {r}
-                                </span>
-                            ))}
-                        </div>
-                    ) : stationArrivals.length > 0 ? (
+                    {stationArrivals.length > 0 ? (
                         <div className="grid grid-cols-2 gap-2 mt-1">
                             <div className="flex flex-col gap-1.5">
                                 <ArrivalHeader 
@@ -448,6 +439,90 @@ const MapPopups = ({
                                 );
                             })}
                         </div>
+                    </div>
+                )}
+            </div>
+        </Popup>
+      )}
+      
+      {/* 3. Toilet (WC) Detail Popup */}
+      {selectedWC && (
+        <Popup
+            longitude={selectedWC.lng}
+            latitude={selectedWC.lat}
+            closeButton={false}
+            closeOnClick={false}
+            onClose={() => setPopupCoords(null)}
+            anchor="bottom"
+            offset={12}
+            className="custom-wc-popup"
+        >
+            <div 
+                className={`p-3 min-w-[220px] max-w-[280px] rounded-2xl border shadow-xl transition-colors duration-300 ${isDarkMode ? 'bg-zinc-900/95 border-white/10 text-white' : 'bg-white/95 border-zinc-200 text-zinc-900'}`}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between mb-2">
+                    <div className="flex flex-col">
+                        <div className="flex items-center gap-1.5 mb-1">
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-500 text-white uppercase tracking-tighter">화장실</span>
+                            {selectedWC.isInsideGate !== undefined && (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${selectedWC.isInsideGate ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400'}`}>
+                                {selectedWC.isInsideGate ? '게이트 내' : '게이트 외'}
+                              </span>
+                            )}
+                        </div>
+                        <h3 className="text-[14px] font-black truncate">{selectedWC.name.replace(' 화장실', '')}</h3>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="bg-zinc-100 dark:bg-white/5 rounded-xl p-2 flex flex-col items-center">
+                        <span className="text-[9px] font-black text-zinc-400 mb-0.5">남성용</span>
+                        <div className="flex items-center gap-1.5 text-[11px] font-black">
+                            <span>대 {selectedWC.maleStalls || 0}</span>
+                            <span className="w-[1px] h-2 bg-zinc-300 dark:bg-white/10" />
+                            <span>소 {selectedWC.maleUrinals || 0}</span>
+                        </div>
+                    </div>
+                    <div className="bg-zinc-100 dark:bg-white/5 rounded-xl p-2 flex flex-col items-center">
+                        <span className="text-[9px] font-black text-zinc-400 mb-0.5">여성용</span>
+                        <div className="text-[11px] font-black">
+                           대 {selectedWC.femaleStalls || 0}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-3 px-1">
+                     <div className="flex gap-1.5">
+                         {selectedWC.accessible && (
+                            <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-500" title="장애인 편의">
+                                <Accessibility size={12} />
+                            </div>
+                         )}
+                         {selectedWC.emergencyBell && (
+                            <div className="w-6 h-6 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-500" title="비상벨">
+                                <Bell size={12} />
+                            </div>
+                         )}
+                         {selectedWC.diapers && (
+                            <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500" title="기저귀 교환대">
+                                <Baby size={12} />
+                            </div>
+                         )}
+                     </div>
+                     <span className="text-[10px] font-bold text-zinc-400">
+                        {selectedWC.openTime?.includes('24') || !selectedWC.openTime ? '24시간 운영' : selectedWC.openTime}
+                     </span>
+                </div>
+
+                {selectedWC.address && (
+                    <div className="flex items-start gap-1.5 pt-2 border-t border-zinc-100 dark:border-white/5">
+                        <MapPin size={10} className="text-zinc-400 mt-0.5 flex-shrink-0" />
+                        <p className="text-[9px] font-medium text-zinc-400 line-clamp-2 leading-relaxed">
+                            {selectedWC.address}
+                        </p>
                     </div>
                 )}
             </div>

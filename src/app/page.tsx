@@ -276,6 +276,31 @@ export default function Home() {
         setSelectedStationName(name);
     };
 
+    const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
+        if (!cityCode) return;
+        try {
+            // Find routeId from local master data
+            const res = await fetch("/data/master-bus-routes.json");
+            const routes = await res.json();
+            const route = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
+            
+            if (route) {
+                const { MetropolitanBusService } = await import("@/services/busApi");
+                const path = await MetropolitanBusService.fetchRoutePath(cityCode, route.id);
+                if (path) {
+                    setRoutePathData(path);
+                    // Optional: fly to the route start/center
+                    if (path.features[0]?.geometry?.coordinates[0]) {
+                        const [lng, lat] = path.features[0].geometry.coordinates[0];
+                        mapRef.current?.flyTo({ center: [lng, lat], zoom: 13, duration: 2000 });
+                    }
+                }
+            }
+        } catch (err) {
+            console.error("Route selection failed:", err);
+        }
+    }, []);
+
     const handleReset = () => {
         setStartStation(null);
         setEndStation(null);
@@ -385,6 +410,7 @@ export default function Home() {
                     activeTab={activeTab}
                     selectedBusStopId={selectedBusStop?.id ?? null}
                     selectedBusRoute={selectedBusRoute}
+                    routePathData={routePathData}
                     onWCClick={setSelectedWC}
                     onBusStopClick={setSelectedBusStop}
                     onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number])}
@@ -442,6 +468,8 @@ export default function Home() {
                 onSelectStation={setSelectedStationName}
                 activeLine={activeLine}
                 onActiveLineChange={handleActiveLineChange}
+                selectedBusStop={selectedBusStop}
+                onSelectBusRoute={handleSelectBusRoute}
             />
 
             <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
@@ -462,18 +490,6 @@ export default function Home() {
                         lng={currentCenter[1]}
                         isDarkMode={isDarkMode}
                         onClose={() => setWeatherOpen(false)}
-                    />
-                )}
-            </AnimatePresence>
-            <AnimatePresence>
-                {selectedBusStop && (
-                    <BusDetailPanel 
-                        stop={selectedBusStop} 
-                        onClose={() => { setSelectedBusStop(null); setRoutePathData(null); }}
-                        onRouteSelect={(seq) => setRoutePathData(convertRouteStationsToGeoJSON(seq))}
-                        isDarkMode={isDarkMode}
-                        onSetStart={(name) => setStartStation(name)}
-                        onSetEnd={(name) => setEndStation(name)}
                     />
                 )}
             </AnimatePresence>

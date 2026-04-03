@@ -58,6 +58,7 @@ interface MapLibreProps {
     onActiveLineChange: (line: string | null) => void;
     nearestStation: Station | null;
     selectedBusRoute?: string | null;
+    routePathData?: any;
 }
 
 // ─── Canvas Polyfill ───────────────────────────────────────────────────────────
@@ -165,7 +166,7 @@ function MapLibreBackground(props: MapLibreProps) {
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
         onCenterChange, onBoundsChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
-        nearestStation, selectedBusRoute
+        nearestStation, selectedBusRoute, routePathData
     } = props;
 
     const [mapInstance, setMapInstance] = useState<any | null>(null);
@@ -318,7 +319,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 focusedLine={activeLine}
             />
             
-            <BusLayers busData={busGeoJSON} activeTab={activeTab} isDarkMode={isDarkMode} />
+            <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
             <BusRealtimeLayers busData={busRealtimeData} activeTab={activeTab} />
             
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
@@ -361,6 +362,8 @@ function MapLibreBackground(props: MapLibreProps) {
                 trainArrivalDetail={trainArrivalDetail}
                 activeLine={activeLine}
                 onActiveLineChange={onActiveLineChange}
+                selectedWC={selectedWC}
+                isDarkMode={isDarkMode}
             />
 
             
@@ -407,12 +410,6 @@ function MapLibreBackground(props: MapLibreProps) {
                 </Source>
             )}
 
-            {selectedWC && (
-                <ToiletDetailPanel 
-                    wc={selectedWC} 
-                    onClose={() => setSelectedWC(null)} 
-                />
-            )}
         </MapBase>
     );
 }

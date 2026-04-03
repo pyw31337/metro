@@ -179,4 +179,44 @@ export class MetropolitanBusService {
       return [];
     }
   }
+  
+  /**
+   * [NEW] Fetch route path geometry from Tago API
+   */
+  static async fetchRoutePath(cityCode: string, routeId: string): Promise<any | null> {
+    const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
+    if (!apiKey || apiKey === "sample") return null;
+    try {
+      const url = `${this.TAGO_URL}BusRouteInfoInqireService/getRoutePath?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) return null;
+      const json = await res.json();
+      const items = json?.response?.body?.items?.item || [];
+      const arr = Array.isArray(items) ? items : [items];
+      
+      if (arr.length === 0) return null;
+
+      // Convert to GeoJSON LineString
+      const coordinates = arr
+        .map((it: any) => [parseFloat(it.gpslnt), parseFloat(it.gpslat)])
+        .filter((coord: any) => !isNaN(coord[0]) && !isNaN(coord[1]));
+
+      if (coordinates.length < 2) return null;
+
+      return {
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          geometry: {
+            type: "LineString",
+            coordinates
+          },
+          properties: { routeId }
+        }]
+      };
+    } catch (err) {
+      console.error("Bus route path fetch error:", err);
+      return null;
+    }
+  }
 }

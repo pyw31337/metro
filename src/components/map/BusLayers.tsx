@@ -91,14 +91,25 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
     {/* Bus Route Path Layer */}
     {routePathData && (
         <Source id="bus-route-path-source" type="geojson" data={routePathData}>
+            {/* Casing for better visibility (선명함) */}
+            <Layer 
+                id="bus-route-path-casing" 
+                type="line" 
+                layout={{ "line-join": "round", "line-cap": "round" }}
+                paint={{ 
+                    "line-color": isDarkMode ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.8)", 
+                    "line-width": 8,
+                    "line-opacity": 0.9
+                }} 
+            />
             <Layer 
                 id="bus-route-path" 
                 type="line" 
                 layout={{ "line-join": "round", "line-cap": "round" }}
                 paint={{ 
-                    "line-color": "#ef4444", 
-                    "line-width": 4,
-                    "line-opacity": 0.8
+                    "line-color": "#10b981", // Emerald-500 for a fresh, vivid look
+                    "line-width": 5,
+                    "line-opacity": 1.0
                 }} 
             />
         </Source>
