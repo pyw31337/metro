@@ -52,60 +52,53 @@ export function useRealtimeTrains(map: any | null) {
             const lineNames = ["1호선", "2호선", "3호선", "4호선", "5호선", "6호선", "7호선", "8호선", "9호선", "경의중앙선", "경춘선", "수인분당선", "신분당선"];
             
             try {
-                const results = await Promise.all(lineNames.map(async (name) => {
-                    const json = await subwayApi.getPositions(name);
-                    const list: RealtimePosition[] = json?.realtimePositionList || [];
-                    return { name, list };
-                }));
-
+                // Fetch SEQUENTIALLY to prevent connection storm and timeouts
                 const allFetchedTrains: any[] = [];
-                results.forEach(({ name, list }) => {
-                    list.forEach(rt => {
-                        const targetLines = SUBWAY_LINES.filter(l => l.name === name);
-                        const normalizedStatnNm = normalizeStationName(rt.statnNm);
+                for (const name of lineNames) {
+                    try {
+                        const json = await subwayApi.getPositions(name);
+                        const list: RealtimePosition[] = json?.realtimePositionList || [];
+                        
+                        list.forEach(rt => {
+                            const targetLines = SUBWAY_LINES.filter(l => l.name === name);
+                            const normalizedStatnNm = normalizeStationName(rt.statnNm);
 
-                        for (const line of targetLines) {
-                            const stationIdx = line.stations.findIndex(s => normalizeStationName(s.name) === normalizedStatnNm);
-                            
-                            if (stationIdx !== -1) {
-                                const dir = getDirection(rt.updnLine);
-                                let initialProgress = 0.05;
-                                if (rt.trainSttus === '0') initialProgress = 0.8; 
-                                if (rt.trainSttus === '1') initialProgress = 0.95; 
-                                if (rt.trainSttus === '2') initialProgress = 0.1; 
+                            for (const line of targetLines) {
+                                const stationIdx = line.stations.findIndex(s => normalizeStationName(s.name) === normalizedStatnNm);
+                                
+                                if (stationIdx !== -1) {
+                                    const dir = getDirection(rt.updnLine);
+                                    let initialProgress = 0.05;
+                                    if (rt.trainSttus === '0') initialProgress = 0.8; 
+                                    if (rt.trainSttus === '1') initialProgress = 0.95; 
+                                    if (rt.trainSttus === '2') initialProgress = 0.1; 
 
-                                allFetchedTrains.push({
-                                    id: `real-${rt.trainNo}-${name}`,
-                                    lineId: line.id,
-                                    lineName: line.name,
-                                    stationIndex: stationIdx,
-                                    progress: initialProgress, 
-                                    direction: dir,
-                                    status: rt.trainSttus === '1' ? 'STOPPED' : 'RUNNING',
-                                    headingTo: rt.statnTnm || rt.statnNm, 
-                                    lastUpdate: Date.now(),
-                                    trainNo: rt.trainNo,
-                                    directAt: rt.directAt,
-                                    trainSttus: rt.trainSttus
-                                });
-                                break; 
+                                    allFetchedTrains.push({
+                                        id: `real-${rt.trainNo}-${name}`,
+                                        lineId: line.id,
+                                        lineName: line.name,
+                                        stationIndex: stationIdx,
+                                        progress: initialProgress, 
+                                        direction: dir,
+                                        status: rt.trainSttus === '1' ? 'STOPPED' : 'RUNNING',
+                                        headingTo: rt.statnTnm || rt.statnNm, 
+                                        lastUpdate: Date.now(),
+                                        trainNo: rt.trainNo,
+                                        directAt: rt.directAt,
+                                        trainSttus: rt.trainSttus
+                                    });
+                                    break; 
+                                }
                             }
-                        }
-                    });
-                });
-
-                const oldMap = new Map(trainsRef.current.map(t => [t.id, t]));
-                const mergedTrains = allFetchedTrains.map(newT => {
-                    const existing = oldMap.get(newT.id);
-                    if (existing && existing.stationIndex === newT.stationIndex) {
-                        return { ...newT, progress: existing.progress, lastUpdate: existing.lastUpdate };
+                        });
+                        // Stagger requests to avoid browser connection limit / server rate limit
+                        await new Promise(resolve => setTimeout(resolve, 100)); 
+                    } catch (lineErr) {
+                        // Silent per-line fail
                     }
-                    return newT;
-                });
-
-                if (mergedTrains.length > 0) {
-                    trainsRef.current = mergedTrains;
                 }
+
+                if (allFetchedTrains.length === 0) return;
             } catch (err) {
                 console.error("Failed to fetch realtime trains:", err);
             }

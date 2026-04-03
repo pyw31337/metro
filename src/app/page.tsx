@@ -16,11 +16,18 @@ import { useArrivalInfo } from "@/hooks/useArrivalInfo";
 import { useBusPositions } from "@/hooks/useBusPositions";
 import { DataIngestionService } from "@/services/dataIngestion";
 import { getCityCodeByCoords } from "@/utils/regionUtils";
+import { 
+  convertSubwayToGeoJSON, 
+  convertWCToGeoJSON, 
+  convertBusStopsToGeoJSON,
+  convertRouteStationsToGeoJSON 
+} from "@/utils/geoJsonUtils";
 
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
 const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: false });
 const WeatherPopup = dynamic(() => import("@/components/WeatherPopup"), { ssr: false });
+const BusDetailPanel = dynamic(() => import("@/components/panels/BusDetailPanel"), { ssr: false });
 import { AnimatePresence } from "framer-motion";
 
 type PathStrategy = "time" | "transfer";
@@ -45,6 +52,9 @@ export default function Home() {
     const [isLocating, setIsLocating] = useState(false);
     const [locatingTimer, setLocatingTimer] = useState(5);
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
+    const [activeBusStop, setActiveBusStop] = useState<BusStop | null>(null);
+    const [routePathData, setRoutePathData] = useState<any | null>(null);
+    const [toiletData, setToiletData] = useState<any | null>(null);
     const [selectedBusStop, setSelectedBusStop] = useState<BusStop | null>(null);
     const [wcItems, setWcItems] = useState<WCItem[]>([]);
     const [nearestWCs, setNearestWCs] = useState<WCItem[]>([]);
@@ -452,6 +462,18 @@ export default function Home() {
                         lng={currentCenter[1]}
                         isDarkMode={isDarkMode}
                         onClose={() => setWeatherOpen(false)}
+                    />
+                )}
+            </AnimatePresence>
+            <AnimatePresence>
+                {selectedBusStop && (
+                    <BusDetailPanel 
+                        stop={selectedBusStop} 
+                        onClose={() => { setSelectedBusStop(null); setRoutePathData(null); }}
+                        onRouteSelect={(seq) => setRoutePathData(convertRouteStationsToGeoJSON(seq))}
+                        isDarkMode={isDarkMode}
+                        onSetStart={(name) => setStartStation(name)}
+                        onSetEnd={(name) => setEndStation(name)}
                     />
                 )}
             </AnimatePresence>

@@ -1,16 +1,1 @@
-[
-  {
-    "LINE_NUM": "01호선",
-    "STATION_NM": "서울",
-    "NEXT_STATION_NM": "남영",
-    "DISTANCE": 1.7,
-    "DURATION": 2
-  },
-  {
-    "LINE_NUM": "04호선",
-    "STATION_NM": "서울",
-    "NEXT_STATION_NM": "숙대입구",
-    "DISTANCE": 1.1,
-    "DURATION": 2
-  }
-]
+[]

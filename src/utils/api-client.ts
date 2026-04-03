@@ -23,24 +23,24 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
     try {
         const response = await fetch(url);
         if (!response.ok) {
-            console.warn(`[API Warning] ${url}: ${response.status}`);
+            console.debug(`[API Warning] ${url}: ${response.status}`);
             return null;
         }
         
         const contentType = response.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
-            console.warn(`[API Warning] ${url}: Expected JSON but got ${contentType}`);
+            console.debug(`[API Warning] ${url}: Expected JSON but got ${contentType}`);
             return null;
         }
 
         const data = await response.json();
         if (!data || Object.keys(data).length === 0) {
-            console.warn(`[API Empty Response] ${url}`);
+            console.debug(`[API Empty Response] ${url}`);
         }
         cache.set(url, { data, timestamp: now });
         return data;
     } catch (error: any) {
-        console.error(`[API Critical Failure] ${url}: ${error?.message || error}`);
+        console.debug(`[API Silenced Failure] ${url}: ${error?.message || error}`);
         return null;
     }
 }

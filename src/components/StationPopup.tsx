@@ -8,7 +8,7 @@ import { StationArrival } from "@/types/metro";
 import { Train, MapPin, Navigation, Clock, Search, Phone, Map as StationMap, Baby, Accessibility, Info } from "lucide-react";
 import { getLineShortName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
-import { Station, Facility } from "@/types/metro";
+import { Station, Facility, StationExit } from "@/types/metro";
 
 interface StationPopupProps {
     name: string;
@@ -25,11 +25,13 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
     const { arrivals, schedules, loading } = useArrivalInfo(type === "subway" ? name : null);
     const [stationMeta, setStationMeta] = useState<Station | null>(null);
     const [facilities, setFacilities] = useState<Facility[]>([]);
+    const [exits, setExits] = useState<StationExit[]>([]);
 
     useEffect(() => {
         if (type === "subway") {
             db.getStationByName(name).then(s => setStationMeta(s || null));
             db.getStationFacilities(name).then(setFacilities);
+            db.stationExits.where('stationName').equals(name).toArray().then(setExits);
         }
     }, [name, type]);
 
@@ -96,6 +98,32 @@ export default function StationPopup({ name, type, onSetStart, onSetEnd, onSetWa
                                 <span className="text-[7px] font-black opacity-40">주차장</span>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Exits and Surroundings */}
+            {type === "subway" && exits.length > 0 && (
+                <div className="px-5 py-4 border-b border-zinc-100 dark:border-white/5 space-y-3">
+                    <div className="text-[11px] font-black text-zinc-400 uppercase tracking-widest flex items-center gap-2">
+                        <MapPin size={10} />
+                        Exit Information
+                    </div>
+                    <div className="flex flex-col gap-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
+                        {exits.sort((a, b) => parseInt(a.exitNo) - parseInt(b.exitNo)).map((ex, i) => (
+                            <div key={i} className="flex gap-3 items-start p-2.5 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5">
+                                <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-[11px] font-black text-white shrink-0">
+                                    {ex.exitNo}
+                                </div>
+                                <div className="flex flex-wrap gap-1">
+                                    {ex.landmarks.map((l: string, j: number) => (
+                                        <span key={j} className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300">
+                                            {l}{j < ex.landmarks.length - 1 ? ',' : ''}
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
             )}

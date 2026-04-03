@@ -37,6 +37,16 @@ const matchChosung = (query: string, target: string) => {
     return disassembledTarget.includes(disassembledQuery);
 };
 
+interface SearchResult {
+    type: 'subway' | 'bus_route';
+    name?: string;
+    no?: string;
+    id?: string;
+    region?: string;
+    type_name?: string;
+    lines?: string[];
+}
+
 export default function FloatingSearchBar({ 
     activeTab, 
     onTabChange, 
@@ -48,11 +58,12 @@ export default function FloatingSearchBar({
     const [isExpanded, setIsExpanded] = useState(false);
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
-    const [searchResults, setSearchResults] = useState<Station[]>([]);
+    const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [selectedIndex, setSelectedIndex] = useState(-1);
 
     const allStations = useRef<Station[]>([]);
+    const allBusRoutes = useRef<any[]>([]);
 
     useEffect(() => {
         const unique = new Map<string, Station>();
@@ -62,6 +73,12 @@ export default function FloatingSearchBar({
             });
         });
         allStations.current = Array.from(unique.values());
+
+        // Load bus routes for search
+        fetch('/metro/data/master-bus-routes.json')
+            .then(res => res.json())
+            .then(data => { allBusRoutes.current = data; })
+            .catch(() => { console.debug("Bus routes not loaded yet"); });
     }, []);
 
     // Sync from external props (e.g. Map click)
@@ -81,12 +98,22 @@ export default function FloatingSearchBar({
             return;
         }
 
-        const filtered = allStations.current.filter(s => {
+        const filteredStations = allStations.current.filter(s => {
             return matchChosung(val, s.name);
-        }).slice(0, 10);
+        }).slice(0, 5);
 
-        setSearchResults(filtered);
-        setSelectedIndex(filtered.length > 0 ? 0 : -1);
+        // Include bus routes in search results
+        const filteredRoutes = allBusRoutes.current.filter(r => {
+            return r.no.includes(val);
+        }).slice(0, 5);
+
+        const combinedResults: any[] = [
+            ...filteredStations.map(s => ({ ...s, type: 'subway' })),
+            ...filteredRoutes.map(r => ({ ...r, type: 'bus_route' }))
+        ];
+
+        setSearchResults(combinedResults);
+        setSelectedIndex(combinedResults.length > 0 ? 0 : -1);
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -108,11 +135,15 @@ export default function FloatingSearchBar({
         }
     };
 
-    const selectStation = (name: string) => {
+    const selectStation = (item: any) => {
+        const name = item.type === 'bus_route' ? `${item.no}번 버스` : item.name;
+        
         if (activeField === "dest") {
             setDestination(name);
             setActiveField(null);
-            if (!source) findNearestStation();
+            if (!item.type || item.type === 'subway') {
+                if (!source) findNearestStation();
+            }
         } else {
             setSource(name);
             setActiveField(null);
@@ -241,30 +272,40 @@ export default function FloatingSearchBar({
                                     return (
                                         <button
                                             key={i}
-                                            onClick={() => selectStation(s.name)}
+                                            onClick={() => selectStation(s)}
                                             onMouseEnter={() => setSelectedIndex(i)}
                                             className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${isSelected ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-50 dark:hover:bg-white/5"}`}
                                         >
                                             <div className="w-8 h-8 rounded-lg bg-zinc-100 dark:bg-white/5 flex items-center justify-center shrink-0">
-                                                <Train size={14} className={isSelected ? "text-zinc-900 dark:text-white" : "text-zinc-400"} />
+                                                {s.type === 'bus_route' ? (
+                                                    <Bus size={14} className={isSelected ? "text-rose-500" : "text-rose-400"} />
+                                                ) : (
+                                                    <Train size={14} className={isSelected ? "text-zinc-900 dark:text-white" : "text-zinc-400"} />
+                                                )}
                                             </div>
                                             <div className="flex flex-col flex-1">
-                                                <span className="font-bold text-zinc-900 dark:text-white text-sm">{s.name}</span>
+                                                <span className="font-bold text-zinc-900 dark:text-white text-sm">
+                                                    {s.type === 'bus_route' ? `${s.no}번 버스` : s.name}
+                                                </span>
                                                 <div className="flex flex-wrap gap-1 mt-0.5">
-                                                    {s.lines.map(lineName => {
-                                                        const line = SUBWAY_LINES.find(l => l.name === lineName || (lineName.includes('호선') && l.name.includes(lineName.replace('호선', ''))));
-                                                        const color = line?.color || "#94a3b8";
-                                                        const shortName = lineName.replace('호선', '').replace('서울배차', '').trim();
-                                                        return (
-                                                            <div 
-                                                                key={lineName}
-                                                                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20"
-                                                            >
-                                                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
-                                                                <span className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 leading-none">{shortName}</span>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {s.type === 'bus_route' ? (
+                                                        <span className="text-[10px] text-zinc-500">{s.region} · {s.type_name || '일반'}</span>
+                                                    ) : (
+                                                        s.lines?.map(lineName => {
+                                                            const line = SUBWAY_LINES.find(l => l.name === lineName || (lineName.includes('호선') && l.name.includes(lineName.replace('호선', ''))));
+                                                            const color = line?.color || "#94a3b8";
+                                                            const shortName = lineName.replace('호선', '').replace('서울배차', '').trim();
+                                                            return (
+                                                                <div 
+                                                                    key={lineName}
+                                                                    className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-black/5 dark:border-white/5 bg-white/50 dark:bg-black/20"
+                                                                >
+                                                                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: color }} />
+                                                                    <span className="text-[9px] font-black text-zinc-500 dark:text-zinc-400 leading-none">{shortName}</span>
+                                                                </div>
+                                                            );
+                                                        })
+                                                    )}
                                                 </div>
                                             </div>
                                         </button>

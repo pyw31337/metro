@@ -22,6 +22,7 @@ import TrainLayers from "./map/TrainLayers";
 import WCLayers from "./map/WCLayers";
 import RouteLayers from "./map/RouteLayers";
 import MapPopups from "./map/MapPopups";
+import ToiletDetailPanel from "./ToiletDetailPanel";
 import { useTransferVerification } from "@/hooks/useTransferVerification";
 
 interface MapLibreProps {
@@ -174,6 +175,7 @@ function MapLibreBackground(props: MapLibreProps) {
     const [congestionData, setCongestionData] = useState<any | null>(null);
     const [trainArrivalDetail, setTrainArrivalDetail] = useState<StationArrival | null>(null);
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
+    const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
     const verifiedPlats = useTransferVerification(pathResult, stations);
 
     // Call high-performance hooks internally
@@ -227,6 +229,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setSelectedTrain(null);
             setTrainArrivalDetail(null);
             setPopupCoords(null);
+            setSelectedWC(null);
             onActiveLineChange(null);
             // Also notify that the station selection should be cleared
             onStationClick?.("", undefined);
@@ -248,6 +251,29 @@ function MapLibreBackground(props: MapLibreProps) {
                     onActiveLineChange(lines[0]);
                 }
             }
+            setSelectedWC(null);
+        } else if (feature.layer.id === 'wc-unclustered') {
+            const props = feature.properties;
+            const wc: WCItem = {
+                id: props.id,
+                name: props.name,
+                lat: coords.lat,
+                lng: coords.lng,
+                accessible: props.accessible === 'true',
+                diapers: props.diapers === 'true',
+                emergencyBell: props.emergencyBell === 'true',
+                address: props.address,
+                station: props.station,
+                isInsideGate: props.isInsideGate === 'true',
+                location: props.location,
+                femaleStalls: parseInt(props.femaleStalls || '0'),
+                maleStalls: parseInt(props.maleStalls || '0'),
+                maleUrinals: parseInt(props.maleUrinals || '0'),
+                openTime: props.openTime
+            };
+            setSelectedWC(wc);
+            setPopupCoords([coords.lng, coords.lat]);
+            onStationClick?.("", undefined); // Clear station panel if open
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label') {
             const stop = busStops.find(s => s.id === feature.properties.id);
             if (stop) {
@@ -280,7 +306,7 @@ function MapLibreBackground(props: MapLibreProps) {
             interactiveLayerIds={[
                 'subway-station-circle', 'subway-station-label', 
                 'subway-line-layer', 'subway-line-interaction', 'bus-unclustered', 
-                'bus-station-label', 'train-layer'
+                'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-clusters'
             ]}
         >
             <MapIconRegister stations={stations} />
@@ -379,6 +405,13 @@ function MapLibreBackground(props: MapLibreProps) {
                         }}
                     />
                 </Source>
+            )}
+
+            {selectedWC && (
+                <ToiletDetailPanel 
+                    wc={selectedWC} 
+                    onClose={() => setSelectedWC(null)} 
+                />
             )}
         </MapBase>
     );

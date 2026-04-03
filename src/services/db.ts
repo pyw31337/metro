@@ -19,10 +19,11 @@ export class MetroDatabase extends Dexie {
   stationExits!: Table<StationExit>;
   parkingLots!: Table<ParkingLot>;
   stationCodes!: Table<StationCode>;
+  syncLogs!: Table<{ key: string; lastSync: number }>;
 
   constructor() {
     super('MetroDatabase');
-    this.version(10).stores({
+    this.version(11).stores({
       stations: '++id, name, *lines', 
       busStops: 'id, name, region, cityCode, *routes',
       wc: 'id, name, station',
@@ -33,7 +34,8 @@ export class MetroDatabase extends Dexie {
       transfers: '++id, stationName, [stationName+fromLine+toLine]',
       stationExits: '++id, stationName, exitNo',
       parkingLots: '++id, stationName, name',
-      stationCodes: '++id, name, line, stationCd'
+      stationCodes: '++id, name, line, stationCd',
+      syncLogs: 'key'
     });
   }
 
@@ -105,6 +107,9 @@ export class MetroDatabase extends Dexie {
                 });
             }, 2000);
         }
+
+        // 🔄 NEW: Trigger Stale-While-Revalidate background sync
+        DataIngestionService.checkAndSyncStaleData().catch(() => {});
     }
   }
 

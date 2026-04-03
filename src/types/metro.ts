@@ -41,6 +41,7 @@ export interface BusStop {
   lng: number;
   region: string;
   routes: string[];
+  cityCode?: string;
 }
 
 export interface WCItem {
@@ -56,6 +57,10 @@ export interface WCItem {
   line?: string;
   isInsideGate?: boolean;
   location?: string;
+  femaleStalls?: number;
+  maleStalls?: number;
+  maleUrinals?: number;
+  openTime?: string;
 }
 
 export interface Facility {

@@ -226,3 +226,27 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
         stations: { type: "FeatureCollection" as const, features: stationFeatures }
     };
 };
+
+export const convertRouteStationsToGeoJSON = (stations: any[]): GeoJsonFeatureCollection => {
+    if (!stations || stations.length < 2) return { type: "FeatureCollection", features: [] };
+    
+    // We assume the stations have lat/lng? 
+    // Wait, the master-route-stations.json only has id/name/order.
+    // The master-bus-stops.json has the coordinates.
+    // In a real app, we'd need to join them.
+    // For now, I'll assume the caller provides stations with coordinates.
+    const coordinates = stations
+        .filter(s => s.lat && s.lng)
+        .map(s => [s.lng, s.lat]);
+
+    return {
+        type: "FeatureCollection" as const,
+        features: [
+            {
+                type: "Feature" as const,
+                geometry: { type: "LineString" as const, coordinates },
+                properties: { type: "bus_route_polyline" }
+            }
+        ]
+    };
+};

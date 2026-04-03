@@ -5,14 +5,16 @@ import { memo } from "react";
 
 interface BusLayersProps {
   busData: any;
+  routePathData?: any;
   activeTab: string;
   isDarkMode: boolean;
 }
 
-const BusLayers = ({ busData, activeTab, isDarkMode }: BusLayersProps) => {
+const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersProps) => {
   if (activeTab !== "bus" && activeTab !== "subway+bus") return null;
 
   return (
+    <>
     <Source 
       id="bus-source" 
       type="geojson" 
@@ -85,6 +87,23 @@ const BusLayers = ({ busData, activeTab, isDarkMode }: BusLayersProps) => {
         }}
       />
     </Source>
+
+    {/* Bus Route Path Layer */}
+    {routePathData && (
+        <Source id="bus-route-path-source" type="geojson" data={routePathData}>
+            <Layer 
+                id="bus-route-path" 
+                type="line" 
+                layout={{ "line-join": "round", "line-cap": "round" }}
+                paint={{ 
+                    "line-color": "#ef4444", 
+                    "line-width": 4,
+                    "line-opacity": 0.8
+                }} 
+            />
+        </Source>
+    )}
+    </>
   );
 };
 
