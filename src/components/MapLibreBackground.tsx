@@ -22,7 +22,9 @@ import TrainLayers from "./map/TrainLayers";
 import WCLayers from "./map/WCLayers";
 import RouteLayers from "./map/RouteLayers";
 import MapPopups from "./map/MapPopups";
+import NearbyPulseMarkers from "./map/NearbyPulseMarkers";
 import ToiletDetailPanel from "./ToiletDetailPanel";
+import { SUBWAY_LINES } from '@/data/subway-lines';
 import { useTransferVerification } from "@/hooks/useTransferVerification";
 
 interface MapLibreProps {
@@ -57,6 +59,8 @@ interface MapLibreProps {
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
     nearestStation: Station | null;
+    nearestBusStop: BusStop | null;
+    nearestWC: WCItem | null;
     selectedBusRoute?: string | null;
     routePathData?: any;
 }
@@ -89,7 +93,6 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
         if (!map) return;
 
         const registerIcons = () => {
-            const { SUBWAY_LINES } = require('@/data/subway-lines');
             const uniqueColors = new Set<string>();
             
             // Pre-load all known line colors first
@@ -166,7 +169,7 @@ function MapLibreBackground(props: MapLibreProps) {
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
         onCenterChange, onBoundsChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
-        nearestStation, selectedBusRoute, routePathData
+        nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData
     } = props;
 
     const [mapInstance, setMapInstance] = useState<any | null>(null);
@@ -373,43 +376,13 @@ function MapLibreBackground(props: MapLibreProps) {
                 </Marker>
             )}
 
-            {/* Nearest Station Layer (GPU Rendered) */}
-            {mapInstance && (
-                <Source
-                    id="nearest-station-source"
-                    type="geojson"
-                    data={{
-                        type: "FeatureCollection",
-                        features: nearestStation ? [{
-                            type: "Feature",
-                            geometry: { type: "Point", coordinates: [nearestStation.lng, nearestStation.lat] },
-                            properties: { name: nearestStation.name }
-                        }] : []
-                    }}
-                >
-                    <Layer
-                        id="nearest-station-glow"
-                        type="circle"
-                        paint={{
-                            "circle-radius": 15,
-                            "circle-color": "#ef4444",
-                            "circle-opacity": 0.3,
-                            "circle-stroke-width": 0
-                        }}
-                    />
-                    <Layer
-                        id="nearest-station-core"
-                        type="circle"
-                        paint={{
-                            "circle-radius": 8,
-                            "circle-color": "#000000",
-                            "circle-stroke-width": 3,
-                            "circle-stroke-color": "#ef4444"
-                        }}
-                    />
-                </Source>
-            )}
-
+            <NearbyPulseMarkers 
+                nearestStation={nearestStation}
+                nearestBusStop={nearestBusStop}
+                nearestWC={nearestWC}
+                isDarkMode={isDarkMode}
+                activeTab={activeTab}
+            />
         </MapBase>
     );
 }

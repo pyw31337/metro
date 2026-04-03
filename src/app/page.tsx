@@ -74,6 +74,8 @@ export default function Home() {
     const [activeLine, setActiveLine] = useState<string | null>(null);
     const [selectedBusRoute, setSelectedBusRoute] = useState<string | null>(null);
     const [nearestStation, setNearestStation] = useState<Station | null>(null);
+    const [nearestBusStop, setNearestBusStop] = useState<BusStop | null>(null);
+    const [nearestWC, setNearestWC] = useState<WCItem | null>(null);
 
 
 
@@ -188,18 +190,48 @@ export default function Home() {
         }
     }, [hookArrivals]);
 
-    // ─── Nearest Station Logic ──────────────────────────────────────────────────
+    // ─── Nearest Asset Logic (Station, Bus, WC) ──────────────────────────────────
     useEffect(() => {
         const updateNearest = async () => {
-            if (userLocation && stations.length > 0) {
-                const nearest = await findNearestStation(userLocation[0], userLocation[1], stations);
-                if (nearest) setNearestStation(nearest as Station);
-            } else {
+            if (!userLocation) {
                 setNearestStation(null);
+                setNearestBusStop(null);
+                setNearestWC(null);
+                return;
+            }
+
+            const [lat, lng] = userLocation;
+
+            // 1. Subway
+            if (stations.length > 0) {
+                const nearest = await findNearestStation(lat, lng, stations);
+                if (nearest) setNearestStation(nearest as Station);
+            }
+
+            // 2. Bus (Local search)
+            if (busStops.length > 0) {
+                let min = Infinity;
+                let found: BusStop | null = null;
+                for (const s of busStops) {
+                    const dist = Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2);
+                    if (dist < min) { min = dist; found = s; }
+                }
+                setNearestBusStop(found);
+            }
+
+            // 3. WC (Local search)
+            if (wcItems.length > 0) {
+                let min = Infinity;
+                let found: WCItem | null = null;
+                for (const s of wcItems) {
+                    const dist = Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2);
+                    if (dist < min) { min = dist; found = s; }
+                }
+                setNearestWC(found);
             }
         };
         updateNearest();
-    }, [userLocation, stations, findNearestStation]);
+    }, [userLocation, stations, busStops, wcItems, findNearestStation]);
 
     // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
     const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
@@ -429,6 +461,8 @@ export default function Home() {
                     onMapReady={(m) => { mapRef.current = m; }}
                     userLocation={userLocation}
                     nearestStation={nearestStation}
+                    nearestBusStop={nearestBusStop}
+                    nearestWC={nearestWC}
                     timeDisplayMode={timeDisplayMode}
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                     showAllRouteBubbles={showAllRouteBubbles}

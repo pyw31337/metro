@@ -209,3 +209,17 @@ body {
 .custom-station-popup {
     z-index: 3000 !important;
 }
+
+/* ─── Pulsing Wave Animation ──────────────────────────────────────────────── */
+@keyframes pulse-wave {
+    0% {
+        transform: scale(0.8);
+        opacity: 0.8;
+        border-width: 3px;
+    }
+    100% {
+        transform: scale(3.5);
+        opacity: 0;
+        border-width: 1px;
+    }
+}

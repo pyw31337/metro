@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
@@ -64,6 +64,47 @@ const matchChosung = (query: string, target: string) => {
     }
     return disassembledTarget.includes(disassembledQuery);
 };
+
+const SuggestionItem = memo(({ 
+    item, 
+    isActive, 
+    onClick, 
+    onMouseEnter,
+    getLineBadge 
+}: { 
+    item: any; 
+    isActive: boolean; 
+    onClick: () => void; 
+    onMouseEnter: () => void;
+    getLineBadge: (line: string) => React.ReactNode;
+}) => (
+    <button 
+        onClick={onClick} 
+        onMouseEnter={onMouseEnter} 
+        className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${
+            isActive ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-100/50 dark:hover:bg-white/5"
+        }`}
+    >
+        <div className="flex items-center gap-2">
+            {item.type === 'subway' ? (
+                <Train size={14} className={isActive ? "text-blue-500" : "text-zinc-400"} />
+            ) : (
+                <Bus size={14} className={isActive ? "text-emerald-500" : "text-zinc-400"} />
+            )}
+            <span className={`font-bold text-[14px] ${isActive ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"}`}>
+                {item.name}
+            </span>
+            {item.type === 'subway' && item.lines?.map((l: string) => (
+                <span key={l}>{getLineBadge(l)}</span>
+            ))}
+        </div>
+        <span className="text-[9px] text-zinc-400 font-black uppercase tracking-tighter">
+            {item.line || item.id}
+        </span>
+    </button>
+));
+
+SuggestionItem.displayName = "SuggestionItem";
 
 export default function UnifiedBottomPanel({
     activeTab,
@@ -395,14 +436,14 @@ export default function UnifiedBottomPanel({
                             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
                                 <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
                                     {searchResults.map((s, i) => (
-                                        <button key={i} onClick={() => selectLocation(s)} onMouseEnter={() => setActiveIndex(i)} className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl transition-all text-left ${activeIndex === i ? "bg-zinc-100 dark:bg-white/10" : "hover:bg-zinc-100/50 dark:hover:bg-white/5"}`}>
-                                            <div className="flex items-center gap-2">
-                                                {s.type === 'subway' ? <Train size={14} className={activeIndex === i ? "text-blue-500" : "text-zinc-400"} /> : <Bus size={14} className={activeIndex === i ? "text-emerald-500" : "text-zinc-400"} />}
-                                                <span className={`font-bold text-[14px] ${activeIndex === i ? "text-blue-600 dark:text-blue-400" : "text-zinc-900 dark:text-white"}`}>{s.name}</span>
-                                                {s.type === 'subway' && s.lines?.map((l: string) => (<span key={l}>{getLineBadge(l)}</span>))}
-                                            </div>
-                                            <span className="text-[9px] text-zinc-400 font-black uppercase tracking-tighter">{s.line || s.id}</span>
-                                        </button>
+                                        <SuggestionItem 
+                                            key={`${s.type}-${s.id || s.name}-${i}`}
+                                            item={s}
+                                            isActive={activeIndex === i}
+                                            onClick={() => selectLocation(s)}
+                                            onMouseEnter={() => setActiveIndex(i)}
+                                            getLineBadge={getLineBadge}
+                                        />
                                     ))}
                                 </div>
                             </motion.div>
