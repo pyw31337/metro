@@ -6,10 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "process-data": "npx ts-node scripts/process-master-data.ts",
-    "ingest-all": "npx ts-node scripts/ingest-all.ts",
+    "ingest-all": "node scripts/ingest-all.js",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "npx -y firebase-tools deploy --only hosting"
+    "deploy": "npm run ingest-all && next build && touch out/.nojekyll && npx gh-pages -d out"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

@@ -132,19 +132,19 @@ export class DataIngestionService {
             const CHUNK_SIZE = 2000;
             for (let i = 0; i < items.length; i += CHUNK_SIZE) {
                 const chunk = items.slice(i, i + CHUNK_SIZE).map((item: any) => ({
-                    id: item.id,
-                    name: item.name,
-                    lat: item.lat,
-                    lng: item.lng,
+                    id: item.id || `wc-${Math.random().toString(36).substr(2, 9)}`,
+                    name: item.name || '공중화장실',
+                    lat: parseFloat(item.lat || item.WGS84_LAT || item.LAT || '0'),
+                    lng: parseFloat(item.lng || item.WGS84_LOT || item.LOT || '0'),
                     accessible: !!item.accessible,
-                    femaleStalls: item.femaleStalls || 0,
-                    maleStalls: item.maleStalls || 0,
-                    maleUrinals: item.maleUrinals || 0,
+                    femaleStalls: parseInt(item.femaleStalls || '0'),
+                    maleStalls: parseInt(item.maleStalls || '0'),
+                    maleUrinals: parseInt(item.maleUrinals || '0'),
                     address: item.address || '',
-                    openTime: item.openTime || '정보없음',
-                    source: item.source || 'UNKNOWN',
+                    openTime: item.openTime || '24시간',
+                    source: item.source || 'MOIS',
                     isInsideGate: !!item.isInsideGate
-                }));
+                })).filter(it => it.lat !== 0);
 
                 await db.wc.bulkPut(chunk);
                 const pct = 30 + Math.floor(((i + CHUNK_SIZE) / items.length) * 65);

@@ -80,6 +80,16 @@ export const convertWCToGeoJSON = (items: WCItem[], filters?: WCFilters): GeoJso
     return true;
   }) : items;
 
+  // Debug: Log if no items are being rendered even when input exists
+  if (items.length > 0 && filtered.length === 0) {
+    console.warn(`⚠️ WC Filtering issue: Input=${items.length}, Output=${filtered.length}. Checking filters:`, filters);
+  }
+
+  // Add debug count
+  if (items.length > 0) {
+    console.log(`🗺️ Rendering WC: Raw=${items.length}, Filtered=${filtered.length}`);
+  }
+
   return {
     type: "FeatureCollection" as const,
     features: filtered.map(item => ({
