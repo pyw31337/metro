@@ -9,7 +9,7 @@
     "ingest-all": "node scripts/ingest-all.js",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "npm run ingest-all && next build && touch out/.nojekyll && npx gh-pages -d out"
+    "deploy": "node scripts/ingest-all.js && node scripts/ingest-schedules.js && npx next build && touch out/.nojekyll && npx gh-pages -d out"
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

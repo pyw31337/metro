@@ -1,15 +1,13 @@
 const fs = require('fs');
 const path = require('path');
 
-// Load environment variables from .env.local
+// Load .env.local for development keys
 const envPath = path.resolve(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
-    const envData = fs.readFileSync(envPath, 'utf8');
-    envData.split('\n').forEach(line => {
-        const [key, ...valueParts] = line.split('=');
-        if (key && valueParts.length > 0) {
-            process.env[key.trim()] = valueParts.join('=').trim();
-        }
+    const env = fs.readFileSync(envPath, 'utf8');
+    env.split('\n').forEach(line => {
+        const [key, value] = line.split('=');
+        if (key && (value || value === "")) process.env[key.trim()] = (value || "").trim();
     });
 }
 
@@ -156,6 +154,13 @@ async function ingestNationwideToilets() {
                                 lat,
                                 lng,
                                 address: String(it.LCTN_ROAD_NM_ADDR || it.LCTN_LOTNO_ADDR || ''),
+                                ms: parseInt(it.MALE_WCLS_CNT || '0'), 
+                                fs: parseInt(it.FEMALE_WCLS_CNT || '0'),
+                                mu: parseInt(it.MALE_URIL_CNT || '0'),
+                                ds: parseInt(it.MALE_DSB_WCLS_CNT || it.FEMALE_DSB_WCLS_CNT || '0'),
+                                bell: it.EMRG_BELL_YN === 'Y' || it.EMRG_BELL_AYN === 'Y',
+                                diaper: it.DIAPER_CHNG_TR_YN === 'Y' || it.DIAPER_CHNG_TR_AYN === 'Y',
+                                ot: String(it.OPN_TM_INFO || '24시간'),
                                 type: 'WC',
                                 source: 'MOIS'
                             };
@@ -214,35 +219,43 @@ async function ingestSeoulSubwayToilets() {
     }
 }
 
-async function ingestNationalBusHubs() {
-    console.log('🚌 Starting National Bus Hub Ingestion (TAGO)...');
+async function ingestNationalBusStops() {
+    console.log('🚌 Starting Massive National Bus Stop Ingestion (TAGO)...');
+    // expanded list of regions/hubs
     const hubs = [
-        { name: '강남역', lat: 37.4979, lng: 127.0276 },
-        { name: '서울역', lat: 37.5546, lng: 126.9725 },
-        { name: '대구역', lat: 35.8762, lng: 128.5976 },
-        { name: '부산역', lat: 35.1147, lng: 129.0416 },
-        { name: '광주역', lat: 35.1654, lng: 126.9092 }
+        { name: '서울/강남', lat: 37.4979, lng: 127.0276 },
+        { name: '서울/명동', lat: 37.5610, lng: 126.9850 },
+        { name: '인천/연수', lat: 37.4093, lng: 126.6800 },
+        { name: '경기/수원', lat: 37.2635, lng: 127.0286 },
+        { name: '경기/성남', lat: 37.4200, lng: 127.1265 },
+        { name: '대구/중구', lat: 35.8714, lng: 128.6014 },
+        { name: '부산/해운대', lat: 35.1631, lng: 129.1636 }
     ];
-    let allHubs = [];
+    let allStops = [];
     for (const hub of hubs) {
         try {
-            const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=placeholder&_type=json&gpsLati=${hub.lat}&gpsLong=${hub.lng}&numOfRows=100`;
+            // Radius 2000m for broader coverage
+            const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&gpsLati=${hub.lat}&gpsLong=${hub.lng}&numOfRows=500`;
             const json = await fetchWithRetry(url);
             const items = json?.response?.body?.items?.item || [];
             const rows = Array.isArray(items) ? items : items ? [items] : [];
-            allHubs.push(...rows.map(it => ({
+            allStops.push(...rows.map(it => ({
                 id: String(it.nodeid),
                 name: String(it.nodenm),
                 lat: parseFloat(it.gpslati),
                 lng: parseFloat(it.gpslong),
+                arsId: String(it.nodeno || ''),
                 type: 'BUS',
                 region: hub.name
             })));
             process.stdout.write(`.`);
-        } catch (e) { /* skip hub error */ }
+            await new Promise(r => setTimeout(r, 100));
+        } catch (e) { /* skip */ }
     }
-    console.log(`\n✅ ${allHubs.length} Bus hubs ingested.`);
-    return allHubs;
+    // Deduplicate
+    const unique = Array.from(new Map(allStops.map(s => [s.id, s])).values());
+    console.log(`\n✅ ${unique.length} Unique Bus stops ingested.`);
+    return unique;
 }
 
 async function main() {
@@ -290,10 +303,10 @@ async function main() {
         console.log('❌ CRITICAL: No toilets ingested. Aborting save.');
     }
 
-    // 3. Bus Stops (Core Hubs)
-    const busHubs = await ingestNationalBusHubs();
-    if (busHubs.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-hubs.json'), JSON.stringify(busHubs, null, 2));
+    // 3. Bus Stops (Major Regions)
+    const busStops = await ingestNationalBusStops();
+    if (busStops.length > 0) {
+        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-stops.json'), JSON.stringify(busStops));
     }
 }
 

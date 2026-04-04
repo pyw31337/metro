@@ -141,7 +141,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         const seenTrains = new Set<string>();
         variantResults.forEach(data => {
             data.forEach(arrival => {
-                const key = `${arrival.subwayId}-${arrival.updnLine}-${arrival.btrainNo || arrival.trainLineNm}`;
+                const key = `${arrival.subwayId || arrival.lineName}-${arrival.updnLine}-${arrival.btrainNo || arrival.trainLineNm}`;
                 if (!seenTrains.has(key)) {
                     allArrivals.push(arrival);
                     seenTrains.add(key);
@@ -149,15 +149,16 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
             });
         });
 
-        // If API fails or returns nothing, check static fallback immediately
-        if (allArrivals.length === 0) {
-            allArrivals = getEstimatedArrivalsFromStatic(cleanName);
-        }
+        // 📅 FETCH SCHEDULED FALLBACK FROM DB
+        const scheduled = await getScheduledArrivalsFromDB(cleanName);
+        
+        // Merge them
+        const merged = mergeLiveAndScheduled(allArrivals, scheduled);
 
         const upArrivals: StationArrival[] = [];
         const downArrivals: StationArrival[] = [];
 
-        allArrivals.forEach(arrival => {
+        merged.forEach(arrival => {
             const isUp = arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선") || arrival.updnLine.includes("상선");
             if (isUp) upArrivals.push(arrival);
             else downArrivals.push(arrival);
@@ -171,7 +172,42 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
 
         return [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)];
     } catch (err) {
-        return getEstimatedArrivalsFromStatic(cleanName);
+        const scheduled = await getScheduledArrivalsFromDB(cleanName);
+        return scheduled.slice(0, 6);
+    }
+};
+
+/**
+ * Queries IndexedDB for upcoming scheduled trains
+ */
+export const getScheduledArrivalsFromDB = async (stationName: string): Promise<StationArrival[]> => {
+    try {
+        const cleanName = stationName.replace(/역+$/, '').trim();
+        const now = new Date();
+        const hour = now.getHours();
+        const min = now.getMinutes();
+        const currentTimeStr = `${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:00`;
+        
+        // Determine day type
+        const day = now.getDay();
+        const dayType: "week" | "sat" | "sun" = (day === 0) ? 'sun' : (day === 6) ? 'sat' : 'week';
+
+        // Fetch all timetables for this station
+        const allMeta = await db.timetables.where('stationName').equals(cleanName).toArray();
+        if (allMeta.length === 0) return [];
+
+        const filtered = allMeta.filter(t => t.dayType === dayType && t.departureTime > currentTimeStr);
+        
+        return filtered.map(item => {
+            const [h, m, s] = item.departureTime.split(':').map(Number);
+            const schedDate = new Date();
+            schedDate.setHours(h, m, s);
+            const diffSeconds = Math.max(0, Math.floor((schedDate.getTime() - now.getTime()) / 1000));
+            
+            return convertTimetableToArrival(item, diffSeconds);
+        }).sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt));
+    } catch (e) {
+        return [];
     }
 };
 

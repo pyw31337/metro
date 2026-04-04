@@ -135,6 +135,11 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
             className={`w-full focus:outline-none flex items-center justify-between px-3 py-2.5 rounded-xl bg-black/[0.03] dark:bg-white/5 border ${isDivergent ? 'border-red-500/50' : 'border-black/5 dark:border-white/5'} active:scale-95 transition-transform`}
         >
             <div className="flex items-center gap-1.5">
+                {arr.isScheduled && (
+                    <span className="text-[9px] px-1 py-0.5 rounded-md bg-blue-500/10 text-blue-600 dark:text-blue-400 font-black border border-blue-500/20">
+                        예정
+                    </span>
+                )}
                 <span className={`text-[12px] leading-tight font-black ${isHighlight ? '' : 'text-zinc-900 dark:text-white'}`} style={isHighlight ? { color: statusColor } : {}}>
                     {displayTime}
                 </span>
