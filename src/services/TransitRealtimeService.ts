@@ -12,7 +12,10 @@ export interface RealtimeUnit {
   lineName: string;
 }
 
-const SUBWAY_LINES = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '경의중앙', '공항철도', '수인분당', '신분당'];
+const SUBWAY_LINES = [
+  '1호선', '2호선', '3호선', '4호선', '5호선', '6호선', '7호선', '8호선', '9호선', 
+  '경의중앙선', '공항철도', '수인분당선', '신분당선', '경춘선', '신림선', '우이신설선'
+];
 
 class TransitRealtimeService extends EventEmitter {
   private worker: Worker | null = null;

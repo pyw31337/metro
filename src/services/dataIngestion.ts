@@ -67,7 +67,10 @@ export class DataIngestionService {
                 // Trigger specific ingestion based on category
                 if (cat === 'toilets') await this.ingestStationToilets(onProgress);
                 if (cat === 'bus_stops') await this.ingestMasterBusStops(onProgress);
-                if (cat === 'metadata') await this.ingestStationMetadata(onProgress);
+                if (cat === 'metadata') {
+                    await this.ingestStationMetadata(onProgress);
+                    await this.ingestMasterTimetables(onProgress);
+                }
                 
                 await db.syncLogs.put({ key: cat, lastSync: now });
             }

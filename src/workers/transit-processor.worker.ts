@@ -32,6 +32,7 @@ function processUpdates(units: any[]) {
     if (!existing) {
       transitState.set(unit.id, {
         ...unit,
+        lastPos: unit.nextPos,
         lastUpdateTime: now - 15000,
         nextUpdateTime: now,
       });
@@ -60,10 +61,10 @@ function startTick() {
 
     for (const unit of transitState.values()) {
       const duration = unit.nextUpdateTime - unit.lastUpdateTime;
-      let ratio = (now - unit.lastUpdateTime) / duration;
+      let ratio = duration > 0 ? (now - unit.lastUpdateTime) / duration : 1;
       
-      // 1.2배까지는 부드럽게 예측 주행 (Dead Reckoning)
-      ratio = Math.min(1.2, ratio); 
+      // 1.5배까지는 부드럽게 예측 주행 (Dead Reckoning)
+      ratio = Math.min(1.5, ratio); 
 
       const currentPos = interpolate(unit.lastPos, unit.nextPos, ratio);
       
