@@ -7,9 +7,13 @@
     "build": "next build",
     "process-data": "npx ts-node scripts/process-master-data.ts",
     "ingest-all": "node scripts/ingest-all.js",
+    "ingest-stations": "node scripts/ingest-station-mappings.js",
+    "ingest-paths": "node scripts/ingest-route-paths.js",
+    "consolidate": "node scripts/consolidate-data.js",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "node scripts/ingest-all.js && node scripts/ingest-schedules.js && npx next build && touch out/.nojekyll && npx gh-pages -d out"
+    "deploy": "node scripts/ingest-all.js && node scripts/ingest-station-mappings.js && node scripts/ingest-route-paths.js && node scripts/consolidate-data.js && node scripts/ingest-schedules.js && npx next build && touch out/.nojekyll && npx gh-pages -d out"
+
   },
   "dependencies": {
     "@types/leaflet": "^1.9.21",

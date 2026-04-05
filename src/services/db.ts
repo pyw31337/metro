@@ -53,7 +53,7 @@ export class MetroDatabase extends Dexie {
           fetch('./data/wc.json').then(res => res.json())
         ]);
 
-        await this.transaction('rw', [this.stations, this.busStops, this.wc], async () => {
+        await this.transaction('rw', [this.stations, this.busStops, this.wc, this.timetables], async () => {
           const mappedStations = stations.map((s: any) => ({
              ...s,
              lat: s.lat || s.latitude,
@@ -76,6 +76,30 @@ export class MetroDatabase extends Dexie {
             location: item.location
           }));
           await this.wc.bulkAdd(mappedWC);
+
+          // 📅 NEW: Initial offline timetable load
+          try {
+            const ttRes = await fetch('./data/master-timetables.json');
+            if (ttRes.ok) {
+              const ttItems = await ttRes.json();
+              if (Array.isArray(ttItems) && ttItems.length > 0) {
+                const ttMapped: TimetableEntry[] = ttItems.map((item: any) => ({
+                  stationName: item.s,
+                  line: item.l,
+                  dayType: (item.dt === 'w' ? 'week' : item.dt === 's' ? 'sat' : 'sun') as 'week' | 'sat' | 'sun',
+                  direction: (item.di === 'u' ? 'up' : 'down') as 'up' | 'down',
+                  arrivalTime: item.at,
+                  departureTime: item.dtm,
+                  trainNo: '',
+                  destination: item.dest
+                }));
+                await this.timetables.bulkAdd(ttMapped);
+                console.log(`📅 Loaded ${ttMapped.length} master timetable entries.`);
+              }
+            }
+          } catch (e) {
+            console.warn('Could not load initial master timetables:', e);
+          }
         });
         console.log('✅ Basic station data loaded.');
         

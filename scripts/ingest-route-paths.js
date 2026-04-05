@@ -28,14 +28,21 @@ let stationMap = null; // routeId -> [nodeId, nodeId, ...]
 let stopCoords = null; // nodeId -> [lat, lng]
 
 function loadLocalData() {
-    if (!stationMap && fs.existsSync(STATIONS_FILE)) {
-        try { stationMap = JSON.parse(fs.readFileSync(STATIONS_FILE, 'utf8')); } catch (e) { stationMap = {}; }
+    if (stationMap && stopCoords) return; // Already loaded
+    
+    console.log('📦 Pre-loading massive datasets into memory...');
+    if (fs.existsSync(STATIONS_FILE)) {
+        try { 
+            stationMap = JSON.parse(fs.readFileSync(STATIONS_FILE, 'utf8')); 
+            console.log(`   ✅ Loaded ${Object.keys(stationMap).length} station mappings.`);
+        } catch (e) { stationMap = {}; }
     }
-    if (!stopCoords && fs.existsSync(STOPS_FILE)) {
+    if (fs.existsSync(STOPS_FILE)) {
         try {
             const stopsArr = JSON.parse(fs.readFileSync(STOPS_FILE, 'utf8'));
             stopCoords = {};
             stopsArr.forEach(s => { stopCoords[s.id] = [parseFloat(s.lat), parseFloat(s.lng)]; });
+            console.log(`   ✅ Loaded ${stopsArr.length} bus stop coordinates.`);
         } catch (e) { stopCoords = {}; }
     }
 }
@@ -44,6 +51,7 @@ function loadLocalData() {
  * Google Polyline Encoding Algorithm
  */
 function encodePolyline(points) {
+    if (!points || points.length < 2) return "";
     let lastLat = 0, lastLng = 0, result = "";
     function encodeValue(value) {
         value = value < 0 ? ~(value << 1) : (value << 1);
@@ -65,18 +73,37 @@ async function fetchWithRetry(url, retries = 3) {
     for (let i = 0; i < retries; i++) {
         try {
             const res = await fetch(url, { 
-                signal: AbortSignal.timeout(15000), 
+                signal: AbortSignal.timeout(20000), 
                 headers: { 
                     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
                 } 
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            if (!res.ok) {
+                if (res.status === 429) throw new Error('QUOTA_EXCEEDED');
+                throw new Error(`HTTP ${res.status}`);
+            }
             const text = await res.text();
-            try { return JSON.parse(text); } catch (e) {
+            
+            // Check for hidden errors in successful HTTP responses
+            if (text.includes('Key인증실패') || text.includes('SERVICE ACCESS DENIED') || text.includes('LIMITED_NUMBER_OF_SERVICE')) {
+                throw new Error('AUTH_FAILED');
+            }
+
+            try { 
+                const parsed = JSON.parse(text);
+                const resCode = parsed?.response?.header?.resultCode || parsed?.header?.resultCode || parsed?.comMsgHeader?.returnCode;
+                if (resCode && resCode !== '00' && resCode !== '0') {
+                    if (resCode === '30' || resCode === '01') throw new Error('AUTH_FAILED');
+                    throw new Error(`API_${resCode}`);
+                }
+                return parsed; 
+            } catch (e) {
                 if (text.includes('<resultCode>00</resultCode>')) return { _xml: true, _raw: text };
+                if (text.includes('<resultCode>')) throw new Error('XML_ERROR_CODE');
                 throw e;
             }
         } catch (e) {
+            if (e.message === 'AUTH_FAILED' || e.message === 'QUOTA_EXCEEDED') throw e; // Don't retry, just fail and fallback
             if (i === retries - 1) throw e;
             await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         }
@@ -91,7 +118,7 @@ async function fetchOSRMRoute(coordinates) {
     if (coordinates.length < 2) return coordinates;
     
     // Chunk coordinates since OSRM has URL length limits (approx 50-100 points per chunk)
-    const MAX_POINTS = 50;
+    const MAX_POINTS = 40; // Safer chunk size
     const allPathPoints = [];
 
     for (let i = 0; i < coordinates.length - 1; i += (MAX_POINTS - 1)) {
@@ -109,13 +136,13 @@ async function fetchOSRMRoute(coordinates) {
                 if (allPathPoints.length > 0) allPathPoints.pop();
                 allPathPoints.push(...points);
             } else {
-                // Fallback to straight lines for this chunk if routing fails
                 allPathPoints.push(...chunk);
             }
         } catch (e) {
             allPathPoints.push(...chunk);
+            await new Promise(r => setTimeout(r, 1000)); // Cool down
         }
-        await new Promise(r => setTimeout(r, 200)); // Be nice to OSRM public API
+        await new Promise(r => setTimeout(r, 400)); // Be nice to OSRM public API
     }
     
     return allPathPoints;
@@ -123,17 +150,17 @@ async function fetchOSRMRoute(coordinates) {
 
 async function getPathFromLocalStations(routeId) {
     loadLocalData();
-    const stations = stationMap[routeId] || [];
+    const stations = stationMap?.[routeId] || [];
     if (stations.length < 2) return null;
 
     const coords = stations
-        .map(s => stopCoords[s.id || s])
+        .map(s => stopCoords?.[s.id || s])
         .filter(c => c && c[0] > 0);
 
     if (coords.length < 2) return null;
 
     // We have coordinates! Now let's use OSRM to find the REAL road path between them.
-    console.log(`\n   🛠️  [Fallback] Routing ${coords.length} stations for ${routeId}...`);
+    // console.log(`   🛠️  [Fallback] Routing ${coords.length} stations for ${routeId}...`);
     return await fetchOSRMRoute(coords);
 }
 
@@ -147,22 +174,33 @@ async function getPathForRoute(route) {
             const json = await fetchWithRetry(url);
             const items = json?.msgBody?.itemList || [];
             if (items.length > 0) return items.map(it => [parseFloat(it.gpsY), parseFloat(it.gpsX)]);
-        } else if (region === '경기' || cityCode === '41' || String(cityCode).startsWith('31')) {
+        } else if (region === '경기' || cityCode === '41' || String(cityCode).startsWith('41')) {
+            // Version 2 Gyeonggi API
+            const urlv2 = `http://apis.data.go.kr/6410000/busrouteservice/v2/getBusRouteLineListv2?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&routeId=${id}&format=json`;
+            const jsonv2 = await fetchWithRetry(urlv2);
+            const itemsv2 = jsonv2?.response?.msgBody?.busRouteLineList || [];
+            if (itemsv2.length > 0) {
+                return itemsv2.map(it => [parseFloat(it.y), parseFloat(it.x)]);
+            }
+
+            // Fallback to legacy
             const url = `https://apis.data.go.kr/6410000/busrouteservice/getBusRouteLineInqire?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&routeId=${id}`;
             const json = await fetchWithRetry(url);
             const items = json?.response?.body?.items?.item || [];
-            const rows = Array.isArray(items) ? items : [items];
+            const rows = Array.isArray(items) ? items : items ? [items] : [];
             if (rows.length > 0 && rows[0].x) return rows.map(it => [parseFloat(it.y), parseFloat(it.x)]);
+
         } else if (cityCode) {
             const url = `https://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRoutePathList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&cityCode=${cityCode}&routeId=${id}`;
             const json = await fetchWithRetry(url);
             const items = json?.response?.body?.items?.item || [];
-            const rows = Array.isArray(items) ? items : [items];
+            const rows = Array.isArray(items) ? items : items ? [items] : [];
             if (rows.length > 0 && rows[0].gpslati) return rows.map(it => [parseFloat(it.gpslati), parseFloat(it.gpslong)]);
         }
     } catch (e) {
-        // If API fails, we continue to OSRM Fallback
+        // AUTH_FAILED or QUOTA_EXCEEDED fall through here to getPathFromLocalStations
     }
+
 
     // 2. Ultimate "Perfect" Fallback: OSRM Routing between known stations
     return await getPathFromLocalStations(id);
@@ -183,12 +221,18 @@ async function main() {
         shards[key].push(r);
     }
 
-    const cityKeys = Object.keys(shards).sort();
+    const args = process.argv.slice(2);
+    const cityFilter = args.find(a => a.startsWith('--city='))?.split('=')[1];
+    const limitArg = args.find(a => a.startsWith('--limit='))?.split('=')[1];
+    const limit = limitArg ? parseInt(limitArg) : 5000; // Safer per-run limit
+
+    const cityKeys = cityFilter ? [cityFilter] : Object.keys(shards).sort();
     const startTime = Date.now();
     let totalProcessed = 0;
 
     for (const code of cityKeys) {
         const group = shards[code];
+        if (!group) continue;
         const shardFile = path.join(SHARDS_DIR, `bus-paths-${code}.json`);
         let pathData = {};
 
@@ -196,21 +240,20 @@ async function main() {
             try { pathData = JSON.parse(fs.readFileSync(shardFile, 'utf8')); } catch (e) {}
         }
 
-        const remaining = group.filter(r => !pathData[r.id]);
+        const remaining = group.filter(r => !pathData[r.id] || pathData[r.id].length < 2).slice(0, limit);
         if (remaining.length === 0) {
             totalProcessed += group.length;
             continue;
         }
 
         console.log(`🚀 [${code}] Processing ${remaining.length} routes...`);
+
         
-        // Split processing: Try Official API for all, then OSRM for failures
-        const BATCH_SIZE = 10; 
+        const BATCH_SIZE = 5; // Reduced batch size for stability
         for (let i = 0; i < remaining.length; i += BATCH_SIZE) {
             const batch = remaining.slice(i, i + BATCH_SIZE);
             const results = await Promise.all(batch.map(async (route) => {
                 try {
-                    // Try Official API first (Higher weight, faster)
                     const points = await getPathForRoute(route);
                     if (points && points.length > 1) {
                         return { id: route.id, polyline: encodePolyline(points) };
@@ -221,18 +264,27 @@ async function main() {
 
             for (const res of results) if (res) pathData[res.id] = res.polyline;
 
-            const progressRatio = (totalProcessed + i + batch.length) / routes.length;
-            process.stdout.write(`\r   📊 Total: ${Math.round(progressRatio * 100)}% | [${code}] ${i + batch.length}/${remaining.length} `);
+            const currentTotal = totalProcessed + i + batch.length;
+            const progressRatio = currentTotal / routes.length;
+            process.stdout.write(`\r   📊 Progress: ${Math.round(progressRatio * 100)}% | [${code}] ${i + batch.length}/${remaining.length} (Routes with paths: ${Object.keys(pathData).length}) `);
 
-            if (i % 20 === 0) fs.writeFileSync(shardFile, JSON.stringify(pathData));
-            await new Promise(r => setTimeout(r, 200));
+            if (i % 20 === 0 && Object.keys(pathData).length > 0) {
+                fs.writeFileSync(shardFile, JSON.stringify(pathData));
+            }
+            await new Promise(r => setTimeout(r, 600)); 
         }
 
         totalProcessed += group.length;
-        fs.writeFileSync(shardFile, JSON.stringify(pathData));
-        console.log(`\n💾 [${code}] Shard updated.`);
+        if (Object.keys(pathData).length > 0) {
+            fs.writeFileSync(shardFile, JSON.stringify(pathData));
+            console.log(`\n💾 [${code}] Shard updated with ${Object.keys(pathData).length} routes.`);
+        }
+        
+        // Memory cleanup: Clear references if not needed
         pathData = null;
+        if (global.gc) global.gc();
     }
+
 
     console.log(`\n🎉 ALL SHARDS COMPLETE! Total Time: ${Math.round((Date.now() - startTime)/1000/60)}m`);
 }

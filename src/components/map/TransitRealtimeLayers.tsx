@@ -1,18 +1,63 @@
 "use client";
 
-import { Source, Layer } from "react-map-gl/maplibre";
-import { memo } from "react";
+import { Source, Layer, useMap } from "react-map-gl/maplibre";
+import { memo, useState, useEffect, useRef } from "react";
+import { transitRealtimeService, RealtimeUnit } from '@/services/TransitRealtimeService';
 
 interface TransitRealtimeLayersProps {
   activeTab: string;
 }
 
 const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
+  const { current: mapRef } = useMap();
+  const map = mapRef?.getMap();
+  
+  const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection>({
+    type: "FeatureCollection",
+    features: []
+  });
+
+  useEffect(() => {
+    if (!map) return;
+
+    const handleUpdate = (units: RealtimeUnit[]) => {
+      const features: any[] = units.map(unit => ({
+        type: "Feature",
+        geometry: {
+          type: "Point",
+          coordinates: unit.pos
+        },
+        properties: {
+          id: unit.id,
+          type: unit.type,
+          label: unit.label,
+          lineName: unit.lineName,
+          bearing: unit.bearing
+        }
+      }));
+
+      // Directly update the source if it exists to maintain 60fps
+      const source: any = map.getSource('transit-realtime-source');
+      if (source) {
+        source.setData({ type: "FeatureCollection", features });
+      } else {
+        setGeoData({ type: "FeatureCollection", features });
+      }
+    };
+
+    transitRealtimeService.on('update', handleUpdate);
+    transitRealtimeService.start();
+
+    return () => {
+      transitRealtimeService.off('update', handleUpdate);
+    };
+  }, [map]);
+
   const isVisible = activeTab === "subway" || activeTab === "bus" || activeTab === "subway+bus";
   if (!isVisible) return null;
 
   return (
-    <Source id="transit-realtime-source" type="geojson" data={{ type: "FeatureCollection", features: [] }}>
+    <Source id="transit-realtime-source" type="geojson" data={geoData}>
       {/* Subway Trains */}
       <Layer
         id="subway-realtime-layer"

@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { safeSaveJson } = require('./lib/safe-data');
 
 // Load .env.local for development keys
 const envPath = path.resolve(process.cwd(), '.env.local');
@@ -40,6 +41,8 @@ async function fetchSeoul(url, retries = 3) {
 }
 
 async function main() {
+    const args = process.argv.slice(2);
+    const force = args.includes('--force');
     console.log('📅 Starting Subway Timetable Ingestion (Major Stations)...');
     
     // 1. Get Station Metadata (CD mapping)
@@ -115,8 +118,7 @@ async function main() {
 
     // 3. Save
     const outputPath = path.join(DATA_DIR, 'master-timetables.json');
-    fs.writeFileSync(outputPath, JSON.stringify(allSchedules));
-    console.log(`\n✨ Saved ${allSchedules.length} schedule entries to ${outputPath}`);
+    safeSaveJson(outputPath, allSchedules, { force, minRatio: 0.5 }); // Schedules can be volatile, 50% threshold
 }
 
 function generatePattern(station, line, direction, destination, startTime, endTime, interval) {

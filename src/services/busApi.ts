@@ -143,7 +143,7 @@ export class MetropolitanBusService {
    */
   static async fetchLocalRouteInfo(routeId: string): Promise<any | null> {
     try {
-      const res = await fetch("/data/master-bus-routes.json");
+      const res = await fetch("./data/master-bus-routes.json");
       if (!res.ok) return null;
       const routes = await res.json();
       return routes.find((r: any) => r.id === routeId) || null;
@@ -158,14 +158,14 @@ export class MetropolitanBusService {
   static async fetchLocalRouteStations(routeId: string): Promise<any[]> {
     try {
       // 1. Fetch sequence map
-      const resSeq = await fetch("/metro/data/master-route-stations.json");
+      const resSeq = await fetch("./data/master-route-stations.json");
       if (!resSeq.ok) return [];
       const sequenceMap = await resSeq.json();
       const sequence = sequenceMap[routeId] || [];
       if (sequence.length === 0) return [];
 
       // 2. Fetch master stops to get coordinates
-      const resStops = await fetch("/metro/data/master-bus-stops.json");
+      const resStops = await fetch("./data/master-bus-stops.json");
       if (!resStops.ok) return sequence;
       const stops = await resStops.json();
       const stopMap = new Map<string, any>();
@@ -186,8 +186,8 @@ export class MetropolitanBusService {
    */
   static async fetchLocalRoutePath(cityCode: string, routeId: string): Promise<any | null> {
     try {
-      // Load by shard (e.g. /data/paths/bus-paths-11.json)
-      const res = await fetch(`/data/paths/bus-paths-${cityCode}.json`);
+      // Load by shard (e.g. ./data/paths/bus-paths-11.json)
+      const res = await fetch(`./data/paths/bus-paths-${cityCode}.json`);
       if (!res.ok) return null;
       const shard = await res.json();
       const encoded = shard[routeId];

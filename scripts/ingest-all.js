@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const { safeSaveJson } = require('./lib/safe-data');
 
 // Load .env.local for development keys
 const envPath = path.resolve(process.cwd(), '.env.local');
@@ -418,6 +419,7 @@ async function main() {
     
     const args = process.argv.slice(2);
     const busOnly = args.includes('--bus-only');
+    const force = args.includes('--force');
 
     if (!busOnly) {
         // 1. Subway Baseline
@@ -430,16 +432,14 @@ async function main() {
             lng: s.lng || s.longitude,
             lines: s.lines || []
         }));
-        fs.writeFileSync(path.join(DATA_DIR, 'master-subway.json'), JSON.stringify(subwayStations));
-        console.log(`✅ Loaded ${subwayStations.length} subway stations.`);
+        safeSaveJson(path.join(DATA_DIR, 'master-subway.json'), subwayStations, { force, minRatio: 0.95 });
 
         // 2. Toilets
         const nationwide = await ingestNationwideToilets();
         const seoulSubway = await ingestSeoulSubwayToilets();
         const combinedToilets = [...nationwide, ...seoulSubway];
         if (combinedToilets.length > 0) {
-            fs.writeFileSync(path.join(DATA_DIR, 'master-toilets.json'), JSON.stringify(combinedToilets)); 
-            console.log(`✨ Saved ${combinedToilets.length} toilets.`);
+            safeSaveJson(path.join(DATA_DIR, 'master-toilets.json'), combinedToilets, { force });
         }
     }
 
@@ -457,8 +457,7 @@ async function main() {
     const uniqueBusStops = deduplicateBusStops(allBusStops);
     
     if (uniqueBusStops.length > 0) {
-        console.log(`\n💾 Saving ${uniqueBusStops.length} bus stops to ${path.join(DATA_DIR, 'master-bus-stops.json')}...`);
-        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-stops.json'), JSON.stringify(uniqueBusStops));
+        safeSaveJson(path.join(DATA_DIR, 'master-bus-stops.json'), uniqueBusStops, { force });
         console.log(`🎉 Phase 2 Ingestion Complete!`);
     }
 

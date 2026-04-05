@@ -1,5 +1,7 @@
 import fs from 'fs';
 import path from 'path';
+const { safeSaveJson } = require('./lib/safe-data');
+
 const envPath = path.resolve(process.cwd(), '.env.local');
 if (fs.existsSync(envPath)) {
     const envData = fs.readFileSync(envPath, 'utf8');
@@ -10,6 +12,10 @@ if (fs.existsSync(envPath)) {
         }
     });
 }
+
+// Global force flag
+const args = process.argv.slice(2);
+const force = args.includes('--force');
 
 // Loaded from .env.local
 const SEOUL_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
@@ -55,8 +61,8 @@ async function processMetadata() {
         XPOINT_WGS: String(s.lat || s.latitude || ''),
         YPOINT_WGS: String(s.lng || s.longitude || '')
     }));
-    fs.writeFileSync(path.join(DATA_DIR, 'master-metadata.json'), JSON.stringify(mapped, null, 2));
-    console.log(`✅ ${mapped.length} Subway stations restored.`);
+    
+    safeSaveJson(path.join(DATA_DIR, 'master-metadata.json'), mapped, { force });
 }
 
 async function processToilets() {
@@ -113,8 +119,7 @@ async function processToilets() {
     }
 
     if (allMapped.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-toilets.json'), JSON.stringify(allMapped, null, 2));
-        console.log(`✅ Total ${allMapped.length} Toilets restored.`);
+        safeSaveJson(path.join(DATA_DIR, 'master-toilets.json'), allMapped, { force });
     }
 }
 
@@ -149,13 +154,12 @@ async function processBusHubs() {
     }
 
     if (allStops.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-stops.json'), JSON.stringify(allStops, null, 2));
-        console.log(`✅ ${allStops.length} Bus stops restored.`);
+        safeSaveJson(path.join(DATA_DIR, 'master-bus-stops.json'), allStops, { force });
     }
 }
 
 async function main() {
-    console.log('🚀 Starting Robust Database Rebuild...');
+    console.log(`🚀 Starting Robust Database Rebuild... (Force: ${force})`);
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
     try {
         await processMetadata();

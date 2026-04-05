@@ -14,8 +14,6 @@ import {
 import MapBase from "./map/MapBase";
 import SubwayLayers from "./map/SubwayLayers";
 import BusLayers from "./map/BusLayers";
-import BusRealtimeLayers from "./map/BusRealtimeLayers";
-import TrainLayers from "./map/TrainLayers";
 import WCLayers from "./map/WCLayers";
 import RouteLayers from "./map/RouteLayers";
 import TransitRealtimeLayers from "./map/TransitRealtimeLayers";
@@ -24,8 +22,6 @@ import MapPopups from "./map/MapPopups";
 import NearbyPulseMarkers from "./map/NearbyPulseMarkers";
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { useTransferVerification } from "@/hooks/useTransferVerification";
-import { useTransitRealtime } from "@/hooks/useTransitRealtime";
-import { useBusPositions } from "@/hooks/useBusPositions";
 import { useUserLocation } from "@/hooks/useUserLocation";
 
 interface MapLibreProps {
@@ -158,7 +154,6 @@ function MapLibreBackground(props: MapLibreProps) {
     const verifiedPlats = useTransferVerification(pathResult, stations);
 
     // High performance realtime hooks
-    useTransitRealtime(mapInstance);
     useUserLocation(mapInstance);
 
     useEffect(() => {
@@ -279,14 +274,12 @@ function MapLibreBackground(props: MapLibreProps) {
             <MapIconRegister stations={stations} />
             <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
-            <BusRealtimeLayers busData={{type:"FeatureCollection", features:[]}} activeTab={activeTab} />
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
             <RouteLayers 
                 activeTab={activeTab} pathLineData={pathGeoJSON.lines} routeStationData={pathGeoJSON.stations}
                 showAllRouteBubbles={showAllRouteBubbles} focusedBubble={focusedBubble} setFocusedBubble={setFocusedBubble}
                 timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} verifiedPlats={verifiedPlats}
             />
-            <TrainLayers trainData={{type:"FeatureCollection", features:[]}} activeTab={activeTab} trainFilter={null} />
             <TransitRealtimeLayers activeTab={activeTab} />
             <UserLocationLayer />
             <MapPopups
