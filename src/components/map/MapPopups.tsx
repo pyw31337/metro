@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X, MapPin, Accessibility, Bell, Baby } from "lucide-react";
-import { StationArrival } from "@/types/metro";
+import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
 import { WCItem, BusStop } from "@/types/metro";
@@ -16,7 +16,7 @@ interface MapPopupsProps {
   popupCoords: [number, number] | null;
   selectedStationName: string | null;
   selectedBusStop: BusStop | null;
-  activeTab: string;
+  activeTab: ActiveTab;
   stationArrivals: StationArrival[];
   timeDisplayMode: "duration" | "arrival";
   onToggleTimeDisplay: () => void;
@@ -32,7 +32,9 @@ interface MapPopupsProps {
   trainArrivalDetail?: StationArrival | null;
   activeLine: string | null;
   onActiveLineChange: (line: string | null) => void;
+  onSelectBusRoute?: (routeNo: string, cityCode?: string) => void;
   selectedWC?: WCItem | null;
+  onWCClick?: (item: WCItem | null) => void;
   isDarkMode?: boolean;
 }
 
@@ -64,6 +66,76 @@ const getStationBadges = (name: string) => {
     return badges;
 };
 
+const RoadViewButtons = ({ lat, lng, address, isDarkMode }: { lat: number, lng: number, address?: string, isDarkMode?: boolean }) => (
+  <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
+    <a 
+      href={`https://map.naver.com/v5/search/${encodeURIComponent(address || `${lat},${lng}`)}`} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
+    >
+      네이버 거리뷰
+    </a>
+    <a 
+      href={`https://map.kakao.com/link/roadview/${lat},${lng}`} 
+      target="_blank" 
+      rel="noopener noreferrer"
+      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
+    >
+      카카오 로드뷰
+    </a>
+  </div>
+);
+
+const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute, isDarkMode }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void, isDarkMode?: boolean }) => {
+  const { useBusArrivals } = require("@/hooks/useBusArrivals");
+  const { arrivals, loading } = useBusArrivals(stopId, cityCode);
+
+  if (loading) return <div className="py-4 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
+  if (arrivals.length === 0) return <div className="py-4 text-center text-[11px] text-zinc-400">도착 정보가 없습니다.</div>;
+
+  return (
+    <div className="space-y-2 mt-2 max-h-[180px] overflow-y-auto no-scrollbar">
+      {arrivals.map((bus: any, idx: number) => (
+        <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-500/10">
+          <div className="flex items-center gap-2">
+             <button 
+                onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(bus.routeNo, cityCode); }}
+                className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[11px] font-black hover:bg-emerald-600 transition-colors shadow-sm"
+             >
+                {bus.routeNo}
+             </button>
+             <span className="text-[10px] text-zinc-400 font-medium">{bus.remainStops}정류장 남음</span>
+          </div>
+          <span className="text-[11px] font-black text-rose-500">
+            {bus.arrivalTime < 60 ? "곧 도착" : `${Math.floor(bus.arrivalTime / 60)}분 전`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const BusRouteStaticList = ({ routes, cityCode, onSelectBusRoute }: { routes: string[], cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
+    if (!routes || routes.length === 0) return null;
+    return (
+        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
+            <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 mb-2 uppercase tracking-tight">전체 노선 ({routes.length})</h4>
+            <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto no-scrollbar">
+                {routes.map((r, i) => (
+                    <button 
+                        key={i}
+                        onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(r, cityCode); }}
+                        className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 text-[10px] font-black hover:bg-emerald-500 hover:text-white transition-all active:scale-95 border border-transparent hover:border-emerald-400 shadow-sm"
+                    >
+                        {r}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 const MapPopups = ({
   popupCoords,
   selectedStationName,
@@ -84,7 +156,9 @@ const MapPopups = ({
   trainArrivalDetail,
   activeLine,
   onActiveLineChange,
+  onSelectBusRoute,
   selectedWC,
+  onWCClick,
   isDarkMode
 }: MapPopupsProps) => {
   const { data: realTimeCongestion, loading: isStationCongestionLoading } = useCongestion(selectedStationName);
@@ -121,7 +195,7 @@ const MapPopups = ({
   return (
     <>
       {/* 1. Station/Bus Detail Popup */}
-      {popupCoords && (activeTab === 'subway' && selectedStationName) && (
+      {popupCoords && ((activeTab === 'subway' && selectedStationName) || (activeTab === 'bus' && selectedBusStop)) && (
         <Popup
             key={selectedStationName || selectedBusStop?.id}
             longitude={popupCoords[0]}
@@ -137,7 +211,7 @@ const MapPopups = ({
             className="custom-station-popup"
         >
             <div 
-                className="p-4 min-w-[320px] max-w-[400px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
+                className="p-4 w-[280px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -145,7 +219,7 @@ const MapPopups = ({
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[170px]">
-                            {selectedStationName || selectedBusStop?.name}
+                            {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
                         </h3>
                     </div>
                     <button 
@@ -162,7 +236,8 @@ const MapPopups = ({
 
                 {activeTab === 'subway' && badges.length > 0 && (
                     <div 
-                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-0.5 w-full min-w-0 scroll-smooth touch-pan-x pointer-events-auto cursor-grab active:cursor-grabbing"
+                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-1 w-full min-w-0 scroll-smooth touch-pan-x pointer-events-auto cursor-grab active:cursor-grabbing last:pr-4"
+                        style={{ WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                         onWheel={(e) => e.stopPropagation()}
@@ -179,7 +254,7 @@ const MapPopups = ({
                                       e.preventDefault();
                                       onActiveLineChange(badge.lineName); 
                                     }}
-                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
+                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 scroll-snap-align-start ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
                                     style={{ 
                                       backgroundColor: isActive ? badge.color : 'transparent',
                                       borderColor: isActive ? 'transparent' : badge.color,
@@ -200,28 +275,29 @@ const MapPopups = ({
                 {/* Navigation Actions */}
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                     {(() => {
-                        const stationName = activeTab === 'subway' ? selectedStationName! : selectedBusStop!.name;
+                        const stationName = selectedStationName || selectedBusStop?.name || selectedWC?.name || "";
                         const isStartSet = !!startStation;
+                        if (!stationName) return null;
                         
                         return (
                             <>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onSetEnd(stationName); setPopupCoords(null); }} 
-                                    className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
-                                    도착
+                                    도착지
                                 </button>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onSetWaypoint(stationName); setPopupCoords(null); }} 
-                                    className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-bold transition-all active:scale-95"
+                                    className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-95"
                                 >
-                                    경유
+                                    경유지
                                 </button>
                                 <button 
                                     onClick={(e) => { e.stopPropagation(); onSetStart(stationName); setPopupCoords(null); }} 
-                                    className={`py-2 rounded-xl text-[11px] font-bold shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
-                                    출발
+                                    출발지
                                 </button>
                             </>
                         );
@@ -229,66 +305,77 @@ const MapPopups = ({
                 </div>
 
                 <div className="space-y-2">
-                    {stationArrivals.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-2 mt-1">
-                            <div className="flex flex-col gap-1.5">
-                                <ArrivalHeader 
-                                    defaultTitle="상행 · 내선" 
-                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'))}
-                                    textColor="text-blue-500 dark:text-blue-400"
-                                    borderColor="border-blue-500/20"
-                                />
-                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).length > 0 ? (
-                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).slice(0, 3).map((arr: any, i: number) => (
-                                        <div key={i} className="flex items-center gap-1.5 group">
-                                            <div className="flex-1">
-                                                <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                    {(activeTab === 'subway' && selectedStationName) ? (
+                         stationArrivals.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-2 mt-1">
+                                <div className="flex flex-col gap-1.5">
+                                    <ArrivalHeader 
+                                        defaultTitle="상행 · 내선" 
+                                        trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'))}
+                                        textColor="text-blue-500 dark:text-blue-400"
+                                        borderColor="border-blue-500/20"
+                                    />
+                                    {filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).length > 0 ? (
+                                        filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).slice(0, 3).map((arr: any, i: number) => (
+                                            <div key={i} className="flex items-center gap-1.5 group">
+                                                <div className="flex-1">
+                                                    <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                                </div>
                                             </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-[10px] text-zinc-400 text-center py-2">
+                                            {(() => {
+                                                const hour = new Date().getHours();
+                                                return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
+                                            })()}
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-[10px] text-zinc-400 text-center py-2">
-                                        {(() => {
-                                            const hour = new Date().getHours();
-                                            return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
-                                        })()}
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex flex-col gap-1.5">
-                                <ArrivalHeader 
-                                    defaultTitle="하행 · 외선" 
-                                    trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'))}
-                                    textColor="text-orange-500 dark:text-orange-400"
-                                    borderColor="border-orange-500/20"
-                                />
-                                {filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).length > 0 ? (
-                                    filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).slice(0, 3).map((arr: any, i: number) => (
-                                        <div key={i} className="flex items-center gap-1.5 group">
-                                            <div className="flex-1">
-                                                <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                    )}
+                                </div>
+                                <div className="flex flex-col gap-1.5">
+                                    <ArrivalHeader 
+                                        defaultTitle="하행 · 외선" 
+                                        trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'))}
+                                        textColor="text-orange-500 dark:text-orange-400"
+                                        borderColor="border-orange-500/20"
+                                    />
+                                    {filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).length > 0 ? (
+                                        filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).slice(0, 3).map((arr: any, i: number) => (
+                                            <div key={i} className="flex items-center gap-1.5 group">
+                                                <div className="flex-1">
+                                                    <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                                </div>
                                             </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-[10px] text-zinc-400 text-center py-2">
+                                            {(() => {
+                                                const hour = new Date().getHours();
+                                                return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
+                                            })()}
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-[10px] text-zinc-400 text-center py-2">
-                                        {(() => {
-                                            const hour = new Date().getHours();
-                                            return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
-                                        })()}
-                                    </div>
-                                )}
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">
-                            {(() => {
-                                const hour = new Date().getHours();
-                                return (hour >= 1 && hour < 5) ? "운행 시간이 아닙니다." : "도착 정보가 없습니다.";
-                            })()}
-                        </div>
-                    )}
+                        ) : (
+                            <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">
+                                {(() => {
+                                    const hour = new Date().getHours();
+                                    return (hour >= 1 && hour < 5) ? "운행 시간이 아닙니다." : "도착 정보가 없습니다.";
+                                })()}
+                            </div>
+                        )
+                    ) : (selectedBusStop) ? (
+                        <>
+                            <BusArrivalList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} isDarkMode={isDarkMode} />
+                            <BusRouteStaticList routes={selectedBusStop.routes} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
+                        </>
+                    ) : null}
                 </div>
+                
+                {selectedBusStop && (
+                   <RoadViewButtons lat={selectedBusStop.lat} lng={selectedBusStop.lng} isDarkMode={isDarkMode} />
+                )}
             </div>
         </Popup>
       )}
@@ -452,7 +539,7 @@ const MapPopups = ({
             latitude={selectedWC.lat}
             closeButton={false}
             closeOnClick={false}
-            onClose={() => setPopupCoords(null)}
+            onClose={() => onWCClick?.(null)}
             anchor="bottom"
             offset={12}
             className="custom-wc-popup"
@@ -467,14 +554,15 @@ const MapPopups = ({
                     <div className="flex flex-col">
                         <div className="flex items-center gap-1.5 mb-1">
                             <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-500 text-white uppercase tracking-tighter">화장실</span>
-                            {selectedWC.isInsideGate !== undefined && (
-                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-md ${selectedWC.isInsideGate ? 'bg-emerald-500/10 text-emerald-500' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400'}`}>
-                                {selectedWC.isInsideGate ? '게이트 내' : '게이트 외'}
-                              </span>
-                            )}
                         </div>
-                        <h3 className="text-[14px] font-black truncate">{selectedWC.name.replace(' 화장실', '')}</h3>
+                        <h3 className="text-[14px] font-black truncate">{selectedWC.name?.replace(' 화장실', '')}</h3>
                     </div>
+                    <button 
+                        onClick={(e) => { e.stopPropagation(); onWCClick?.(null); }}
+                        className="p-1 -mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors shrink-0"
+                    >
+                        <X size={14} />
+                    </button>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 mb-3">
@@ -520,9 +608,12 @@ const MapPopups = ({
                 {selectedWC.address && (
                     <div className="flex items-start gap-1.5 pt-2 border-t border-zinc-100 dark:border-white/5">
                         <MapPin size={10} className="text-zinc-400 mt-0.5 flex-shrink-0" />
-                        <p className="text-[9px] font-medium text-zinc-400 line-clamp-2 leading-relaxed">
-                            {selectedWC.address}
-                        </p>
+                        <div className="flex flex-col gap-1 w-full overflow-hidden">
+                            <p className="text-[9px] font-medium text-zinc-400 line-clamp-2 leading-relaxed">
+                                {selectedWC.address}
+                            </p>
+                            <RoadViewButtons lat={selectedWC.lat} lng={selectedWC.lng} address={selectedWC.address} isDarkMode={isDarkMode} />
+                        </div>
                     </div>
                 )}
             </div>

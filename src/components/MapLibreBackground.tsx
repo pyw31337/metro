@@ -4,14 +4,11 @@ import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
 import { Marker, useMap, Source, Layer } from "react-map-gl/maplibre";
 import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival, Station } from "@/types/metro";
 import { fetchTrainCongestion } from "@/services/arrivalApi";
-import { Train } from "lucide-react";
 import { 
     convertSubwayToGeoJSON, 
     convertBusStopsToGeoJSON, 
     convertWCToGeoJSON, 
-    convertTrainsToGeoJSON, 
-    convertPathToGeoJSON,
-    convertBusPositionsToGeoJSON
+    convertPathToGeoJSON
 } from "@/utils/geoJsonUtils";
 
 import MapBase from "./map/MapBase";
@@ -21,11 +18,15 @@ import BusRealtimeLayers from "./map/BusRealtimeLayers";
 import TrainLayers from "./map/TrainLayers";
 import WCLayers from "./map/WCLayers";
 import RouteLayers from "./map/RouteLayers";
+import TransitRealtimeLayers from "./map/TransitRealtimeLayers";
+import UserLocationLayer from "./map/UserLocationLayer";
 import MapPopups from "./map/MapPopups";
 import NearbyPulseMarkers from "./map/NearbyPulseMarkers";
-import ToiletDetailPanel from "./ToiletDetailPanel";
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { useTransferVerification } from "@/hooks/useTransferVerification";
+import { useTransitRealtime } from "@/hooks/useTransitRealtime";
+import { useBusPositions } from "@/hooks/useBusPositions";
+import { useUserLocation } from "@/hooks/useUserLocation";
 
 interface MapLibreProps {
     pathResult: PathResult | null;
@@ -41,7 +42,7 @@ interface MapLibreProps {
     wcFilters: WCFilters;
     busStops: BusStop[];
     selectedBusStopId: string | null;
-    onWCClick: (item: WCItem) => void;
+    onWCClick: (item: WCItem | null) => void;
     onBusStopClick: (stop: BusStop, latlng?: [number, number]) => void;
     selectedWC: WCItem | null;
     selectedBusStop: BusStop | null;
@@ -63,9 +64,9 @@ interface MapLibreProps {
     nearestWC: WCItem | null;
     selectedBusRoute?: string | null;
     routePathData?: any;
+    onSelectBusRoute?: (routeNo: string, cityCode?: string) => void;
 }
 
-// ─── Canvas Polyfill ───────────────────────────────────────────────────────────
 const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
     if (ctx.roundRect) {
         ctx.roundRect(x, y, w, h, r);
@@ -84,7 +85,6 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
     }
 };
 
-// ─── Icon Registration Sub-component ──────────────────────────────────────────
 const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
     const { current: mapRef } = useMap();
     const map = mapRef?.getMap();
@@ -94,18 +94,8 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
 
         const registerIcons = () => {
             const uniqueColors = new Set<string>();
-            
-            // Pre-load all known line colors first
-            SUBWAY_LINES.forEach((line: any) => {
-                if (line.color) uniqueColors.add(line.color.toUpperCase());
-            });
-
-            // Add dynamic station colors as well
-            stations.forEach(s => {
-                if (s.lineColors) {
-                    s.lineColors.forEach((color: string) => uniqueColors.add(color.toUpperCase()));
-                }
-            });
+            SUBWAY_LINES.forEach((line: any) => { if (line.color) uniqueColors.add(line.color.toUpperCase()); });
+            stations.forEach(s => { if (s.lineColors) s.lineColors.forEach((c: string) => uniqueColors.add(c.toUpperCase())); });
 
             uniqueColors.forEach(color => {
                 const id = `train-card-${color}`;
@@ -115,9 +105,7 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     ctx.fillStyle = color;
-                    ctx.beginPath();
-                    safeRoundRect(ctx, 14, 14, 100, 100, 20);
-                    ctx.fill();
+                    ctx.beginPath(); safeRoundRect(ctx, 14, 14, 100, 100, 20); ctx.fill();
                     ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
                     ctx.fillStyle = 'white';
                     ctx.beginPath(); safeRoundRect(ctx, 34, 34, 60, 40, 5); ctx.fill();
@@ -128,35 +116,22 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
                 }
             });
 
-            if (!map.hasImage('express-full-badge')) {
+            if (!map.hasImage('rocket')) {
                 const canvas = document.createElement('canvas');
-                canvas.width = 280; canvas.height = 192;
+                canvas.width = 64; canvas.height = 64;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
-                    ctx.fillStyle = '#ef4444';
-                    ctx.beginPath();
-                    safeRoundRect(ctx, 12, 12, 256, 168, 84);
-                    ctx.fill();
-                    ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
-                    ctx.fillStyle = 'white';
-                    ctx.font = '1000 104px Pretentard, -apple-system, sans-serif';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText('급행', 140, 96 + 4);
-                    const data = ctx.getImageData(0, 0, 280, 192);
-                    map.addImage('express-full-badge', data, { pixelRatio: 3 });
+                    ctx.fillStyle = '#3b82f6'; ctx.beginPath();
+                    ctx.moveTo(32, 0); ctx.lineTo(64, 64); ctx.lineTo(32, 48); ctx.lineTo(0, 64); ctx.closePath(); ctx.fill();
+                    const data = ctx.getImageData(0, 0, 64, 64);
+                    map.addImage('rocket', data);
                 }
             }
         };
 
-        if (map.isStyleLoaded()) {
-            registerIcons();
-        }
+        if (map.isStyleLoaded()) registerIcons();
         map.on('style.load', registerIcons);
-        
-        return () => {
-            map.off('style.load', registerIcons);
-        };
+        return () => { map.off('style.load', registerIcons); };
     }, [map, stations]);
 
     return null;
@@ -167,7 +142,7 @@ function MapLibreBackground(props: MapLibreProps) {
         pathResult, startStation, activeTab, isDarkMode, wcItems, wcFilters, busStops,
         onStationClick, onBusStopClick, onMapReady,
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-        onCenterChange, onBoundsChange, userLocation, timeDisplayMode, onToggleTimeDisplay, 
+        onCenterChange, onBoundsChange, timeDisplayMode, onToggleTimeDisplay, 
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
         nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData
     } = props;
@@ -182,50 +157,42 @@ function MapLibreBackground(props: MapLibreProps) {
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
     const verifiedPlats = useTransferVerification(pathResult, stations);
 
-    // Call high-performance hooks internally
-    const { useRealtimeTrains } = require("@/hooks/useRealtimeTrains");
-    const { useBusPositions } = require("@/hooks/useBusPositions");
-    
-    useRealtimeTrains(mapInstance);
-    useBusPositions(activeTab === "bus" || activeTab === "subway+bus", selectedBusRoute, mapInstance);
+    // High performance realtime hooks
+    useTransitRealtime(mapInstance);
+    useUserLocation(mapInstance);
 
-    // ─── Data Conversion ────────────────────────────────────────────────────────
+    useEffect(() => {
+        if (!selectedBusRoute) return;
+        const { transitRealtimeService } = require("@/services/TransitRealtimeService");
+        // We assume cityCode is available from the stop or passed down. 
+        // For now, using default "11" (Seoul) or extracting from routeId if possible.
+        const cityCode = selectedBusStop?.cityCode || "11";
+        transitRealtimeService.trackBusRoute(cityCode, selectedBusRoute);
+        return () => transitRealtimeService.untrackBusRoute(cityCode, selectedBusRoute);
+    }, [selectedBusRoute, selectedBusStop]);
+
     const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
     const filteredWCs = useMemo(() => convertWCToGeoJSON(wcItems, wcFilters), [wcItems, wcFilters]);
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
     const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult), [pathResult]);
-    
-    // Static empty sources for real-time layers to be populated via hooks
-    const trainData = useMemo(() => ({ type: "FeatureCollection" as const, features: [] }), []);
-    const busRealtimeData = useMemo(() => ({ type: "FeatureCollection" as const, features: [] }), []);
 
-    // ─── Train Logic ────────────────────────────────────────────────────────────
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
         setIsLoadingCongestion(true);
         setCongestionData(null);
         setTrainArrivalDetail(null);
-        
         try {
-            const { fetchStationArrivals } = await import("@/services/arrivalApi");
-            const congestionPromise = fetchTrainCongestion(train.lineName, train.trainNo);
-            const arrivalPromise = fetchStationArrivals(train.arrivalNm);
-            
-            const [cData, aList] = await Promise.all([congestionPromise, arrivalPromise]);
+            const { fetchStationArrivals, fetchTrainCongestion } = await import("@/services/arrivalApi");
+            const [cData, aList] = await Promise.all([
+                fetchTrainCongestion(train.lineName, train.trainNo),
+                fetchStationArrivals(train.arrivalNm || train.headingTo)
+            ]);
             setCongestionData(cData);
-            
             const matchingArrival = aList.find(a => a.btrainNo === train.trainNo);
-            if (matchingArrival) {
-                setTrainArrivalDetail(matchingArrival);
-            }
-        } catch (err) { 
-            console.error(err); 
-        } finally { 
-            setIsLoadingCongestion(false); 
-        }
+            if (matchingArrival) setTrainArrivalDetail(matchingArrival);
+        } catch (err) { console.error(err); } finally { setIsLoadingCongestion(false); }
     };
 
-    // ─── Interaction Handlers ───────────────────────────────────────────────────
     const handleMapClick = useCallback((e: any) => {
         const feature = e.features?.[0];
         if (!feature) {
@@ -235,50 +202,48 @@ function MapLibreBackground(props: MapLibreProps) {
             setPopupCoords(null);
             setSelectedWC(null);
             onActiveLineChange(null);
-            // Also notify that the station selection should be cleared
             onStationClick?.("", undefined);
             return;
         }
 
         const coords = e.lngLat;
+        if (feature.layer.id === 'wc-clusters' || feature.layer.id === 'bus-clusters') {
+            const sourceId = feature.layer.id === 'wc-clusters' ? 'wc-source' : 'bus-source';
+            const source = mapInstance.getSource(sourceId);
+            source.getClusterExpansionZoom(feature.properties.cluster_id, (err: any, zoom: number) => {
+                if (err) return;
+                mapInstance.flyTo({
+                    center: [coords.lng, coords.lat],
+                    zoom: zoom + 1,
+                    duration: 500
+                });
+            });
+            return;
+        }
 
         if (feature.layer.id === 'subway-station-circle' || feature.layer.id === 'subway-station-label') {
             const name = feature.properties.name;
             const lines = typeof feature.properties.lines === 'string' ? JSON.parse(feature.properties.lines) : feature.properties.lines;
-            
             onStationClick?.(name, [coords.lat, coords.lng]);
             setPopupCoords([coords.lng, coords.lat]);
-
-            // Auto-activate the line if needed
             if (lines && Array.isArray(lines) && lines.length > 0) {
-                if (!activeLine || !lines.includes(activeLine)) {
-                    onActiveLineChange(lines[0]);
-                }
+                if (!activeLine || !lines.includes(activeLine)) onActiveLineChange(lines[0]);
             }
             setSelectedWC(null);
         } else if (feature.layer.id === 'wc-unclustered') {
             const props = feature.properties;
-            const wc: WCItem = {
-                id: props.id,
-                name: props.name,
-                lat: coords.lat,
-                lng: coords.lng,
-                accessible: props.accessible === 'true',
-                diapers: props.diapers === 'true',
-                emergencyBell: props.emergencyBell === 'true',
-                address: props.address,
-                station: props.station,
-                isInsideGate: props.isInsideGate === 'true',
-                location: props.location,
-                femaleStalls: parseInt(props.femaleStalls || '0'),
-                maleStalls: parseInt(props.maleStalls || '0'),
-                maleUrinals: parseInt(props.maleUrinals || '0'),
+            setSelectedWC({
+                id: props.id, name: props.name, lat: coords.lat, lng: coords.lng,
+                accessible: props.accessible === 'true', diapers: props.diapers === 'true',
+                emergencyBell: props.emergencyBell === 'true', address: props.address,
+                station: props.station, isInsideGate: props.isInsideGate === 'true',
+                location: props.location, femaleStalls: parseInt(props.femaleStalls || '0'),
+                maleStalls: parseInt(props.maleStalls || '0'), maleUrinals: parseInt(props.maleUrinals || '0'),
                 openTime: props.openTime
-            };
-            setSelectedWC(wc);
+            });
             setPopupCoords([coords.lng, coords.lat]);
-            onStationClick?.("", undefined); // Clear station panel if open
-        } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label') {
+            onStationClick?.("", undefined);
+        } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label' || feature.layer.id === 'bus-unclustered-hitbox') {
             const stop = busStops.find(s => s.id === feature.properties.id);
             if (stop) {
                 onBusStopClick(stop, [coords.lat, coords.lng]);
@@ -290,12 +255,9 @@ function MapLibreBackground(props: MapLibreProps) {
             onActiveLineChange(null);
             handleTrainClick(feature.properties);
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
-            const lineName = feature.properties.name;
-            setPopupCoords(null);
-            // Toggle logic is handled in the callback in page.tsx
-            onActiveLineChange(lineName);
+            onActiveLineChange(feature.properties.name);
         }
-    }, [busStops, onStationClick, onBusStopClick, activeLine, onActiveLineChange]);
+    }, [busStops, onStationClick, onBusStopClick, activeLine, onActiveLineChange, mapInstance]);
 
     return (
         <MapBase
@@ -310,44 +272,25 @@ function MapLibreBackground(props: MapLibreProps) {
             interactiveLayerIds={[
                 'subway-station-circle', 'subway-station-label', 
                 'subway-line-layer', 'subway-line-interaction', 'bus-unclustered', 
+                'bus-unclustered-hitbox', 'bus-clusters',
                 'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-clusters'
             ]}
         >
             <MapIconRegister stations={stations} />
-            <SubwayLayers 
-                subwayData={subwayData} 
-                activeTab={activeTab} 
-                isDarkMode={isDarkMode} 
-                pathResult={pathResult}
-                focusedLine={activeLine}
-            />
-            
+            <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
-            <BusRealtimeLayers busData={busRealtimeData} activeTab={activeTab} />
-            
+            <BusRealtimeLayers busData={{type:"FeatureCollection", features:[]}} activeTab={activeTab} />
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
-            
             <RouteLayers 
-                activeTab={activeTab}
-                pathLineData={pathGeoJSON.lines}
-                routeStationData={pathGeoJSON.stations}
-                showAllRouteBubbles={showAllRouteBubbles}
-                focusedBubble={focusedBubble}
-                setFocusedBubble={setFocusedBubble}
-                timeDisplayMode={timeDisplayMode}
-                onToggleTimeDisplay={onToggleTimeDisplay}
-                verifiedPlats={verifiedPlats}
+                activeTab={activeTab} pathLineData={pathGeoJSON.lines} routeStationData={pathGeoJSON.stations}
+                showAllRouteBubbles={showAllRouteBubbles} focusedBubble={focusedBubble} setFocusedBubble={setFocusedBubble}
+                timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} verifiedPlats={verifiedPlats}
             />
-            
-            <TrainLayers 
-                trainData={trainData} 
-                activeTab={activeTab}
-                trainFilter={null}
-            />
-
-            <MapPopups 
+            <TrainLayers trainData={{type:"FeatureCollection", features:[]}} activeTab={activeTab} trainFilter={null} />
+            <TransitRealtimeLayers activeTab={activeTab} />
+            <UserLocationLayer />
+            <MapPopups
                 popupCoords={popupCoords}
-                setPopupCoords={setPopupCoords}
                 selectedStationName={selectedStationName}
                 selectedBusStop={selectedBusStop}
                 activeTab={activeTab}
@@ -358,6 +301,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 onSetEnd={onSetEnd}
                 onSetWaypoint={onSetWaypoint}
                 startStation={startStation}
+                setPopupCoords={setPopupCoords}
                 selectedTrain={selectedTrain}
                 setSelectedTrain={setSelectedTrain}
                 isLoadingCongestion={isLoadingCongestion}
@@ -365,24 +309,12 @@ function MapLibreBackground(props: MapLibreProps) {
                 trainArrivalDetail={trainArrivalDetail}
                 activeLine={activeLine}
                 onActiveLineChange={onActiveLineChange}
+                onSelectBusRoute={props.onSelectBusRoute}
                 selectedWC={selectedWC}
+                onWCClick={props.onWCClick}
                 isDarkMode={isDarkMode}
             />
-
-            
-            {userLocation && (
-                <Marker longitude={userLocation[1]} latitude={userLocation[0]}>
-                    <div className="w-4 h-4 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" />
-                </Marker>
-            )}
-
-            <NearbyPulseMarkers 
-                nearestStation={nearestStation}
-                nearestBusStop={nearestBusStop}
-                nearestWC={nearestWC}
-                isDarkMode={isDarkMode}
-                activeTab={activeTab}
-            />
+            <NearbyPulseMarkers nearestStation={nearestStation} nearestBusStop={nearestBusStop} nearestWC={nearestWC} isDarkMode={isDarkMode} activeTab={activeTab} />
         </MapBase>
     );
 }

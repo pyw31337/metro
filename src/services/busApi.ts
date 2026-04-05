@@ -1,4 +1,5 @@
 "use client";
+import { decodePolyline } from "@/utils/polyline";
 
 /**
  * TAGO City Codes for metropolitan & regional areas
@@ -179,11 +180,43 @@ export class MetropolitanBusService {
       return [];
     }
   }
+
+  /**
+   * [NEW] Load route path from local sharded shards (High-fidelity, stable fallback)
+   */
+  static async fetchLocalRoutePath(cityCode: string, routeId: string): Promise<any | null> {
+    try {
+      // Load by shard (e.g. /data/paths/bus-paths-11.json)
+      const res = await fetch(`/data/paths/bus-paths-${cityCode}.json`);
+      if (!res.ok) return null;
+      const shard = await res.json();
+      const encoded = shard[routeId];
+      if (!encoded) return null;
+
+      const coordinates = decodePolyline(encoded).map(p => [p[1], p[0]]); // [lng, lat] for GeoJSON
+      return {
+        type: "FeatureCollection",
+        features: [{
+          type: "Feature",
+          geometry: { type: "LineString", coordinates },
+          properties: { routeId, source: "local_shard" }
+        }]
+      };
+    } catch (err) {
+      console.warn(`Local shard fetch failed for ${cityCode}/${routeId}:`, err);
+      return null;
+    }
+  }
   
   /**
-   * [NEW] Fetch route path geometry from Tago API
+   * [NEW] Fetch route path geometry from Tago API with local shard fallback
    */
   static async fetchRoutePath(cityCode: string, routeId: string): Promise<any | null> {
+    // 1. Try local shard first (much faster and more reliable)
+    const local = await this.fetchLocalRoutePath(cityCode, routeId);
+    if (local) return local;
+
+    // 2. Fallback to TAGO API
     const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
     if (!apiKey || apiKey === "sample") return null;
     try {
@@ -196,7 +229,6 @@ export class MetropolitanBusService {
       
       if (arr.length === 0) return null;
 
-      // Convert to GeoJSON LineString
       const coordinates = arr
         .map((it: any) => [parseFloat(it.gpslnt), parseFloat(it.gpslat)])
         .filter((coord: any) => !isNaN(coord[0]) && !isNaN(coord[1]));
@@ -207,16 +239,59 @@ export class MetropolitanBusService {
         type: "FeatureCollection",
         features: [{
           type: "Feature",
-          geometry: {
-            type: "LineString",
-            coordinates
-          },
-          properties: { routeId }
+          geometry: { type: "LineString", coordinates },
+          properties: { routeId, source: "tago_api" }
         }]
       };
     } catch (err) {
       console.error("Bus route path fetch error:", err);
       return null;
+    }
+  }
+
+  /**
+   * [NEW] Fetch real-time bus positions by routeId (Seoul & TAGO)
+   */
+  static async fetchBusPositions(cityCode: string, routeId: string): Promise<any[]> {
+    const provider = this.getProvider(cityCode);
+    const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
+    if (!apiKey || apiKey === "sample") return [];
+
+    try {
+      let url = "";
+      if (provider === "SEOUL") {
+        url = `${this.SEOUL_URL}buspos/getBusPosByRtid?busRouteId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
+      } else {
+        url = `${this.TAGO_URL}BusLcInfoInqireService/getRouteLcInfoList?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
+      }
+
+      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      if (!res.ok) return [];
+      const json = await res.json();
+
+      if (provider === "SEOUL") {
+        const items = json?.ServiceResult?.msgBody?.itemList || [];
+        return items.map((it: any) => ({
+          id: it.vehId,
+          no: it.plainNo,
+          lat: parseFloat(it.tmY),
+          lng: parseFloat(it.tmX),
+          stopIdx: parseInt(it.sectOrd),
+          isFull: it.isFull === "1"
+        }));
+      } else {
+        const items = json?.response?.body?.items?.item || [];
+        const arr = Array.isArray(items) ? items : [items];
+        return arr.map((it: any) => ({
+          id: it.vehicleno,
+          no: it.vehicleno,
+          lat: parseFloat(it.gpslat),
+          lng: parseFloat(it.gpslnt),
+          stopIdx: parseInt(it.nodeord),
+        }));
+      }
+    } catch (err) {
+      return [];
     }
   }
 }

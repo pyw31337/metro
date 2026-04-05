@@ -29,6 +29,7 @@ const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: fal
 const WeatherPopup = dynamic(() => import("@/components/WeatherPopup"), { ssr: false });
 const BusDetailPanel = dynamic(() => import("@/components/panels/BusDetailPanel"), { ssr: false });
 import { AnimatePresence } from "framer-motion";
+import DirectionCompass from "@/components/ui/DirectionCompass";
 
 type PathStrategy = "time" | "transfer";
 
@@ -64,7 +65,7 @@ export default function Home() {
     const [validationError, setValidationError] = useState<"source" | "dest" | "no_route" | null>(null);
     const [wcFilters, setWcFilters] = useState<WCFilters>({ accessible: false, diapers: false, emergencyBell: false });
     const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-    const [currentCenter, setCurrentCenter] = useState<[number, number]>([37.5665, 126.9780]);
+    const [currentCenter, setCurrentCenter] = useState<[number, number]>([37.5546, 126.9706]);
     const [weatherOpen, setWeatherOpen] = useState(false);
     const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
     const [stationArrivals, setStationArrivals] = useState<StationArrival[]>([]);
@@ -76,8 +77,6 @@ export default function Home() {
     const [nearestStation, setNearestStation] = useState<Station | null>(null);
     const [nearestBusStop, setNearestBusStop] = useState<BusStop | null>(null);
     const [nearestWC, setNearestWC] = useState<WCItem | null>(null);
-
-
 
     const handleActiveLineChange = useCallback((line: string | null) => {
         setActiveLine(prev => {
@@ -96,74 +95,81 @@ export default function Home() {
         return Array.from(unique.values());
     }, []);
 
-
-
     const mapRef = useRef<any>(null);
 
-    // ─── Initialize Local Database & Load Data ──────────────────────────────────
     useEffect(() => {
         const init = async () => {
             await db.initializeData();
-            
-            // Background load for UI responsiveness
             const allBusStops = await db.busStops.toArray() as BusStop[];
             setBusStops(allBusStops);
-            
             const allWCs = await db.wc.toArray() as WCItem[];
             setWcItems(allWCs);
         };
         init();
     }, []);
 
-    // ─── Real-time sorting/filtering still uses state for now ──────────────────
-    useEffect(() => {
-        if (activeTab === "wc" && userLocation && wcItems.length > 0) {
-            const sorted = [...wcItems].sort((a,b) => {
-                const distA = Math.pow(a.lat - userLocation[0], 2) + Math.pow(a.lng - userLocation[1], 2);
-                const distB = Math.pow(b.lat - userLocation[0], 2) + Math.pow(b.lng - userLocation[1], 2);
-                return distA - distB;
-            });
-            setNearestWCs(sorted.slice(0, 10));
-        }
-    }, [activeTab, userLocation, wcItems]);
-
-    // ─── Auto Locate On First Load ──────────────────────────────────────────────
     useEffect(() => {
         if (!navigator.geolocation) return;
         
-        setIsLocating(true);
-        setLocatingTimer(5);
-        
-        const interval = setInterval(() => {
-            setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
-        }, 1000);
+        let timerInterval: NodeJS.Timeout;
 
-        const cleanup = () => {
-            clearInterval(interval);
-            setIsLocating(false);
-            setLocatingTimer(0);
+        const updateLocation = () => {
+            setIsLocating(true);
+            setLocatingTimer(10);
+            
+            // Start countdown timer for UI
+            if (timerInterval) clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
+            }, 1000);
+
+            navigator.geolocation.getCurrentPosition(async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                console.log("📍 Updated Location:", latitude, longitude);
+                setUserLocation([latitude, longitude]);
+                
+                // On first location, also set start station
+                setStartStation(prev => {
+                    if (!prev && stations.length > 0) {
+                        findNearestStation(latitude, longitude, stations).then((nearest: any) => {
+                            if (nearest?.name) {
+                                setStartStation(current => current ? current : `내 위치 : ${nearest.name} (내 위치)`);
+                            }
+                        });
+                    }
+                    return prev;
+                });
+            }, (err) => {
+                console.error("Geolocation error:", err);
+                setIsLocating(false);
+                setLocatingTimer(0);
+                if (timerInterval) clearInterval(timerInterval);
+            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         };
 
-        navigator.geolocation.getCurrentPosition(async (pos) => {
-            const { latitude, longitude } = pos.coords;
-            setUserLocation([latitude, longitude]);
-            
-            setStartStation(prev => {
-                if (!prev && stations.length > 0) {
-                    findNearestStation(latitude, longitude, stations).then((nearest: any) => {
-                        if (nearest?.name) {
-                            setStartStation(current => current ? current : `내 위치 : ${nearest.name} (내 위치)`);
-                        }
-                    });
-                }
-                return prev;
-            });
-            cleanup();
-        }, () => cleanup(), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
+        // Initial update
+        updateLocation();
+
+        // Real-time update every 10 seconds
+        const mainInterval = setInterval(updateLocation, 10000);
         
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-    // Pathfinding logic cleanup timer
+        return () => {
+            clearInterval(mainInterval);
+            if (timerInterval) clearInterval(timerInterval);
+        };
+    }, [stations, findNearestStation]);
+
+    // Automatically follow user location
+    useEffect(() => {
+        if (userLocation && mapRef.current) {
+            mapRef.current?.flyTo({ 
+                center: [userLocation[1], userLocation[0]], 
+                zoom: 15, 
+                duration: 2000 
+            });
+        }
+    }, [userLocation]);
+
     useEffect(() => {
         if (validationError === "no_route") {
             const timer = setTimeout(() => setValidationError(null), 5000);
@@ -181,8 +187,7 @@ export default function Home() {
         updateWCs();
     }, [activeTab, userLocation, wcItems, sortWCs]);
 
-    // Fetch station arrivals and schedules using hook
-    const { arrivals: hookArrivals, schedules: hookSchedules, loading: arrivalLoading } = useArrivalInfo(selectedStationName);
+    const { arrivals: hookArrivals, schedules: hookSchedules } = useArrivalInfo(selectedStationName);
 
     useEffect(() => {
         if (hookArrivals) {
@@ -190,7 +195,6 @@ export default function Home() {
         }
     }, [hookArrivals]);
 
-    // ─── Nearest Asset Logic (Station, Bus, WC) ──────────────────────────────────
     useEffect(() => {
         const updateNearest = async () => {
             if (!userLocation) {
@@ -199,16 +203,11 @@ export default function Home() {
                 setNearestWC(null);
                 return;
             }
-
             const [lat, lng] = userLocation;
-
-            // 1. Subway
             if (stations.length > 0) {
                 const nearest = await findNearestStation(lat, lng, stations);
                 if (nearest) setNearestStation(nearest as Station);
             }
-
-            // 2. Bus (Local search)
             if (busStops.length > 0) {
                 let min = Infinity;
                 let found: BusStop | null = null;
@@ -218,8 +217,6 @@ export default function Home() {
                 }
                 setNearestBusStop(found);
             }
-
-            // 3. WC (Local search)
             if (wcItems.length > 0) {
                 let min = Infinity;
                 let found: WCItem | null = null;
@@ -233,26 +230,31 @@ export default function Home() {
         updateNearest();
     }, [userLocation, stations, busStops, wcItems, findNearestStation]);
 
-    // ─── Pathfinding Logic (Off-thread) ──────────────────────────────────────────
+    const handleBusStopClick = useCallback((stop: BusStop, coords?: [number, number]) => {
+        setSelectedBusStop(stop);
+        setSelectedStationName(null);
+        setSelectedWC(null);
+        if (coords) {
+            setCurrentCenter([coords[1], coords[0]]);
+        }
+    }, []);
+
+    const handleStationClick = useCallback((name: string, latlng?: [number, number]) => {
+        const normalized = normalizeStationName(name);
+        setSelectedStationName(normalized);
+        if (latlng) {
+            setCurrentCenter([latlng[0], latlng[1]]);
+        }
+    }, []);
+
     const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
         if (!start || !end) {
             setPathResults(null);
             return;
         }
-        const normalize = normalizeStationName;
-        
-        const nStart = normalize(start);
-        const nEnd = normalize(end);
-        
-        if (!nStart || !nEnd) {
-            setIsCalculating(false);
-            return;
-        }
-
         setIsCalculating(true);
         setValidationError(null);
 
-        // 🟢 BUS ROUTING BRANCH
         if (activeTab === "bus") {
             const res = findBusPath(start, end, busStops);
             if (res) {
@@ -273,19 +275,17 @@ export default function Home() {
             return;
         }
 
-        // 🟠 SUBWAY ROUTING BRANCH
+        const normalize = normalizeStationName;
+        const nStart = normalize(start);
+        const nEnd = normalize(end);
         const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
         const points = [nStart, ...nWaypoints, nEnd];
         
         try {
             const res = await findPath(points) as Record<string, PathResult>;
             setIsCalculating(false);
-
             if (res && res.time && res.transfer) {
-                setPathResults({
-                    time: res.time,
-                    transfer: res.transfer
-                });
+                setPathResults({ time: res.time, transfer: res.transfer });
                 setBusPathResult(null);
             } else {
                 setPathResults(null);
@@ -297,40 +297,30 @@ export default function Home() {
             setValidationError("no_route");
             setIsCalculating(false);
         }
-    }, [activeTab, busStops, findPath, stations]);
+    }, [activeTab, busStops, findPath, waypoints, normalizeStationName]);
 
     useEffect(() => {
         calculatePath(startStation, waypoints, endStation);
     }, [startStation, waypoints, endStation, calculatePath]);
 
-    // ─── Event Handlers ────────────────────────────────────────────────────────
-    const handleStationClick = (name: string, latlng: [number, number]) => {
-        setSelectedStationName(name);
-    };
-
     const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
         if (!cityCode) return;
         try {
-            // Find routeId from local master data
             const res = await fetch("/data/master-bus-routes.json");
             const routes = await res.json();
             const route = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
-            
             if (route) {
                 const { MetropolitanBusService } = await import("@/services/busApi");
                 const path = await MetropolitanBusService.fetchRoutePath(cityCode, route.id);
                 if (path) {
                     setRoutePathData(path);
-                    // Optional: fly to the route start/center
                     if (path.features[0]?.geometry?.coordinates[0]) {
                         const [lng, lat] = path.features[0].geometry.coordinates[0];
                         mapRef.current?.flyTo({ center: [lng, lat], zoom: 13, duration: 2000 });
                     }
                 }
             }
-        } catch (err) {
-            console.error("Route selection failed:", err);
-        }
+        } catch (err) { console.error("Route selection failed:", err); }
     }, []);
 
     const handleReset = () => {
@@ -361,19 +351,16 @@ export default function Home() {
 
     const handleLocateStation = async (type: "source" | "dest") => {
         if (isLocating) return; 
-        
         setIsLocating(true);
         setLocatingTimer(5);
         const interval = setInterval(() => {
             setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
         }, 1000);
-
         const cleanup = () => {
             clearInterval(interval);
             setIsLocating(false);
             setLocatingTimer(0);
         };
-
         if (!userLocation && navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -388,7 +375,6 @@ export default function Home() {
             }, () => cleanup(), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
             return;
         }
-
         if (userLocation) {
             const nearest = await findNearestStation(userLocation[0], userLocation[1], stations) as any;
             if (nearest) {
@@ -397,31 +383,23 @@ export default function Home() {
                 else setEndStation(val);
             }
             cleanup();
-        } else {
-            cleanup();
-        }
+        } else { cleanup(); }
     };
 
     const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
         if (activeTab !== "bus" && activeTab !== "subway+bus") return;
-
-        // 1. Query local DB for existing stops in this box
         const existingStops = await db.busStops
             .where('lat').between(bounds.minLat, bounds.maxLat)
             .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
             .limit(1)
             .count();
-
-        // 2. If NO stops found, try to discover region and fetch
         if (existingStops === 0) {
             const centerLat = (bounds.minLat + bounds.maxLat) / 2;
             const centerLng = (bounds.minLng + bounds.maxLng) / 2;
             const cityCode = getCityCodeByCoords(centerLat, centerLng);
-            
             if (cityCode) {
                 console.log(`🌍 New region discovered: ${cityCode}. Fetching stops...`);
                 await DataIngestionService.fetchRegionalBusStops(cityCode);
-                // Refresh local state
                 const allBusStops = await db.busStops.toArray() as BusStop[];
                 setBusStops(allBusStops);
             }
@@ -444,8 +422,8 @@ export default function Home() {
                     selectedBusRoute={selectedBusRoute}
                     routePathData={routePathData}
                     onWCClick={setSelectedWC}
-                    onBusStopClick={setSelectedBusStop}
-                    onStationClick={(name, latlng) => handleStationClick(name, latlng as [number, number])}
+                    onBusStopClick={handleBusStopClick}
+                    onStationClick={handleStationClick}
                     selectedStationName={selectedStationName}
                     stationArrivals={stationArrivals}
                     selectedWC={selectedWC}
@@ -467,6 +445,7 @@ export default function Home() {
                     onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
                     showAllRouteBubbles={showAllRouteBubbles}
                     onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
+                    onSelectBusRoute={handleSelectBusRoute}
                 />
             </div>
 
@@ -527,6 +506,16 @@ export default function Home() {
                     />
                 )}
             </AnimatePresence>
+
+            {/* Direction Compass for WC Navigation */}
+            {activeTab === "wc" && selectedWC && userLocation && (
+                <DirectionCompass 
+                    userLocation={userLocation}
+                    targetLocation={[selectedWC.lat, selectedWC.lng]}
+                    targetName={selectedWC.name}
+                    onClose={() => setSelectedWC(null)}
+                />
+            )}
         </main>
     );
 }

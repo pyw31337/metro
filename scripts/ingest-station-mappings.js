@@ -1,0 +1,112 @@
+const fs = require('fs');
+const path = require('path');
+
+// Load .env.local for development keys
+const envPath = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(envPath)) {
+    const env = fs.readFileSync(envPath, 'utf8');
+    env.split('\n').forEach(line => {
+        const [key, value] = line.split('=');
+        if (key && (value || value === "")) process.env[key.trim()] = (value || "").trim();
+    });
+}
+
+const DATA_GO_KR_KEY_DECODED = "+wF9V/FmtnPwFyVA23nnj8bPMr6408AqX7SOvjeKVxwn/9NdHD9lY3vlQ0SckYijlvhHdjIPmDttxD4bd9YvwQ==";
+const DATA_DIR = path.resolve(process.cwd(), 'public', 'data');
+const ROUTES_FILE = path.join(DATA_DIR, 'master-bus-routes.json');
+const STATIONS_FILE = path.join(DATA_DIR, 'master-route-stations.json');
+const PARTIAL_FILE = path.join(DATA_DIR, 'master-route-stations-partial.json');
+
+async function fetchWithRetry(url, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const res = await fetch(url, { 
+                signal: AbortSignal.timeout(15000), 
+                headers: { 
+                    'Accept': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                } 
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const text = await res.text();
+            try {
+                const parsed = JSON.parse(text);
+                const resCode = parsed?.response?.header?.resultCode || parsed?.header?.resultCode;
+                if (resCode && resCode !== '00' && resCode !== '0') throw new Error(resCode);
+                return parsed;
+            } catch (e) {
+                if (text.includes('<resultCode>00</resultCode>')) return { _xml: true, _raw: text };
+                throw e;
+            }
+        } catch (e) {
+            if (i === retries - 1) throw e;
+            await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+        }
+    }
+}
+
+async function main() {
+    process.stdout.write('\x1Bc');
+    console.log('🔗 Starting Master Route-Station Mapping Ingestion');
+    console.log('--------------------------------------------------');
+
+    if (!fs.existsSync(ROUTES_FILE)) return console.error('❌ master-bus-routes.json not found!');
+    const routes = JSON.parse(fs.readFileSync(ROUTES_FILE, 'utf8'));
+
+    let mapping = {};
+    if (fs.existsSync(STATIONS_FILE)) {
+        try { mapping = JSON.parse(fs.readFileSync(STATIONS_FILE, 'utf8')); } catch (e) {}
+    }
+    if (fs.existsSync(PARTIAL_FILE)) {
+        try { Object.assign(mapping, JSON.parse(fs.readFileSync(PARTIAL_FILE, 'utf8'))); } catch (e) {}
+    }
+
+    const remaining = routes.filter(r => !mapping[r.id]);
+    console.log(`📊 Total: ${routes.length} routes. Remaining: ${remaining.length}`);
+
+    const startTime = Date.now();
+    const BATCH_SIZE = 5;
+    
+    for (let i = 0; i < remaining.length; i += BATCH_SIZE) {
+        const batch = remaining.slice(i, i + BATCH_SIZE);
+        
+        await Promise.all(batch.map(async (route) => {
+            try {
+                // TAGO API for Station List of a Route
+                const url = `http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&cityCode=${route.cityCode}&routeId=${route.id}&numOfRows=400`;
+                const json = await fetchWithRetry(url);
+                
+                const items = json?.response?.body?.items?.item || [];
+                const rows = Array.isArray(items) ? items : items ? [items] : [];
+                
+                if (rows.length > 0) {
+                    mapping[route.id] = rows.map(it => ({
+                        id: String(it.nodeid),
+                        name: String(it.nodenm),
+                        idx: parseInt(it.nodeord)
+                    })).sort((a, b) => a.idx - b.idx);
+                }
+            } catch (e) {
+                // console.error(`\n❌ Error [${route.cityCode}] ${route.id}: ${e.message}`);
+            }
+        }));
+
+        const elapsed = (Date.now() - startTime) / 1000;
+        const processed = i + batch.length;
+        const progress = (routes.length - remaining.length + processed) / routes.length;
+        const eta = progress > 0 ? (elapsed / (processed/remaining.length) - elapsed) : 0;
+
+        process.stdout.write(`\r   > Progress: ${Math.round(progress * 100)}% | Processed: ${processed}/${remaining.length} | ETA: ${Math.round(eta/60)}m `);
+
+        if (i % 50 === 0 || i + BATCH_SIZE >= remaining.length) {
+            fs.writeFileSync(PARTIAL_FILE, JSON.stringify(mapping));
+        }
+        await new Promise(r => setTimeout(r, 400));
+    }
+
+    fs.writeFileSync(STATIONS_FILE, JSON.stringify(mapping));
+    if (fs.existsSync(PARTIAL_FILE)) fs.unlinkSync(PARTIAL_FILE);
+    console.log('\n\n✅ Station Mapping Ingestion Complete!');
+}
+
+main().catch(console.error);

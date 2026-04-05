@@ -1,0 +1,148 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<title>오류 메세지 | 경기데이터드림</title>
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, target-densitydpi=medium-dpi" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="format-detection" content="telephone=no" />
+<meta name="copyright" content="Gyeonggi Province. All Rights Reserved." />
+<meta name="description" content="경기데이터드림 에서 필요한 자료를 손쉽게 찾아보세요. PC웹, 태블릿 PC, 모바일에서 편리하게 사용하실 수 있습니다." />
+<meta name="keywords" content="경기도, 데이터, data, 데이터셋, 멀티미디어, 데이터 시각화, 활용갤러리, 개방데이터 요청, 개발자 공간, 공공데이터 개방, 공공테이터 통계" />
+
+<link rel="stylesheet" type="text/css" href="/css/ggportal/base.css" />
+<link rel="stylesheet" type="text/css" href="/css/ggportal/layout.css" />
+<link rel="stylesheet" type="text/css" href="/css/ggportal/remainder.css?ver=1.0" />
+<link rel="stylesheet" type="text/css" href="/css/ggportal/style.css" />
+<!--[if lt IE 9]>
+<link rel="stylesheet" type="text/css" href="/incl/css/ie.css" />
+<![endif]-->
+
+<script type="text/javascript" src="/js/ggportal/jquery-1.10.2.min.js"></script>
+<script type="text/javascript" src="/js/ggportal/jquery.bx.js"></script>
+<script type="text/javascript" src="/js/ggportal/base-by-developer.js"></script>
+<!--[if lt IE 9]>
+<script type="text/javascript" src="/js/ggportal/html5.js"></script>
+<script type="text/javascript" src="/js/ggportal/respond.min.js"></script>
+<![endif]-->
+
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+  ga('create', 'UA-66786815-1', 'auto');
+  ga('send', 'pageview');
+</script>
+
+<script type="text/javascript">
+ //   $(function() {
+        if (window.parent && window.parent.jQuery && window.parent.jQuery(".layout_A").length > 0) {
+            // Nothing to do.
+        }
+        else {
+            if (window.opener && window.opener.jQuery && window.opener.jQuery(".layout_A").length > 0) {
+                setTimeout(function() {
+                   window.close();
+                }, 2000);
+            } else {
+            	/*
+                setTimeout(function() {
+                    window.location.href = "/";
+                }, 2000);
+            	*/
+            }
+        }
+  //  });
+</script>
+</head>
+<body>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!-- layout_A -->
+<div class="layout_error">
+    <div class="area_error">
+        <h1><img src="/img/ggportal/desktop/remainder/h1.png"  alt="경기데이터드림" /></h1>
+        <div class="error">
+            <strong class="tit_error"><img src="/img/ggportal/desktop/remainder/txt_error.png"  alt="죄송합니다. 요청하신 페이지를 찾을 수 없습니다." /></strong>
+            <p class="txt_error mq_tablet">잘못된 페이지를 호출하셨거나 일시적인 시스템 오작동으로<br />
+            요청하신 페이지를 찾을 수 없습니다. 이용에 불편을 드려 죄송합니다.<br /><br />
+            </p>
+            <p class="txt_error mq_mobile">잘못된 페이지를 호출하셨거나 일시적인 시스템 오작동으로
+            요청하신 페이지를 찾을 수 없습니다. 이용에 불편을 드려 죄송합니다.<br /><br />
+            </p>
+            <strong class="tit_error_english">Error-Page Not Found</strong>
+            <p class="txt_error_english">The page you were looking for does not exist or has been moved.<br />
+            </p>
+            <span class="logo">
+                <a href="http://www.gg.go.kr" target="_blank" title="새창으로 이동"><img src="/img/ggportal/desktop/remainder/logo_footer_1.png" alt="셰게속의 경기도" /></a>
+            </span>
+        </div>
+    </div>
+</div>
+<!-- // layout_A -->
+</body>
+</html>

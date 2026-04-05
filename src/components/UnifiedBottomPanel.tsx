@@ -48,6 +48,8 @@ interface UnifiedBottomPanelProps {
     onActiveLineChange: (line: string | null) => void;
     selectedBusStop?: any | null;
     onSelectBusRoute?: (routeNum: string, cityCode?: string) => void;
+    userLocation?: [number, number] | null;
+    userHeading?: number | null;
 }
 
 const matchChosung = (query: string, target: string) => {
@@ -367,6 +369,23 @@ export default function UnifiedBottomPanel({
                                 <IngestionProgress tasks={tasks} isVisible={isIngesting} />
                             </div>
 
+                            {/* Live Tracking Status */}
+                            {activePath && (
+                                <div className="px-3 py-2 flex items-center gap-3 bg-blue-500/5 dark:bg-blue-500/10 rounded-2xl border border-blue-500/10">
+                                    <div className="relative">
+                                        <Locate size={16} className="text-blue-500 animate-pulse" />
+                                        <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-[11px] font-black text-blue-500 uppercase tracking-widest">Live Tracking</span>
+                                            <span className="w-1 h-1 rounded-full bg-blue-500" />
+                                            <span className="text-[10px] font-bold text-zinc-500">실시간 연동 중</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Premium Route Timeline */}
                             {showAllRouteBubbles && activePath && (
                                 <motion.div 
@@ -452,9 +471,9 @@ export default function UnifiedBottomPanel({
 
 
                     {activeTab !== "wc" && (
-                        <div className="grid grid-cols-2 gap-2 mt-0.5 relative">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-0.5 relative">
                             {isLocating && (
-                                <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
+                                <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-10">
                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
                                         <Locate size={12} className="animate-pulse" />
                                         현재 위치 조회 중... {locatingTimer}초
@@ -462,7 +481,7 @@ export default function UnifiedBottomPanel({
                                 </div>
                             )}
                             {(externalValidationError || validationError) && (
-                                <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none">
+                                <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-10">
                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto">
                                         {(externalValidationError || validationError) === "source" ? 
                                             <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</> : 
@@ -473,17 +492,7 @@ export default function UnifiedBottomPanel({
                                     </motion.div>
                                 </div>
                             )}
-                            <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
-                                <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
-                                <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
-                                    {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatStationDisplay(destination, true)}</div>)}
-                                    <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
-                                </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                    {destination && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                    <button disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
-                                </div>
-                            </div>
+                            {/* Source (Departure) First */}
                             <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
                                 <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
@@ -493,6 +502,18 @@ export default function UnifiedBottomPanel({
                                 <div className="flex items-center gap-1 shrink-0">
                                     {source && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
                                     <button disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                </div>
+                            </div>
+                            {/* Destination Second */}
+                            <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
+                                <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
+                                <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
+                                    {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatStationDisplay(destination, true)}</div>)}
+                                    <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {destination && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
+                                    <button disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                 </div>
                             </div>
                         </div>

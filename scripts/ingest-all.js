@@ -28,53 +28,57 @@ if (fs.existsSync(METRO_DATA_FILE)) {
 
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
-async function fetchWithRetry(url, retries = 3) {
-    // Try encoded key first, then decoded key if 401
-    const keys = [DATA_GO_KR_KEY_ENCODED, DATA_GO_KR_KEY_DECODED];
+async function fetchWithRetry(url, retries = 5) {
+    const keys = [DATA_GO_KR_KEY_ENCODED, DATA_GO_KR_KEY_DECODED].filter(Boolean);
     
     for (const key of keys) {
-        if (!key) continue;
-        const targetUrl = url.replace(/serviceKey=[^&]+/, `serviceKey=${encodeURIComponent(key)}`);
-        
-        for (let i = 0; i < retries; i++) {
-            try {
-                const res = await fetch(targetUrl, { signal: AbortSignal.timeout(20000) });
-                const text = await res.text();
-                if (res.status === 401) {
-                    console.log(`   [Auth Failed] Key index ${keys.indexOf(key)}`);
-                    break; 
-                }
-                if (!res.ok) {
-                    console.log(`   [HTTP Error] ${res.status} for ${targetUrl.substring(0, 80)}...`);
-                    throw new Error(`HTTP ${res.status}`);
-                }
-                
+        // Try both encoded and literal for the key
+        const keyVersions = [
+            key.startsWith('%') ? key : encodeURIComponent(key), 
+            key // Literal version
+        ];
+
+        for (const targetKey of Array.from(new Set(keyVersions))) {
+            const targetUrl = url.replace(/serviceKey=[^&]+/, `serviceKey=${targetKey}`);
+            
+            for (let i = 0; i < retries; i++) {
                 try {
-                    const parsed = JSON.parse(text);
-                    // Check for API-level errors in JSON (0 or 00 is success)
-                    const resCode = parsed?.response?.header?.resultCode;
-                    if (resCode && resCode !== '00' && resCode !== '0') {
-                        console.log(`   [API Error] ${resCode}: ${parsed.response.header.resultMsg}`);
-                        throw new Error(parsed.response.header.resultMsg);
+                    const res = await fetch(targetUrl, { 
+                        signal: AbortSignal.timeout(30000),
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    
+                    if (res.status === 401 || res.status === 403) {
+                        break; // Try next key/version
                     }
-                    return parsed;
+                    if (res.status === 500 || res.status === 503 || !res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+
+                    const text = await res.text();
+                    try {
+                        const parsed = JSON.parse(text);
+                        const resCode = parsed?.response?.header?.resultCode || parsed?.header?.resultCode;
+                        if (resCode && resCode !== '00' && resCode !== '0') {
+                            throw new Error(resCode);
+                        }
+                        return parsed;
+                    } catch (e) {
+                         if (text.includes('<resultCode>00</resultCode>')) {
+                             return { _xml: true, _raw: text };
+                         }
+                         throw e;
+                    }
                 } catch (e) {
-                    // Possible XML or bad JSON
-                    if (text.includes('<response>')) {
-                        if (text.includes('<resultCode>00</resultCode>')) return { _xml: true, _raw: text };
-                        const code = text.match(/<resultCode>([^<]+)<\/resultCode>/)?.[1];
-                        const msg = text.match(/<resultMsg>([^<]+)<\/resultMsg>/)?.[1];
-                        console.log(`   [XML API Error] ${code}: ${msg}`);
+                    if (i === retries - 1 && targetKey === keyVersions[keyVersions.length-1] && key === keys[keys.length-1]) {
+                        throw e;
                     }
-                    throw e;
+                    await new Promise(r => setTimeout(r, 2000 * (i + 1))); 
                 }
-            } catch (e) {
-                if (i === retries - 1) break;
-                await new Promise(r => setTimeout(r, 1000));
             }
         }
     }
-    throw new Error('All keys and retries failed for: ' + url);
+    throw new Error('All authentication attempts failed for: ' + url.substring(0, 50));
 }
 
 async function fetchSeoul(url, retries = 3) {
@@ -82,7 +86,7 @@ async function fetchSeoul(url, retries = 3) {
     const targetUrl = url.replace(/\{KEY\}/, SEOUL_KEY);
     for (let i = 0; i < retries; i++) {
         try {
-            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(10000) });
+            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(15000) });
             return await res.json();
         } catch (e) {
             if (i === retries - 1) return null;
@@ -92,60 +96,68 @@ async function fetchSeoul(url, retries = 3) {
 }
 
 /**
- * 1. MOIS Public Toilet Info (Nationwide 52,255 records)
+ * 1. MOIS Public Toilet Info (1741000)
  */
 async function ingestNationwideToilets() {
-    console.log('🚽 Starting Massive Nationwide Toilet Ingestion (MOIS)...');
+    console.log('🚽 Starting Massive Nationwide Toilet Ingestion (MOIS 1741000)...');
+    
+    const PARTIAL_FILE = path.join(DATA_DIR, 'master-toilets-partial.json');
     let allToilets = [];
+    let startPage = 1;
+
+    // RESUME LOGIC (Enhanced with Page Tracker)
+    if (fs.existsSync(PARTIAL_FILE)) {
+        try {
+            const checkpoint = JSON.parse(fs.readFileSync(PARTIAL_FILE, 'utf8'));
+            if (checkpoint.toilets && checkpoint.lastPage) {
+                allToilets = checkpoint.toilets;
+                startPage = checkpoint.lastPage + 1;
+                console.log(`🔄 Resuming from Page ${startPage} (${allToilets.length} valid records processed)`);
+            } else if (Array.isArray(checkpoint)) {
+                // Legacy fallback: assume 100 per page for older checkpoints
+                allToilets = checkpoint;
+                startPage = Math.floor(allToilets.length / 100) + 1;
+                console.log(`🔄 Resuming Legacy Page ${startPage} (${allToilets.length} records)`);
+            }
+        } catch (e) {
+            console.warn('⚠️ Could not load partial file. Starting fresh.');
+        }
+    }
     
     try {
-        const initialUrl = `https://apis.data.go.kr/1741000/public_restroom_info/info?serviceKey=placeholder&type=json&numOfRows=1&pageNo=1`;
-        const initialJson = await fetchWithRetry(initialUrl);
-        const totalCount = parseInt(initialJson?.response?.body?.totalCount || '0');
+        const baseUrl = `https://apis.data.go.kr/1741000/public_restroom_info/info?serviceKey=placeholder&type=json&numOfRows=100`;
+        const initialJson = await fetchWithRetry(`${baseUrl}&pageNo=1`);
+        const totalCount = parseInt(initialJson?.response?.body?.totalCount || '53452');
         
-        if (totalCount === 0) {
-            console.log('⚠️ No toilets found. Check API key or endpoint structure.');
-            return [];
-        }
-
-        console.log(`📊 Found ${totalCount} records. Starting chunked parallel loop...`);
-        
+        console.log(`📊 Total records to fetch: ${totalCount}`);
         const PAGE_SIZE = 100; 
-        const CHUNK_SIZE = 10; // Fetch 10 pages in parallel
+        const CHUNK_SIZE = 2; // Maximum stability
         const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-        for (let i = 1; i <= totalPages; i += CHUNK_SIZE) {
+        for (let i = startPage; i <= totalPages; i += CHUNK_SIZE) {
             const promises = [];
             for (let j = 0; j < CHUNK_SIZE && (i + j) <= totalPages; j++) {
                 const page = i + j;
-                const url = `https://apis.data.go.kr/1741000/public_restroom_info/info?serviceKey=placeholder&type=json&numOfRows=${PAGE_SIZE}&pageNo=${page}`;
-                promises.push(fetchWithRetry(url).then(json => ({ page, json })));
+                promises.push(fetchWithRetry(`${baseUrl}&pageNo=${page}`).then(json => ({ page, json })));
             }
             
             try {
                 const results = await Promise.all(promises);
+                let currentMaxPage = i;
                 for (const { page, json } of results) {
-                    let rows = json?.response?.body?.items?.item || [];
-                    if (!Array.isArray(rows) && rows) rows = [rows];
+                    if (page > currentMaxPage) currentMaxPage = page;
+                    let items = json?.response?.body?.items?.item || json?.response?.body?.items || [];
+                    if (!Array.isArray(items) && items) items = [items];
 
-                    if (rows.length > 0) {
-                        const mapped = rows.map(it => {
+                    if (items.length > 0) {
+                        const mapped = items.map(it => {
                             let lat = parseFloat(String(it.WGS84_LAT || it.la || '0').trim());
                             let lng = parseFloat(String(it.WGS84_LOT || it.lo || '0').trim());
                             const name = String(it.RSTRM_NM || it.fcltyNm || '화장실');
-                            const mng = String(it.MNG_INST_NM || '');
 
-                            // Rescue Station Toilets without coordinates
                             if (!(lat > 30 && lng > 120)) {
-                                const match = subwayStations.find(s => 
-                                    name.includes(s.name) || 
-                                    mng.includes(s.name) ||
-                                    (s.name.length > 1 && (name.includes(s.name.replace(/역+$/, '')) || mng.includes(s.name.replace(/역+$/, ''))))
-                                );
-                                if (match) {
-                                    lat = match.latitude || match.lat;
-                                    lng = match.longitude || match.lng;
-                                }
+                                const match = (subwayStations || []).find(s => name.includes(s.name));
+                                if (match) { lat = match.lat; lng = match.lng; }
                             }
 
                             return {
@@ -154,13 +166,10 @@ async function ingestNationwideToilets() {
                                 lat,
                                 lng,
                                 address: String(it.LCTN_ROAD_NM_ADDR || it.LCTN_LOTNO_ADDR || ''),
-                                ms: parseInt(it.MALE_WCLS_CNT || '0'), 
-                                fs: parseInt(it.FEMALE_WCLS_CNT || '0'),
-                                mu: parseInt(it.MALE_URIL_CNT || '0'),
-                                ds: parseInt(it.MALE_DSB_WCLS_CNT || it.FEMALE_DSB_WCLS_CNT || '0'),
-                                bell: it.EMRG_BELL_YN === 'Y' || it.EMRG_BELL_AYN === 'Y',
-                                diaper: it.DIAPER_CHNG_TR_YN === 'Y' || it.DIAPER_CHNG_TR_AYN === 'Y',
-                                ot: String(it.OPN_TM_INFO || '24시간'),
+                                ms: parseInt(it.MALE_TOILT_CNT || '0'), 
+                                fs: parseInt(it.FEMALE_TOILT_CNT || '0'),
+                                bell: it.EMRGNCBLL_INSTL_YN === 'Y',
+                                ot: String(it.OPN_HR_DTL || it.OPN_HR || '24시간'),
                                 type: 'WC',
                                 source: 'MOIS'
                             };
@@ -169,24 +178,27 @@ async function ingestNationwideToilets() {
                     }
                 }
                 
-                process.stdout.write(`\r   > Progress: ${allToilets.length}/${totalCount} (${Math.round((i/totalPages)*100)}%) [Page ${i + CHUNK_SIZE - 1}/${totalPages}]`);
+                process.stdout.write(`\r   > Progress: ${allToilets.length}/${totalCount} (${Math.round((i/totalPages)*100)}%) [Page ${i}/${totalPages}]`);
                 
-                if (i % 50 === 1) {
-                    fs.writeFileSync(path.join(DATA_DIR, 'master-toilets-partial.json'), JSON.stringify(allToilets));
+                // Save checkpoint with metadata
+                if (i % 10 === 1 || i + CHUNK_SIZE > totalPages) {
+                    fs.writeFileSync(PARTIAL_FILE, JSON.stringify({ toilets: allToilets, lastPage: currentMaxPage }));
                 }
-                await new Promise(r => setTimeout(r, 200)); // Small delay between chunks to avoid rate limit
+                await new Promise(r => setTimeout(r, 800)); 
             } catch (err) {
-                console.error(`\n❌ Error in chunk starting at page ${i}:`, err.message);
-                await new Promise(r => setTimeout(r, 2000));
+                console.error(`\n❌ Fatal Error at page ${i}:`, err.message);
+                await new Promise(r => setTimeout(r, 5000));
             }
         }
-        console.log('\n✅ MOIS Nationwide Toilet Ingestion Complete.');
+        console.log('\n✅ Nationwide Toilet Ingestion Complete.');
         return allToilets;
     } catch (e) {
-        console.error('\n❌ MOIS Ingestion Failed:', e.message);
-        return [];
+        console.error('\n❌ Ingestion Failed:', e.message);
+        return allToilets;
     }
 }
+
+
 
 /**
  * 2. Seoul Subway Toilets (Open Data 312 records)
@@ -220,94 +232,239 @@ async function ingestSeoulSubwayToilets() {
 }
 
 async function ingestNationalBusStops() {
-    console.log('🚌 Starting Massive National Bus Stop Ingestion (TAGO)...');
-    // expanded list of regions/hubs
-    const hubs = [
-        { name: '서울/강남', lat: 37.4979, lng: 127.0276 },
-        { name: '서울/명동', lat: 37.5610, lng: 126.9850 },
-        { name: '인천/연수', lat: 37.4093, lng: 126.6800 },
-        { name: '경기/수원', lat: 37.2635, lng: 127.0286 },
-        { name: '경기/성남', lat: 37.4200, lng: 127.1265 },
-        { name: '대구/중구', lat: 35.8714, lng: 128.6014 },
-        { name: '부산/해운대', lat: 35.1631, lng: 129.1636 }
+    console.log('\n🚌 Starting Massive National Bus Stop Ingestion (TAGO City Codes)...');
+    
+    // All 16 major administrative regions in Korea
+    const cityCodes = [
+        { code: '11', name: '서울' }, { code: '21', name: '부산' }, { code: '22', name: '대구' },
+        { code: '23', name: '인천' }, { code: '24', name: '광주' }, { code: '25', name: '대전' },
+        { code: '26', name: '울산' }, 
+        // Gyeonggi-do Sub-cities (to ensure full coverage via TAGO)
+        { code: '31010', name: '수원' }, { code: '31020', name: '성남' }, { code: '31030', name: '의정부' },
+        { code: '31040', name: '안양' }, { code: '31050', name: '부천' }, { code: '31060', name: '광명' },
+        { code: '31070', name: '평택' }, { code: '31080', name: '동두천' }, { code: '31090', name: '안산' },
+        { code: '31100', name: '고양' }, { code: '31110', name: '과천' }, { code: '31120', name: '구리' },
+        { code: '31130', name: '남양주' }, { code: '31140', name: '오산' }, { code: '31150', name: '시흥' },
+        { code: '31160', name: '군포' }, { code: '31170', name: '의왕' }, { code: '31180', name: '하남' },
+        { code: '31190', name: '용인' }, { code: '31200', name: '파주' }, { code: '31210', name: '이천' },
+        { code: '31220', name: '안성' }, { code: '31230', name: '김포' }, { code: '31240', name: '화성' },
+        { code: '31250', name: '광주' }, { code: '31260', name: '양주' }, { code: '31270', name: '포천' },
+        { code: '31320', name: '여주' }, { code: '31350', name: '연천' }, { code: '31370', name: '가평' },
+        { code: '31380', name: '양평' },
+        { code: '32', name: '강원' }, { code: '33', name: '충북' }, { code: '34', name: '충남' },
+        { code: '35', name: '전북' }, { code: '36', name: '전남' }, { code: '37', name: '경북' },
+        { code: '38', name: '경남' }, { code: '39', name: '제주' }
     ];
+
     let allStops = [];
-    for (const hub of hubs) {
+    for (const city of cityCodes) {
         try {
-            // Radius 2000m for broader coverage
-            const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getCrdntPrxmtSttnList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&gpsLati=${hub.lat}&gpsLong=${hub.lng}&numOfRows=500`;
+            process.stdout.write(`   > Fetching stops for ${city.name} (${city.code}): `);
+            let cityStops = [];
+            for (let page = 1; page <= 10; page++) { // Max 10,000 per city
+                const url = `https://apis.data.go.kr/1613000/BusSttnInfoInqireService/getSttnNoList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&cityCode=${city.code}&pageNo=${page}&numOfRows=1000`;
+                const json = await fetchWithRetry(url);
+                const items = json?.response?.body?.items?.item || [];
+                const rows = Array.isArray(items) ? items : items ? [items] : [];
+                
+                if (rows.length === 0) break;
+
+                const mapped = rows.map(it => ({
+                    id: String(it.nodeid),
+                    name: String(it.nodenm),
+                    lat: parseFloat(it.gpslati),
+                    lng: parseFloat(it.gpslong),
+                    arsId: String(it.nodeno || ''),
+                    type: 'BUS',
+                    region: city.name,
+                    cityCode: city.code,
+                    source: 'NATIONAL'
+                })).filter(s => s.lat > 30 && s.lng > 120);
+                
+                cityStops.push(...mapped);
+                process.stdout.write(`.`);
+                if (rows.length < 1000) break;
+                await new Promise(r => setTimeout(r, 300));
+            }
+            allStops.push(...cityStops);
+            console.log(` ${cityStops.length} stops.`);
+        } catch (e) {
+            console.log(`❌ Failed: ${e.message}`);
+        }
+    }
+    return allStops;
+}
+
+async function ingestSeoulHighFidelityBusStops() {
+    console.log('\n🏙️  Starting Seoul High-Fidelity Bus Station Ingestion (Seoul Open Data)...');
+    let seoulStops = [];
+    try {
+        const PAGE_SIZE = 1000;
+        for (let i = 1; i <= 15000; i += PAGE_SIZE) {
+            const start = i;
+            const end = i + PAGE_SIZE - 1;
+            const url = `http://openapi.seoul.go.kr:8088/${SEOUL_KEY}/json/busStopLocationXyInfo/${start}/${end}`;
+            const json = await fetch(url).then(res => res.json()).catch(() => null);
+            
+            const rows = json?.busStopLocationXyInfo?.row || [];
+            if (rows.length === 0) break;
+
+            const mapped = rows.map(it => ({
+                id: `SEOUL_BUS_${it.STOPS_NO || Math.random()}`,
+                name: String(it.STOPS_NM),
+                lat: parseFloat(it.YCRD),
+                lng: parseFloat(it.XCRD),
+                arsId: String(it.STOPS_NO || ''),
+                type: 'BUS',
+                region: '서울',
+                source: 'SEOUL_HF'
+            })).filter(s => s.lat > 30 && s.lng > 120);
+
+            seoulStops.push(...mapped);
+            process.stdout.write(`.`);
+            if (rows.length < PAGE_SIZE) break;
+            await new Promise(r => setTimeout(r, 300));
+        }
+        console.log(` ✅ ${seoulStops.length} Seoul HF stops fetched.`);
+        return seoulStops;
+    } catch (e) {
+        console.error('❌ Seoul HF Ingestion Failed:', e.message);
+        return seoulStops;
+    }
+}
+
+async function ingestGyeonggiHighFidelityBusStops() {
+    console.log('\n🏡 Starting Gyeonggi High-Fidelity Bus Station Ingestion (Gyeonggi Data Portal)...');
+    let gyeonggiStops = [];
+    const PARTIAL_FILE = path.join(DATA_DIR, 'master-bus-stops-partial.json');
+    
+    try {
+        const baseUrl = `https://apis.data.go.kr/6410000/busstationservice/getBusStationList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json`;
+        
+        for (let page = 1; page <= 50; page++) {
+            const url = `${baseUrl}&pageNo=${page}&numOfRows=1000`;
             const json = await fetchWithRetry(url);
             const items = json?.response?.body?.items?.item || [];
             const rows = Array.isArray(items) ? items : items ? [items] : [];
-            allStops.push(...rows.map(it => ({
-                id: String(it.nodeid),
-                name: String(it.nodenm),
-                lat: parseFloat(it.gpslati),
-                lng: parseFloat(it.gpslong),
-                arsId: String(it.nodeno || ''),
+            
+            if (rows.length === 0) break;
+
+            const mapped = rows.map(it => ({
+                id: `GG_BUS_${it.stationId}`,
+                name: String(it.stationName),
+                lat: parseFloat(it.y),
+                lng: parseFloat(it.x),
+                arsId: String(it.mobileNo || ''),
                 type: 'BUS',
-                region: hub.name
-            })));
+                region: '경기',
+                source: 'GG_HF'
+            })).filter(s => s.lat > 30 && s.lng > 120);
+
+            gyeonggiStops.push(...mapped);
             process.stdout.write(`.`);
-            await new Promise(r => setTimeout(r, 100));
-        } catch (e) { /* skip */ }
+            
+            if (page % 5 === 0) {
+                fs.writeFileSync(PARTIAL_FILE, JSON.stringify({ busStops: gyeonggiStops, lastPage: page }));
+            }
+
+            if (rows.length < 1000) break;
+            await new Promise(r => setTimeout(r, 500));
+        }
+        
+        console.log(` ✅ ${gyeonggiStops.length} Gyeonggi HF stops fetched.`);
+        return gyeonggiStops;
+    } catch (e) {
+        console.error('❌ Gyeonggi HF Ingestion Failed:', e.message);
+        return gyeonggiStops;
     }
-    // Deduplicate
-    const unique = Array.from(new Map(allStops.map(s => [s.id, s])).values());
-    console.log(`\n✅ ${unique.length} Unique Bus stops ingested.`);
-    return unique;
+}
+
+function deduplicateBusStops(allStops) {
+    console.log(`\n🧹 Deduplicating ${allStops.length} total bus stops...`);
+    const unique = new Map();
+    
+    const priority = { 'SEOUL_HF': 3, 'GG_HF': 2, 'NATIONAL': 1 };
+
+    for (const stop of allStops) {
+        // Round coordinates to 5 decimal places (~1 meter) for collision detection
+        const coordKey = `${stop.lat.toFixed(5)}_${stop.lng.toFixed(5)}`;
+        // Use ARS ID if available as primary unique key
+        const arsKey = stop.arsId && stop.arsId !== '0' ? `ARS_${stop.region}_${stop.arsId}` : null;
+        
+        const existingByArs = arsKey ? unique.get(arsKey) : null;
+        const existingByCoord = unique.get(coordKey);
+        
+        const existing = existingByArs || existingByCoord;
+        
+        if (!existing || (priority[stop.source] > priority[existing.source])) {
+            if (arsKey) unique.set(arsKey, stop);
+            unique.set(coordKey, stop);
+        }
+    }
+    
+    // Convert back to array ensuring unique IDs
+    const finalMap = new Map();
+    for (const stop of unique.values()) {
+        finalMap.set(stop.id, stop);
+    }
+    
+    const final = Array.from(finalMap.values());
+    console.log(`✨ Deduplication complete: ${allStops.length} -> ${final.length} unique stops.`);
+    return final;
 }
 
 async function main() {
-    console.log('🚀 Final Definitive Restoration Ingestion (V5)');
+    console.log('🚀 Final Definitive Restoration Ingestion (V5 - Phase 2 High-Fidelity)');
     
-    // 1. Subway Baseline (Full Restoration)
-    console.log('🚄 Loading Full Subway Baseline...');
-    const CAPITAL_STATIONS_PATH = path.join(process.cwd(), 'src/data/capitalStations.json');
-    let subwayStations = [];
-    if (fs.existsSync(CAPITAL_STATIONS_PATH)) {
-        const rawSubway = JSON.parse(fs.readFileSync(CAPITAL_STATIONS_PATH, 'utf8'));
-        subwayStations = rawSubway.map(s => ({
-            id: String(s.name), // Using name as ID for baseline stability
+    const args = process.argv.slice(2);
+    const busOnly = args.includes('--bus-only');
+
+    if (!busOnly) {
+        // 1. Subway Baseline
+        console.log('🚄 Loading Full Subway Baseline...');
+        const rawSubway = JSON.parse(fs.readFileSync(METRO_DATA_FILE, 'utf8'));
+        const subwayStations = rawSubway.map(s => ({
+            id: String(s.name),
             name: s.name,
             lat: s.lat || s.latitude,
             lng: s.lng || s.longitude,
             lines: s.lines || []
         }));
-        console.log(`✅ Loaded ${subwayStations.length} subway stations from local data.`);
-    } else {
-        subwayStations = [{ id: '1001', name: '서울역', lat: 37.554648, lng: 126.972559 }];
-        console.warn('⚠️ capitalStations.json not found. Using minimal baseline.');
-    }
-    fs.writeFileSync(path.join(DATA_DIR, 'master-subway.json'), JSON.stringify(subwayStations, null, 2));
+        fs.writeFileSync(path.join(DATA_DIR, 'master-subway.json'), JSON.stringify(subwayStations));
+        console.log(`✅ Loaded ${subwayStations.length} subway stations.`);
 
-    // 2. Toilets (The Big Restoration)
-    const nationwide = await ingestNationwideToilets();
-    const seoulSubway = await ingestSeoulSubwayToilets();
-    
-    const combinedToilets = [...nationwide, ...seoulSubway];
-    
-    // Safety guard: Final record count check before saving
-    if (combinedToilets.length > 0) {
-        // [OPTIMIZATION] Avoid indentation for 50k+ records to prevent memory crash
-        console.log(`\n💾 Saving ${combinedToilets.length} toilets to ${path.join(DATA_DIR, 'master-toilets.json')}...`);
-        fs.writeFileSync(path.join(DATA_DIR, 'master-toilets.json'), JSON.stringify(combinedToilets)); 
-        console.log(`✨ Successfully saved ${combinedToilets.length} total toilets (minified for performance).`);
-        
-        if (combinedToilets.length < 52000) {
-            console.log(`🚨 WARNING: Captured ${combinedToilets.length} records. MOIS total was expected nearer 52k.`);
-        } else {
-            console.log('🎖️ Target reached! Pre-deployment verification passed.');
+        // 2. Toilets
+        const nationwide = await ingestNationwideToilets();
+        const seoulSubway = await ingestSeoulSubwayToilets();
+        const combinedToilets = [...nationwide, ...seoulSubway];
+        if (combinedToilets.length > 0) {
+            fs.writeFileSync(path.join(DATA_DIR, 'master-toilets.json'), JSON.stringify(combinedToilets)); 
+            console.log(`✨ Saved ${combinedToilets.length} toilets.`);
         }
-    } else {
-        console.log('❌ CRITICAL: No toilets ingested. Aborting save.');
     }
 
-    // 3. Bus Stops (Major Regions)
-    const busStops = await ingestNationalBusStops();
-    if (busStops.length > 0) {
-        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-stops.json'), JSON.stringify(busStops));
+    // 3. Bus Stops (Phase 2 Expanded)
+    const nationalBusStops = await ingestNationalBusStops();
+    const seoulHFStops = await ingestSeoulHighFidelityBusStops();
+    const gyeonggiHFStops = await ingestGyeonggiHighFidelityBusStops();
+    
+    const allBusStops = [
+        ...nationalBusStops,
+        ...seoulHFStops, 
+        ...gyeonggiHFStops
+    ];
+    
+    const uniqueBusStops = deduplicateBusStops(allBusStops);
+    
+    if (uniqueBusStops.length > 0) {
+        console.log(`\n💾 Saving ${uniqueBusStops.length} bus stops to ${path.join(DATA_DIR, 'master-bus-stops.json')}...`);
+        fs.writeFileSync(path.join(DATA_DIR, 'master-bus-stops.json'), JSON.stringify(uniqueBusStops));
+        console.log(`🎉 Phase 2 Ingestion Complete!`);
     }
+
+    // Cleanup
+    const PARTIAL_BUS = path.join(DATA_DIR, 'master-bus-stops-partial.json');
+    if (fs.existsSync(PARTIAL_BUS)) fs.unlinkSync(PARTIAL_BUS);
 }
 
 main().catch(console.error);

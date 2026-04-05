@@ -1,8 +1,9 @@
+"use client";
+
 import { useEffect, useRef } from 'react';
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { subwayApi } from '@/utils/api-client';
 import { normalizeStationName } from '@/utils/stationUtils';
-import { convertTrainsToGeoJSON } from '@/utils/geoJsonUtils';
 
 export interface Train {
     id: string;
@@ -19,6 +20,8 @@ export interface Train {
     trainNo: string;
     directAt: string;
     trainSttus: string;
+    lastUpdate: number;
+    progress: number;
 }
 
 interface RealtimePosition {
@@ -33,27 +36,29 @@ interface RealtimePosition {
 }
 
 function interpolate(start: { lat: number, lng: number }, end: { lat: number, lng: number }, ratio: number) {
-    const r = Math.max(0, Math.min(1, ratio));
+    const r = Math.max(0, Math.min(1.1, ratio));
     return {
-        lat: start.lat + (end.lat - start.lat) * r,
-        lng: start.lng + (end.lng - start.lng) * r
+        lat: start.lat + (end.lat - start.lat) * Math.min(1, r),
+        lng: start.lng + (end.lng - start.lng) * Math.min(1, r)
     };
 }
 
 function getDirection(updn: string): 1 | -1 {
-    return updn === '0' || updn === '1001' ? 1 : -1; // 1001/상행/내선: 1, 1002/하행/외선: -1
+    return (updn === '0' || updn === '1001' || updn.includes('상행') || updn.includes('내선')) ? 1 : -1;
 }
 
 export function useRealtimeTrains(map: any | null) {
-    const trainsRef = useRef<any[]>([]);
+    const trainsRef = useRef<Train[]>([]);
+    const lastApiUpdateRef = useRef<number>(Date.now());
 
     useEffect(() => {
+        if (!map) return;
+
         const fetchRealtime = async () => {
             const lineNames = ["1호선", "2호선", "3호선", "4호선", "5호선", "6호선", "7호선", "8호선", "9호선", "경의중앙선", "경춘선", "수인분당선", "신분당선"];
             
             try {
-                // Fetch SEQUENTIALLY to prevent connection storm and timeouts
-                const allFetchedTrains: any[] = [];
+                const allFetchedTrains: Train[] = [];
                 for (const name of lineNames) {
                     try {
                         const json = await subwayApi.getPositions(name);
@@ -74,7 +79,7 @@ export function useRealtimeTrains(map: any | null) {
                                     if (rt.trainSttus === '2') initialProgress = 0.1; 
 
                                     allFetchedTrains.push({
-                                        id: `real-${rt.trainNo}-${name}`,
+                                        id: `${rt.trainNo}-${name}`,
                                         lineId: line.id,
                                         lineName: line.name,
                                         stationIndex: stationIdx,
@@ -85,58 +90,59 @@ export function useRealtimeTrains(map: any | null) {
                                         lastUpdate: Date.now(),
                                         trainNo: rt.trainNo,
                                         directAt: rt.directAt,
-                                        trainSttus: rt.trainSttus
+                                        trainSttus: rt.trainSttus,
+                                        lat: 0, lng: 0, lineColor: line.color.toUpperCase()
                                     });
                                     break; 
                                 }
                             }
                         });
-                        // Stagger requests to avoid browser connection limit / server rate limit
-                        await new Promise(resolve => setTimeout(resolve, 100)); 
-                    } catch (lineErr) {
-                        // Silent per-line fail
-                    }
+                        // Fast fetch but staggered
+                        await new Promise(resolve => setTimeout(resolve, 50)); 
+                    } catch (err) {}
                 }
 
-                if (allFetchedTrains.length === 0) return;
+                if (allFetchedTrains.length > 0) {
+                    trainsRef.current = allFetchedTrains;
+                    lastApiUpdateRef.current = Date.now();
+                }
             } catch (err) {
                 console.error("Failed to fetch realtime trains:", err);
             }
         };
 
+        // Initial fetch
         fetchRealtime();
-        const apiInterval = setInterval(fetchRealtime, 15000); 
 
-        // Persistent GeoJSON for ZERO ALLOCATION
-        const geojsonRef = {
-            type: "FeatureCollection" as const,
-            features: [] as any[]
+        // 10s interval as requested
+        const apiInterval = setInterval(fetchRealtime, 10000);
+
+        // Immediate refresh on focus/visible
+        const handleRefresh = () => fetchRealtime();
+        window.addEventListener('focus', handleRefresh);
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'visible') fetchRealtime();
         };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
 
-        let lastUpdateTime = 0;
+        // Animation logic 60fps
+        const geojsonRef: any = { type: "FeatureCollection", features: [] };
         let rafId: number;
 
-        const animate = (time: number) => {
+        const animate = () => {
             if (!map || !map.isStyleLoaded()) {
                 rafId = requestAnimationFrame(animate);
                 return;
             }
 
-            // High Throttling: 2fps (500ms) for mobile silence
-            if (time - lastUpdateTime < 500) {
-                rafId = requestAnimationFrame(animate);
-                return;
-            }
-            lastUpdateTime = time;
-
             const now = Date.now();
-            const source = map.getSource('train-source');
+            const source: any = map.getSource('train-source');
             if (!source) {
                 rafId = requestAnimationFrame(animate);
                 return;
             }
 
-            // Sync features array size
+            // Sync features array length
             if (geojsonRef.features.length !== trainsRef.current.length) {
                 geojsonRef.features = trainsRef.current.map(() => ({
                     type: "Feature",
@@ -145,31 +151,33 @@ export function useRealtimeTrains(map: any | null) {
                 }));
             }
 
+            const elapsedSinceApi = (now - lastApiUpdateRef.current) / 1000;
+
             trainsRef.current.forEach((t, i) => {
                 const line = SUBWAY_LINES.find(l => l.id === t.lineId);
-                if (!line) return;
+                if (!line || !line.stations) return;
 
-                const elapsed = (now - t.lastUpdate) / 1000;
-                let progress = t.status === 'RUNNING' ? t.progress + (elapsed * 0.005) : t.progress;
-                if (progress > 0.98) progress = 0.98;
-
+                // Move progress linearly between updates
+                // avg station gap ~120s
+                let currentProgress = t.progress;
+                if (t.status === 'RUNNING') {
+                    currentProgress += (elapsedSinceApi / 120);
+                }
+                
                 const currentStation = line.stations[t.stationIndex];
                 const nextStationIdx = t.stationIndex + t.direction;
                 const nextStation = line.stations[nextStationIdx] || currentStation;
-                const pos = interpolate(currentStation, nextStation, progress);
+                const pos = interpolate(currentStation, nextStation, currentProgress);
 
-                // MUTATE IN-PLACE - ZERO ALLOCATION
                 const feat = geojsonRef.features[i];
-                feat.geometry.coordinates[0] = pos.lng;
-                feat.geometry.coordinates[1] = pos.lat;
-                
-                // Only merge properties if they changed or on first load
-                Object.assign(feat.properties, t, {
-                    lineColor: line.color.toUpperCase(),
-                    lat: pos.lat,
-                    lng: pos.lng,
-                    type: "train"
-                });
+                if (feat) {
+                    feat.geometry.coordinates = [pos.lng, pos.lat];
+                    Object.assign(feat.properties, t, {
+                        lat: pos.lat,
+                        lng: pos.lng,
+                        type: "train"
+                    });
+                }
             });
 
             if (geojsonRef.features.length > 0) {
@@ -178,15 +186,15 @@ export function useRealtimeTrains(map: any | null) {
 
             rafId = requestAnimationFrame(animate);
         };
-
         rafId = requestAnimationFrame(animate);
 
         return () => {
             clearInterval(apiInterval);
             cancelAnimationFrame(rafId);
+            window.removeEventListener('focus', handleRefresh);
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
         };
     }, [map]);
 
-    return null; // Return nothing as we update the map directly
+    return null;
 }
-

@@ -61,6 +61,20 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
         }} 
       />
       <Layer 
+        id="bus-unclustered-hitbox" 
+        type="circle" 
+        filter={["!", ["has", "point_count"]]} 
+        paint={{ 
+          "circle-radius": [
+            "interpolate", ["linear"], ["zoom"],
+            12, 15,
+            14, 20,
+            16, 25
+          ], 
+          "circle-color": "transparent"
+        }} 
+      />
+      <Layer 
         id="bus-station-label"
         type="symbol"
         filter={["!", ["has", "point_count"]]}
