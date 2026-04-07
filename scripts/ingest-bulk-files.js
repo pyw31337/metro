@@ -2,119 +2,61 @@ const fs = require('fs');
 const path = require('path');
 const { safeSaveJson } = require('./lib/safe-data');
 
-/**
- * Bulk Ingestion Hub: Ingests nationwide data from CSV/JSON bulk files.
- * This script is the core of the 'File-First' architecture.
- */
+const CSV_PATH = path.resolve(process.cwd(), 'data', 'raw', 'nationwide-bus-stops-utf8.csv');
+const OUTPUT_PATH = path.resolve(process.cwd(), 'public', 'data', 'master-bus-stops.json');
 
-const DATA_DIR = path.resolve(process.cwd(), 'public', 'data');
-const RAW_DIR = path.resolve(process.cwd(), 'data', 'raw');
+async function processBusStops() {
+    console.log('📖 Reading nationwide-bus-stops-utf8.csv...');
+    if (!fs.existsSync(CSV_PATH)) {
+        console.error(`❌ File not found: ${CSV_PATH}`);
+        return;
+    }
 
-if (!fs.existsSync(RAW_DIR)) fs.mkdirSync(RAW_DIR, { recursive: true });
+    const content = fs.readFileSync(CSV_PATH, 'utf8');
+    const lines = content.split('\n');
+    const headers = lines[0].split(',');
+    
+    console.log(`📊 Processing ${lines.length - 1} records...`);
 
-/**
- * Normalizes CSV row into a structured object based on header mapping.
- */
-function parseCsv(content, mapping) {
-    const lines = content.split('\n').filter(line => line.trim());
-    if (lines.length < 2) return [];
+    // Column mapping (based on previous head -n 5 output)
+    // 0: 정류소번호 (stopId/nodeId)
+    // 1: 정류소명 (name)
+    // 2: 위도 (lat)
+    // 3: 경도 (lng)
+    // 6: 지자체코드 (cityCode)
+    // 7: 관할시군 (region)
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    const rows = lines.slice(1);
+    const busStops = [];
+    for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const columns = lines[i].split(',');
+        
+        if (columns.length < 7) continue;
 
-    return rows.map(row => {
-        const values = row.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
-        const obj = {};
-        for (const [key, csvHeader] of Object.entries(mapping)) {
-            const index = headers.indexOf(csvHeader);
-            if (index !== -1) {
-                obj[key] = values[index];
-            }
+        const stop = {
+            id: columns[0].trim(),
+            name: columns[1].trim(),
+            lat: parseFloat(columns[2]),
+            lng: parseFloat(columns[3]),
+            cityCode: columns[6].trim(),
+            region: columns[7].trim()
+        };
+
+        if (!isNaN(stop.lat) && !isNaN(stop.lng)) {
+            busStops.push(stop);
         }
-        return obj;
+
+        if (i % 10000 === 0) console.log(`   > ${i} records processed...`);
+    }
+
+    console.log(`✨ Processed ${busStops.length} valid bus stops.`);
+
+    // Save using safe-save utility
+    safeSaveJson(OUTPUT_PATH, busStops, {
+        merge: true,
+        uniqueKey: 'id',
+        force: true // Forced as we are migrating from API to File-First
     });
 }
 
-/**
- * 1. SEOUL METRO TRANSFER INFO
- * Source: 서울교통공사_서울 도시철도 환승정보
- */
-async function ingestTransfers() {
-    console.log('🔄 Ingesting Seoul Metro Transfer Info (CSV)...');
-    const csvPath = path.join(RAW_DIR, 'seoul-metro-transfers.csv');
-    if (!fs.existsSync(csvPath)) {
-        console.warn(`⚠️  Raw file ${csvPath} not found. Skipping.`);
-        return;
-    }
-
-    const content = fs.readFileSync(csvPath, 'utf8');
-    const mapping = {
-        stationName: 'STIN_NM',
-        fromLine: 'LN_NM',
-        toLine: 'CHTN_LN_CD',
-        platform: 'TRNSIT_POS',
-        fastCar: 'CAR_ORDR',
-        fastDoor: 'CAR_ETRC_NO'
-    };
-
-    const parsed = parseCsv(content, mapping);
-    if (parsed.length > 0) {
-        safeSaveJson(path.join(DATA_DIR, 'master-transfers.json'), parsed);
-    }
-}
-
-/**
- * 2. NATIONWIDE PUBLIC TOILETS
- * Source: 전국공중화장실표준데이터
- */
-async function ingestToilets() {
-    console.log('🚽 Ingesting Nationwide Public Toilets (CSV)...');
-    const csvPath = path.join(RAW_DIR, 'nationwide-toilets.csv');
-    if (!fs.existsSync(csvPath)) {
-        console.warn(`⚠️  Raw file ${csvPath} not found. Skipping.`);
-        return;
-    }
-
-    const content = fs.readFileSync(csvPath, 'utf8');
-    const mapping = {
-        name: '화장실명',
-        lat: '위도',
-        lng: '경도',
-        address: '소재지도로명주소',
-        accessible: '남녀공용화장실여부', // Needs better mapping for accessible
-        bell: '비상벨설치여부',
-        diaper: '기저귀교환대지점',
-        openTime: '개방시간명'
-    };
-
-    const parsed = parseCsv(content, mapping).map(t => ({
-        ...t,
-        lat: parseFloat(t.lat),
-        lng: parseFloat(t.lng),
-        accessible: t.accessible === 'Y',
-        emergencyBell: t.bell === 'Y',
-        diapers: t.diaper && t.diaper !== '없음'
-    })).filter(t => !isNaN(t.lat) && !isNaN(t.lng));
-
-    if (parsed.length > 0) {
-        safeSaveJson(path.join(DATA_DIR, 'master-toilets.json'), parsed);
-    }
-}
-
-// TODO: Add more bulk ingesters for Bus Stops and Facilities
-
-async function main() {
-    const args = process.argv.slice(2);
-    const type = args[0];
-
-    if (type === 'transfers') await ingestTransfers();
-    else if (type === 'toilets') await ingestToilets();
-    else {
-        await ingestTransfers();
-        await ingestToilets();
-    }
-
-    console.log('✅ Bulk ingestion complete.');
-}
-
-main().catch(console.error);
+processBusStops().catch(console.error);

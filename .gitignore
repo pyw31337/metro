@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# data
+/data/raw/
+/tmp/
+public/data/paths/bus-paths-*.json
+!public/data/paths/bus-paths-23.json
+!public/data/paths/bus-paths-11.json
+!public/data/paths/bus-paths-41.json

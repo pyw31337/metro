@@ -20,46 +20,64 @@ const STATIONS_FILE = path.join(DATA_DIR, 'master-route-stations.json');
 const PARTIAL_FILE = path.join(DATA_DIR, 'master-route-stations-partial.json');
 
 async function fetchWithRetry(url, retries = 3) {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const res = await fetch(url, { 
-                signal: AbortSignal.timeout(15000), 
-                headers: { 
-                    'Accept': 'application/json',
-                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-                } 
-            });
-            
-            if (res.status === 429) {
-                console.warn(`⚠️ Rate limited (429). Waiting 30s... (Attempt ${i+1}/${retries})`);
-                await new Promise(r => setTimeout(r, 30000));
-                continue;
-            }
-            if (res.status === 500) {
-                console.error(`❌ Server Error (500) for ${url}. Skipping.`);
-                return null; 
-            }
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const keys = [process.env.NEXT_PUBLIC_DATA_GO_KR_KEY, DATA_GO_KR_KEY_DECODED].filter(Boolean);
+    
+    for (const key of keys) {
+        // Try both encoded and literal for the key (some APIs want literal, some want encoded)
+        const keyVersions = [
+            key.startsWith('%') ? key : encodeURIComponent(key), 
+            key // Literal version
+        ];
 
-            const text = await res.text();
-            try {
-                const parsed = JSON.parse(text);
-                const resCode = parsed?.response?.header?.resultCode || parsed?.header?.resultCode;
-                if (resCode && resCode !== '00' && resCode !== '0') throw new Error(resCode);
-                return parsed;
-            } catch (e) {
-                if (text.includes('<resultCode>00</resultCode>')) return { _xml: true, _raw: text };
-                throw e;
+        for (const targetKey of Array.from(new Set(keyVersions))) {
+            const targetUrl = url.replace(/serviceKey=[^&]+/, `serviceKey=${targetKey}`);
+            
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const res = await fetch(targetUrl, { 
+                        signal: AbortSignal.timeout(20000), 
+                        headers: { 
+                            'Accept': 'application/json',
+                            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                        } 
+                    });
+                    
+                    if (res.status === 401 || res.status === 403) break; // Try next key/version
+                    if (res.status === 429) {
+                        console.warn(`⚠️ Rate limited (429). Waiting 30s... (Attempt ${i+1}/${retries})`);
+                        await new Promise(r => setTimeout(r, 30000));
+                        continue;
+                    }
+                    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+                    const text = await res.text();
+                    try {
+                        const parsed = JSON.parse(text);
+                        const resCode = parsed?.response?.header?.resultCode || parsed?.header?.resultCode || parsed?.comMsgHeader?.returnCode;
+                        
+                        // Handle standard "00" or "0" success codes
+                        if (resCode && resCode !== '00' && resCode !== '0') {
+                            // If it's an auth error, break to try next key
+                            if (resCode === '30' || resCode === '01' || text.includes('인증실패')) break;
+                            throw new Error(`API_${resCode}`);
+                        }
+                        return parsed;
+                    } catch (e) {
+                        if (text.includes('<resultCode>00</resultCode>')) return { _xml: true, _raw: text };
+                        throw e;
+                    }
+                } catch (e) {
+                    if (i === retries - 1 && targetKey === keyVersions[keyVersions.length-1] && key === keys[keys.length-1]) throw e;
+                    await new Promise(r => setTimeout(r, 1000 * (i + 1)));
+                }
             }
-        } catch (e) {
-            if (i === retries - 1) throw e;
-            await new Promise(r => setTimeout(r, 1000 * (i + 1)));
         }
     }
+    throw new Error('All authentication attempts failed');
 }
 
 async function fetchSeoulRouteStations(routeId) {
-    const url = `http://ws.bus.go.kr/api/rest/busRouteInfo/getStaionByRoute?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&busRouteId=${routeId}&resultType=json`;
+    const url = `http://ws.bus.go.kr/api/rest/busRouteInfo/getStaionByRoute?serviceKey=placeholder&busRouteId=${routeId}&resultType=json`;
 
 
     try {
@@ -80,7 +98,7 @@ async function fetchSeoulRouteStations(routeId) {
 
 
 async function fetchGyeonggiRouteStations(routeId) {
-    const url = `http://apis.data.go.kr/6410000/busrouteservice/v2/getBusRouteStationListv2?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&routeId=${routeId}&format=json`;
+    const url = `http://apis.data.go.kr/6410000/busrouteservice/v2/getBusRouteStationListv2?serviceKey=placeholder&routeId=${routeId}&format=json`;
     try {
         const json = await fetchWithRetry(url);
         const items = json?.response?.msgBody?.busRouteStationList || [];
@@ -119,7 +137,19 @@ async function main() {
     const limitArg = args.find(a => a.startsWith('--limit='))?.split('=')[1];
     const limit = limitArg ? parseInt(limitArg) : 100000;
 
-    const remaining = routes.filter(r => !mapping[r.id] && (!cityFilter || r.cityCode === cityFilter)).slice(0, limit);
+    const priorities = ['11', '23', '31', '41'];
+    const remaining = routes
+        .filter(r => !mapping[r.id] && (!cityFilter || r.cityCode === cityFilter))
+        .sort((a, b) => {
+            const aP = priorities.indexOf(String(a.cityCode));
+            const bP = priorities.indexOf(String(b.cityCode));
+            if (aP !== -1 && bP !== -1) return aP - bP;
+            if (aP !== -1) return -1;
+            if (bP !== -1) return 1;
+            return 0;
+        })
+        .slice(0, limit);
+    
     console.log(`📊 Total: ${routes.length} routes. Filtered/Remaining: ${remaining.length}`);
 
 
@@ -141,7 +171,7 @@ async function main() {
 
 
                 if (!rows) {
-                    const url = `http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?serviceKey=${encodeURIComponent(DATA_GO_KR_KEY_DECODED)}&_type=json&cityCode=${route.cityCode}&routeId=${route.id}&numOfRows=400`;
+                    const url = `http://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteAcctoThrghSttnList?serviceKey=placeholder&_type=json&cityCode=${route.cityCode}&routeId=${route.id}&numOfRows=400`;
                     const json = await fetchWithRetry(url);
                     const items = json?.response?.body?.items?.item || [];
                     const tagoRows = Array.isArray(items) ? items : items ? [items] : [];
