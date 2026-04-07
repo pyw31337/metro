@@ -57,8 +57,10 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         }
     }
 
+    const cleanUrl = decodeURI(targetUrl);
     const proxies = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(cleanUrl)}`
     ];
 
     for (const proxy of proxies) {

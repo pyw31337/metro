@@ -21,24 +21,31 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
     }
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) {
-            console.debug(`[API Warning] ${url}: ${response.status}`);
-            return null;
-        }
-        
-        const contentType = response.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-            console.debug(`[API Warning] ${url}: Expected JSON but got ${contentType}`);
-            return null;
+        let data: T | null = null;
+
+        // Use fetchWithFallbacks in browser to handle CORS via proxy
+        if (typeof window !== 'undefined') {
+            const { fetchWithFallbacks } = await import('@/services/arrivalApi');
+            data = await fetchWithFallbacks(url);
+        } else {
+            const response = await fetch(url);
+            if (!response.ok) {
+                console.debug(`[API Warning] ${url}: ${response.status}`);
+                return null;
+            }
+            const contentType = response.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.debug(`[API Warning] ${url}: Expected JSON but got ${contentType}`);
+                return null;
+            }
+            data = await response.json();
         }
 
-        const data = await response.json();
-        if (!data || Object.keys(data).length === 0) {
+        if (!data || Object.keys(data as any).length === 0) {
             console.debug(`[API Empty Response] ${url}`);
         }
         cache.set(url, { data, timestamp: now });
-        return data;
+        return data as T;
     } catch (error: any) {
         console.debug(`[API Silenced Failure] ${url}: ${error?.message || error}`);
         return null;
