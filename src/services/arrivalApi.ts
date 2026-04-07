@@ -53,18 +53,21 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         if (directRes.ok) return await directRes.json();
     } catch (e) {}
 
-    // 2. Proxy Fetch (with better encoding and wrapper handling)
+    // 2. Proxy Fetch (with cache-busting and multiple fallbacks)
     const cleanUrl = decodeURIComponent(decodeURI(targetUrl));
     const encodedUrl = encodeURIComponent(cleanUrl);
+    const ts = Date.now();
 
     const proxyUrls = [
-        `https://api.allorigins.win/get?url=${encodedUrl}`,
-        `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`
+        `https://api.allorigins.win/get?url=${encodedUrl}&_t=${ts}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`,
+        `https://thingproxy.freeboard.io/fetch/${cleanUrl}`
     ];
 
     for (const url of proxyUrls) {
         try {
-            const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            console.log(`[Proxy Attempt] Trying ${url.substring(0, 50)}...`);
+            const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
             if (!res.ok) continue;
 
             const text = await res.text();
@@ -72,12 +75,13 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
 
             if (url.includes('allorigins')) {
                 const wrapper = JSON.parse(text);
-                data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
+                data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents.trim()) : wrapper.contents;
             } else {
-                data = JSON.parse(text);
+                data = JSON.parse(text.trim());
             }
 
             if (data && !data?.RESULT?.CODE?.includes("ERROR-500")) {
+                console.log(`[Proxy Success] Data received from ${url.substring(0, 30)}`);
                 return data;
             }
         } catch (e) {
