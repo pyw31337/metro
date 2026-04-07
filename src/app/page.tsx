@@ -51,6 +51,7 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState<ActiveTab>("subway");
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [isLocating, setIsLocating] = useState(false);
+    const [hasInitialLocation, setHasInitialLocation] = useState(false);
     const [locatingTimer, setLocatingTimer] = useState(5);
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
     const [activeBusStop, setActiveBusStop] = useState<BusStop | null>(null);
@@ -114,14 +115,18 @@ export default function Home() {
         let timerInterval: NodeJS.Timeout;
 
         const updateLocation = () => {
-            setIsLocating(true);
-            setLocatingTimer(10);
+            if (!hasInitialLocation) {
+                setIsLocating(true);
+                setLocatingTimer(10);
+            }
             
-            // Start countdown timer for UI
-            if (timerInterval) clearInterval(timerInterval);
-            timerInterval = setInterval(() => {
-                setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
-            }, 1000);
+            // Start countdown timer for UI if needed
+            if (!hasInitialLocation) {
+                if (timerInterval) clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
+                }, 1000);
+            }
 
             navigator.geolocation.getCurrentPosition(async (pos) => {
                 const { latitude, longitude } = pos.coords;
@@ -139,6 +144,12 @@ export default function Home() {
                     }
                     return prev;
                 });
+
+                if (!hasInitialLocation) {
+                    setHasInitialLocation(true);
+                    setIsLocating(false);
+                    if (timerInterval) clearInterval(timerInterval);
+                }
             }, (err) => {
                 console.error("Geolocation error:", err);
                 setIsLocating(false);
@@ -161,14 +172,14 @@ export default function Home() {
 
     // Automatically follow user location
     useEffect(() => {
-        if (userLocation && mapRef.current) {
+        if (userLocation && mapRef.current && !hasInitialLocation) {
             mapRef.current?.flyTo({ 
                 center: [userLocation[1], userLocation[0]], 
                 zoom: 15, 
                 duration: 2000 
             });
         }
-    }, [userLocation]);
+    }, [userLocation, hasInitialLocation]);
 
     useEffect(() => {
         if (validationError === "no_route") {

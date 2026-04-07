@@ -24,7 +24,7 @@ export interface Train {
     progress: number;
 }
 
-interface RealtimePosition {
+export interface RealtimePosition {
     subwayId: string;
     subwayNm: string;
     statnNm: string; 

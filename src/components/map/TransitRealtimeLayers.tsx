@@ -32,6 +32,7 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
           type: unit.type,
           label: unit.label,
           lineName: unit.lineName,
+          lineColor: unit.lineColor,
           bearing: unit.bearing
         }
       }));
@@ -64,7 +65,7 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
         type="symbol"
         filter={["==", ["get", "type"], "subway"]}
         layout={{
-          "icon-image": "train-card-3B82F6", // Default blue if line color mapping not immediate
+          "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
           "icon-size": [
             "interpolate", ["linear"], ["zoom"],
             10, 0.12,

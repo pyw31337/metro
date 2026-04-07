@@ -3,6 +3,9 @@ import { fetchTrainPositions } from './arrivalApi';
 import { MetropolitanBusService } from './busApi';
 import { db } from './db';
 
+import { SUBWAY_LINES } from '@/data/subway-lines';
+import { RealtimePosition } from '@/hooks/useRealtimeTrains';
+
 export interface RealtimeUnit {
   id: string;
   type: 'bus' | 'subway';
@@ -10,9 +13,10 @@ export interface RealtimeUnit {
   bearing: number;
   label: string;
   lineName: string;
+  lineColor: string;
 }
 
-const SUBWAY_LINES = [
+const SUBWAY_POLLING_NAMES = [
   '1호선', '2호선', '3호선', '4호선', '5호선', '6호선', '7호선', '8호선', '9호선', 
   '경의중앙선', '공항철도', '수인분당선', '신분당선', '경춘선', '신림선', '우이신설선'
 ];
@@ -56,14 +60,18 @@ class TransitRealtimeService extends EventEmitter {
   }
 
   private async getStationCoord(name: string): Promise<[number, number] | null> {
-    if (this.stationCoordsCache.has(name)) {
-      return this.stationCoordsCache.get(name)!;
-    }
-    const station = await db.getStationByName(name);
-    if (station && station.lng && station.lat) {
-      const coord: [number, number] = [station.lng, station.lat];
-      this.stationCoordsCache.set(name, coord);
-      return coord;
+    const variants = [name, name + '역', name.replace(/역$/, '')];
+    
+    for (const variant of variants) {
+        if (this.stationCoordsCache.has(variant)) {
+            return this.stationCoordsCache.get(variant)!;
+        }
+        const station = await db.getStationByName(variant);
+        if (station && station.lng && station.lat) {
+            const coord: [number, number] = [station.lng, station.lat];
+            this.stationCoordsCache.set(variant, coord);
+            return coord;
+        }
     }
     return null;
   }
@@ -88,17 +96,23 @@ class TransitRealtimeService extends EventEmitter {
 
     try {
       // 1. Subway Polling
-      const trainPromises = SUBWAY_LINES.map(line => fetchTrainPositions(line));
+      const trainPromises = SUBWAY_POLLING_NAMES.map(line => fetchTrainPositions(line));
       const trainResults = await Promise.all(trainPromises);
       
       const subwayUnits = await Promise.all(trainResults.flat().map(async train => {
         const coord = await this.getStationCoord(train.statnNm);
         if (!coord) return null;
+
+        // Find correct color from static data
+        const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm);
+        const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
+
         return {
           id: `train-${train.subwayId}-${train.trainNo}`,
           type: 'subway' as const,
           nextPos: coord,
           lineName: train.subwayNm,
+          lineColor: lineColor,
           label: `${train.trainNo}\n${train.arrivalNm}`,
         };
       }));
@@ -116,6 +130,7 @@ class TransitRealtimeService extends EventEmitter {
           type: 'bus' as const,
           nextPos: [pos.lng, pos.lat] as [number, number],
           lineName: routeInfo?.no || routeId,
+          lineColor: "3b82f6", // Default blue for buses
           label: pos.no || routeInfo?.no || "BUS",
         }));
       });
