@@ -53,7 +53,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         if (directRes.ok) return await directRes.json();
     } catch (e) {}
 
-    // 2. Proxy Fetch (with aggressive cache-busting and 4x fallbacks)
+    // 2. Parallel Proxy Fetch (First success wins)
     const salt = Math.random().toString(36).substring(7);
     const targetWithSalt = targetUrl.includes('?') ? `${targetUrl}&_s=${salt}` : `${targetUrl}?_s=${salt}`;
     const cleanUrl = decodeURIComponent(decodeURI(targetWithSalt));
@@ -62,36 +62,45 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
 
     const proxyUrls = [
         `https://api.allorigins.win/get?url=${encodedUrl}&_t=${ts}`,
-        `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`,
-        `https://thingproxy.freeboard.io/fetch/${cleanUrl}`,
-        `https://corsproxy.io/?${encodedUrl}`
+        `https://api.codetabs.com/v1/proxy/?quest=${encodedUrl}`,
+        `https://corsproxy.io/?${encodedUrl}`,
+        `https://thingproxy.freeboard.io/fetch/${cleanUrl}`
     ];
 
-    for (const url of proxyUrls) {
-        try {
-            console.log(`[Proxy Attempt] Trying ${url.substring(0, 50)}...`);
-            const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
-            if (!res.ok) continue;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+    try {
+        const fetchFromProxy = async (proxyUrl: string) => {
+            const res = await fetch(proxyUrl, { signal: controller.signal });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
             const text = await res.text();
             let data: any;
 
-            if (url.includes('allorigins')) {
+            if (proxyUrl.includes('allorigins')) {
                 const wrapper = JSON.parse(text);
                 data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents.trim()) : wrapper.contents;
             } else {
                 data = JSON.parse(text.trim());
             }
 
-            if (data && !data?.RESULT?.CODE?.includes("ERROR-500")) {
-                console.log(`[Proxy Success] Data received from ${url.substring(0, 30)}`);
-                return data;
+            // Validate that we actually got something useful
+            if (!data || data?.RESULT?.CODE?.includes("ERROR-500")) {
+                throw new Error("Invalid or error response from proxy");
             }
-        } catch (e) {
-            console.warn(`[Proxy Error] ${url}:`, e);
-        }
+            
+            return data;
+        };
+
+        const result = await Promise.any(proxyUrls.map(url => fetchFromProxy(url)));
+        clearTimeout(timeoutId);
+        return result;
+    } catch (e) {
+        clearTimeout(timeoutId);
+        console.error("[Parallel Proxy Failure]", e);
+        throw new Error(`모든 프록시 요청이 최종 실패했습니다.`);
     }
-    throw new Error(`모든 요청(직접/프록시)이 실패했습니다: ${targetUrl}`);
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
