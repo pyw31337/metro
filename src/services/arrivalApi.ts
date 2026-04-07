@@ -47,34 +47,44 @@ export const parseSeoulDate = (dateStr: string): number => {
 };
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
-    const isHttps = typeof window !== 'undefined' && window.location.protocol === 'https:';
-    if (!isHttps) {
-        try {
-            const res = await fetch(targetUrl, { signal: AbortSignal.timeout(3000) });
-            if (res.ok) return await res.json();
-        } catch (e) {
-            // Silently try proxies
-        }
-    }
+    // 1. Direct Fetch (Check if server allows CORS)
+    try {
+        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(3000) });
+        if (directRes.ok) return await directRes.json();
+    } catch (e) {}
 
-    const cleanUrl = decodeURIComponent(targetUrl);
-    const proxies = [
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(cleanUrl)}`,
-        `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(cleanUrl)}`
+    // 2. Proxy Fetch (with better encoding and wrapper handling)
+    const cleanUrl = decodeURIComponent(decodeURI(targetUrl));
+    const encodedUrl = encodeURIComponent(cleanUrl);
+
+    const proxyUrls = [
+        `https://api.allorigins.win/get?url=${encodedUrl}`,
+        `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`
     ];
 
-    for (const proxy of proxies) {
+    for (const url of proxyUrls) {
         try {
-            const res = await fetch(proxy, { signal: AbortSignal.timeout(3000) });
-            if (res.ok) {
-                const json = await res.json();
-                if (!json?.RESULT?.CODE?.includes("ERROR-500")) return json;
+            const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            if (!res.ok) continue;
+
+            const text = await res.text();
+            let data: any;
+
+            if (url.includes('allorigins')) {
+                const wrapper = JSON.parse(text);
+                data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
+            } else {
+                data = JSON.parse(text);
+            }
+
+            if (data && !data?.RESULT?.CODE?.includes("ERROR-500")) {
+                return data;
             }
         } catch (e) {
-            // Silently try next proxy
+            console.warn(`[Proxy Error] ${url}:`, e);
         }
     }
-    throw new Error(`All fetch attempts failed for ${targetUrl}`);
+    throw new Error(`모든 요청(직접/프록시)이 실패했습니다: ${targetUrl}`);
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
