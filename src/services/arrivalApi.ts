@@ -47,84 +47,62 @@ export const parseSeoulDate = (dateStr: string): number => {
 };
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
-    // 1. Direct Fetch (Check if server allows CORS)
+    // 1. Direct Fetch
     try {
-        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(2000) });
+        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(1500) });
         if (directRes.ok) return await directRes.json();
     } catch (e) {}
 
-    // 2. Parallel Fetch (JSONP + Multiple Proxies)
+    // 2. Competitive Parallel Proxy Fetch
     const salt = Math.random().toString(36).substring(7);
     const targetWithSalt = targetUrl.includes('?') ? `${targetUrl}&_s=${salt}` : `${targetUrl}?_s=${salt}`;
     const cleanUrl = decodeURIComponent(decodeURI(targetWithSalt));
     const encodedUrl = encodeURIComponent(cleanUrl);
-    const ts = Date.now();
-
-    const fetchFromJSONP = (url: string): Promise<any> => {
-        return new Promise((resolve, reject) => {
-            const callbackName = `jsonp_${Math.random().toString(36).substring(7)}`;
-            const script = document.createElement('script');
-            script.src = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}&callback=${callbackName}&_t=${Date.now()}`;
-            
-            (window as any)[callbackName] = (data: any) => {
-                delete (window as any)[callbackName];
-                document.body.removeChild(script);
-                try {
-                    const parsed = typeof data.contents === 'string' ? JSON.parse(data.contents) : data.contents;
-                    resolve(parsed);
-                } catch (e) {
-                    reject(e);
-                }
-            };
-
-            script.onerror = () => {
-                delete (window as any)[callbackName];
-                document.body.removeChild(script);
-                reject(new Error("JSONP Load Error"));
-            };
-            
-            document.body.appendChild(script);
-            setTimeout(() => {
-                if ((window as any)[callbackName]) {
-                    delete (window as any)[callbackName];
-                    if (script.parentNode) document.body.removeChild(script);
-                    reject(new Error("JSONP Timeout"));
-                }
-            }, 10000);
-        });
-    };
-
-    const fetchFromProxy = async (proxyUrl: string) => {
-        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        let data: any;
-        if (proxyUrl.includes('allorigins')) {
-            const wrapper = JSON.parse(text);
-            data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents.trim()) : wrapper.contents;
-        } else {
-            data = JSON.parse(text.trim());
-        }
-        if (!data || data?.RESULT?.CODE?.includes("ERROR-500")) throw new Error("Invalid response");
-        return data;
-    };
 
     const proxyUrls = [
+        `https://api.allorigins.win/get?url=${encodedUrl}&_t=${Date.now()}`,
+        `https://cors-proxy.htmldriven.com/?url=${encodedUrl}`,
         `https://api.codetabs.com/v1/proxy/?quest=${encodedUrl}`,
         `https://corsproxy.io/?${encodedUrl}`
     ];
 
+    const fetchFromProxy = async (proxyUrl: string) => {
+        const timeout = proxyUrl.includes('allorigins') ? 12000 : 8000;
+        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(timeout) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const text = (await res.text()).trim();
+        
+        let data: any;
+        if (proxyUrl.includes('allorigins')) {
+            const wrapper = JSON.parse(text);
+            data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
+        } else {
+            data = JSON.parse(text);
+        }
+
+        if (data?.realtimeSubwayPositionList || data?.realtimeArrivalList || data?.RESULT?.CODE === "INFO-000") {
+            console.log(`[Proxy Success] ${proxyUrl.substring(0, 30)}`);
+            return data;
+        }
+        throw new Error("Invalid data format");
+    };
+
     try {
-        // Run JSONP and proxies together
-        const result = await Promise.any([
-            fetchFromJSONP(cleanUrl),
-            ...proxyUrls.map(url => fetchFromProxy(url))
-        ]);
-        return result;
+        return await Promise.any(proxyUrls.map(url => fetchFromProxy(url)));
     } catch (e) {
-        console.error("[Fetch Fail]", e);
-        throw new Error(`모든 우회 수단(JSONP/Proxy)이 실패했습니다.`);
+        throw new Error(`All proxies failed for ${targetUrl}`);
     }
+};
+
+/**
+ * Fallback: Get train positions by analyzing station arrival data
+ * Useful when the main position API is blocked.
+ */
+export const getSubwayPositionsFromArrivals = async (lineName: string): Promise<TrainPosition[]> => {
+    // This is a high-level fallback that could be implemented to poll 
+    // key stations and estimate train positions. 
+    // For now, we focus on making the primary API work.
+    return [];
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
