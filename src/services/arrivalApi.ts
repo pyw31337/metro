@@ -53,15 +53,18 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
         if (directRes.ok) return await directRes.json();
     } catch (e) {}
 
-    // 2. Proxy Fetch (with cache-busting and multiple fallbacks)
-    const cleanUrl = decodeURIComponent(decodeURI(targetUrl));
+    // 2. Proxy Fetch (with aggressive cache-busting and 4x fallbacks)
+    const salt = Math.random().toString(36).substring(7);
+    const targetWithSalt = targetUrl.includes('?') ? `${targetUrl}&_s=${salt}` : `${targetUrl}?_s=${salt}`;
+    const cleanUrl = decodeURIComponent(decodeURI(targetWithSalt));
     const encodedUrl = encodeURIComponent(cleanUrl);
     const ts = Date.now();
 
     const proxyUrls = [
         `https://api.allorigins.win/get?url=${encodedUrl}&_t=${ts}`,
         `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`,
-        `https://thingproxy.freeboard.io/fetch/${cleanUrl}`
+        `https://thingproxy.freeboard.io/fetch/${cleanUrl}`,
+        `https://corsproxy.io/?${encodedUrl}`
     ];
 
     for (const url of proxyUrls) {
