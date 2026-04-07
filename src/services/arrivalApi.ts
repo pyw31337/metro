@@ -417,11 +417,31 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
 };
 
 export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
+    // 🛡️ API Key Fallback Logic (User provided approved keys)
+    const USER_APPROVED_KEYS = [
+        "454c774156707977313774514e5764", 
+        "634179436a7079773730786f4d5445",
+        "7a634444557079773735624765796d"
+    ];
+    
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = "sample";
-    const url = API_ENDPOINTS.SUBWAY_POSITION(apiKey, lineName);
+    if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
+
+    const tryFetchWithKeys = async () => {
+        const keysToTry = [apiKey, ...USER_APPROVED_KEYS, "sample"];
+        for (const key of keysToTry) {
+            if (!key) continue;
+            const url = API_ENDPOINTS.SUBWAY_POSITION(key, lineName);
+            try {
+                const json = await fetchWithFallbacks(url);
+                if (json?.realtimeSubwayPositionList) return json;
+            } catch (e) {}
+        }
+        return null;
+    };
+
     try {
-        const json = await fetchWithFallbacks(url);
+        const json = await tryFetchWithKeys();
         return (json?.realtimeSubwayPositionList || []).map((item: any) => ({
             subwayId: item.subwayId,
             subwayNm: item.subwayNm,
