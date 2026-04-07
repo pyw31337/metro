@@ -8,7 +8,6 @@ import { SUBWAY_LINES, Station as SubwayStation } from "@/data/subway-lines";
 import { ActiveTab, BusStop, Station, WCItem, PathResult, WCFilters, StationArrival } from "@/types/metro";
 import { fetchStationArrivals } from "@/services/arrivalApi";
 import { useDataWorker } from "@/hooks/useDataWorker";
-import { useRealtimeTrains } from "@/hooks/useRealtimeTrains";
 import { findBusPath, BusPathResult } from "@/utils/busRouting";
 import { normalizeStationName } from "@/utils/stationUtils";
 import { db } from "@/services/db";
@@ -35,7 +34,6 @@ type PathStrategy = "time" | "transfer";
 
 export default function Home() {
     const { findPath, findNearestStation, sortWCs } = useDataWorker();
-
     
     const [pathResults, setPathResults] = useState<Record<string, PathResult> | null>(null);
     const [selectedStrategy, setSelectedStrategy] = useState<PathStrategy>("time");

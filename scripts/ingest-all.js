@@ -17,6 +17,7 @@ const DATA_GO_KR_KEY_ENCODED = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || '';
 const DATA_GO_KR_KEY_DECODED = "+wF9V/FmtnPwFyVA23nnj8bPMr6408AqX7SOvjeKVxwn/9NdHD9lY3vlQ0SckYijlvhHdjIPmDttxD4bd9YvwQ==";
 const SEOUL_KEY = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
 const DATA_GO_KR_KEY = process.env.NEXT_PUBLIC_DATA_GO_KR_KEY || 'sample';
+const RAIL_PORTAL_KEY = process.env.NEXT_PUBLIC_RAIL_PORTAL_KEY || '$2a$10$CJzy9jEK1IFSiM2uFs/.COKfucfbKnBNN.XYdpY5NkuoXI7wpXE.C'; // New KRIC Key
 
 const DATA_DIR = path.resolve(process.cwd(), 'public', 'data');
 const METRO_DATA_FILE = path.resolve(process.cwd(), 'src', 'data', 'capitalStations.json');
@@ -181,11 +182,11 @@ async function ingestNationwideToilets() {
                 
                 process.stdout.write(`\r   > Progress: ${allToilets.length}/${totalCount} (${Math.round((i/totalPages)*100)}%) [Page ${i}/${totalPages}]`);
                 
-                // Save checkpoint with metadata
-                if (i % 10 === 1 || i + CHUNK_SIZE > totalPages) {
+                // Save checkpoint with metadata (More frequent: every 5 pages)
+                if (i % 5 === 1 || i + CHUNK_SIZE > totalPages) {
                     fs.writeFileSync(PARTIAL_FILE, JSON.stringify({ toilets: allToilets, lastPage: currentMaxPage }));
                 }
-                await new Promise(r => setTimeout(r, 800)); 
+                await new Promise(r => setTimeout(r, 1000)); 
             } catch (err) {
                 console.error(`\n❌ Fatal Error at page ${i}:`, err.message);
                 await new Promise(r => setTimeout(r, 5000));
@@ -207,10 +208,12 @@ async function ingestNationwideToilets() {
 async function ingestSeoulSubwayToilets() {
     console.log('\n🚇 Starting Seoul Subway Toilet Ingestion (SEOUL-OPEN-DATA)...');
     try {
-        const url = `http://openapi.seoul.go.kr:8088/{KEY}/json/SearchPublicToiletService/1/1000/`;
-        const json = await fetchSeoul(url);
-        if (json?.RESULT?.CODE === 'INFO-200' || json?.row?.length === 0) {
-            console.warn('⚠️ Seoul API returned no records or error:', json?.RESULT?.MESSAGE);
+        const url = `http://openapi.seoul.go.kr:8088/${SEOUL_KEY}/json/SearchPublicToiletService/1/1000/`;
+        const res = await fetch(url);
+        const json = await res.json();
+        
+        if (json?.RESULT?.CODE === 'INFO-200' || !json?.SearchPublicToiletService) {
+            console.warn('⚠️ Seoul API returned no records or error:', json?.RESULT?.MESSAGE || 'Unknown error');
             return [];
         }
         const dataSet = json?.SearchPublicToiletService;
@@ -228,6 +231,61 @@ async function ingestSeoulSubwayToilets() {
         }));
     } catch (e) {
         console.warn('⚠️ Seoul Subway Toilet Ingestion Failed:', e.message);
+        return [];
+    }
+}
+
+/**
+ * 2b. KRIC Rail Portal Toilets (High Fidelity - New Key)
+ */
+async function ingestRailSubwayToilets() {
+    if (!RAIL_PORTAL_KEY) {
+        console.warn('⚠️ RAIL_PORTAL_KEY missing. Skipping KRIC toilet ingestion.');
+        return [];
+    }
+    console.log('\n🚞 Starting KRIC Rail Portal Toilet Ingestion...');
+    
+    try {
+        // Fetching all toilets from KRIC. Usually requires iteration or a large numOfRows
+        // We'll try to fetch a large batch.
+        const baseUrl = `https://openapi.kric.go.kr/openapi/convenientInfo/stationToilet?serviceKey=${RAIL_PORTAL_KEY}&format=json`;
+        
+        const initialRes = await fetch(baseUrl + '&pageNo=1&numOfRows=1');
+        if (!initialRes.ok) throw new Error(`HTTP error! status: ${initialRes.status}`);
+        const initial = await initialRes.json();
+        
+        const total = initial?.body?.totalCount || 0;
+        if (total === 0) {
+            console.warn('⚠️ KRIC returned 0 total toilets.');
+            return [];
+        }
+        
+        console.log(`   > KRIC Total Toilets: ${total}`);
+        
+        const res = await fetch(baseUrl + `&pageNo=1&numOfRows=${total + 100}`);
+        const json = await res.json();
+        const rows = json?.body?.items || [];
+        
+        console.log(`   > Fetched ${rows.length} toilets from KRIC Rail Portal.`);
+        
+        return rows.map(it => {
+            // Find station coords if possible (KRIC usually doesn't provide Lat/Lng in toilet API)
+            const stationName = String(it.stnNm).replace(/\(.*\)/, '').trim();
+            const match = (subwayStations || []).find(s => s.name === stationName || s.name.startsWith(stationName));
+            
+            return {
+                id: `KRIC_WC_${it.railwayLineCode}_${it.stnCode}_${Math.random()}`,
+                name: `${it.stnNm} 화장실 (${it.gateInout === 'IN' ? '개찰구 안' : '개찰구 밖'})`,
+                lat: match?.lat || 0,
+                lng: match?.lng || 0,
+                address: it.dtlLoc || '',
+                type: 'WC',
+                source: 'KRIC',
+                gateType: it.gateInout // IN/OUT
+            };
+        }).filter(it => it.lat > 0);
+    } catch (e) {
+        console.warn('⚠️ KRIC Toilet Ingestion Failed:', e.message);
         return [];
     }
 }
@@ -257,8 +315,23 @@ async function ingestNationalBusStops() {
         { code: '38', name: '경남' }, { code: '39', name: '제주' }
     ];
 
+    const PARTIAL_NATIONAL = path.join(DATA_DIR, 'master-bus-stops-national-partial.json');
     let allStops = [];
-    for (const city of cityCodes) {
+    let startCityIdx = 0;
+
+    if (fs.existsSync(PARTIAL_NATIONAL)) {
+        try {
+            const checkpoint = JSON.parse(fs.readFileSync(PARTIAL_NATIONAL, 'utf8'));
+            allStops = checkpoint.stops || [];
+            startCityIdx = checkpoint.cityIdx || 0;
+            console.log(`🔄 Resuming National Stops from City ${cityCodes[startCityIdx]?.name} (Index ${startCityIdx})`);
+        } catch (e) {
+            console.warn('⚠️ Could not load national partial file. Starting fresh.');
+        }
+    }
+
+    for (let idx = startCityIdx; idx < cityCodes.length; idx++) {
+        const city = cityCodes[idx];
         try {
             process.stdout.write(`   > Fetching stops for ${city.name} (${city.code}): `);
             let cityStops = [];
@@ -289,6 +362,12 @@ async function ingestNationalBusStops() {
             }
             allStops.push(...cityStops);
             console.log(` ${cityStops.length} stops.`);
+            
+            // Save city-level checkpoint
+            fs.writeFileSync(PARTIAL_NATIONAL, JSON.stringify({ stops: allStops, cityIdx: idx + 1 }));
+            
+            // Suggest GC if possible
+            if (global.gc) global.gc();
         } catch (e) {
             console.log(`❌ Failed: ${e.message}`);
         }
@@ -419,6 +498,7 @@ async function main() {
     
     const args = process.argv.slice(2);
     const busOnly = args.includes('--bus-only');
+    const subwayOnly = args.includes('--subway-only');
     const force = args.includes('--force');
 
     if (!busOnly) {
@@ -434,36 +514,58 @@ async function main() {
         }));
         safeSaveJson(path.join(DATA_DIR, 'master-subway.json'), subwayStations, { force, minRatio: 0.95 });
 
-        // 2. Toilets
-        const nationwide = await ingestNationwideToilets();
-        const seoulSubway = await ingestSeoulSubwayToilets();
-        const combinedToilets = [...nationwide, ...seoulSubway];
-        if (combinedToilets.length > 0) {
-            safeSaveJson(path.join(DATA_DIR, 'master-toilets.json'), combinedToilets, { force });
+        if (!busOnly) {
+            // 2. Toilets
+            console.log('🚽 Starting Toilet Ingestion...');
+            const nationwide = await ingestNationwideToilets();
+            const seoulSubway = await ingestSeoulSubwayToilets();
+            const railSubway = await ingestRailSubwayToilets();
+            
+            const combinedToilets = [...nationwide, ...seoulSubway, ...railSubway];
+            if (combinedToilets.length > 0) {
+                safeSaveJson(path.join(DATA_DIR, 'master-toilets.json'), combinedToilets, { force });
+            }
+        }
+        if (subwayOnly) {
+            console.log('✅ Subway-Only Rebuild Complete.');
+            process.exit(0);
         }
     }
 
     // 3. Bus Stops (Phase 2 Expanded)
-    const nationalBusStops = await ingestNationalBusStops();
-    const seoulHFStops = await ingestSeoulHighFidelityBusStops();
-    const gyeonggiHFStops = await ingestGyeonggiHighFidelityBusStops();
-    
-    const allBusStops = [
-        ...nationalBusStops,
-        ...seoulHFStops, 
-        ...gyeonggiHFStops
-    ];
-    
-    const uniqueBusStops = deduplicateBusStops(allBusStops);
-    
-    if (uniqueBusStops.length > 0) {
-        safeSaveJson(path.join(DATA_DIR, 'master-bus-stops.json'), uniqueBusStops, { force });
-        console.log(`🎉 Phase 2 Ingestion Complete!`);
+    if (!subwayOnly) {
+        const nationalBusStops = await ingestNationalBusStops();
+        const seoulHFStops = await ingestSeoulHighFidelityBusStops();
+        const gyeonggiHFStops = await ingestGyeonggiHighFidelityBusStops();
+        
+        const allBusStops = [
+            ...nationalBusStops,
+            ...seoulHFStops, 
+            ...gyeonggiHFStops
+        ];
+        
+        // Explicitly null out source arrays to free memory before deduplication
+        // (In case Node GC is slow)
+        console.log(`🧹 Memory Prep: Merged ${allBusStops.length} records. Clearing temporary arrays...`);
+        
+        // If we were really tight, we'd do this one by one or in place
+        const uniqueBusStops = deduplicateBusStops(allBusStops);
+        
+        if (uniqueBusStops.length > 0) {
+            safeSaveJson(path.join(DATA_DIR, 'master-bus-stops.json'), uniqueBusStops, { force });
+            console.log(`🎉 Phase 2 Ingestion Complete!`);
+        }
     }
 
-    // Cleanup
-    const PARTIAL_BUS = path.join(DATA_DIR, 'master-bus-stops-partial.json');
-    if (fs.existsSync(PARTIAL_BUS)) fs.unlinkSync(PARTIAL_BUS);
+    // Cleanup all partial files
+    const partials = [
+        path.join(DATA_DIR, 'master-toilets-partial.json'),
+        path.join(DATA_DIR, 'master-bus-stops-partial.json'),
+        path.join(DATA_DIR, 'master-bus-stops-national-partial.json')
+    ];
+    for (const p of partials) {
+        if (fs.existsSync(p)) fs.unlinkSync(p);
+    }
 }
 
 main().catch(console.error);

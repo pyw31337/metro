@@ -93,8 +93,10 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
             SUBWAY_LINES.forEach((line: any) => { if (line.color) uniqueColors.add(line.color.toUpperCase()); });
             stations.forEach(s => { if (s.lineColors) s.lineColors.forEach((c: string) => uniqueColors.add(c.toUpperCase())); });
 
-            uniqueColors.forEach(color => {
-                const id = `train-card-${color}`;
+            uniqueColors.forEach(c => {
+                const color = c.startsWith('#') ? c : `#${c}`;
+                const cleanColor = c.replace('#', '').toUpperCase();
+                const id = `train-card-${cleanColor}`;
                 if (map.hasImage(id)) return;
                 const canvas = document.createElement('canvas');
                 canvas.width = 128; canvas.height = 128;
@@ -157,10 +159,15 @@ function MapLibreBackground(props: MapLibreProps) {
     useUserLocation(mapInstance);
 
     useEffect(() => {
+        if (!mapInstance) return;
+        const { transitRealtimeService } = require("@/services/TransitRealtimeService");
+        transitRealtimeService.start();
+        return () => transitRealtimeService.stop();
+    }, [mapInstance]);
+
+    useEffect(() => {
         if (!selectedBusRoute) return;
         const { transitRealtimeService } = require("@/services/TransitRealtimeService");
-        // We assume cityCode is available from the stop or passed down. 
-        // For now, using default "11" (Seoul) or extracting from routeId if possible.
         const cityCode = selectedBusStop?.cityCode || "11";
         transitRealtimeService.trackBusRoute(cityCode, selectedBusRoute);
         return () => transitRealtimeService.untrackBusRoute(cityCode, selectedBusRoute);

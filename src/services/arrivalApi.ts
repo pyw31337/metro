@@ -47,50 +47,61 @@ export const parseSeoulDate = (dateStr: string): number => {
 };
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
-    // 1. Direct Fetch
+    // 1. Direct Fetch (Usually fails in browser due to CORS, but good to keep as first attempt)
     try {
         const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(1500) });
         if (directRes.ok) return await directRes.json();
     } catch (e) {}
 
-    // 2. Competitive Parallel Proxy Fetch
+    // 2. Proxy Fetching
     const salt = Math.random().toString(36).substring(7);
     const targetWithSalt = targetUrl.includes('?') ? `${targetUrl}&_s=${salt}` : `${targetUrl}?_s=${salt}`;
-    const cleanUrl = decodeURIComponent(decodeURI(targetWithSalt));
-    const encodedUrl = encodeURIComponent(cleanUrl);
+    
+    // Explicitly use HTTP for Seoul OpenAPI to prevent redirect issues behind proxies
+    const urlHttp = targetWithSalt.replace('https://swopenapi.seoul.go.kr', 'http://swopenapi.seoul.go.kr');
+    const encodedUrl = encodeURIComponent(urlHttp);
 
-    const proxyUrls = [
-        `https://api.allorigins.win/get?url=${encodedUrl}&_t=${Date.now()}`,
-        `https://cors-proxy.htmldriven.com/?url=${encodedUrl}`,
-        `https://api.codetabs.com/v1/proxy/?quest=${encodedUrl}`,
-        `https://corsproxy.io/?${encodedUrl}`
+    const PROXIES = [
+        { name: 'allorigins', url: `https://api.allorigins.win/get?url=${encodedUrl}` },
+        { name: 'corsproxy_io', url: `https://corsproxy.io/?${encodedUrl}` },
+        { name: 'thingproxy', url: `https://thingproxy.freeboard.io/fetch/${urlHttp}` }
     ];
 
-    const fetchFromProxy = async (proxyUrl: string) => {
-        const timeout = proxyUrl.includes('allorigins') ? 12000 : 8000;
-        const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(timeout) });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const text = (await res.text()).trim();
+    const fetchFromProxy = async (proxy: { name: string, url: string }) => {
+        const res = await fetch(proxy.url, { 
+            signal: AbortSignal.timeout(10000),
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        if (!res.ok) throw new Error(`${proxy.name} failed: ${res.status}`);
         
         let data: any;
-        if (proxyUrl.includes('allorigins')) {
-            const wrapper = JSON.parse(text);
+        if (proxy.name === 'allorigins') {
+            const wrapper = await res.json();
+            if (!wrapper.contents) throw new Error(`${proxy.name} contents empty`);
             data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
         } else {
-            data = JSON.parse(text);
+            const rawText = await res.text();
+            try {
+                data = JSON.parse(rawText);
+            } catch (e) {
+                throw new Error(`${proxy.name} returned non-JSON`);
+            }
         }
 
         if (data?.realtimeSubwayPositionList || data?.realtimeArrivalList || data?.RESULT?.CODE === "INFO-000") {
-            console.log(`[Proxy Success] ${proxyUrl.substring(0, 30)}`);
+            console.log(`[Proxy Success] ${proxy.name}`);
             return data;
         }
-        throw new Error("Invalid data format");
+        throw new Error(`${proxy.name} returned invalid data`);
     };
 
+    // Try them sequentially or via Promise.any. Promise.any returns the first successfully resolved promise.
     try {
-        return await Promise.any(proxyUrls.map(url => fetchFromProxy(url)));
+        return await Promise.any(PROXIES.map(p => fetchFromProxy(p)));
     } catch (e) {
-        throw new Error(`All proxies failed for ${targetUrl}`);
+        console.error("All proxies failed:", e);
+        throw new Error(`Realtime data unavailable (CORS/Proxy issues)`);
     }
 };
 

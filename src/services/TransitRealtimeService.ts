@@ -5,6 +5,7 @@ import { db } from './db';
 
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { RealtimePosition } from '@/hooks/useRealtimeTrains';
+import { normalizeLineName } from '@/utils/stationUtils';
 
 export interface RealtimeUnit {
   id: string;
@@ -60,13 +61,14 @@ class TransitRealtimeService extends EventEmitter {
   }
 
   private async getStationCoord(name: string): Promise<[number, number] | null> {
-    const variants = [name, name + '역', name.replace(/역$/, '')];
+    const clean = name.replace(/\(.*\)/, '').replace(/역$/, '').trim();
+    const variants = [clean, clean + '역', name];
     
     for (const variant of variants) {
         if (this.stationCoordsCache.has(variant)) {
             return this.stationCoordsCache.get(variant)!;
         }
-        const station = await db.getStationByName(variant);
+        const station = await db.stations.where('name').equals(variant).first();
         if (station && station.lng && station.lat) {
             const coord: [number, number] = [station.lng, station.lat];
             this.stationCoordsCache.set(variant, coord);
@@ -98,13 +100,18 @@ class TransitRealtimeService extends EventEmitter {
       // 1. Subway Polling
       const trainPromises = SUBWAY_POLLING_NAMES.map(line => fetchTrainPositions(line));
       const trainResults = await Promise.all(trainPromises);
+      const flattenedResults = trainResults.flat();
       
-      const subwayUnits = await Promise.all(trainResults.flat().map(async train => {
+      console.log(`📡 Realtime Polling: Fetched ${flattenedResults.length} trains.`);
+      
+      const subwayUnits = await Promise.all(flattenedResults.map(async train => {
         const coord = await this.getStationCoord(train.statnNm);
-        if (!coord) return null;
+        if (!coord) {
+            // console.warn(`🔍 Coord not found for station: ${train.statnNm}`);
+            return null;
+        }
 
-        // Find correct color from static data
-        const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm);
+        const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm || normalizeLineName(l.name) === normalizeLineName(train.subwayNm));
         const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
 
         return {

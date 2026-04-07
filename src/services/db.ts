@@ -44,13 +44,21 @@ export class MetroDatabase extends Dexie {
    */
   async initializeData() {
     const stationCount = await this.stations.count();
-    if (stationCount === 0) {
-      console.log('🚄 Initializing Metro Database for the first time...');
+    const hasSangok = await this.stations.where('name').equals('산곡').count() > 0;
+    
+    if (stationCount === 0 || !hasSangok) {
+      console.log('🚄 Initializing/Updating Metro Database with latest station data...');
       try {
+        const [stationsRes, busStopsRes, wcRes] = await Promise.all([
+          fetch('./data/master-subway.json'),
+          fetch('./data/master-bus-stops.json'),
+          fetch('./data/master-toilets.json')
+        ]);
+
         const [stations, busStops, wc] = await Promise.all([
-          fetch('./data/capitalStations.json').then(res => res.json()),
-          fetch('./data/bus-stops.json').then(res => res.json()),
-          fetch('./data/wc.json').then(res => res.json())
+            stationsRes.ok ? stationsRes.json() : fetch('./data/capitalStations.json').then(res => res.json()),
+            busStopsRes.ok ? busStopsRes.json() : [],
+            wcRes.ok ? wcRes.json() : []
         ]);
 
         await this.transaction('rw', [this.stations, this.busStops, this.wc, this.timetables], async () => {
@@ -59,7 +67,9 @@ export class MetroDatabase extends Dexie {
              lat: s.lat || s.latitude,
              lng: s.lng || s.longitude
           }));
+          await this.stations.clear();
           await this.stations.bulkAdd(mappedStations);
+          await this.busStops.clear();
           await this.busStops.bulkAdd(busStops);
           
           const mappedWC = wc.map((item: any) => ({
