@@ -190,7 +190,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 fetchStationArrivals(train.arrivalNm || train.headingTo)
             ]);
             setCongestionData(cData);
-            const matchingArrival = aList.find(a => a.btrainNo === train.trainNo);
+            const matchingArrival = aList.find((a: any) => a.btrainNo === train.trainNo);
             if (matchingArrival) setTrainArrivalDetail(matchingArrival);
         } catch (err) { console.error(err); } finally { setIsLoadingCongestion(false); }
     };
