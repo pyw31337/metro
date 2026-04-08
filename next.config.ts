@@ -3,8 +3,8 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === 'development';
 
 const nextConfig: NextConfig = {
-  output: 'export',
-  basePath: '/metro',
+  // Use '/metro' for GitHub Pages, but empty for Firebase root-level hosting
+  basePath: process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro',
   images: {
     unoptimized: true,
   },

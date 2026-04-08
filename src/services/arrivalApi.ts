@@ -62,23 +62,17 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     const encodedUrl = encodeURIComponent(urlHttp);
 
     // Proxies list, starting with local dev proxy if available
+    const isFirebase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase';
+    const base = isFirebase ? '' : '/metro';
     const PROXIES = [
-        { name: 'local_rewrite', url: `/metro/api/proxy/subway/${urlHttp.replace('http://swopenapi.seoul.go.kr/api/subway/', '')}` },
-        { name: 'corsproxy_io', url: `https://corsproxy.io/?${encodedUrl}` },
-        { name: 'allorigins', url: `https://api.allorigins.win/get?url=${encodedUrl}` },
+        { name: 'local_rewrite', url: `${base}/api/proxy/subway/${urlHttp.replace('http://swopenapi.seoul.go.kr/api/subway/', '')}` },
         { name: 'allorigins_raw', url: `https://api.allorigins.win/raw?url=${encodedUrl}` },
-        { name: 'corsfix', url: `https://corsfix.com/?${encodedUrl}` }
+        { name: 'corsproxy_io', url: `https://corsproxy.io/?${encodedUrl}` },
+        { name: 'allorigins_v2', url: `https://api.allorigins.win/get?url=${encodedUrl}` },
+        { name: 'cors_sh', url: `https://proxy.cors.sh/${urlHttp}` }
     ];
 
     const fetchFromProxy = async (proxy: { name: string, url: string }) => {
-        const res = await fetch(proxy.url, { 
-            signal: AbortSignal.timeout(10000),
-            headers: { 'Accept': 'application/json' }
-        });
-        
-        if (!res.ok) throw new Error(`${proxy.name} failed: ${res.status}`);
-        
-        let data: any;
         if (proxy.name === 'allorigins') {
             const wrapper = await res.json();
             if (!wrapper.contents) throw new Error(`${proxy.name} contents empty`);

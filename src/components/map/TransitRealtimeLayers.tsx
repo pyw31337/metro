@@ -115,6 +115,12 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
           "text-halo-width": 1
         }}
       />
+      {/* Simulation Indicator */}
+      {geoData.features.some(f => (f.properties as any).id.includes('sim')) && (
+        <div className="absolute top-20 right-4 bg-yellow-500/90 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-50">
+          ⚠️ 시뮬레이션 모드 (API 점검 중)
+        </div>
+      )}
     </Source>
   );
 };

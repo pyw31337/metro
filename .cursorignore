@@ -1,0 +1,9 @@
+public/data/*
+src/data/capitalStations.json
+src/data/station-geometry.json
+src/data/transfer-info.json
+dist/
+build/
+node_modules/
+.next/
+*.log
