@@ -73,7 +73,15 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     ];
 
     const fetchFromProxy = async (proxy: { name: string, url: string }) => {
-        if (proxy.name === 'allorigins') {
+        const res = await fetch(proxy.url, { 
+            signal: AbortSignal.timeout(15000), 
+            headers: { 'Accept': 'application/json' }
+        });
+        
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        
+        let data: any;
+        if (proxy.name.includes('allorigins') && !proxy.name.includes('raw')) {
             const wrapper = await res.json();
             if (!wrapper.contents) throw new Error(`${proxy.name} contents empty`);
             data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
