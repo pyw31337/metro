@@ -10,9 +10,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  images: {
-    unoptimized: true,
-  },
+
   // Ensure trailing slashes for static export routing
   trailingSlash: true,
   ...(isDev && {
