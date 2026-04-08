@@ -177,13 +177,35 @@ class TransitRealtimeService extends EventEmitter {
 
       if (allUnits.length > 0) {
         this.worker?.postMessage({ type: 'UPDATE_UNITS', data: allUnits });
+      } else {
+        // Fallback if results are somehow empty after mapping
+        const simulated = this.generateSimulatedSubwayResults();
+        this.emitSimulatedUnits(simulated);
       }
       
     } catch (err) {
-      console.error('Realtime polling failed:', err);
+      console.error('Realtime polling failed, entering simulation mode:', err);
+      const simulated = this.generateSimulatedSubwayResults();
+      this.emitSimulatedUnits(simulated);
     }
 
     setTimeout(() => this.poll(), this.updateInterval);
+  }
+
+  private async emitSimulatedUnits(simulated: any[]) {
+      const subwayUnits = await Promise.all(simulated.map(async train => {
+        const coord = await this.getStationCoord(train.statnNm);
+        if (!coord) return null;
+        return {
+          id: `train-sim-${train.trainNo}`,
+          type: 'subway' as const,
+          nextPos: coord,
+          lineName: train.subwayNm,
+          lineColor: "FF5722", // Distinct simulation color
+          label: `${train.trainNo}\n${train.arrivalNm || '시뮬레이션'}`,
+        };
+      }));
+      this.worker?.postMessage({ type: 'UPDATE_UNITS', data: subwayUnits.filter(u => u !== null) });
   }
 
   /**

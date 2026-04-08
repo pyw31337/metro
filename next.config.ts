@@ -10,10 +10,8 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  experimental: {
-    turbopack: {
-      root: '.',
-    },
+  images: {
+    unoptimized: true,
   },
   // Ensure trailing slashes for static export routing
   trailingSlash: true,

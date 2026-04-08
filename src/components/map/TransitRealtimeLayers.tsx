@@ -58,70 +58,73 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
   if (!isVisible) return null;
 
   return (
-    <Source id="transit-realtime-source" type="geojson" data={geoData}>
-      {/* Subway Trains */}
-      <Layer
-        id="subway-realtime-layer"
-        type="symbol"
-        filter={["==", ["get", "type"], "subway"]}
-        layout={{
-          "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
-          "icon-size": [
-            "interpolate", ["linear"], ["zoom"],
-            10, 0.12,
-            14, 0.25,
-            18, 0.5
-          ],
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "text-field": ["get", "label"],
-          "text-font": ["Open Sans Bold"],
-          "text-size": 10,
-          "text-offset": [0, 1.5],
-          "text-anchor": "top"
-        }}
-        paint={{
-          "text-color": "#ffffff",
-          "text-halo-color": "#000000",
-          "text-halo-width": 1
-        }}
-      />
+    <>
+      <Source id="transit-realtime-source" type="geojson" data={geoData}>
+        {/* Subway Trains */}
+        <Layer
+          id="subway-realtime-layer"
+          type="symbol"
+          filter={["==", ["get", "type"], "subway"]}
+          layout={{
+            "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
+            "icon-size": [
+              "interpolate", ["linear"], ["zoom"],
+              10, 0.12,
+              14, 0.25,
+              18, 0.5
+            ],
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
+            "text-field": ["get", "label"],
+            "text-font": ["Open Sans Bold"],
+            "text-size": 10,
+            "text-offset": [0, 1.5],
+            "text-anchor": "top"
+          }}
+          paint={{
+            "text-color": "#ffffff",
+            "text-halo-color": "#000000",
+            "text-halo-width": 1
+          }}
+        />
 
-      {/* Buses */}
-      <Layer
-        id="bus-realtime-layer"
-        type="symbol"
-        filter={["==", ["get", "type"], "bus"]}
-        layout={{
-          "icon-image": "rocket", // Using the existing rocket icon or a bus icon
-          "icon-rotate": ["get", "bearing"],
-          "icon-rotation-alignment": "map",
-          "icon-size": [
-            "interpolate", ["linear"], ["zoom"],
-            10, 0.1,
-            14, 0.2,
-            18, 0.4
-          ],
-          "icon-allow-overlap": true,
-          "icon-ignore-placement": true,
-          "text-field": ["get", "label"],
-          "text-size": 9,
-          "text-offset": [0, 1.2],
-          "text-anchor": "top"
-        }}
-        paint={{
-          "text-color": "#ffffff",
-          "text-halo-color": "#3b82f6",
-          "text-halo-width": 1
-        }}
-      />
+        {/* Buses */}
+        <Layer
+          id="bus-realtime-layer"
+          type="symbol"
+          filter={["==", ["get", "type"], "bus"]}
+          layout={{
+            "icon-image": "rocket", // Using the existing rocket icon or a bus icon
+            "icon-rotate": ["get", "bearing"],
+            "icon-rotation-alignment": "map",
+            "icon-size": [
+              "interpolate", ["linear"], ["zoom"],
+              10, 0.1,
+              14, 0.2,
+              18, 0.4
+            ],
+            "icon-allow-overlap": true,
+            "icon-ignore-placement": true,
+            "text-field": ["get", "label"],
+            "text-size": 9,
+            "text-offset": [0, 1.2],
+            "text-anchor": "top"
+          }}
+          paint={{
+            "text-color": "#ffffff",
+            "text-halo-color": "#3b82f6",
+            "text-halo-width": 1
+          }}
+        />
+      </Source>
+
       {/* Simulation Indicator */}
       {geoData.features.some(f => (f.properties as any).id.includes('sim')) && (
-        <div className="absolute top-20 right-4 bg-yellow-500/90 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-50">
+        <div className="absolute top-20 right-4 bg-yellow-500/90 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-[9999]">
           ⚠️ 시뮬레이션 모드 (API 점검 중)
         </div>
       )}
-    </Source>
+    </>
   );
 };
 
