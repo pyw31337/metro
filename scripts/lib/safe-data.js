@@ -19,8 +19,11 @@ function safeSaveJson(filePath, newData, options = {}) {
     console.log(`💾 Safe-Saving: ${path.basename(filePath)}...`);
 
     let oldData = null;
-    if (fs.existsSync(filePath)) {
+    const shouldReadOld = (merge || minRatio > 0) && !force;
+
+    if (shouldReadOld && fs.existsSync(filePath)) {
         try {
+            // Memory optimization: only read if really needed
             oldData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
         } catch (e) {
             console.warn(`⚠️  Existing file ${filePath} is corrupt. Proceeding with overwrite.`);

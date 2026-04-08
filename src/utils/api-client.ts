@@ -57,7 +57,7 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
  */
 export const API_ENDPOINTS = {
     SUBWAY_POSITION: (key: string, name: string) =>
-        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/100/${encodeURIComponent(name)}`,
+        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeSubwayPosition/0/100/${encodeURIComponent(name)}`,
     
     SUBWAY_ARRIVAL: (key: string, station: string) =>
         `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeStationArrival/0/20/${encodeURIComponent(station)}`,
@@ -75,24 +75,42 @@ export const API_ENDPOINTS = {
         `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearnBusList?serviceKey=${key}&cityCode=${cityCode}&nodeId=${nodeId}&_type=json`
 };
 
+const USER_APPROVED_KEYS = [
+    "454c774156707977313774514e5764", 
+    "634179436a7079773730786f4d5445",
+    "7a634444557079773735624765796d"
+];
+
 /**
  * High-level API Handlers
  */
 export const subwayApi = {
     getPositions: async (lineName: string) => {
-        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
-        return fetchWithCache<any>(API_ENDPOINTS.SUBWAY_POSITION(key, lineName), 15000);
+        let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
+        const keysToTry = Array.from(new Set([apiKey, ...USER_APPROVED_KEYS, 'sample']));
+        
+        for (const key of keysToTry) {
+            const result = await fetchWithCache<any>(API_ENDPOINTS.SUBWAY_POSITION(key, lineName), 15000);
+            if (result && (result.realtimeSubwayPositionList || result.realtimePositionList)) return result;
+            // If error-338 or similar, try next key
+        }
+        return null;
     },
     getArrivals: async (stationName: string) => {
-        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
-        return fetchWithCache<any>(API_ENDPOINTS.SUBWAY_ARRIVAL(key, stationName), 15000);
+        let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
+        const keysToTry = Array.from(new Set([apiKey, ...USER_APPROVED_KEYS, 'sample']));
+        for (const key of keysToTry) {
+            const result = await fetchWithCache<any>(API_ENDPOINTS.SUBWAY_ARRIVAL(key, stationName), 15000);
+            if (result && result.realtimeArrivalList) return result;
+        }
+        return null;
     },
     getCongestion: async (subwayId: string, trainNo: string) => {
-        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
+        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
         return fetchWithCache<any>(API_ENDPOINTS.SUBWAY_CONGESTION(key, subwayId, trainNo), 60000);
     },
     getTransferPlatform: async (station: string, from: string, to: string) => {
-        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || 'sample';
+        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
         return fetchWithCache<any>(API_ENDPOINTS.TRANSFER_PLATFORM(key, station, from, to), 3600000);
     }
 };

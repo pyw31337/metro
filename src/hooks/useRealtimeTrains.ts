@@ -62,7 +62,7 @@ export function useRealtimeTrains(map: any | null) {
                 for (const name of lineNames) {
                     try {
                         const json = await subwayApi.getPositions(name);
-                        const list: RealtimePosition[] = json?.realtimePositionList || [];
+                        const list: RealtimePosition[] = json?.realtimeSubwayPositionList || json?.realtimePositionList || [];
                         
                         list.forEach(rt => {
                             const targetLines = SUBWAY_LINES.filter(l => l.name === name);

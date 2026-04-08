@@ -61,10 +61,13 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     const urlHttp = targetWithSalt.replace('https://swopenapi.seoul.go.kr', 'http://swopenapi.seoul.go.kr');
     const encodedUrl = encodeURIComponent(urlHttp);
 
+    // Proxies list, starting with local dev proxy if available
     const PROXIES = [
-        { name: 'allorigins', url: `https://api.allorigins.win/get?url=${encodedUrl}` },
+        { name: 'local_rewrite', url: `/metro/api/proxy/subway/${urlHttp.replace('http://swopenapi.seoul.go.kr/api/subway/', '')}` },
         { name: 'corsproxy_io', url: `https://corsproxy.io/?${encodedUrl}` },
-        { name: 'thingproxy', url: `https://thingproxy.freeboard.io/fetch/${urlHttp}` }
+        { name: 'allorigins', url: `https://api.allorigins.win/get?url=${encodedUrl}` },
+        { name: 'allorigins_raw', url: `https://api.allorigins.win/raw?url=${encodedUrl}` },
+        { name: 'corsfix', url: `https://corsfix.com/?${encodedUrl}` }
     ];
 
     const fetchFromProxy = async (proxy: { name: string, url: string }) => {
@@ -89,7 +92,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
             }
         }
 
-        if (data?.realtimeSubwayPositionList || data?.realtimeArrivalList || data?.RESULT?.CODE === "INFO-000") {
+        if (data?.realtimePositionList || data?.realtimeSubwayPositionList || data?.realtimeArrivalList || data?.RESULT?.CODE === "INFO-000" || data?.errorMessage?.code === "INFO-000") {
             console.log(`[Proxy Success] ${proxy.name}`);
             return data;
         }

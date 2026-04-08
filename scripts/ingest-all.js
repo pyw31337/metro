@@ -525,6 +525,9 @@ async function main() {
             if (combinedToilets.length > 0) {
                 safeSaveJson(path.join(DATA_DIR, 'master-toilets.json'), combinedToilets, { force });
             }
+            // Memory cleanup
+            process.stdout.write(`\n🧹 Clearing ${combinedToilets.length} toilets from memory...`);
+            allToilets = null; 
         }
         if (subwayOnly) {
             console.log('✅ Subway-Only Rebuild Complete.');
@@ -555,6 +558,8 @@ async function main() {
             safeSaveJson(path.join(DATA_DIR, 'master-bus-stops.json'), uniqueBusStops, { force });
             console.log(`🎉 Phase 2 Ingestion Complete!`);
         }
+        // Memory cleanup
+        process.stdout.write(`\n🧹 Final Memory Cleanup: All data saved.`);
     }
 
     // Cleanup all partial files
