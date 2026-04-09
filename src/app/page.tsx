@@ -25,7 +25,6 @@ const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"),  { ssr: false });
 const MapControls        = dynamic(() => import("@/components/MapControls"),         { ssr: false });
 const WeatherPopup       = dynamic(() => import("@/components/WeatherPopup"),        { ssr: false });
-const BusDetailPanel     = dynamic(() => import("@/components/panels/BusDetailPanel"), { ssr: false });
 import DirectionCompass  from "@/components/ui/DirectionCompass";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,11 +91,14 @@ export default function Home() {
 
           if (!initLocRef.current) {
             initLocRef.current = true;
-            mapSt.setHasInitialLocation(true);
             mapSt.setIsLocating(false);
             clearInterval(timerInterval);
 
-            // 최초 위치 → 가장 가까운 역을 출발역으로
+            // 최초 위치 → 지도 이동 (직접 호출, 배치 렌더 우회)
+            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
+            mapSt.setHasInitialLocation(true);
+
+            // 가장 가까운 역을 출발역으로
             if (stations.length > 0) {
               const nearest: any = await findNearestStation(latitude, longitude, stations);
               if (nearest?.name && !route.startStation) {
@@ -128,14 +130,6 @@ export default function Home() {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stations]);
-
-  // 최초 위치 감지 시 지도 이동
-  useEffect(() => {
-    const loc = mapSt.userLocation;
-    if (loc && mapRef.current && !mapSt.hasInitialLocation) {
-      mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 15, duration: 2000 });
-    }
-  }, [mapSt.userLocation, mapSt.hasInitialLocation]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 가장 가까운 시설 계산 (userLocation 변경 시)

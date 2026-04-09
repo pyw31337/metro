@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone } from "lucide-react";
+import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone, Bell } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
@@ -13,6 +13,8 @@ import { db } from "@/services/db";
 import { Facility } from "@/types/metro";
 import { useIngestion } from "@/hooks/useIngestion";
 import IngestionProgress from "./IngestionProgress";
+import { useUIStore } from "@/store/useUIStore";
+import { useSubwayStore } from "@/store/useSubwayStore";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -107,6 +109,91 @@ const SuggestionItem = memo(({
 ));
 
 SuggestionItem.displayName = "SuggestionItem";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// WC 패널: 필터 + 주변 화장실 목록
+// ─────────────────────────────────────────────────────────────────────────────
+const WCPanel = memo(() => {
+    const { wcFilters, updateWcFilter } = useUIStore();
+    const { nearestWCs, selectedWC } = useSubwayStore();
+    const setSelectedWC = useSubwayStore(s => s.setSelectedWC);
+
+    const filterDefs = [
+        { key: 'accessible' as const, icon: <Accessibility size={12} />, label: '장애인' },
+        { key: 'diapers'    as const, icon: <Baby size={12} />,          label: '기저귀' },
+        { key: 'emergencyBell' as const, icon: <Bell size={12} />,       label: '비상벨' },
+    ];
+
+    return (
+        <div className="flex flex-col gap-2.5 py-1">
+            {/* 필터 칩 */}
+            <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest shrink-0">필터</span>
+                <div className="flex gap-1.5">
+                    {filterDefs.map(({ key, icon, label }) => {
+                        const active = wcFilters[key];
+                        return (
+                            <button
+                                key={key}
+                                onClick={() => updateWcFilter(key, !wcFilters[key])}
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border transition-all active:scale-95 ${
+                                    active
+                                        ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
+                                        : 'bg-zinc-100 dark:bg-white/5 border-transparent text-zinc-500 dark:text-zinc-400'
+                                }`}
+                            >
+                                {icon}
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+
+            {/* 주변 화장실 */}
+            {nearestWCs.length > 0 && (
+                <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
+                    {nearestWCs.slice(0, 5).map(wc => {
+                        const isSelected = selectedWC?.id === wc.id;
+                        return (
+                            <button
+                                key={wc.id}
+                                onClick={() => setSelectedWC(isSelected ? null : wc)}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-all active:scale-[0.98] ${
+                                    isSelected
+                                        ? 'bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/15'
+                                        : 'bg-zinc-50 dark:bg-white/5 border-transparent hover:bg-zinc-100 dark:hover:bg-white/10'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Bath size={12} className={isSelected ? 'text-blue-500' : 'text-zinc-400'} />
+                                    <span className={`text-[12px] font-bold truncate ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-800 dark:text-white'}`}>
+                                        {wc.name?.replace(' 화장실', '')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                    {wc.accessible && <Accessibility size={10} className="text-blue-400" />}
+                                    {wc.diapers    && <Baby size={10}          className="text-amber-400" />}
+                                    {wc.emergencyBell && <Bell size={10}       className="text-rose-400" />}
+                                    {wc.station && (
+                                        <span className="text-[9px] text-zinc-400 font-bold">{wc.station}</span>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+
+            {nearestWCs.length === 0 && (
+                <div className="py-3 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
+                    위치 정보가 필요합니다
+                </div>
+            )}
+        </div>
+    );
+});
+WCPanel.displayName = "WCPanel";
 
 export default function UnifiedBottomPanel({
     activeTab,
@@ -457,6 +544,8 @@ export default function UnifiedBottomPanel({
                         )}
                     </AnimatePresence>
 
+
+                    {activeTab === "wc" && <WCPanel />}
 
                     {activeTab !== "wc" && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-0.5 relative">
