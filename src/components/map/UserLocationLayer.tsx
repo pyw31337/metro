@@ -6,18 +6,6 @@ import { memo } from "react";
 const UserLocationLayer = () => {
   return (
     <Source id="user-location-source" type="geojson" data={{ type: "FeatureCollection", features: [] }}>
-      {/* Accuracy Circle */}
-      <Layer
-        id="user-accuracy"
-        type="circle"
-        paint={{
-          "circle-radius": ["get", "accuracy"],
-          "circle-color": "#3b82f6",
-          "circle-opacity": 0.15,
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#3b82f6"
-        }}
-      />
       {/* Outer Glow */}
       <Layer
         id="user-glow"
@@ -25,20 +13,20 @@ const UserLocationLayer = () => {
         paint={{
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
-            10, 8,
-            15, 14,
-            20, 24
+            10, 10,
+            15, 16,
+            20, 28
           ],
           "circle-color": "#3b82f6",
           "circle-opacity": [
             "interpolate", ["linear"], ["zoom"],
-            10, 0.4,
-            20, 0.2
+            10, 0.35,
+            20, 0.15
           ],
           "circle-blur": 1
         }}
       />
-      {/* Main Pulse Circle */}
+      {/* Main Dot */}
       <Layer
         id="user-dot"
         type="circle"
@@ -54,19 +42,19 @@ const UserLocationLayer = () => {
           "circle-stroke-color": "#3b82f6"
         }}
       />
-      {/* Heading Arrow */}
+      {/* Heading Arrow — only shown when heading is available */}
       <Layer
         id="user-heading"
         type="symbol"
         layout={{
-            "icon-image": "rocket", // Fallback or custom icon
+            "icon-image": "rocket",
             "icon-size": 0.5,
             "icon-rotate": ["get", "heading"],
             "icon-allow-overlap": true,
             "icon-ignore-placement": true,
             "icon-rotation-alignment": "map",
-            "visibility": ["case", [">", ["get", "heading"], 0], "visible", "none"]
         }}
+        filter={[">", ["get", "heading"], 0]}
       />
     </Source>
   );

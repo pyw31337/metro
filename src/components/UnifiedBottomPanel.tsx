@@ -16,6 +16,7 @@ import IngestionProgress from "./IngestionProgress";
 import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
 import { useRouteStore } from "@/store/useRouteStore";
+import { useSearchHistory } from "@/hooks/useSearchHistory";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -269,6 +270,7 @@ export default function UnifiedBottomPanel({
     const { keyboardOffset } = useViewportHeight();
     const { waypoints, removeWaypoint } = useRouteStore();
     const setSelectedBusStop = useSubwayStore(s => s.setSelectedBusStop);
+    const { history, addToHistory, clearHistory } = useSearchHistory();
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -392,11 +394,10 @@ export default function UnifiedBottomPanel({
     const selectLocation = (s: any) => {
         const line = s.lines?.[0] || '';
         let fullName = s.name;
-        // If the station name doesn't already contain the line info, append it cleanly
         if (line && !s.name.includes(line.replace('호선', ''))) {
             fullName = `${s.name} (${line.replace('호선', '')})`;
         }
-        
+
         if (activeField === "dest") {
             setDestination(fullName);
             onSetDestination?.(fullName);
@@ -406,6 +407,7 @@ export default function UnifiedBottomPanel({
         }
         setSearchResults([]);
         setActiveField(null);
+        addToHistory({ name: s.name, type: s.type || 'subway', lines: s.lines, id: s.id });
     };
 
 
@@ -564,6 +566,26 @@ export default function UnifiedBottomPanel({
                             if (query.length >= 1) return (
                                 <motion.div key="no-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 mb-1">
                                     &apos;{query}&apos; 검색 결과가 없습니다
+                                </motion.div>
+                            );
+                            if (history.length > 0) return (
+                                <motion.div key="history" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
+                                    <div className="flex items-center justify-between px-3 py-1.5">
+                                        <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">최근 검색</span>
+                                        <button onClick={clearHistory} className="text-[9px] font-bold text-zinc-400 hover:text-rose-500 transition-colors">지우기</button>
+                                    </div>
+                                    <div className="py-0.5">
+                                        {history.map((h, i) => (
+                                            <SuggestionItem
+                                                key={`hist-${h.name}-${i}`}
+                                                item={h}
+                                                isActive={false}
+                                                onClick={() => selectLocation(h)}
+                                                onMouseEnter={() => {}}
+                                                getLineBadge={getLineBadge}
+                                            />
+                                        ))}
+                                    </div>
                                 </motion.div>
                             );
                             return null;

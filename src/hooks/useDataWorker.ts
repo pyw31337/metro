@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useCallback } from "react";
 
+// Each call gets a unique ID so concurrent requests don't cross-resolve
+let _msgIdCounter = 0;
+
 export function useDataWorker() {
     const workerRef = useRef<Worker | null>(null);
 
@@ -12,69 +15,39 @@ export function useDataWorker() {
         };
     }, []);
 
-    const findPath = useCallback((points: string[]) => {
+    /** Send a message and await the matching reply by msgId */
+    const sendMessage = useCallback(<T>(type: string, replyType: string, payload: object): Promise<T | null> => {
         return new Promise((resolve) => {
             if (!workerRef.current) return resolve(null);
-            
+            const msgId = ++_msgIdCounter;
+
             const handleMessage = (e: MessageEvent) => {
-                if (e.data.type === "PATH_RESULT") {
+                if (e.data.type === replyType && e.data.msgId === msgId) {
                     workerRef.current?.removeEventListener("message", handleMessage);
-                    resolve(e.data.payload);
+                    resolve(e.data.payload as T);
                 }
             };
-            
+
             workerRef.current.addEventListener("message", handleMessage);
-            workerRef.current.postMessage({ type: "FIND_PATH", payload: { points } });
+            workerRef.current.postMessage({ type, msgId, payload });
         });
     }, []);
 
-    const findNearestStation = useCallback((lat: number, lng: number, stations: any[]) => {
-        return new Promise((resolve) => {
-            if (!workerRef.current) return resolve(null);
-            
-            const handleMessage = (e: MessageEvent) => {
-                if (e.data.type === "NEAREST_STATION_RESULT") {
-                    workerRef.current?.removeEventListener("message", handleMessage);
-                    resolve(e.data.payload);
-                }
-            };
-            
-            workerRef.current.addEventListener("message", handleMessage);
-            workerRef.current.postMessage({ type: "FIND_NEAREST_STATION", payload: { lat, lng, stations } });
-        });
-    }, []);
+    const findPath = useCallback((points: string[]) =>
+        sendMessage<Record<string, any>>("FIND_PATH", "PATH_RESULT", { points }),
+    [sendMessage]);
 
-    const sortWCs = useCallback((items: any[], userLat: number, userLng: number) => {
-        return new Promise((resolve) => {
-            if (!workerRef.current) return resolve([]);
-            
-            const handleMessage = (e: MessageEvent) => {
-                if (e.data.type === "SORTED_WC_RESULT") {
-                    workerRef.current?.removeEventListener("message", handleMessage);
-                    resolve(e.data.payload);
-                }
-            };
-            
-            workerRef.current.addEventListener("message", handleMessage);
-            workerRef.current.postMessage({ type: "SORT_WC", payload: { items, userLat, userLng } });
-        });
-    }, []);
+    const findNearestStation = useCallback((lat: number, lng: number, stations: any[]) =>
+        sendMessage<any>("FIND_NEAREST_STATION", "NEAREST_STATION_RESULT", { lat, lng, stations }),
+    [sendMessage]);
 
-    const mergeArrivals = useCallback((live: any[], scheduled: any[]) => {
-        return new Promise<any[]>((resolve) => {
-            if (!workerRef.current) return resolve([]);
-            
-            const handleMessage = (e: MessageEvent) => {
-                if (e.data.type === "MERGE_ARRIVALS_RESULT") {
-                    workerRef.current?.removeEventListener("message", handleMessage);
-                    resolve(e.data.payload);
-                }
-            };
-            
-            workerRef.current.addEventListener("message", handleMessage);
-            workerRef.current.postMessage({ type: "MERGE_ARRIVALS", payload: { live, scheduled } });
-        });
-    }, []);
+    const sortWCs = useCallback((items: any[], userLat: number, userLng: number) =>
+        sendMessage<any[]>("SORT_WC", "SORTED_WC_RESULT", { items, userLat, userLng }),
+    [sendMessage]);
+
+    const mergeArrivals = useCallback((live: any[], scheduled: any[]) =>
+        sendMessage<any[]>("MERGE_ARRIVALS", "MERGE_ARRIVALS_RESULT", { live, scheduled }),
+    [sendMessage]);
 
     return { findPath, findNearestStation, sortWCs, mergeArrivals };
 }

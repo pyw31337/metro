@@ -345,7 +345,7 @@ function calcPathDistanceKm(path: string[], graph: Map<string, GraphNode>): numb
 // Worker 메시지 핸들러
 // ─────────────────────────────────────────────────────────────────────────────
 self.onmessage = async (e: MessageEvent) => {
-  const { type, payload } = e.data;
+  const { type, msgId, payload } = e.data;
 
   switch (type) {
     case 'FIND_PATH': {
@@ -429,7 +429,7 @@ self.onmessage = async (e: MessageEvent) => {
         };
       }
 
-      self.postMessage({ type: 'PATH_RESULT', payload: results });
+      self.postMessage({ type: 'PATH_RESULT', msgId, payload: results });
       break;
     }
 
@@ -441,7 +441,7 @@ self.onmessage = async (e: MessageEvent) => {
         const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
         if (d < minDist) { minDist = d; nearest = s; }
       }
-      self.postMessage({ type: 'NEAREST_STATION_RESULT', payload: nearest });
+      self.postMessage({ type: 'NEAREST_STATION_RESULT', msgId, payload: nearest });
       break;
     }
 
@@ -454,7 +454,7 @@ self.onmessage = async (e: MessageEvent) => {
         }))
         .sort((a, b) => a._dist - b._dist)
         .slice(0, 3);
-      self.postMessage({ type: 'SORTED_WC_RESULT', payload: sorted });
+      self.postMessage({ type: 'SORTED_WC_RESULT', msgId, payload: sorted });
       break;
     }
   }
