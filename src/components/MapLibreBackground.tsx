@@ -92,6 +92,10 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
             const uniqueColors = new Set<string>();
             SUBWAY_LINES.forEach((line: any) => { if (line.color) uniqueColors.add(line.color.toUpperCase()); });
             stations.forEach(s => { if (s.lineColors) s.lineColors.forEach((c: string) => uniqueColors.add(c.toUpperCase())); });
+            
+            // Add explicitly required dynamic colors
+            uniqueColors.add('FF5722'); // Simulation Color
+            uniqueColors.add('3B82F6'); // Bus Color
 
             uniqueColors.forEach(c => {
                 const color = c.startsWith('#') ? c : `#${c}`;

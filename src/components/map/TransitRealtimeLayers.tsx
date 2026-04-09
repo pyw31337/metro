@@ -16,11 +16,15 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
     type: "FeatureCollection",
     features: []
   });
+  const [isSimulated, setIsSimulated] = useState(false);
 
   useEffect(() => {
     if (!map) return;
 
     const handleUpdate = (units: RealtimeUnit[]) => {
+      const hasSim = units.some(u => u.id.includes('sim'));
+      setIsSimulated(hasSim);
+
       const features: any[] = units.map(unit => ({
         type: "Feature",
         geometry: {
@@ -119,7 +123,7 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
       </Source>
 
       {/* Simulation Indicator */}
-      {geoData.features.some(f => (f.properties as any).id.includes('sim')) && (
+      {isSimulated && (
         <div className="absolute top-20 right-4 bg-yellow-500/90 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-[9999]">
           ⚠️ 시뮬레이션 모드 (API 점검 중)
         </div>
