@@ -32,6 +32,22 @@ export default function RootLayout({
 }) {
     return (
         <html lang="ko">
+            <head>
+                {/* Apply dark mode before first paint to prevent flash */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+(function(){
+  try {
+    var prefs = JSON.parse(localStorage.getItem('metro-ui-prefs') || '{}');
+    var dark = prefs.state?.isDarkMode ?? window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (dark) document.documentElement.classList.add('dark');
+  } catch(e) {}
+})();
+        `.trim()
+                    }}
+                />
+            </head>
             <body>
                 {children}
             </body>
