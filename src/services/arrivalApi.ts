@@ -47,9 +47,9 @@ export const parseSeoulDate = (dateStr: string): number => {
 };
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
-    // 1. Direct Fetch (Usually fails in browser due to CORS, but good to keep as first attempt)
+    // 1. Direct Fetch (로컬 개발 환경에서만 성공, 프로덕션은 CORS로 차단됨)
     try {
-        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(1500) });
+        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(1000) });
         if (directRes.ok) return await directRes.json();
     } catch (e) {}
 
@@ -57,56 +57,60 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
     const salt = Math.random().toString(36).substring(7);
     const targetWithSalt = targetUrl.includes('?') ? `${targetUrl}&_s=${salt}` : `${targetUrl}?_s=${salt}`;
     
-    // Explicitly use HTTP for Seoul OpenAPI to prevent redirect issues behind proxies
+    // HTTP 강제로 서울 OpenAPI 리다이렉트 문제 방지
     const urlHttp = targetWithSalt.replace('https://swopenapi.seoul.go.kr', 'http://swopenapi.seoul.go.kr');
     const encodedUrl = encodeURIComponent(urlHttp);
 
-    // Proxies list, starting with local dev proxy if available
     const isFirebase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase';
     const base = isFirebase ? '' : '/metro';
-    const PROXIES = [
-        { name: 'local_rewrite', url: `${base}/api/proxy/subway/${urlHttp.replace('http://swopenapi.seoul.go.kr/api/subway/', '')}` },
-        { name: 'allorigins_raw', url: `https://api.allorigins.win/raw?url=${encodedUrl}` },
-        { name: 'corsproxy_io', url: `https://corsproxy.io/?${encodedUrl}` },
-        { name: 'allorigins_v2', url: `https://api.allorigins.win/get?url=${encodedUrl}` },
-        { name: 'cors_sh', url: `https://proxy.cors.sh/${urlHttp}` }
-    ];
 
-    const fetchFromProxy = async (proxy: { name: string, url: string }) => {
-        const res = await fetch(proxy.url, { 
-            signal: AbortSignal.timeout(5000), 
+    const fetchFromProxy = async (proxyUrl: string, isWrapped: boolean = false) => {
+        const res = await fetch(proxyUrl, { 
+            signal: AbortSignal.timeout(3000),  // 3초로 단축
             headers: { 'Accept': 'application/json' }
         });
         
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         
         let data: any;
-        if (proxy.name.includes('allorigins') && !proxy.name.includes('raw')) {
+        if (isWrapped) {
             const wrapper = await res.json();
-            if (!wrapper.contents) throw new Error(`${proxy.name} contents empty`);
+            if (!wrapper.contents) throw new Error('contents empty');
             data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
         } else {
             const rawText = await res.text();
-            try {
-                data = JSON.parse(rawText);
-            } catch (e) {
-                throw new Error(`${proxy.name} returned non-JSON`);
-            }
+            try { data = JSON.parse(rawText); }
+            catch (e) { throw new Error('non-JSON response'); }
         }
 
-        if (data?.realtimePositionList || data?.realtimeSubwayPositionList || data?.realtimeArrivalList || data?.RESULT?.CODE === "INFO-000" || data?.errorMessage?.code === "INFO-000") {
-            console.log(`[Proxy Success] ${proxy.name}`);
+        if (data?.realtimePositionList || data?.realtimeArrivalList || 
+            data?.RESULT?.CODE === "INFO-000" || data?.errorMessage?.code === "INFO-000" ||
+            data?.errorMessage?.status === 200) {
             return data;
         }
-        throw new Error(`${proxy.name} returned invalid data`);
+        throw new Error('invalid data structure');
     };
 
-    // Try them sequentially or via Promise.any. Promise.any returns the first successfully resolved promise.
+    // 로컬 Next.js 리라이트 프록시 우선 시도 (가장 빠름, 서버사이드라 CORS 없음)
+    const localProxyPath = urlHttp.replace('http://swopenapi.seoul.go.kr/api/subway/', '');
+    const localProxyUrl = `${base}/api/proxy/subway/${localProxyPath}`;
+    
     try {
-        return await Promise.any(PROXIES.map(p => fetchFromProxy(p)));
+        const data = await fetchFromProxy(localProxyUrl);
+        return data;
+    } catch (e) {}
+
+    // 외부 프록시 병렬 시도 (Promise.any로 첫 성공 결과 사용)
+    const externalProxies = [
+        { url: `https://corsproxy.io/?${encodedUrl}`, wrapped: false },
+        { url: `https://api.allorigins.win/raw?url=${encodedUrl}`, wrapped: false },
+        { url: `https://api.allorigins.win/get?url=${encodedUrl}`, wrapped: true },
+    ];
+
+    try {
+        return await Promise.any(externalProxies.map(p => fetchFromProxy(p.url, p.wrapped)));
     } catch (e) {
-        console.error("All proxies failed:", e);
-        throw new Error(`Realtime data unavailable (CORS/Proxy issues)`);
+        throw new Error(`Realtime data unavailable (all proxies failed)`);
     }
 };
 

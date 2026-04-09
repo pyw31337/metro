@@ -24,7 +24,7 @@ const SUBWAY_POLLING_NAMES = [
 
 class TransitRealtimeService extends EventEmitter {
   private worker: Worker | null = null;
-  private updateInterval: number = 15000;
+  private updateInterval: number = 12000; // 12초마다 폴링
   private isRunning: boolean = false;
   private currentUnits: RealtimeUnit[] = [];
   private stationCoordsCache: Map<string, [number, number]> = new Map();
@@ -122,20 +122,17 @@ class TransitRealtimeService extends EventEmitter {
     if (!this.isRunning) return;
 
     try {
-      // 1. Subway Polling
+      // 1. Subway Polling — Promise.allSettled으로 일부 노선만 실패해도 나머지는 사용
       const trainPromises = SUBWAY_POLLING_NAMES.map(line => fetchTrainPositions(line));
-      const timeoutPromise = new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error("API_TIMEOUT")), 5000));
       
       let flattenedResults: any[] = [];
       try {
-        const trainResults = await Promise.race([Promise.all(trainPromises), timeoutPromise]);
-        flattenedResults = trainResults.flat();
+        const trainResults = await Promise.allSettled(trainPromises);
+        flattenedResults = trainResults
+          .filter((r): r is PromiseFulfilledResult<any[]> => r.status === 'fulfilled')
+          .flatMap(r => r.value);
       } catch (e: any) {
-        if (e.message === "API_TIMEOUT") {
-            console.warn("⚠️ API polling timeout (>5s). Falling back to simulation move tick.");
-        } else {
-            console.warn("⚠️ API fetch error:", e);
-        }
+        console.warn("⚠️ API fetch error:", e);
       }
 
       let finalFlattened = flattenedResults;
@@ -157,13 +154,20 @@ class TransitRealtimeService extends EventEmitter {
         const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm || normalizeLineName(l.name) === normalizeLineName(train.subwayNm));
         const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
 
+        // 방향 화살표: updnLine '1' = 상행(▶), '2' = 하행(◀)
+        const isUpward = train.updnLine === '1';
+        const destination = train.lstnyNm || train.arrivalNm || '';
+        const label = destination
+          ? (isUpward ? `▶ ${destination}행` : `◀ ${destination}행`)
+          : (isUpward ? '▶ 상행' : '◀ 하행');
+
         return {
           id: `train-${train.subwayId || 'sim'}-${train.trainNo}`,
           type: 'subway' as const,
           nextPos: coord,
           lineName: train.subwayNm,
           lineColor: lineColor,
-          label: `${train.arrivalNm || '진입'}`,
+          label,
         };
       }));
 
@@ -218,13 +222,19 @@ class TransitRealtimeService extends EventEmitter {
         const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm || normalizeLineName(l.name) === normalizeLineName(train.subwayNm));
         const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
 
+        const isUpward = train.updnLine === '1';
+        const destination = train.lstnyNm || train.arrivalNm?.replace('행', '') || '';
+        const label = destination
+          ? (isUpward ? `▶ ${destination}행` : `◀ ${destination}행`)
+          : (isUpward ? '▶ 상행' : '◀ 하행');
+
         return {
           id: `train-sim-${train.trainNo}`,
           type: 'subway' as const,
           nextPos: coord,
           lineName: train.subwayNm,
           lineColor: lineColor,
-          label: `${train.arrivalNm || '시뮬레이션'}`,
+          label,
         };
       }));
       this.worker?.postMessage({ type: 'UPDATE_UNITS', data: subwayUnits.filter(u => u !== null) });
@@ -238,38 +248,42 @@ class TransitRealtimeService extends EventEmitter {
   private generateSimulatedSubwayResults(): any[] {
       if (!this.simulatedTrains) {
           this.simulatedTrains = [];
-          const linesToSimulate = SUBWAY_LINES.slice(0, 9); // Lines 1-9
+          // 주요 노선 전체 커버 (1~9호선, 경의중앙, 수인분당, 신분당, 공항, 경춘 등)
+          const SIMULATED_LINE_NAMES = ['1호선','2호선','3호선','4호선','5호선','6호선','7호선','8호선','9호선',
+            '경의중앙선','수인분당선','신분당선','공항철도','경춘선','신림선','우이신설선','인천1호선','인천2호선'];
+          const linesToSimulate = SUBWAY_LINES.filter(l => SIMULATED_LINE_NAMES.includes(l.name));
+          // 중복 이름 제거 (1호선이 여러 구간으로 나뉜 경우 첫 번째만 사용)
+          const seen = new Set<string>();
           
           linesToSimulate.forEach(line => {
-              if (!line.stations || line.stations.length < 5) return;
-              
-              // Add 10 trains per line!
-              for (let i = 0; i < 10; i++) {
-                  const randomIndex = Math.floor(Math.random() * (line.stations.length - 1));
+              if (seen.has(line.name)) return;
+              if (!line.stations || line.stations.length < 4) return;
+              seen.add(line.name);
+
+              // 역 간격을 두어 열차 배치 (노선 길이에 따라 적절히)
+              const step = Math.max(1, Math.floor(line.stations.length / 8));
+              for (let i = 0; i < line.stations.length; i += step) {
+                  const direction = (i % 2 === 0) ? 1 : -1;
                   this.simulatedTrains!.push({
                       subwayId: line.id,
                       subwayNm: line.name,
-                      currentStationIndex: randomIndex,
-                      direction: Math.random() > 0.5 ? 1 : -1,
-                      trainNo: `SIM${line.id.substring(0,1)}${i}`,
+                      currentStationIndex: i,
+                      direction,
+                      trainNo: `SIM-${line.id}-${i}`,
                   });
               }
           });
       } else {
-         // Move each train forward smoothly!
+         // 매 폴링 사이클마다 한 역씩 이동
          this.simulatedTrains.forEach(train => {
              const line = SUBWAY_LINES.find(l => l.id === train.subwayId);
              if (line) {
-                 // 80% chance to move to next station every 15 sec (so they don't get stuck too long)
-                 if (Math.random() < 0.8) {
-                    let nextIndex = train.currentStationIndex + train.direction;
-                    // Bounce at the ends of the line
-                    if (nextIndex < 0 || nextIndex >= line.stations.length) {
-                        train.direction *= -1; 
-                        nextIndex = train.currentStationIndex + train.direction;
-                    }
-                    train.currentStationIndex = nextIndex;
-                 }
+                let nextIndex = train.currentStationIndex + train.direction;
+                if (nextIndex < 0 || nextIndex >= line.stations.length) {
+                    train.direction *= -1;
+                    nextIndex = train.currentStationIndex + train.direction;
+                }
+                train.currentStationIndex = Math.max(0, Math.min(line.stations.length - 1, nextIndex));
              }
          });
       }
@@ -278,18 +292,21 @@ class TransitRealtimeService extends EventEmitter {
       this.simulatedTrains.forEach(train => {
           const line = SUBWAY_LINES.find(l => l.id === train.subwayId);
           if (line) {
-             const station = line.stations[train.currentStationIndex];
-             let nextIndex = train.currentStationIndex + train.direction;
-             if (nextIndex < 0 || nextIndex >= line.stations.length) nextIndex = train.currentStationIndex;
-             const nextStation = line.stations[nextIndex];
+             const idx = train.currentStationIndex;
+             const station = line.stations[idx];
+             // 종착역: 방향에 따라 맨 앞 or 맨 뒤 역
+             const terminalStation = train.direction > 0
+               ? line.stations[line.stations.length - 1]
+               : line.stations[0];
              
              results.push({
                  subwayId: train.subwayId,
                  subwayNm: train.subwayNm,
                  statnNm: station.name,
                  trainNo: train.trainNo,
-                 arrivalNm: nextStation.name + '행',
-                 trainSttus: "1" // STOPPED/MOVING
+                 lstnyNm: terminalStation.name,
+                 updnLine: train.direction > 0 ? '1' : '2',
+                 trainSttus: '1',
              });
           }
       });

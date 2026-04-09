@@ -41,27 +41,37 @@ function processUpdates(units: any[]) {
   const now = Date.now();
   units.forEach((unit) => {
     const existing = transitState.get(unit.id);
-    
+
     if (!existing) {
+      // 첫 등장: nextPos에서 시작 (아직 이동 정보 없음)
       transitState.set(unit.id, {
         ...unit,
         lastPos: unit.nextPos,
-        lastUpdateTime: now - 15000,
-        nextUpdateTime: now,
+        lastUpdateTime: now - 10000,  // 10초 전에 현재 위치에 있었다고 가정
+        nextUpdateTime: now + 10000,  // 10초 후에 next로 이동
       });
     } else {
-      existing.lastPos = existing.nextPos;
-      existing.nextPos = unit.nextPos;
-      existing.lastUpdateTime = existing.nextUpdateTime;
-      existing.nextUpdateTime = now;
+      // ✅ 핵심 픽스: jump-back 방지
+      // 이전 애니메이션의 현재 시각적 위치를 계산해서 lastPos로 설정
+      const oldDuration = existing.nextUpdateTime - existing.lastUpdateTime;
+      const oldRatio = oldDuration > 0
+        ? Math.min(1.0, (now - existing.lastUpdateTime) / oldDuration)
+        : 1.0;
+      const visualCurrentPos = interpolate(existing.lastPos, existing.nextPos, oldRatio);
+
+      existing.lastPos = visualCurrentPos;    // 현재 화면상 위치에서 출발
+      existing.nextPos = unit.nextPos;         // 새 목적지 역
+      existing.lastUpdateTime = now;
+      existing.nextUpdateTime = now + 12000;   // 12초 안에 다음 역에 도달
       existing.lineName = unit.lineName;
       existing.lineColor = unit.lineColor;
       existing.label = unit.label;
     }
   });
 
+  // 오래된 유닛 정리 (마지막 업데이트 후 90초 이상된 경우)
   for (const [id, unit] of transitState.entries()) {
-    if (now - unit.nextUpdateTime > 60000) {
+    if (now - unit.lastUpdateTime > 90000) {
       transitState.delete(id);
     }
   }
@@ -75,13 +85,12 @@ function startTick() {
 
     for (const unit of transitState.values()) {
       const duration = unit.nextUpdateTime - unit.lastUpdateTime;
+      // ✅ ratio는 최대 1.0까지만 (1.5 dead-reckoning 제거 - 노선 이탈 원인)
       let ratio = duration > 0 ? (now - unit.lastUpdateTime) / duration : 1;
-      
-      // 1.5배까지는 부드럽게 예측 주행 (Dead Reckoning)
-      ratio = Math.min(1.5, ratio); 
+      ratio = Math.max(0, Math.min(1.0, ratio));
 
       const currentPos = interpolate(unit.lastPos, unit.nextPos, ratio);
-      
+
       result.push({
         id: unit.id,
         type: unit.type,
@@ -98,7 +107,7 @@ function startTick() {
     }
 
     if (transitState.size > 0) {
-      setTimeout(tick, 1000 / 60); // 60fps
+      setTimeout(tick, 1000 / 30); // 30fps (충분히 부드럽고 성능 절약)
     } else {
       isTicking = false;
     }
@@ -114,8 +123,12 @@ function interpolate(last: [number, number], next: [number, number], ratio: numb
 }
 
 function calculateBearing(start: [number, number], end: [number, number]): number {
-  const y = Math.sin(end[1] - start[1]) * Math.cos(end[0]);
-  const x = Math.cos(start[0]) * Math.sin(end[0]) - Math.sin(start[0]) * Math.cos(end[0]) * Math.cos(end[1] - start[1]);
-  const brng = Math.atan2(y, x);
-  return (brng * 180 / Math.PI + 360) % 360;
+  if (start[0] === end[0] && start[1] === end[1]) return 0;
+  // MapLibre uses [lng, lat], so index 0 = lng, index 1 = lat
+  const lat1 = start[1] * Math.PI / 180;
+  const lat2 = end[1] * Math.PI / 180;
+  const dLng = (end[0] - start[0]) * Math.PI / 180;
+  const y = Math.sin(dLng) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
+  return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
 }
