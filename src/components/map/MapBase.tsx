@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, memo } from "react";
-import Map, { MapRef, NavigationControl } from "react-map-gl/maplibre";
+import { useState, useRef, memo } from "react";
+import Map, { MapRef } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -36,9 +36,10 @@ const MapBase = ({
 }: MapBaseProps) => {
   const mapRef = useRef<MapRef | null>(null);
   const [cursor, setCursor] = useState<string>("auto");
+  const boundsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return (
-    <div className="absolute inset-0 w-full h-full z-0 bg-black">
+    <div className="absolute inset-0 w-full h-full z-0 bg-zinc-100 dark:bg-black">
       <Map
         initialViewState={initialViewState}
         mapStyle={isDarkMode ? CARTO_DARK : CARTO_VOYAGER}
@@ -51,15 +52,20 @@ const MapBase = ({
         onMove={(e) => {
           const { latitude, longitude } = e.viewState;
           if (onCenterChange) onCenterChange(latitude, longitude);
-          
+
+          // Debounce bounds change — DB query doesn't need to run at 60fps
           if (onBoundsChange && mapRef.current) {
-            const b = mapRef.current.getBounds();
-            onBoundsChange({
-                minLat: b.getSouth(),
-                minLng: b.getWest(),
-                maxLat: b.getNorth(),
-                maxLng: b.getEast()
-            });
+            if (boundsTimerRef.current) clearTimeout(boundsTimerRef.current);
+            boundsTimerRef.current = setTimeout(() => {
+              if (!mapRef.current) return;
+              const b = mapRef.current.getBounds();
+              onBoundsChange({
+                  minLat: b.getSouth(),
+                  minLng: b.getWest(),
+                  maxLat: b.getNorth(),
+                  maxLng: b.getEast()
+              });
+            }, 300);
           }
         }}
         ref={(r) => {
