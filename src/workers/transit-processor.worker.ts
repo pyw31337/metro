@@ -24,13 +24,13 @@ self.onmessage = (e: MessageEvent) => {
     if (!isTicking) startTick();
   } else if (type === 'CLEAR_SIMULATED') {
     for (const id of transitState.keys()) {
-      if (id.includes('sim')) {
+      if (id.toLowerCase().includes('sim')) {
         transitState.delete(id);
       }
     }
   } else if (type === 'CLEAR_REAL') {
     for (const id of transitState.keys()) {
-      if (!id.includes('sim') && id.includes('train')) {
+      if (!id.toLowerCase().includes('sim') && id.includes('train')) {
         transitState.delete(id);
       }
     }

@@ -428,7 +428,7 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
             const url = API_ENDPOINTS.SUBWAY_POSITION(key, lineName);
             try {
                 const json = await fetchWithFallbacks(url);
-                if (json?.realtimeSubwayPositionList) return json;
+                if (json?.realtimePositionList) return json;
             } catch (e) {}
         }
         return null;
@@ -436,7 +436,7 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
 
     try {
         const json = await tryFetchWithKeys();
-        return (json?.realtimeSubwayPositionList || []).map((item: any) => ({
+        return (json?.realtimePositionList || []).map((item: any) => ({
             subwayId: item.subwayId,
             subwayNm: item.subwayNm,
             statnId: item.statnId,

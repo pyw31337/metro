@@ -57,7 +57,7 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
  */
 export const API_ENDPOINTS = {
     SUBWAY_POSITION: (key: string, name: string) =>
-        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeSubwayPosition/0/100/${encodeURIComponent(name)}`,
+        `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/100/${encodeURIComponent(name)}`,
     
     SUBWAY_ARRIVAL: (key: string, station: string) =>
         `https://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeStationArrival/0/20/${encodeURIComponent(station)}`,
