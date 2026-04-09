@@ -1,0 +1,21 @@
+{
+  "name": "Metro Live",
+  "short_name": "Metro Live",
+  "description": "수도권 실시간 지하철·버스·화장실 네비게이션",
+  "start_url": "/metro/",
+  "scope": "/metro/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0052A4",
+  "icons": [
+    {
+      "src": "/metro/train-icon.png",
+      "sizes": "150x150",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["navigation", "travel", "utilities"],
+  "lang": "ko"
+}
