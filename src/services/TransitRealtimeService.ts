@@ -13,6 +13,8 @@ export interface RealtimeUnit {
   label: string;
   lineName: string;
   lineColor: string;
+  updnLine?: string;
+  currentStationName?: string;
 }
 
 const SUBWAY_POLLING_NAMES = [

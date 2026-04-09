@@ -103,15 +103,22 @@ export interface StationMetric {
     rank?: number;
 }
 
+export interface RouteSegment {
+    line: string;
+    direction: '0' | '1';
+    stations: string[];
+}
+
 export interface PathResult {
-    path: string[]; 
-    totalWeight: number; 
-    weights: number[]; 
+    path: string[];
+    totalWeight: number;
+    weights: number[];
     transferCount: number;
     strategy: "time" | "transfer";
     fare: number;
     transfers: any[];
     linePath?: string[];
+    segments?: RouteSegment[];
 }
 
 export interface WCFilters {

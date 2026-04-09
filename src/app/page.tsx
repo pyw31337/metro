@@ -431,7 +431,6 @@ export default function Home() {
         <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
             <div className="absolute inset-0 z-10">
                 <MapLibreBackground
-                    pathResult={activePath}
                     startStation={startStation}
                     endStation={endStation}
                     isDarkMode={isDarkMode}
