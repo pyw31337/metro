@@ -241,6 +241,27 @@ export default function Home() {
     if (activePath && mapSt.activeLine) mapSt.setActiveLine(null);
   }, [activePath, mapSt.activeLine]);
 
+  // 경로 결과 나오면 지도 자동 fitBounds
+  useEffect(() => {
+    if (!activePath?.path?.length || !mapRef.current) return;
+    const coords: [number, number][] = [];
+    for (const name of activePath.path) {
+      const s = stations.find(st => st.name === name);
+      if (s?.lat && s?.lng) coords.push([s.lng, s.lat]);
+    }
+    if (coords.length < 2) return;
+    const minLng = Math.min(...coords.map(c => c[0]));
+    const maxLng = Math.max(...coords.map(c => c[0]));
+    const minLat = Math.min(...coords.map(c => c[1]));
+    const maxLat = Math.max(...coords.map(c => c[1]));
+    mapRef.current.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+      padding: { top: 80, bottom: 220, left: 40, right: 40 },
+      duration: 1200,
+      maxZoom: 14
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePath]);
+
   // ─────────────────────────────────────────────────────────────────────────
   // 이벤트 핸들러
   // ─────────────────────────────────────────────────────────────────────────
