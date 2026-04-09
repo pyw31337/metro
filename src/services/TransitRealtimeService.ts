@@ -191,6 +191,8 @@ class TransitRealtimeService extends EventEmitter {
       lineColor,
       label,
       status: train.arvlCd || '99',
+      updnLine: train.updnLine,
+      currentStationName: train.statnNm, // ✅ 추가: 현재 역 이름
     };
   }
 

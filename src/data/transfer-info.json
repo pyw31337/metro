@@ -1,9 +1,8 @@
-[
   {
-    "stationName": "을지로3가",
+    "stationName": "영등포구청",
     "transfers": [
-      { "from": "2", "to": "3", "platform": "4-3" },
-      { "from": "3", "to": "2", "platform": "2-2" }
+      { "from": "2", "to": "5", "platform": "2-4" },
+      { "from": "5", "to": "2", "platform": "6-3" }
     ]
   },
   {
@@ -14,18 +13,18 @@
     ]
   },
   {
-    "stationName": "서울역",
+    "stationName": "대림",
     "transfers": [
-      { "from": "1", "to": "4", "platform": "10-4" },
-      { "from": "4", "to": "1", "platform": "1-1" },
-      { "from": "1", "to": "공항철도", "platform": "1-1" }
+      { "from": "2", "to": "7", "platform": "1-1" },
+      { "from": "7", "to": "2", "platform": "8-4" }
     ]
   },
   {
-    "stationName": "청량리",
+    "stationName": "고속터미널",
     "transfers": [
-      { "from": "1", "to": "경의중앙", "platform": "1-1" },
-      { "from": "경의중앙", "to": "1", "platform": "4-1" }
+      { "from": "3", "to": "7", "platform": "5-2" },
+      { "from": "7", "to": "3", "platform": "4-1" },
+      { "from": "9", "to": "3", "platform": "2-2" }
     ]
   }
 ]

@@ -369,23 +369,6 @@ export default function UnifiedBottomPanel({
                                 <IngestionProgress tasks={tasks} isVisible={isIngesting} />
                             </div>
 
-                            {/* Live Tracking Status */}
-                            {activePath && (
-                                <div className="px-3 py-2 flex items-center gap-3 bg-blue-500/5 dark:bg-blue-500/10 rounded-2xl border border-blue-500/10">
-                                    <div className="relative">
-                                        <Locate size={16} className="text-blue-500 animate-pulse" />
-                                        <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-[11px] font-black text-blue-500 uppercase tracking-widest">Live Tracking</span>
-                                            <span className="w-1 h-1 rounded-full bg-blue-500" />
-                                            <span className="text-[10px] font-bold text-zinc-500">실시간 연동 중</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
                             {/* Premium Route Timeline */}
                             {showAllRouteBubbles && activePath && (
                                 <motion.div 

@@ -51,6 +51,12 @@ export interface PathTransfer {
     fastTransfer?: string; // e.g., "2-4"
 }
 
+export interface RouteSegment {
+    line: string;
+    direction: '0' | '1'; // 0: Up/Inner, 1: Down/Outer
+    stations: string[];
+}
+
 export interface PathResult {
     path: string[]; // List of station names
     totalWeight: number; // Actual time in minutes
@@ -59,7 +65,7 @@ export interface PathResult {
     strategy: PathStrategy;
     fare: number;
     transfers: PathTransfer[];
-    linePath?: string[]; // Added this line
+    segments?: RouteSegment[]; // Added for directional filtering
 }
 
 /**
@@ -117,9 +123,50 @@ export const findPathWithStrategy = (points: string[], strategy: PathStrategy): 
         transferCount: totalTransferCount,
         strategy,
         fare,
-        transfers: points.length === 2 ? calculateTransfers(finalPath) : []
+        transfers: calculateTransfers(finalPath),
+        segments: buildSegments(finalPath)
     };
 };
+
+function buildSegments(path: string[]): RouteSegment[] {
+    const segments: RouteSegment[] = [];
+    if (path.length < 2) return segments;
+
+    let currentLine: string | null = null;
+    let currentStations: string[] = [path[0]];
+
+    for (let i = 0; i < path.length - 1; i++) {
+        const line = findLineBetween(path[i], path[i+1]);
+        if (line === null) continue;
+
+        if (!currentLine) {
+            currentLine = line;
+        }
+
+        if (line === currentLine) {
+            currentStations.push(path[i+1]);
+        } else {
+            segments.push(createSegment(currentLine, currentStations));
+            currentLine = line;
+            currentStations = [path[i], path[i+1]];
+        }
+    }
+    if (currentLine) {
+        segments.push(createSegment(currentLine, currentStations));
+    }
+    return segments;
+}
+
+function createSegment(lineName: string, stations: string[]): RouteSegment {
+    const line = SUBWAY_LINES.find(l => l.name === lineName);
+    let direction: '0' | '1' = '1';
+    if (line && stations.length >= 2) {
+        const idx1 = line.stations.findIndex(s => s.name === stations[0] || s.name === stations[0] + '역');
+        const idx2 = line.stations.findIndex(s => s.name === stations[stations.length - 1] || s.name === stations[stations.length - 1] + '역');
+        direction = (idx2 > idx1) ? '1' : '0';
+    }
+    return { line: lineName, direction, stations };
+}
 
 function calculateTransfers(path: string[]): PathTransfer[] {
     const transfers: PathTransfer[] = [];
@@ -130,7 +177,6 @@ function calculateTransfers(path: string[]): PathTransfer[] {
         const prevStation = path[i-1];
         const nextStation = path[i+1];
 
-        // Find line for [prev, station] and [station, next]
         const lineBefore = findLineBetween(prevStation, station);
         const lineAfter = findLineBetween(station, nextStation);
 
@@ -139,7 +185,7 @@ function calculateTransfers(path: string[]): PathTransfer[] {
                 stationName: station,
                 fromLine: lineBefore,
                 toLine: lineAfter,
-                fastTransfer: "2-4" // Placeholder for demonstration
+                fastTransfer: "2-4" 
             });
         }
     }

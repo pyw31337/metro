@@ -133,7 +133,8 @@ const SubwayLayers = ({
               16, 15
             ],
             "text-offset": [0, 1.4],
-            "text-anchor": "top"
+            "text-anchor": "top",
+            "symbol-sort-key": 1, // ✅ 열차보다 낮게 정렬
           }}
           paint={{
             "text-color": ["case",

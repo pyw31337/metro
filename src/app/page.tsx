@@ -317,6 +317,13 @@ export default function Home() {
         calculatePath(startStation, waypoints, endStation);
     }, [startStation, waypoints, endStation, calculatePath]);
 
+    // ✅ 길찾기 시 기존 활성화 노선 해제 (배타적 하이라이트)
+    useEffect(() => {
+        if (activePath && activeLine) {
+            handleActiveLineChange(null);
+        }
+    }, [activePath, activeLine, handleActiveLineChange]);
+
     const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
         if (!cityCode) return;
         try {
@@ -451,6 +458,7 @@ export default function Home() {
                     activeLine={activeLine}
                     onActiveLineChange={handleActiveLineChange}
                     onMapReady={(m) => { mapRef.current = m; }}
+                    pathResult={activePath}
                     userLocation={userLocation}
                     nearestStation={nearestStation}
                     nearestBusStop={nearestBusStop}
