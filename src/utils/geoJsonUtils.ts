@@ -1,6 +1,9 @@
 import { SUBWAY_LINES, Station as SubwayStation, SubwayLine, getStationByName } from "@/data/subway-lines";
 import { WCItem, BusStop, PathResult, WCFilters } from "@/types/metro";
 
+// Module-level O(1) line-name→color lookup
+const LINE_COLOR_MAP = new Map<string, string>(SUBWAY_LINES.map(l => [l.name, l.color]));
+
 export interface GeoJsonFeatureCollection {
   type: "FeatureCollection";
   features: any[];
@@ -160,8 +163,8 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 }
                 
                 if (outgoingLines.length > 0) {
-                    const line = SUBWAY_LINES.find(l => l.name === outgoingLines[0]);
-                    if (line) routeColor = line.color;
+                    const color = LINE_COLOR_MAP.get(outgoingLines[0]);
+                    if (color) routeColor = color;
                 }
                 
                 if (isActualTransfer) {
@@ -176,8 +179,8 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             if (nextS) {
                 const commonLines = s.lines.filter(l => nextS.lines.includes(l));
                 if (commonLines.length > 0) {
-                    const line = SUBWAY_LINES.find(l => l.name === commonLines[0]);
-                    if (line) routeColor = line.color;
+                    const color = LINE_COLOR_MAP.get(commonLines[0]);
+                    if (color) routeColor = color;
                 }
             }
         }

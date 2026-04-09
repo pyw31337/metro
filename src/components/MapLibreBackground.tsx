@@ -258,7 +258,7 @@ function MapLibreBackground(props: MapLibreProps) {
             }
             setSelectedWC(null);
             onWCClick(null);
-        } else if (feature.layer.id === 'wc-unclustered') {
+        } else if (feature.layer.id === 'wc-unclustered' || feature.layer.id === 'wc-unclustered-label') {
             const fp = feature.properties;
             const wcItem: WCItem = {
                 id: fp.id, name: fp.name, lat: coords.lat, lng: coords.lng,
@@ -304,7 +304,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 'subway-station-circle', 'subway-station-label', 
                 'subway-line-layer', 'subway-line-interaction', 'bus-unclustered', 
                 'bus-unclustered-hitbox', 'bus-clusters',
-                'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-clusters'
+                'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-unclustered-label', 'wc-clusters'
             ]}
         >
             <MapIconRegister stations={stations} />
