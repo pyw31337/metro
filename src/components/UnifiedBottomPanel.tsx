@@ -157,6 +157,7 @@ export default function UnifiedBottomPanel({
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
     const destInputRef = useRef<HTMLInputElement>(null);
+    const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const badges = useMemo(() => {
         if (!selectedStationName) return [];
@@ -235,28 +236,32 @@ export default function UnifiedBottomPanel({
 
         if (!val || val.trim().length === 0) {
             setSearchResults([]);
+            if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
             return;
         }
 
-        const q = val.toLowerCase().trim();
-        const filteredSubway = stations
-            .filter(s => matchChosung(q, s.name) || s.name.toLowerCase().includes(q))
-            .map(s => ({ ...s, type: 'subway' }))
-            .sort((a, b) => {
-                const aName = a.name.toLowerCase();
-                const bName = b.name.toLowerCase();
-                if (aName === q) return -1;
-                if (bName === q) return 1;
-                return (b as any).lines?.length - (a as any).lines?.length;
-            });
+        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+        searchDebounceRef.current = setTimeout(() => {
+            const q = val.toLowerCase().trim();
+            const filteredSubway = stations
+                .filter(s => matchChosung(q, s.name) || s.name.toLowerCase().includes(q))
+                .map(s => ({ ...s, type: 'subway' }))
+                .sort((a, b) => {
+                    const aName = a.name.toLowerCase();
+                    const bName = b.name.toLowerCase();
+                    if (aName === q) return -1;
+                    if (bName === q) return 1;
+                    return (b as any).lines?.length - (a as any).lines?.length;
+                });
 
-        const filteredBus = (busStops || [])
-            .filter(s => s.name.toLowerCase().includes(q))
-            .map(s => ({ ...s, type: 'bus' }))
-            .slice(0, 3);
+            const filteredBus = (busStops || [])
+                .filter(s => s.name.toLowerCase().includes(q))
+                .map(s => ({ ...s, type: 'bus' }))
+                .slice(0, 3);
 
-        setSearchResults([...filteredSubway, ...filteredBus].slice(0, 8));
-        setActiveIndex(-1);
+            setSearchResults([...filteredSubway, ...filteredBus].slice(0, 8));
+            setActiveIndex(-1);
+        }, 100);
     };
 
     const selectLocation = (s: any) => {
@@ -295,7 +300,7 @@ export default function UnifiedBottomPanel({
         );
     };
 
-    const formatStationDisplay = (value: string, isDest: boolean = false) => {
+    const formatInputDisplay = (value: string, isDest: boolean = false) => {
         if (!value) return null;
         let stationName = value;
         let lineInfo = "";
@@ -380,7 +385,7 @@ export default function UnifiedBottomPanel({
                                         {activePath.path.map((stationName, idx) => {
                                             const isStart = idx === 0;
                                             const isEnd = idx === activePath.path.length - 1;
-                                            const weight = activePath.weights[idx];
+                                            const weight = activePath.weights[idx] ?? 0;
                                             const arrivalTime = new Date(Date.now() + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                                             const transfer = activePath.transfers.find(t => t.stationName === stationName);
                                             
@@ -479,7 +484,7 @@ export default function UnifiedBottomPanel({
                             <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
                                 <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
-                                    {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatStationDisplay(source)}</div>)}
+                                    {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(source)}</div>)}
                                     <input ref={sourceInputRef} type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
@@ -491,7 +496,7 @@ export default function UnifiedBottomPanel({
                             <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
                                 <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
-                                    {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatStationDisplay(destination, true)}</div>)}
+                                    {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(destination, true)}</div>)}
                                     <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">

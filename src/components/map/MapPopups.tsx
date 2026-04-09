@@ -11,6 +11,7 @@ import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
+import { useBusArrivals } from "@/hooks/useBusArrivals";
 
 interface MapPopupsProps {
   popupCoords: [number, number] | null;
@@ -88,7 +89,6 @@ const RoadViewButtons = ({ lat, lng, address, isDarkMode }: { lat: number, lng: 
 );
 
 const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute, isDarkMode }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void, isDarkMode?: boolean }) => {
-  const { useBusArrivals } = require("@/hooks/useBusArrivals");
   const { arrivals, loading } = useBusArrivals(stopId, cityCode);
 
   if (loading) return <div className="py-4 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
@@ -179,12 +179,6 @@ const MapPopups = ({
     const lines = SUBWAY_LINES.filter(l => l.stations.some(s => s.name === selectedStationName));
     return lines.map(l => ({ lineName: l.name, color: l.color }));
   }, [activeTab, selectedStationName]);
-
-  useEffect(() => {
-    if (popupCoords && activeTab === 'subway' && !activeLine && badges.length > 0) {
-      onActiveLineChange(badges[0].lineName);
-    }
-  }, [popupCoords, activeTab, activeLine, badges, onActiveLineChange]);
 
   useEffect(() => {
     if (popupCoords && activeTab === 'subway' && !activeLine && badges.length > 0) {
@@ -306,17 +300,21 @@ const MapPopups = ({
 
                 <div className="space-y-2">
                     {(activeTab === 'subway' && selectedStationName) ? (
-                         stationArrivals.length > 0 ? (
+                         stationArrivals.length > 0 ? (() => {
+                            const upTrains  = filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'));
+                            const downTrains = filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'));
+                            const offHourMsg = (() => { const h = new Date().getHours(); return (h >= 1 && h < 5) ? "운행 종료" : "정보 없음"; })();
+                            return (
                             <div className="grid grid-cols-2 gap-2 mt-1">
                                 <div className="flex flex-col gap-1.5">
-                                    <ArrivalHeader 
-                                        defaultTitle="상행 · 내선" 
-                                        trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'))}
+                                    <ArrivalHeader
+                                        defaultTitle="상행 · 내선"
+                                        trains={upTrains}
                                         textColor="text-blue-500 dark:text-blue-400"
                                         borderColor="border-blue-500/20"
                                     />
-                                    {filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).length > 0 ? (
-                                        filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선')).slice(0, 3).map((arr: any, i: number) => (
+                                    {upTrains.length > 0 ? (
+                                        upTrains.slice(0, 3).map((arr: any, i: number) => (
                                             <div key={i} className="flex items-center gap-1.5 group">
                                                 <div className="flex-1">
                                                     <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
@@ -324,23 +322,18 @@ const MapPopups = ({
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="text-[10px] text-zinc-400 text-center py-2">
-                                            {(() => {
-                                                const hour = new Date().getHours();
-                                                return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
-                                            })()}
-                                        </div>
+                                        <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
                                     )}
                                 </div>
                                 <div className="flex flex-col gap-1.5">
-                                    <ArrivalHeader 
-                                        defaultTitle="하행 · 외선" 
-                                        trains={filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'))}
+                                    <ArrivalHeader
+                                        defaultTitle="하행 · 외선"
+                                        trains={downTrains}
                                         textColor="text-orange-500 dark:text-orange-400"
                                         borderColor="border-orange-500/20"
                                     />
-                                    {filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).length > 0 ? (
-                                        filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선')).slice(0, 3).map((arr: any, i: number) => (
+                                    {downTrains.length > 0 ? (
+                                        downTrains.slice(0, 3).map((arr: any, i: number) => (
                                             <div key={i} className="flex items-center gap-1.5 group">
                                                 <div className="flex-1">
                                                     <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
@@ -348,16 +341,12 @@ const MapPopups = ({
                                             </div>
                                         ))
                                     ) : (
-                                        <div className="text-[10px] text-zinc-400 text-center py-2">
-                                            {(() => {
-                                                const hour = new Date().getHours();
-                                                return (hour >= 1 && hour < 5) ? "운행 종료" : "정보 없음";
-                                            })()}
-                                        </div>
+                                        <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
                                     )}
                                 </div>
                             </div>
-                        ) : (
+                        );
+                    })() : (
                             <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">
                                 {(() => {
                                     const hour = new Date().getHours();
