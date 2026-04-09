@@ -15,6 +15,7 @@ import { useIngestion } from "@/hooks/useIngestion";
 import IngestionProgress from "./IngestionProgress";
 import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
+import { useRouteStore } from "@/store/useRouteStore";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -242,6 +243,7 @@ export default function UnifiedBottomPanel({
     onSelectBusRoute
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
+    const { waypoints, removeWaypoint } = useRouteStore();
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -559,7 +561,7 @@ export default function UnifiedBottomPanel({
                     {activeTab === "wc" && <WCPanel />}
 
                     {activeTab !== "wc" && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-0.5 relative">
+                        <div className="flex flex-col gap-2 mt-0.5 relative">
                             {isLocating && (
                                 <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-10">
                                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
@@ -592,6 +594,25 @@ export default function UnifiedBottomPanel({
                                     <button disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                 </div>
                             </div>
+                            {/* Waypoints */}
+                            {waypoints.length > 0 && (
+                                <div className="flex flex-col gap-1">
+                                    {waypoints.map((wp, idx) => (
+                                        <div key={idx} className="flex items-center px-3 h-9 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-200/50 dark:border-violet-700/30">
+                                            <span className="text-[11px] font-black text-violet-500 shrink-0 mr-1">경유</span>
+                                            <span className="flex-1 text-[13px] font-bold text-zinc-900 dark:text-white truncate px-2">
+                                                {wp.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, '')}
+                                            </span>
+                                            <button
+                                                onClick={() => removeWaypoint(idx)}
+                                                className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"
+                                            >
+                                                <X size={14} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                             {/* Destination Second */}
                             <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
                                 <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>

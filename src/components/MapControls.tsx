@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Plus, Minus, Crosshair, Menu, X, Sun, Moon, CloudSun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { THEME } from "@/theme/design-system";
 
 interface MapControlsProps {
     onZoomIn: () => void;
@@ -14,23 +13,23 @@ interface MapControlsProps {
     onDarkModeToggle: () => void;
 }
 
-export default function MapControls({ 
-    onZoomIn, 
-    onZoomOut, 
-    onLocate, 
+export default function MapControls({
+    onZoomIn,
+    onZoomOut,
+    onLocate,
     onWeatherToggle,
-    isDarkMode, 
-    onDarkModeToggle 
+    isDarkMode,
+    onDarkModeToggle
 }: MapControlsProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    const menuItems = [
+    const menuItems = useMemo(() => [
         { id: "dark", icon: isDarkMode ? <Sun size={20} /> : <Moon size={20} />, onClick: onDarkModeToggle, label: "테마" },
         { id: "weather", icon: <CloudSun size={20} />, onClick: onWeatherToggle, label: "날씨" },
         { id: "locate", icon: <Crosshair size={20} />, onClick: onLocate, label: "위치" },
         { id: "zoomIn", icon: <Plus size={20} />, onClick: onZoomIn, label: "확대" },
         { id: "zoomOut", icon: <Minus size={20} />, onClick: onZoomOut, label: "축소" },
-    ];
+    ], [isDarkMode, onDarkModeToggle, onWeatherToggle, onLocate, onZoomIn, onZoomOut]);
 
     return (
         <div className="flex flex-col items-center gap-3">

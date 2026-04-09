@@ -24,6 +24,7 @@ interface RouteStore {
   setEndStation: (s: string | null) => void;
   setWaypoints: (w: string[]) => void;
   addWaypoint: (w: string) => void;
+  removeWaypoint: (index: number) => void;
   setIsCalculating: (v: boolean) => void;
   setValidationError: (e: ValidationError) => void;
   setShowAllRouteBubbles: (v: boolean) => void;
@@ -49,6 +50,7 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
   setEndStation: (s) => set({ endStation: s }),
   setWaypoints: (w) => set({ waypoints: w }),
   addWaypoint: (w) => set(state => ({ waypoints: [...state.waypoints, w] })),
+  removeWaypoint: (index) => set(state => ({ waypoints: state.waypoints.filter((_, i) => i !== index) })),
   setIsCalculating: (v) => set({ isCalculating: v }),
   setValidationError: (e) => set({ validationError: e }),
   setShowAllRouteBubbles: (v) => set({ showAllRouteBubbles: v }),

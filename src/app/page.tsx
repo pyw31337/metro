@@ -80,7 +80,7 @@ export default function Home() {
         mapSt.setIsLocating(true);
         mapSt.setLocatingTimer(10);
         timerInterval = setInterval(() => {
-          mapSt.setLocatingTimer(Math.max(0, mapSt.locatingTimer - 1));
+          mapSt.setLocatingTimer(Math.max(0, useMapStore.getState().locatingTimer - 1));
         }, 1000);
       }
 
@@ -97,6 +97,7 @@ export default function Home() {
             // 최초 위치 → 지도 이동 (직접 호출, 배치 렌더 우회)
             mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
             mapSt.setHasInitialLocation(true);
+
 
             // 가장 가까운 역을 출발역으로
             if (stations.length > 0) {
@@ -279,7 +280,7 @@ export default function Home() {
     mapSt.setIsLocating(true);
     mapSt.setLocatingTimer(5);
     const interval = setInterval(() => {
-      mapSt.setLocatingTimer(Math.max(0, mapSt.locatingTimer - 1));
+      mapSt.setLocatingTimer(Math.max(0, useMapStore.getState().locatingTimer - 1));
     }, 1000);
     const cleanup = () => { clearInterval(interval); mapSt.setIsLocating(false); mapSt.setLocatingTimer(0); };
 

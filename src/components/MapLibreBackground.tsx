@@ -23,6 +23,7 @@ import NearbyPulseMarkers from "./map/NearbyPulseMarkers";
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { useTransferVerification } from "@/hooks/useTransferVerification";
 import { useUserLocation } from "@/hooks/useUserLocation";
+import { transitRealtimeService } from "@/services/TransitRealtimeService";
 
 interface MapLibreProps {
     pathResult: PathResult | null;
@@ -168,14 +169,12 @@ function MapLibreBackground(props: MapLibreProps) {
 
     useEffect(() => {
         if (!mapInstance) return;
-        const { transitRealtimeService } = require("@/services/TransitRealtimeService");
         transitRealtimeService.start();
         return () => transitRealtimeService.stop();
     }, [mapInstance]);
 
     useEffect(() => {
         if (!selectedBusRoute) return;
-        const { transitRealtimeService } = require("@/services/TransitRealtimeService");
         const cityCode = selectedBusStop?.cityCode || "11";
         transitRealtimeService.trackBusRoute(cityCode, selectedBusRoute);
         return () => transitRealtimeService.untrackBusRoute(cityCode, selectedBusRoute);
