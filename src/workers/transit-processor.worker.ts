@@ -22,6 +22,18 @@ self.onmessage = (e: MessageEvent) => {
   if (type === 'UPDATE_UNITS') {
     processUpdates(data);
     if (!isTicking) startTick();
+  } else if (type === 'CLEAR_SIMULATED') {
+    for (const id of transitState.keys()) {
+      if (id.includes('sim')) {
+        transitState.delete(id);
+      }
+    }
+  } else if (type === 'CLEAR_REAL') {
+    for (const id of transitState.keys()) {
+      if (!id.includes('sim') && id.includes('train')) {
+        transitState.delete(id);
+      }
+    }
   }
 };
 

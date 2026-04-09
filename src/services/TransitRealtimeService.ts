@@ -101,8 +101,13 @@ class TransitRealtimeService extends EventEmitter {
   public start() {
     if (this.isRunning) return;
     this.isRunning = true;
+    
+    // 🔥 IMMEDIATELY show simulation units on boot so map is never empty
+    const simulated = this.generateSimulatedSubwayResults();
+    this.emitSimulatedUnits(simulated);
+    
     this.poll();
-    console.log('💎 TransitRealtimeService Started');
+    console.log('💎 TransitRealtimeService Started. Sent initial simulation data.');
   }
 
   public stop() {
@@ -128,8 +133,10 @@ class TransitRealtimeService extends EventEmitter {
       if (flattenedResults.length === 0) {
           console.warn('⚠️ API Quota hit or no data. Entering Simulation Mode for verification.');
           finalFlattened = this.generateSimulatedSubwayResults();
+          this.worker?.postMessage({ type: 'CLEAR_REAL' });
       } else {
           console.log(`📡 Realtime Polling: Fetched ${flattenedResults.length} trains.`);
+          this.worker?.postMessage({ type: 'CLEAR_SIMULATED' });
       }
       
       const subwayUnits = await Promise.all(finalFlattened.map(async train => {
