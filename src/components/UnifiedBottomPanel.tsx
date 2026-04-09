@@ -717,9 +717,9 @@ export default function UnifiedBottomPanel({
                     </div>
 
                     {activeTab === 'bus' && selectedBusStop && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative group">
-                            <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => setSelectedBusStop(null)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400">
+                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative">
+                            <div className="absolute top-2 right-2">
+                                <button onClick={() => setSelectedBusStop(null)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400 active:scale-90 transition-all">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -765,10 +765,58 @@ export default function UnifiedBottomPanel({
                     )}
 
                     {activeTab === 'bus' && busPathResult && !selectedBusStop && (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-4 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 backdrop-blur-md">
-                            <div className="flex items-center justify-between mb-3"><span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">직행 버스 추천</span><span className="text-[12px] font-bold text-zinc-900 dark:text-white">약 {Math.round(busPathResult.distanceWeight)}분</span></div>
-                            <div className="flex flex-wrap gap-1.5">{busPathResult.commonRoutes.map((r, i) => (<span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">{r}</span>))}</div>
-                            <p className="mt-3 text-[11px] text-zinc-500 dark:text-zinc-400 leading-relaxed font-bold">{busPathResult.startStop.name} 정류장에서 승차하여 {busPathResult.endStop.name} 하차하십시오.</p>
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-2 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 dark:border-white/5 backdrop-blur-md">
+                            <div className="flex items-center justify-between mb-3">
+                                <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">
+                                    {busPathResult.type === 'direct' ? '직행 버스' : '환승 버스'}
+                                </span>
+                                <span className="text-[12px] font-bold text-zinc-400">약 {Math.round(busPathResult.distanceWeight)}분</span>
+                            </div>
+                            {busPathResult.type === 'direct' ? (
+                                <>
+                                    <div className="flex flex-wrap gap-1.5 mb-3">
+                                        {busPathResult.commonRoutes.map((r, i) => (
+                                            <span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">{r}</span>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-bold">
+                                        <MapPin size={10} className="text-blue-500 shrink-0" />
+                                        <span>{busPathResult.startStop.name}</span>
+                                        <span className="text-zinc-300 dark:text-zinc-600">→</span>
+                                        <MapPin size={10} className="text-rose-500 shrink-0" />
+                                        <span>{busPathResult.endStop.name}</span>
+                                    </div>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="flex flex-col gap-2">
+                                        <div className="flex items-center gap-2">
+                                            {busPathResult.commonRoutes.map((r, i) => (
+                                                <span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">{r}</span>
+                                            ))}
+                                            <span className="text-[11px] text-zinc-400 font-bold">타고 →</span>
+                                            {busPathResult.transferStop && (
+                                                <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-300">{busPathResult.transferStop.name}</span>
+                                            )}
+                                        </div>
+                                        {busPathResult.transferRoutes && (
+                                            <div className="flex items-center gap-2">
+                                                {busPathResult.transferRoutes.map((r, i) => (
+                                                    <span key={i} className="px-3 py-1.5 rounded-xl bg-amber-500 text-white text-[13px] font-black shadow-sm">{r}</span>
+                                                ))}
+                                                <span className="text-[11px] text-zinc-400 font-bold">환승</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-bold mt-2">
+                                        <MapPin size={10} className="text-blue-500 shrink-0" />
+                                        <span>{busPathResult.startStop.name}</span>
+                                        <span className="text-zinc-300 dark:text-zinc-600">→</span>
+                                        <MapPin size={10} className="text-rose-500 shrink-0" />
+                                        <span>{busPathResult.endStop.name}</span>
+                                    </div>
+                                </>
+                            )}
                         </motion.div>
                     )}
                 </div>

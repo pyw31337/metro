@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { PathResult, WCFilters } from '@/types/metro';
+import type { BusPathResult } from '@/utils/busRouting';
 
 export type PathStrategy = 'time' | 'transfer';
 export type ValidationError = 'source' | 'dest' | 'no_route' | null;
@@ -7,6 +8,7 @@ export type ValidationError = 'source' | 'dest' | 'no_route' | null;
 interface RouteStore {
   // 경로 결과
   pathResults: Record<string, PathResult> | null;
+  busPathResult: BusPathResult | null;
   selectedStrategy: PathStrategy;
   // 입력값
   startStation: string | null;
@@ -19,6 +21,7 @@ interface RouteStore {
 
   // 액션
   setPathResults: (r: Record<string, PathResult> | null) => void;
+  setBusPathResult: (r: BusPathResult | null) => void;
   setSelectedStrategy: (s: PathStrategy) => void;
   setStartStation: (s: string | null) => void;
   setEndStation: (s: string | null) => void;
@@ -36,6 +39,7 @@ interface RouteStore {
 
 export const useRouteStore = create<RouteStore>((set, get) => ({
   pathResults: null,
+  busPathResult: null,
   selectedStrategy: 'time',
   startStation: null,
   endStation: null,
@@ -45,6 +49,7 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
   showAllRouteBubbles: false,
 
   setPathResults: (r) => set({ pathResults: r }),
+  setBusPathResult: (r) => set({ busPathResult: r }),
   setSelectedStrategy: (s) => set({ selectedStrategy: s }),
   setStartStation: (s) => set({ startStation: s }),
   setEndStation: (s) => set({ endStation: s }),
@@ -57,6 +62,7 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
 
   reset: () => set({
     pathResults: null,
+    busPathResult: null,
     startStation: null,
     endStation: null,
     waypoints: [],

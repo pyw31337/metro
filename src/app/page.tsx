@@ -203,12 +203,14 @@ export default function Home() {
     // 버스 경로
     if (ui.activeTab === 'bus') {
       const res = findBusPath(start, end, subway.busStops);
+      route.setBusPathResult(res);
+      if (!res) route.setValidationError('no_route');
       route.setIsCalculating(false);
-      // 버스 경로 결과는 별도 store가 없어서 여기서 처리 (추후 분리 가능)
       return;
     }
 
-    // 지하철 경로
+    // 지하철 경로 — bus result 초기화
+    route.setBusPathResult(null);
     const normalize = normalizeStationName;
     const points = [normalize(start), ...waypoints.map(normalize).filter(Boolean), normalize(end)];
 
@@ -419,7 +421,7 @@ export default function Home() {
         locatingTimer={mapSt.locatingTimer}
         isCalculating={route.isCalculating}
         validationError={route.validationError}
-        busPathResult={null}
+        busPathResult={route.busPathResult}
         showAllRouteBubbles={route.showAllRouteBubbles}
         onToggleShowAll={() => route.setShowAllRouteBubbles(!route.showAllRouteBubbles)}
         selectedStationName={subway.selectedStationName}
