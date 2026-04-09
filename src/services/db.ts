@@ -47,7 +47,6 @@ export class MetroDatabase extends Dexie {
     const hasSangok = await this.stations.where('name').equals('산곡').count() > 0;
     
     if (stationCount === 0 || !hasSangok) {
-      console.log('🚄 Initializing/Updating Metro Database with latest station data...');
       try {
         const [stationsRes, busStopsRes, wcRes] = await Promise.all([
           fetch('./data/master-subway.json'),

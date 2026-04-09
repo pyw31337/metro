@@ -68,7 +68,6 @@ export const findBusPath = (startName: string, endName: string, busStops: BusSto
     const endCandidates = findCandidates(nEnd, endCoords);
 
     if (startCandidates.length === 0 || endCandidates.length === 0) {
-        console.log("❌ No candidate bus stops found for:", nStart, "or", nEnd);
         return null;
     }
 
