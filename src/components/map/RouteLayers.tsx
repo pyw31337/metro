@@ -75,7 +75,7 @@ const RouteLayers = ({
 
       {/* Info Bubbles (Markers) */}
       {routeStationData.features.map((f: any, i: number) => {
-        const { name, arrivalTime, arrivalTimeWeight, platformInfo, routeColor } = f.properties;
+        const { name, arrivalTimeWeight, platformInfo, routeColor } = f.properties;
         const [lng, lat] = f.geometry.coordinates;
         const isFocused = focusedBubble === name;
         const isLast = i === routeStationData.features.length - 1;
@@ -115,9 +115,9 @@ const RouteLayers = ({
               </div>
               
               <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
-                {timeDisplayMode === "duration" 
-                    ? `${Math.round(arrivalTimeWeight || 0)}분` 
-                    : (arrivalTime || "")
+                {timeDisplayMode === "duration"
+                    ? `${Math.round(arrivalTimeWeight || 0)}분`
+                    : new Date(Date.now() + (arrivalTimeWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
                 }
               </span>
 

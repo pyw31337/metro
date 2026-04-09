@@ -28,5 +28,21 @@
     }
   ],
   "categories": ["navigation", "travel", "utilities"],
-  "lang": "ko"
+  "lang": "ko",
+  "shortcuts": [
+    {
+      "name": "지하철 길찾기",
+      "short_name": "지하철",
+      "description": "지하철 경로 탐색",
+      "url": "/metro/?tab=subway",
+      "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "주변 화장실",
+      "short_name": "화장실",
+      "description": "내 주변 공중화장실 찾기",
+      "url": "/metro/?tab=wc",
+      "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
 }

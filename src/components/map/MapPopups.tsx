@@ -12,6 +12,7 @@ import { SUBWAY_LINES } from "@/data/subway-lines";
 import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
+import { hapticLight } from "@/utils/haptic";
 
 interface MapPopupsProps {
   popupCoords: [number, number] | null;
@@ -278,19 +279,19 @@ const MapPopups = ({
                         return (
                             <>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); onSetStart(stationName); setPopupCoords(null); }}
+                                    onClick={(e) => { e.stopPropagation(); hapticLight(); onSetStart(stationName); setPopupCoords(null); }}
                                     className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
                                     출발지
                                 </button>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); onSetWaypoint(stationName); setPopupCoords(null); }}
+                                    onClick={(e) => { e.stopPropagation(); hapticLight(); onSetWaypoint(stationName); setPopupCoords(null); }}
                                     className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-95"
                                 >
                                     경유지
                                 </button>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); onSetEnd(stationName); setPopupCoords(null); }}
+                                    onClick={(e) => { e.stopPropagation(); hapticLight(); onSetEnd(stationName); setPopupCoords(null); }}
                                     className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
                                     도착지
@@ -602,16 +603,30 @@ const MapPopups = ({
                      </span>
                 </div>
 
+                <div className="flex gap-1.5 mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
+                    <a
+                        href={`https://map.naver.com/v5/search/${encodeURIComponent(selectedWC.address || selectedWC.name)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => hapticLight()}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
+                    >
+                        네이버 길안내
+                    </a>
+                    <a
+                        href={`https://map.kakao.com/link/to/${encodeURIComponent(selectedWC.name || '화장실')},${selectedWC.lat},${selectedWC.lng}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => hapticLight()}
+                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
+                    >
+                        카카오 길안내
+                    </a>
+                </div>
                 {selectedWC.address && (
-                    <div className="flex items-start gap-1.5 pt-2 border-t border-zinc-100 dark:border-white/5">
-                        <MapPin size={10} className="text-zinc-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex flex-col gap-1 w-full overflow-hidden">
-                            <p className="text-[9px] font-medium text-zinc-400 line-clamp-2 leading-relaxed">
-                                {selectedWC.address}
-                            </p>
-                            <RoadViewButtons lat={selectedWC.lat} lng={selectedWC.lng} address={selectedWC.address}  />
-                        </div>
-                    </div>
+                    <p className="text-[9px] font-medium text-zinc-400 line-clamp-2 leading-relaxed mt-1.5 px-0.5">
+                        {selectedWC.address}
+                    </p>
                 )}
             </div>
         </Popup>

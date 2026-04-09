@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useCallback, useMemo, useRef } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { AnimatePresence } from "framer-motion";
 
-import { SUBWAY_LINES, Station as SubwayStation } from "@/data/subway-lines";
+import { SUBWAY_LINES, Station as SubwayStation, getStationByName } from "@/data/subway-lines";
 import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 
 import { useDataWorker }      from "@/hooks/useDataWorker";
@@ -38,6 +38,16 @@ export default function Home() {
   const mapSt   = useMapStore();
   const ui      = useUIStore();
   const subway  = useSubwayStore();
+
+  // ── 온라인/오프라인 상태 ──
+  const [isOffline, setIsOffline] = useState(false);
+  useEffect(() => {
+    const onOffline = () => setIsOffline(true);
+    const onOnline  = () => setIsOffline(false);
+    window.addEventListener('offline', onOffline);
+    window.addEventListener('online',  onOnline);
+    return () => { window.removeEventListener('offline', onOffline); window.removeEventListener('online', onOnline); };
+  }, []);
 
   // ── 모든 역 목록 (고유) ──
   const stations = useMemo(() => {
@@ -180,6 +190,16 @@ export default function Home() {
     document.documentElement.classList.toggle('dark', ui.isDarkMode);
   }, [ui.isDarkMode]);
 
+  // PWA shortcut: ?tab= query parameter → set active tab on launch
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get('tab');
+    if (tab && ['subway', 'bus', 'wc'].includes(tab)) {
+      ui.setActiveTab(tab as any);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // validationError 5초 자동 해제
   useEffect(() => {
     if (route.validationError === 'no_route') {
@@ -246,7 +266,7 @@ export default function Home() {
     if (!activePath?.path?.length || !mapRef.current) return;
     const coords: [number, number][] = [];
     for (const name of activePath.path) {
-      const s = stations.find(st => st.name === name);
+      const s = getStationByName(name);
       if (s?.lat && s?.lng) coords.push([s.lng, s.lat]);
     }
     if (coords.length < 2) return;
@@ -334,7 +354,7 @@ export default function Home() {
   const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
     if (!cityCode) return;
     try {
-      const res = await fetch('/data/master-bus-routes.json');
+      const res = await fetch('/metro/data/master-bus-routes.json');
       const routes = await res.json();
       const route_ = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
       if (route_) {
@@ -476,6 +496,15 @@ export default function Home() {
             isDarkMode={ui.isDarkMode}
             onClose={() => ui.setWeatherOpen(false)}
           />
+        )}
+      </AnimatePresence>
+
+      {/* 오프라인 알림 배지 */}
+      <AnimatePresence>
+        {isOffline && (
+          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none">
+            오프라인 · 캐시 데이터 사용 중
+          </div>
         )}
       </AnimatePresence>
 

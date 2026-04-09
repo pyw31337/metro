@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { Plus, Minus, Crosshair, Menu, X, Sun, Moon, CloudSun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { hapticLight } from "@/utils/haptic";
 
 interface MapControlsProps {
     onZoomIn: () => void;
@@ -34,8 +35,8 @@ export default function MapControls({
     return (
         <div className="flex flex-col items-center gap-3">
             {/* Main Menu Toggle */}
-            <button 
-                onClick={() => setIsOpen(!isOpen)}
+            <button
+                onClick={() => { hapticLight(); setIsOpen(!isOpen); }}
                 className={`w-14 h-14 rounded-3xl flex items-center justify-center transition-all ${isOpen ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl scale-[1.05]' : 'glass-premium text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-xl'}`}
                 aria-label="Toggle Menu"
             >
@@ -65,8 +66,8 @@ export default function MapControls({
                             <motion.button
                                 key={item.id}
                                 onClick={() => {
+                                    hapticLight();
                                     item.onClick();
-                                    // if (item.id !== "weather") setIsOpen(false); // Optional: close menu after non-toggle clicks
                                 }}
                                 variants={{
                                     visible: { y: 0, opacity: 1, scale: 1 },

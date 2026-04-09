@@ -126,6 +126,9 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
                             {compassReady ? '직선거리' : `${bearingCardinal}방향 · 직선거리`}
                         </span>
+                        <span className="text-[9px] font-bold text-zinc-400 mt-0.5">
+                            도보 약 {Math.ceil(distance / 67)}분 예상
+                        </span>
                     </div>
                 </div>
 

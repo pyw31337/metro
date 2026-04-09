@@ -17,7 +17,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
 import { useRouteStore } from "@/store/useRouteStore";
 import { useMapStore } from "@/store/useMapStore";
-import { hapticLight, hapticMedium } from "@/utils/haptic";
+import { hapticLight, hapticMedium, hapticSuccess } from "@/utils/haptic";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 
 interface UnifiedBottomPanelProps {
@@ -219,7 +219,7 @@ const WCPanel = memo(() => {
                         return (
                             <button
                                 key={key}
-                                onClick={() => updateWcFilter(key, !wcFilters[key])}
+                                onClick={() => { hapticLight(); updateWcFilter(key, !wcFilters[key]); }}
                                 className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border transition-all active:scale-95 ${
                                     active
                                         ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
@@ -333,6 +333,7 @@ export default function UnifiedBottomPanel({
     const [validationError, setValidationError] = useState<string | null>(null);
     const [stationFacilities, setStationFacilities] = useState<Facility[]>([]);
     const [hasDiapers, setHasDiapers] = useState(false);
+    const [shareCopied, setShareCopied] = useState(false);
     const { tasks, isIngesting } = useIngestion();
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
@@ -447,6 +448,7 @@ export default function UnifiedBottomPanel({
     };
 
     const selectLocation = (s: any) => {
+        hapticLight();
         const line = s.lines?.[0] || '';
         let fullName = s.name;
         if (line && !s.name.includes(line.replace('호선', ''))) {
@@ -543,21 +545,43 @@ export default function UnifiedBottomPanel({
                                     className="bg-zinc-50 dark:bg-black/10 rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden"
                                 >
                                     <div className="max-h-[240px] overflow-y-auto no-scrollbar p-4 flex flex-col">
-                                        {activePath.path.map((stationName, idx) => {
+                                        {(() => {
+                                            // Build station→segment mapping for line colors
+                                            // seg.line is a lineId (e.g. "1-Incheon"), resolve to color via SUBWAY_LINES
+                                            const lineColorById = new Map(SUBWAY_LINES.map(l => [l.id, l.color]));
+                                            const segmentByStation = new Map<string, { line: string; color: string }>();
+                                            if (activePath.segments) {
+                                                activePath.segments.forEach(seg => {
+                                                    const color = lineColorById.get(seg.line) || LINE_COLORS[seg.line] || '#6b7280';
+                                                    seg.stations.forEach(s => segmentByStation.set(s, { line: seg.line, color }));
+                                                });
+                                            }
+                                            return activePath.path.map((stationName, idx) => {
                                             const isStart = idx === 0;
                                             const isEnd = idx === activePath.path.length - 1;
                                             const weight = activePath.weights[idx] ?? 0;
                                             const arrivalTime = new Date(Date.now() + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                                             const transfer = activePath.transfers.find(t => t.stationName === stationName);
-                                            
+                                            const seg = segmentByStation.get(stationName);
+                                            const lineColor = seg?.color || '#3b82f6';
+                                            const tc = transfer
+                                                ? (lineColorById.get(transfer.toLine) || LINE_COLORS[transfer.toLine] || '#3b82f6')
+                                                : '#3b82f6';
+
                                             return (
                                                 <div key={idx} className="flex gap-4">
                                                     {/* Timeline Bar */}
                                                     <div className="flex flex-col items-center w-4 relative">
                                                         {!isEnd && (
-                                                            <div className={`absolute top-2 bottom-0 w-[3px] rounded-full ${transfer ? 'bg-zinc-300 dark:bg-zinc-700' : 'bg-blue-500/30'}`} />
+                                                            <div
+                                                                className="absolute top-2 bottom-0 w-[3px] rounded-full"
+                                                                style={{ backgroundColor: transfer ? '#d1d5db' : `${lineColor}50` }}
+                                                            />
                                                         )}
-                                                        <div className={`z-10 w-[10px] h-[10px] rounded-full border-2 bg-white dark:bg-zinc-900 mt-1.5 ${isStart || isEnd ? 'border-blue-500 h-[12px] w-[12px] ring-2 ring-blue-500/20' : 'border-zinc-400'}`} />
+                                                        <div
+                                                            className={`z-10 rounded-full border-2 bg-white dark:bg-zinc-900 mt-1.5 ${isStart || isEnd ? 'h-[12px] w-[12px]' : 'w-[10px] h-[10px]'}`}
+                                                            style={{ borderColor: lineColor }}
+                                                        />
                                                     </div>
 
                                                     {/* Station Info */}
@@ -568,9 +592,15 @@ export default function UnifiedBottomPanel({
                                                                     {stationName}
                                                                 </span>
                                                                 {transfer && (
-                                                                    <div className="flex items-center gap-1.5 bg-blue-500/10 px-2 py-1 rounded-full border border-blue-500/20 shadow-sm">
-                                                                        <span className="text-[9px] font-black text-blue-500">환승</span>
-                                                                        <span className="text-[9px] font-black text-blue-600 truncate max-w-[40px] uppercase tracking-tighter">{getLineShortName(transfer.toLine)}</span>
+                                                                    <div
+                                                                        className="flex items-center gap-1.5 px-2 py-1 rounded-full border shadow-sm"
+                                                                        style={{
+                                                                            backgroundColor: `${tc}15`,
+                                                                            borderColor: `${tc}30`
+                                                                        }}
+                                                                    >
+                                                                        <span className="text-[9px] font-black" style={{ color: tc }}>환승</span>
+                                                                        <span className="text-[9px] font-black truncate max-w-[40px] uppercase tracking-tighter" style={{ color: tc }}>{getLineShortName(transfer.toLine)}</span>
                                                                         {transfer.fastTransfer && (
                                                                             <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-blue-500/20">
                                                                                 <Clock size={10} className="text-yellow-500 fill-yellow-500/10" />
@@ -587,7 +617,7 @@ export default function UnifiedBottomPanel({
                                                     </div>
                                                 </div>
                                             );
-                                        })}
+                                        });})()}
                                         {/* Fare Information + Share */}
                                         <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-zinc-500 dark:text-zinc-400 font-bold">
                                             <span className="text-[11px]">성인 교통카드 기준</span>
@@ -606,12 +636,14 @@ export default function UnifiedBottomPanel({
                                                             navigator.share({ title: 'Metro Live 경로', text });
                                                         } else {
                                                             navigator.clipboard?.writeText(text).then(() => {
-                                                                // brief visual feedback
+                                                                hapticSuccess();
+                                                                setShareCopied(true);
+                                                                setTimeout(() => setShareCopied(false), 2000);
                                                             });
                                                         }
                                                     }}
-                                                    className="p-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-zinc-400 hover:text-blue-500 transition-all active:scale-90"
-                                                    title="경로 공유"
+                                                    className={`p-1 rounded-lg transition-all active:scale-90 ${shareCopied ? 'bg-green-100 dark:bg-green-500/20 text-green-500' : 'bg-zinc-100 dark:bg-white/10 text-zinc-400 hover:text-blue-500'}`}
+                                                    title={shareCopied ? '복사됨!' : '경로 공유'}
                                                 >
                                                     <Share2 size={12} />
                                                 </button>
@@ -718,7 +750,7 @@ export default function UnifiedBottomPanel({
                                                 {wp.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, '')}
                                             </span>
                                             <button
-                                                onClick={() => removeWaypoint(idx)}
+                                                onClick={() => { hapticLight(); removeWaypoint(idx); }}
                                                 className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"
                                             >
                                                 <X size={14} />
