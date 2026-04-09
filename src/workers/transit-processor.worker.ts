@@ -43,33 +43,37 @@ function processUpdates(units: any[]) {
     const existing = transitState.get(unit.id);
 
     if (!existing) {
-      // 첫 등장: nextPos에서 시작 (아직 이동 정보 없음)
+      // ✅ 첫 등장: prevPos가 있으면 거기서 nextPos로 이동 시작 (즉시 애니메이션)
+      const startPos = (unit.prevPos && 
+        (unit.prevPos[0] !== unit.nextPos[0] || unit.prevPos[1] !== unit.nextPos[1]))
+        ? unit.prevPos
+        : unit.nextPos;
+      
       transitState.set(unit.id, {
         ...unit,
-        lastPos: unit.nextPos,
-        lastUpdateTime: now - 10000,  // 10초 전에 현재 위치에 있었다고 가정
-        nextUpdateTime: now + 10000,  // 10초 후에 next로 이동
+        lastPos: startPos,
+        lastUpdateTime: now,
+        nextUpdateTime: now + 12000,  // 12초 안에 nextPos에 도달
       });
     } else {
-      // ✅ 핵심 픽스: jump-back 방지
-      // 이전 애니메이션의 현재 시각적 위치를 계산해서 lastPos로 설정
+      // 업데이트: 현재 시각적 위치에서 새 목적지로 부드럽게 이동
       const oldDuration = existing.nextUpdateTime - existing.lastUpdateTime;
       const oldRatio = oldDuration > 0
         ? Math.min(1.0, (now - existing.lastUpdateTime) / oldDuration)
         : 1.0;
       const visualCurrentPos = interpolate(existing.lastPos, existing.nextPos, oldRatio);
 
-      existing.lastPos = visualCurrentPos;    // 현재 화면상 위치에서 출발
-      existing.nextPos = unit.nextPos;         // 새 목적지 역
+      existing.lastPos = visualCurrentPos;
+      existing.nextPos = unit.nextPos;
       existing.lastUpdateTime = now;
-      existing.nextUpdateTime = now + 12000;   // 12초 안에 다음 역에 도달
+      existing.nextUpdateTime = now + 12000;
       existing.lineName = unit.lineName;
       existing.lineColor = unit.lineColor;
       existing.label = unit.label;
     }
   });
 
-  // 오래된 유닛 정리 (마지막 업데이트 후 90초 이상된 경우)
+  // 90초 이상 업데이트 없는 열차 제거
   for (const [id, unit] of transitState.entries()) {
     if (now - unit.lastUpdateTime > 90000) {
       transitState.delete(id);

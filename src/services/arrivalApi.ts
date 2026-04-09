@@ -450,7 +450,8 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
             updnLine: item.updnLine,
             directAt: item.directAt,
             trainSttus: item.trainSttus || "99",
-            lstnyNm: item.lstnyNm,
+            lstnyNm: item.lstnyNm || item.statnTnm || "",  // realtimePosition에서는 statnTnm
+            statnTnm: item.statnTnm || "",                 // 종착역명 (realtimePosition API 전용)
             arrivalNm: item.arrivalNm,
             arvlCd: item.arvlCd
         }));
