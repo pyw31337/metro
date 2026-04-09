@@ -107,19 +107,21 @@ export default function Home() {
         init();
     }, []);
 
+    const initLocRef = useRef(false);
+
     useEffect(() => {
         if (!navigator.geolocation) return;
         
         let timerInterval: NodeJS.Timeout;
 
         const updateLocation = () => {
-            if (!hasInitialLocation) {
+            if (!initLocRef.current) {
                 setIsLocating(true);
                 setLocatingTimer(10);
             }
             
             // Start countdown timer for UI if needed
-            if (!hasInitialLocation) {
+            if (!initLocRef.current) {
                 if (timerInterval) clearInterval(timerInterval);
                 timerInterval = setInterval(() => {
                     setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
@@ -143,16 +145,19 @@ export default function Home() {
                     return prev;
                 });
 
-                if (!hasInitialLocation) {
+                if (!initLocRef.current) {
+                    initLocRef.current = true;
                     setHasInitialLocation(true);
                     setIsLocating(false);
                     if (timerInterval) clearInterval(timerInterval);
                 }
             }, (err) => {
                 console.error("Geolocation error:", err);
-                setIsLocating(false);
-                setLocatingTimer(0);
-                if (timerInterval) clearInterval(timerInterval);
+                if (!initLocRef.current) {
+                    setIsLocating(false);
+                    setLocatingTimer(0);
+                    if (timerInterval) clearInterval(timerInterval);
+                }
             }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
         };
 

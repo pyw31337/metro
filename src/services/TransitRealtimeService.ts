@@ -124,9 +124,20 @@ class TransitRealtimeService extends EventEmitter {
     try {
       // 1. Subway Polling
       const trainPromises = SUBWAY_POLLING_NAMES.map(line => fetchTrainPositions(line));
-      const trainResults = await Promise.all(trainPromises);
-      const flattenedResults = trainResults.flat();
+      const timeoutPromise = new Promise<any[]>((_, reject) => setTimeout(() => reject(new Error("API_TIMEOUT")), 5000));
       
+      let flattenedResults: any[] = [];
+      try {
+        const trainResults = await Promise.race([Promise.all(trainPromises), timeoutPromise]);
+        flattenedResults = trainResults.flat();
+      } catch (e: any) {
+        if (e.message === "API_TIMEOUT") {
+            console.warn("⚠️ API polling timeout (>5s). Falling back to simulation move tick.");
+        } else {
+            console.warn("⚠️ API fetch error:", e);
+        }
+      }
+
       let finalFlattened = flattenedResults;
 
       // 🚨 QUOTA CHECK: If no trains found or all keys failed, try simulation mode
@@ -152,7 +163,7 @@ class TransitRealtimeService extends EventEmitter {
           nextPos: coord,
           lineName: train.subwayNm,
           lineColor: lineColor,
-          label: `${train.trainNo}\n${train.arrivalNm || '진입'}`,
+          label: `${train.arrivalNm || '진입'}`,
         };
       }));
 
@@ -203,13 +214,17 @@ class TransitRealtimeService extends EventEmitter {
       const subwayUnits = await Promise.all(simulated.map(async train => {
         const coord = await this.getStationCoord(train.statnNm);
         if (!coord) return null;
+        
+        const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm || normalizeLineName(l.name) === normalizeLineName(train.subwayNm));
+        const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
+
         return {
           id: `train-sim-${train.trainNo}`,
           type: 'subway' as const,
           nextPos: coord,
           lineName: train.subwayNm,
-          lineColor: "FF5722", // Distinct simulation color
-          label: `${train.trainNo}\n${train.arrivalNm || '시뮬레이션'}`,
+          lineColor: lineColor,
+          label: `${train.arrivalNm || '시뮬레이션'}`,
         };
       }));
       this.worker?.postMessage({ type: 'UPDATE_UNITS', data: subwayUnits.filter(u => u !== null) });
