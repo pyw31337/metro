@@ -291,7 +291,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 showAllRouteBubbles={showAllRouteBubbles} focusedBubble={focusedBubble} setFocusedBubble={setFocusedBubble}
                 timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} verifiedPlats={verifiedPlats}
             />
-            <TransitRealtimeLayers activeTab={activeTab} />
+            <TransitRealtimeLayers activeTab={activeTab} activeLine={activeLine} />
             <UserLocationLayer />
             <MapPopups
                 popupCoords={popupCoords}

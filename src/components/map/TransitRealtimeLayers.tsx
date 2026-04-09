@@ -6,9 +6,10 @@ import { transitRealtimeService, RealtimeUnit } from '@/services/TransitRealtime
 
 interface TransitRealtimeLayersProps {
   activeTab: string;
+  activeLine?: string | null;
 }
 
-const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
+const TransitRealtimeLayers = ({ activeTab, activeLine }: TransitRealtimeLayersProps) => {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
   
@@ -88,7 +89,9 @@ const TransitRealtimeLayers = ({ activeTab }: TransitRealtimeLayersProps) => {
           paint={{
             "text-color": "#ffffff",
             "text-halo-color": "#000000",
-            "text-halo-width": 1
+            "text-halo-width": 1,
+            "icon-opacity": activeLine ? ["case", ["==", ["get", "lineName"], activeLine], 1.0, 0.2] : 1.0,
+            "text-opacity": activeLine ? ["case", ["==", ["get", "lineName"], activeLine], 1.0, 0.2] : 1.0
           }}
         />
 

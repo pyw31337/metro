@@ -74,7 +74,7 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
 
     const fetchFromProxy = async (proxy: { name: string, url: string }) => {
         const res = await fetch(proxy.url, { 
-            signal: AbortSignal.timeout(15000), 
+            signal: AbortSignal.timeout(5000), 
             headers: { 'Accept': 'application/json' }
         });
         
