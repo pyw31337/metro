@@ -111,7 +111,7 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute, isDarkMode }: { st
              <span className="text-[10px] text-zinc-400 font-medium">{bus.remainStops}정류장 남음</span>
           </div>
           <span className="text-[11px] font-black text-rose-500">
-            {bus.arrivalTime < 60 ? "곧 도착" : `${Math.floor(bus.arrivalTime / 60)}분 전`}
+            {bus.arrivalTime < 60 ? "곧 도착" : `${Math.floor(bus.arrivalTime / 60)}분 후`}
           </span>
         </div>
       ))}
