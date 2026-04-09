@@ -417,9 +417,9 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
 export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
     // 🛡️ API Key Fallback Logic (User provided approved keys)
     const USER_APPROVED_KEYS = [
-        "454c774156707977313774514e5764", 
-        "634179436a7079773730786f4d5445",
-        "7a634444557079773735624765796d"
+        "634179436a7079773730786f4d5445",  // 지하철인증키 (2026/03/30) ✅
+        "53517344677079773531694a786f6a",  // 지하철인증키 (2026/03/27) ✅
+        "434f7275707079773537687a507658",  // 지하철인증키 (2026/03/27) ✅
     ];
     
     let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
