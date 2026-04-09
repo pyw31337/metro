@@ -154,12 +154,13 @@ class TransitRealtimeService extends EventEmitter {
         const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm || normalizeLineName(l.name) === normalizeLineName(train.subwayNm));
         const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
 
-        // 방향 화살표: updnLine '1' = 상행(▶), '2' = 하행(◀)
-        const isUpward = train.updnLine === '1';
-        const destination = train.lstnyNm || train.arrivalNm || '';
+        // realtimePosition API: updnLine '0'=상행(방화 방향 등), '1'=하행(종착 방향)
+        // 상행(0): 텍스트 + ▶  /  하행(1): ◀ + 텍스트
+        const destination = train.lstnyNm || train.statnTnm || train.arrivalNm || '';
+        const isDownward = train.updnLine === '1';
         const label = destination
-          ? (isUpward ? `▶ ${destination}행` : `◀ ${destination}행`)
-          : (isUpward ? '▶ 상행' : '◀ 하행');
+          ? (isDownward ? `◀ ${destination}행` : `${destination}행 ▶`)
+          : (isDownward ? '◀ 하행' : '상행 ▶');
 
         return {
           id: `train-${train.subwayId || 'sim'}-${train.trainNo}`,
@@ -222,11 +223,11 @@ class TransitRealtimeService extends EventEmitter {
         const staticLine = SUBWAY_LINES.find(l => l.name === train.subwayNm || normalizeLineName(l.name) === normalizeLineName(train.subwayNm));
         const lineColor = (staticLine?.color || "#3b82f6").replace('#', '').toUpperCase();
 
-        const isUpward = train.updnLine === '1';
+        const arrowRight = train.updnLine === '1';
         const destination = train.lstnyNm || train.arrivalNm?.replace('행', '') || '';
         const label = destination
-          ? (isUpward ? `▶ ${destination}행` : `◀ ${destination}행`)
-          : (isUpward ? '▶ 상행' : '◀ 하행');
+          ? (arrowRight ? `${destination}행 ▶` : `◀ ${destination}행`)
+          : (arrowRight ? '상행 ▶' : '◀ 하행');
 
         return {
           id: `train-sim-${train.trainNo}`,
