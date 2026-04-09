@@ -16,7 +16,6 @@ export async function fetchWithCache<T>(url: string, ttl: number = CACHE_TTL): P
     const cached = cache.get(url);
 
     if (cached && (now - cached.timestamp < ttl)) {
-        console.log(`[Cache Hit] ${url.substring(0, 60)}...`);
         return cached.data;
     }
 

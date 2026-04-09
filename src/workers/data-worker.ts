@@ -119,7 +119,6 @@ function buildGraph(): Map<string, GraphNode> {
     }
   }
 
-  console.log(`🏗️ Graph built: ${graph.size} nodes`);
   return graph;
 }
 
