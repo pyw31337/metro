@@ -405,9 +405,11 @@ export default function UnifiedBottomPanel({
 
         if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
         searchDebounceRef.current = setTimeout(() => {
-            const q = val.toLowerCase().trim();
+            const raw = val.toLowerCase().trim();
+            // Strip common Korean station suffixes so "강남역" finds "강남"
+            const q = raw.replace(/역$/, '').trim() || raw;
             const filteredSubway = stations
-                .filter(s => matchChosung(q, s.name) || s.name.toLowerCase().includes(q))
+                .filter(s => matchChosung(q, s.name) || matchChosung(raw, s.name) || s.name.toLowerCase().includes(q))
                 .map(s => ({ ...s, type: 'subway' }))
                 .sort((a, b) => {
                     const aName = a.name.toLowerCase();
@@ -418,7 +420,7 @@ export default function UnifiedBottomPanel({
                 });
 
             const filteredBus = (busStops || [])
-                .filter(s => s.name.toLowerCase().includes(q))
+                .filter(s => s.name.toLowerCase().includes(q) || s.name.toLowerCase().includes(raw))
                 .map(s => ({ ...s, type: 'bus' }))
                 .slice(0, 3);
 

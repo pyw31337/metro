@@ -69,7 +69,14 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
     }, [userLocation, targetLocation]);
 
     // Arrow pointing direction relative to phone top
-    const relativeAngle = heading !== null ? (bearing - heading + 360) % 360 : 0;
+    // When heading is null (compass unavailable), show absolute bearing (north-relative)
+    const relativeAngle = heading !== null ? (bearing - heading + 360) % 360 : bearing;
+    const compassReady = heading !== null;
+
+    const bearingCardinal = useMemo(() => {
+        const dirs = ['북', '북동', '동', '남동', '남', '남서', '서', '북서'];
+        return dirs[Math.round(bearing / 45) % 8];
+    }, [bearing]);
 
     return (
         <motion.div
@@ -85,10 +92,10 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                         </div>
                         <div>
                             <h4 className="text-[13px] font-black text-zinc-900 dark:text-white leading-tight">화장실 길안내</h4>
-                            <p className="text-[10px] font-bold text-blue-500">{targetName}</p>
+                            <p className="text-[10px] font-bold text-blue-500 truncate max-w-[120px]">{targetName}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400">
+                    <button onClick={onClose} className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 active:scale-90 transition-all">
                         <X size={14} />
                     </button>
                 </div>
@@ -97,17 +104,17 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                     <div className="absolute inset-0 flex items-center justify-center opacity-10 dark:opacity-5">
                         <Compass size={120} />
                     </div>
-                    
+
                     {/* Circle Background */}
-                    <div className="w-24 h-24 rounded-full border-2 border-dashed border-zinc-200 dark:border-white/10 flex items-center justify-center">
+                    <div className={`w-24 h-24 rounded-full border-2 flex items-center justify-center transition-colors duration-500 ${compassReady ? 'border-blue-200 dark:border-blue-500/30 border-solid' : 'border-dashed border-zinc-200 dark:border-white/10'}`}>
                         {/* The Pointer */}
-                        <motion.div 
+                        <motion.div
                             animate={{ rotate: relativeAngle }}
                             transition={{ type: "spring", stiffness: 100, damping: 15 }}
                             className="relative w-full h-full flex items-center justify-center"
                         >
-                            <div className="w-1 h-12 bg-gradient-to-t from-blue-500 to-rose-500 rounded-full relative -top-6">
-                                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] border-b-rose-500 -mt-1" />
+                            <div className={`w-1 h-12 rounded-full relative -top-6 transition-opacity duration-300 ${compassReady ? 'opacity-100 bg-gradient-to-t from-blue-500 to-rose-500' : 'opacity-40 bg-gradient-to-t from-zinc-400 to-zinc-600'}`}>
+                                <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] -mt-1 ${compassReady ? 'border-b-rose-500' : 'border-b-zinc-600'}`} />
                             </div>
                         </motion.div>
                     </div>
@@ -116,12 +123,19 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                         <span className="text-[20px] font-black text-zinc-900 dark:text-white tabular-nums">
                             {distance < 1000 ? `${Math.round(distance)}m` : `${(distance/1000).toFixed(1)}km`}
                         </span>
-                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">직선거리</span>
+                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+                            {compassReady ? '직선거리' : `${bearingCardinal}방향 · 직선거리`}
+                        </span>
                     </div>
                 </div>
 
+                {!compassReady && permissionStatus !== 'denied' && (
+                    <div className="mt-3 p-2 bg-amber-500/10 rounded-xl border border-amber-500/20 text-center">
+                        <p className="text-[9px] font-bold text-amber-600 dark:text-amber-400">기기를 움직이면 나침반이 활성화됩니다</p>
+                    </div>
+                )}
                 {permissionStatus === 'denied' && (
-                    <div className="mt-4 p-2 bg-rose-500/10 rounded-xl border border-rose-500/20 text-center">
+                    <div className="mt-3 p-2 bg-rose-500/10 rounded-xl border border-rose-500/20 text-center">
                         <p className="text-[9px] font-bold text-rose-500">나침반 권한이 거부되었습니다.<br/>브라우저 설정에서 센서 권한을 허용해주세요.</p>
                     </div>
                 )}
