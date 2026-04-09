@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useEffect, useMemo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X, MapPin, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
@@ -49,28 +49,7 @@ const getLineInfo = (lineName: string) => {
     return { num, color: line?.color || '#ccc' };
 };
 
-const getStationBadges = (name: string) => {
-    if (!name) return [];
-    const cleanName = name.replace(/역+$/, '');
-    const badges: { num: string; color: string; lineName: string }[] = [];
-    const addedLines = new Set<string>();
-
-    for (const line of SUBWAY_LINES) {
-        if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
-            if (!addedLines.has(line.name)) {
-                badges.push({ 
-                    num: getLineShortName(line.name), 
-                    color: line.color,
-                    lineName: line.name 
-                });
-                addedLines.add(line.name);
-            }
-        }
-    }
-    return badges;
-};
-
-const RoadViewButtons = ({ lat, lng, address, isDarkMode }: { lat: number, lng: number, address?: string, isDarkMode?: boolean }) => (
+const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, address?: string }) => (
   <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
     <a 
       href={`https://map.naver.com/v5/search/${encodeURIComponent(address || `${lat},${lng}`)}`} 
@@ -91,7 +70,7 @@ const RoadViewButtons = ({ lat, lng, address, isDarkMode }: { lat: number, lng: 
   </div>
 );
 
-const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute, isDarkMode }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void, isDarkMode?: boolean }) => {
+const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
   const { arrivals, loading } = useBusArrivals(stopId, cityCode);
 
   if (loading) return <div className="py-4 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
@@ -167,7 +146,7 @@ const MapPopups = ({
   isLiveArrival,
   onRefreshArrival,
 }: MapPopupsProps) => {
-  const { data: realTimeCongestion, loading: isStationCongestionLoading } = useCongestion(selectedStationName);
+  const { data: realTimeCongestion } = useCongestion(selectedStationName);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -298,23 +277,23 @@ const MapPopups = ({
                         
                         return (
                             <>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onSetEnd(stationName); setPopupCoords(null); }} 
-                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onSetStart(stationName); setPopupCoords(null); }}
+                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
-                                    도착지
+                                    출발지
                                 </button>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onSetWaypoint(stationName); setPopupCoords(null); }} 
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onSetWaypoint(stationName); setPopupCoords(null); }}
                                     className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-95"
                                 >
                                     경유지
                                 </button>
-                                <button 
-                                    onClick={(e) => { e.stopPropagation(); onSetStart(stationName); setPopupCoords(null); }} 
-                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onSetEnd(stationName); setPopupCoords(null); }}
+                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                                 >
-                                    출발지
+                                    도착지
                                 </button>
                             </>
                         );
@@ -385,14 +364,14 @@ const MapPopups = ({
                         )
                     ) : (selectedBusStop) ? (
                         <>
-                            <BusArrivalList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} isDarkMode={isDarkMode} />
+                            <BusArrivalList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
                             <BusRouteStaticList routes={selectedBusStop.routes} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
                         </>
                     ) : null}
                 </div>
                 
                 {selectedBusStop && (
-                   <RoadViewButtons lat={selectedBusStop.lat} lng={selectedBusStop.lng} isDarkMode={isDarkMode} />
+                   <RoadViewButtons lat={selectedBusStop.lat} lng={selectedBusStop.lng}  />
                 )}
             </div>
         </Popup>
@@ -630,7 +609,7 @@ const MapPopups = ({
                             <p className="text-[9px] font-medium text-zinc-400 line-clamp-2 leading-relaxed">
                                 {selectedWC.address}
                             </p>
-                            <RoadViewButtons lat={selectedWC.lat} lng={selectedWC.lng} address={selectedWC.address} isDarkMode={isDarkMode} />
+                            <RoadViewButtons lat={selectedWC.lat} lng={selectedWC.lng} address={selectedWC.address}  />
                         </div>
                     </div>
                 )}
