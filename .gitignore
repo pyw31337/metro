@@ -16,6 +16,8 @@
 # next.js
 /.next/
 /out/
+/out_firebase/
+/out_github/
 
 # production
 /build
