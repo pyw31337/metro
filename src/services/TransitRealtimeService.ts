@@ -178,6 +178,7 @@ class TransitRealtimeService extends EventEmitter {
       lineName,
       lineColor,
       label,
+      status: train.arvlCd || '99', // 0:진입, 1:도착, 2:출발, 99:운행중
     };
   }
 

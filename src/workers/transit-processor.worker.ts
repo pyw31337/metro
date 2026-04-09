@@ -11,10 +11,15 @@ interface TransitUnit {
   lineName: string;
   lineColor: string;
   label: string;
+  status?: string; // arvlCd: 0:진입, 1:도착, 2:출발, 99:운행중
+  currentBearing: number;
 }
 
 const transitState: Map<string, TransitUnit> = new Map();
 let isTicking = false;
+
+// 12초 주기에 맞춘 애니메이션 지속 시간
+const ANIM_DURATION = 12000;
 
 self.onmessage = (e: MessageEvent) => {
   const { type, data } = e.data;
@@ -43,7 +48,6 @@ function processUpdates(units: any[]) {
     const existing = transitState.get(unit.id);
 
     if (!existing) {
-      // ✅ 첫 등장: prevPos가 있으면 거기서 nextPos로 이동 시작 (즉시 애니메이션)
       const startPos = (unit.prevPos && 
         (unit.prevPos[0] !== unit.nextPos[0] || unit.prevPos[1] !== unit.nextPos[1]))
         ? unit.prevPos
@@ -53,27 +57,27 @@ function processUpdates(units: any[]) {
         ...unit,
         lastPos: startPos,
         lastUpdateTime: now,
-        nextUpdateTime: now + 12000,  // 12초 안에 nextPos에 도달
+        nextUpdateTime: now + ANIM_DURATION,
+        currentBearing: calculateBearing(startPos, unit.nextPos),
       });
     } else {
-      // 업데이트: 현재 시각적 위치에서 새 목적지로 부드럽게 이동
-      const oldDuration = existing.nextUpdateTime - existing.lastUpdateTime;
-      const oldRatio = oldDuration > 0
-        ? Math.min(1.0, (now - existing.lastUpdateTime) / oldDuration)
-        : 1.0;
-      const visualCurrentPos = interpolate(existing.lastPos, existing.nextPos, oldRatio);
+      // ✅ Smooth transition: Calculate where we are visually now
+      const elapsed = now - existing.lastUpdateTime;
+      const t = Math.min(1.0, elapsed / ANIM_DURATION);
+      const easedT = easeInOutCubic(t);
+      const visualCurrentPos = interpolate(existing.lastPos, existing.nextPos, easedT);
 
       existing.lastPos = visualCurrentPos;
       existing.nextPos = unit.nextPos;
       existing.lastUpdateTime = now;
-      existing.nextUpdateTime = now + 12000;
+      existing.nextUpdateTime = now + ANIM_DURATION;
       existing.lineName = unit.lineName;
       existing.lineColor = unit.lineColor;
       existing.label = unit.label;
+      existing.status = unit.status;
     }
   });
 
-  // 90초 이상 업데이트 없는 열차 제거
   for (const [id, unit] of transitState.entries()) {
     if (now - unit.lastUpdateTime > 90000) {
       transitState.delete(id);
@@ -88,12 +92,28 @@ function startTick() {
     const result: any[] = [];
 
     for (const unit of transitState.values()) {
-      const duration = unit.nextUpdateTime - unit.lastUpdateTime;
-      // ✅ ratio는 최대 1.0까지만 (1.5 dead-reckoning 제거 - 노선 이탈 원인)
-      let ratio = duration > 0 ? (now - unit.lastUpdateTime) / duration : 1;
-      ratio = Math.max(0, Math.min(1.0, ratio));
+      const elapsed = now - unit.lastUpdateTime;
+      let ratio = Math.min(1.0, elapsed / ANIM_DURATION);
 
-      const currentPos = interpolate(unit.lastPos, unit.nextPos, ratio);
+      // ✅ API 상태(status/arvlCd) 기반 보정
+      // 0: 진입(Entering) - 역에 거의 다 옴
+      // 1: 도착(Arrived) - 역에 멈춤
+      // 2: 출발(Departed) - 역을 막 떠남
+      if (unit.status === '1') {
+        ratio = 1.0; // 강제 도착 고정
+      } else if (unit.status === '0') {
+        ratio = Math.max(0.9, ratio); // 진입 중이면 최소 90% 이상 지점
+      } else if (unit.status === '2') {
+        ratio = Math.max(0.1, ratio); // 출발했으면 최소 10% 이상 지점
+      }
+
+      // ✅ Easing 적용 (가속/감속)
+      const easedRatio = easeInOutCubic(ratio);
+      const currentPos = interpolate(unit.lastPos, unit.nextPos, easedRatio);
+
+      // ✅ Bearing Smoothing
+      const targetBearing = calculateBearing(unit.lastPos, unit.nextPos);
+      unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, 0.1);
 
       result.push({
         id: unit.id,
@@ -102,7 +122,7 @@ function startTick() {
         lineName: unit.lineName,
         lineColor: unit.lineColor,
         label: unit.label,
-        bearing: calculateBearing(unit.lastPos, unit.nextPos)
+        bearing: unit.currentBearing
       });
     }
 
@@ -111,7 +131,7 @@ function startTick() {
     }
 
     if (transitState.size > 0) {
-      setTimeout(tick, 1000 / 30); // 30fps (충분히 부드럽고 성능 절약)
+      setTimeout(tick, 1000 / 30);
     } else {
       isTicking = false;
     }
@@ -119,6 +139,12 @@ function startTick() {
   tick();
 }
 
+// Cubic Easing (In/Out)
+function easeInOutCubic(t: number): number {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+// Linear Interpolation
 function interpolate(last: [number, number], next: [number, number], ratio: number): [number, number] {
   return [
     last[0] + (next[0] - last[0]) * ratio,
@@ -126,9 +152,14 @@ function interpolate(last: [number, number], next: [number, number], ratio: numb
   ];
 }
 
+// Bearing Interpolation (Avoids 360->0 snap)
+function lerpBearing(start: number, end: number, t: number): number {
+  let diff = (end - start + 180) % 360 - 180;
+  return (start + diff * t + 360) % 360;
+}
+
 function calculateBearing(start: [number, number], end: [number, number]): number {
   if (start[0] === end[0] && start[1] === end[1]) return 0;
-  // MapLibre uses [lng, lat], so index 0 = lng, index 1 = lat
   const lat1 = start[1] * Math.PI / 180;
   const lat2 = end[1] * Math.PI / 180;
   const dLng = (end[0] - start[0]) * Math.PI / 180;
