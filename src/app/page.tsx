@@ -2,7 +2,7 @@
 
 import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 import { SUBWAY_LINES, Station as SubwayStation, getStationByName } from "@/data/subway-lines";
 import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
@@ -26,6 +26,15 @@ const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel
 const MapControls        = dynamic(() => import("@/components/MapControls"),         { ssr: false });
 const WeatherPopup       = dynamic(() => import("@/components/WeatherPopup"),        { ssr: false });
 import DirectionCompass  from "@/components/ui/DirectionCompass";
+
+// Module-level cache so the 3MB routes JSON is only fetched once per session
+let busRoutesCache: any[] | null = null;
+const getBusRoutes = async () => {
+  if (busRoutesCache) return busRoutesCache;
+  const res = await fetch('/metro/data/master-bus-routes.json');
+  busRoutesCache = await res.json();
+  return busRoutesCache!;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
@@ -354,8 +363,7 @@ export default function Home() {
   const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
     if (!cityCode) return;
     try {
-      const res = await fetch('/metro/data/master-bus-routes.json');
-      const routes = await res.json();
+      const routes = await getBusRoutes();
       const route_ = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
       if (route_) {
         const { MetropolitanBusService } = await import('@/services/busApi');
@@ -502,9 +510,15 @@ export default function Home() {
       {/* 오프라인 알림 배지 */}
       <AnimatePresence>
         {isOffline && (
-          <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none">
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none"
+          >
             오프라인 · 캐시 데이터 사용 중
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
 

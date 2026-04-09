@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export const metadata: Metadata = {
     title: 'Metro Live',
@@ -71,7 +72,9 @@ export default function RootLayout({
                 />
             </head>
             <body>
-                {children}
+                <ErrorBoundary>
+                    {children}
+                </ErrorBoundary>
             </body>
         </html>
     );

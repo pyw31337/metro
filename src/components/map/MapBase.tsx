@@ -37,6 +37,7 @@ const MapBase = ({
   const mapRef = useRef<MapRef | null>(null);
   const [cursor, setCursor] = useState<string>("auto");
   const boundsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const centerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   return (
     <div className="absolute inset-0 w-full h-full z-0 bg-zinc-100 dark:bg-black">
@@ -51,7 +52,12 @@ const MapBase = ({
         onMouseLeave={() => setCursor("auto")}
         onMove={(e) => {
           const { latitude, longitude } = e.viewState;
-          if (onCenterChange) onCenterChange(latitude, longitude);
+
+          // Debounce center change — only WeatherPopup uses this, no need for 60fps
+          if (onCenterChange) {
+            if (centerTimerRef.current) clearTimeout(centerTimerRef.current);
+            centerTimerRef.current = setTimeout(() => onCenterChange(latitude, longitude), 200);
+          }
 
           // Debounce bounds change — DB query doesn't need to run at 60fps
           if (onBoundsChange && mapRef.current) {

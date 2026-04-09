@@ -3,6 +3,7 @@
 
 const CACHE_NAME = 'metro-live-v1';
 const STATIC_CACHE = 'metro-static-v1';
+const TILE_CACHE = 'metro-tiles-v1';
 
 // App shell files to cache on install
 const APP_SHELL = [
@@ -39,7 +40,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then(keys =>
             Promise.all(
                 keys
-                    .filter(key => key !== CACHE_NAME && key !== STATIC_CACHE)
+                    .filter(key => key !== CACHE_NAME && key !== STATIC_CACHE && key !== TILE_CACHE)
                     .map(key => caches.delete(key))
             )
         )
@@ -59,10 +60,27 @@ self.addEventListener('fetch', (event) => {
         url.hostname.includes('open-meteo.com') ||
         url.hostname.includes('nominatim') ||
         url.hostname.includes('corsproxy.io') ||
-        url.hostname.includes('allorigins.win') ||
-        url.hostname.includes('cartocdn.com') // Map tiles (handled by browser cache)
+        url.hostname.includes('allorigins.win')
     ) {
         return; // Let browser handle external requests normally
+    }
+
+    // Map tiles: cache-first with long TTL (tiles are immutable per URL)
+    if (url.hostname.includes('cartocdn.com')) {
+        event.respondWith(
+            caches.open(TILE_CACHE).then(async cache => {
+                const cached = await cache.match(event.request);
+                if (cached) return cached;
+                try {
+                    const response = await fetch(event.request);
+                    if (response.ok) cache.put(event.request, response.clone());
+                    return response;
+                } catch {
+                    return cached || new Response('', { status: 503 });
+                }
+            })
+        );
+        return;
     }
 
     // Static data files: cache-first

@@ -129,12 +129,12 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
                                     ))}
                                 </div>
 
-                                {!isExpanded && data && data.daily.time.length > 7 && (
-                                    <button 
-                                        onClick={() => setIsExpanded(true)}
+                                {data && data.daily.time.length > 7 && (
+                                    <button
+                                        onClick={() => setIsExpanded(v => !v)}
                                         className="w-full py-3 rounded-2xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 text-[11px] font-black transition-all"
                                     >
-                                        7일 더보기
+                                        {isExpanded ? '접기' : '7일 더보기'}
                                     </button>
                                 )}
                             </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { Source, Layer, Marker } from "react-map-gl/maplibre";
-import { Flag } from "lucide-react";
+import { Flag, MapPin } from "lucide-react";
 import { memo } from "react";
 
 interface RouteLayersProps {
@@ -105,6 +105,7 @@ const RouteLayers = ({
                 className={`flex flex-col gap-0.5 p-1 px-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center justify-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
             >
               <div className="flex items-center gap-1">
+                {i === 0 && <MapPin size={10} className="text-blue-500 fill-blue-500" />}
                 {isLast && <Flag size={10} className="text-rose-500 fill-rose-500" />}
                 <span 
                     className="text-[10px] font-black leading-tight text-center"
@@ -115,7 +116,9 @@ const RouteLayers = ({
               </div>
               
               <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
-                {timeDisplayMode === "duration"
+                {i === 0
+                    ? new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : timeDisplayMode === "duration"
                     ? `${Math.round(arrivalTimeWeight || 0)}분`
                     : new Date(Date.now() + (arrivalTimeWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
                 }

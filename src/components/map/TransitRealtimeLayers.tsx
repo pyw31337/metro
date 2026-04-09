@@ -14,6 +14,9 @@ interface Props {
 
 const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
+// Module-level O(1) line lookup for filterByPath (called on every realtime tick)
+const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
+
 const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
@@ -257,7 +260,7 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   if (unitDir !== seg.direction) return false;
 
   // 구간 범위 내 열차만 표시
-  const lineData = SUBWAY_LINES.find(l => l.name === unit.lineName);
+  const lineData = LINE_BY_NAME.get(unit.lineName);
   if (!lineData || !unit.currentStationName) return true;
 
   const sts     = lineData.stations;

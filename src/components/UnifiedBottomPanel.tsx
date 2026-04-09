@@ -612,7 +612,7 @@ export default function UnifiedBottomPanel({
                                                             </div>
                                                         </div>
                                                         <span className="text-[11px] font-black text-zinc-400 font-mono tracking-tight">
-                                                            {isStart ? '출발' : arrivalTime}
+                                                            {isStart ? new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : arrivalTime}
                                                         </span>
                                                     </div>
                                                 </div>
