@@ -250,7 +250,9 @@ function MapLibreBackground(props: MapLibreProps) {
                 openTime: props.openTime
             });
             setPopupCoords([coords.lng, coords.lat]);
-            onStationClick?.("", undefined);
+            // Close any open station/bus popup, but don't touch subway.selectedWC
+            setSelectedTrain(null);
+            setFocusedBubble(null);
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label' || feature.layer.id === 'bus-unclustered-hitbox') {
             const stop = busStops.find(s => s.id === feature.properties.id);
             if (stop) {
@@ -325,7 +327,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 onActiveLineChange={onActiveLineChange}
                 onSelectBusRoute={props.onSelectBusRoute}
                 selectedWC={selectedWC}
-                onWCClick={props.onWCClick}
+                onWCClick={(item) => { setSelectedWC(item); props.onWCClick(item); setPopupCoords(item ? popupCoords : null); }}
                 isDarkMode={isDarkMode}
             />
             <NearbyPulseMarkers nearestStation={nearestStation} nearestBusStop={nearestBusStop} nearestWC={nearestWC} isDarkMode={isDarkMode} activeTab={activeTab} />
