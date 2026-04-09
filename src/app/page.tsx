@@ -174,6 +174,11 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ui.activeTab, mapSt.userLocation, subway.wcItems]);
 
+  // isDarkMode → <html class="dark"> 동기화
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', ui.isDarkMode);
+  }, [ui.isDarkMode]);
+
   // validationError 5초 자동 해제
   useEffect(() => {
     if (route.validationError === 'no_route') {

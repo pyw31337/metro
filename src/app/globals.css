@@ -2,6 +2,9 @@
 
 @import "tailwindcss";
 
+/* Enable class-based dark mode for Tailwind v4 */
+@custom-variant dark (&:is(.dark *));
+
 @layer theme {
     :root {
         --background: #ffffff;
