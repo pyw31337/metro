@@ -137,12 +137,13 @@ const SuggestionItem = memo(({
 SuggestionItem.displayName = "SuggestionItem";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// WC 패널: 필터 + 주변 화장실 목록
+// WC 패널: 검색 + 필터 + 주변 화장실 목록
 // ─────────────────────────────────────────────────────────────────────────────
 const WCPanel = memo(() => {
     const { wcFilters, updateWcFilter } = useUIStore();
-    const { nearestWCs, selectedWC } = useSubwayStore();
+    const { nearestWCs, selectedWC, wcItems } = useSubwayStore();
     const setSelectedWC = useSubwayStore(s => s.setSelectedWC);
+    const [wcQuery, setWcQuery] = useState("");
 
     const filterDefs = [
         { key: 'accessible' as const, icon: <Accessibility size={12} />, label: '장애인' },
@@ -150,8 +151,52 @@ const WCPanel = memo(() => {
         { key: 'emergencyBell' as const, icon: <Bell size={12} />,       label: '비상벨' },
     ];
 
+    const applyFilters = useCallback((list: typeof nearestWCs) =>
+        list.filter(wc => {
+            if (wcFilters.accessible && !wc.accessible) return false;
+            if (wcFilters.diapers && !wc.diapers) return false;
+            if (wcFilters.emergencyBell && !wc.emergencyBell) return false;
+            return true;
+        }), [wcFilters]);
+
+    const searchResults = useMemo(() => {
+        const q = wcQuery.trim();
+        if (!q) return null;
+        const lower = q.toLowerCase();
+        return wcItems
+            .filter(wc => {
+                const haystack = [wc.name, wc.station, wc.address, wc.location]
+                    .filter(Boolean).join(" ").toLowerCase();
+                return haystack.includes(lower);
+            })
+            .slice(0, 20);
+    }, [wcQuery, wcItems]);
+
+    const displayList = searchResults
+        ? applyFilters(searchResults)
+        : applyFilters(nearestWCs);
+
+    const isSearchMode = searchResults !== null;
+
     return (
         <div className="flex flex-col gap-2.5 py-1">
+            {/* 검색 입력 */}
+            <div className="relative">
+                <Bath size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                <input
+                    type="text"
+                    value={wcQuery}
+                    onChange={e => setWcQuery(e.target.value)}
+                    placeholder="역명·지역명으로 검색"
+                    className="w-full pl-8 pr-8 py-2 rounded-xl text-[13px] font-bold bg-zinc-100 dark:bg-white/8 text-zinc-900 dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 border border-transparent focus:border-blue-400/50 outline-none transition-all"
+                />
+                {wcQuery && (
+                    <button onClick={() => setWcQuery("")} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 transition-colors">
+                        <X size={13} />
+                    </button>
+                )}
+            </div>
+
             {/* 필터 칩 */}
             <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest shrink-0">필터</span>
@@ -176,57 +221,48 @@ const WCPanel = memo(() => {
                 </div>
             </div>
 
-            {/* 주변 화장실 */}
-            {nearestWCs.length === 0 ? (
+            {/* 화장실 목록 */}
+            {!isSearchMode && nearestWCs.length === 0 ? (
                 <div className="py-3 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                    위치 정보가 필요합니다
+                    위 검색창에서 역명으로 찾거나<br/>위치를 허용하면 주변 화장실이 표시됩니다
                 </div>
-            ) : (() => {
-                const visibleWCs = nearestWCs.filter(wc => {
-                    if (wcFilters.accessible && !wc.accessible) return false;
-                    if (wcFilters.diapers && !wc.diapers) return false;
-                    if (wcFilters.emergencyBell && !wc.emergencyBell) return false;
-                    return true;
-                });
-                if (visibleWCs.length === 0) return (
-                    <div className="py-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
-                        필터에 맞는 화장실이 없습니다
-                    </div>
-                );
-                return (
-                    <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
-                        {visibleWCs.slice(0, 5).map(wc => {
-                            const isSelected = selectedWC?.id === wc.id;
-                            return (
-                                <button
-                                    key={wc.id}
-                                    onClick={() => setSelectedWC(isSelected ? null : wc)}
-                                    className={`flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-all active:scale-[0.98] ${
-                                        isSelected
-                                            ? 'bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/15'
-                                            : 'bg-zinc-50 dark:bg-white/5 border-transparent hover:bg-zinc-100 dark:hover:bg-white/10'
-                                    }`}
-                                >
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <Bath size={12} className={isSelected ? 'text-blue-500' : 'text-zinc-400'} />
-                                        <span className={`text-[12px] font-bold truncate ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-800 dark:text-white'}`}>
-                                            {wc.name?.replace(' 화장실', '')}
-                                        </span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                                        {wc.accessible && <Accessibility size={10} className="text-blue-400" />}
-                                        {wc.diapers    && <Baby size={10}          className="text-amber-400" />}
-                                        {wc.emergencyBell && <Bell size={10}       className="text-rose-400" />}
-                                        {wc.station && (
-                                            <span className="text-[9px] text-zinc-400 font-bold">{wc.station}</span>
-                                        )}
-                                    </div>
-                                </button>
-                            );
-                        })}
-                    </div>
-                );
-            })()}
+            ) : displayList.length === 0 ? (
+                <div className="py-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500">
+                    {isSearchMode ? `"${wcQuery}" 검색 결과 없음` : '필터에 맞는 화장실이 없습니다'}
+                </div>
+            ) : (
+                <div className="flex flex-col gap-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
+                    {(isSearchMode ? displayList : displayList.slice(0, 5)).map(wc => {
+                        const isSelected = selectedWC?.id === wc.id;
+                        return (
+                            <button
+                                key={wc.id}
+                                onClick={() => setSelectedWC(isSelected ? null : wc)}
+                                className={`flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-all active:scale-[0.98] ${
+                                    isSelected
+                                        ? 'bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/15'
+                                        : 'bg-zinc-50 dark:bg-white/5 border-transparent hover:bg-zinc-100 dark:hover:bg-white/10'
+                                }`}
+                            >
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <Bath size={12} className={isSelected ? 'text-blue-500' : 'text-zinc-400'} />
+                                    <span className={`text-[12px] font-bold truncate ${isSelected ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-800 dark:text-white'}`}>
+                                        {wc.name?.replace(' 화장실', '')}
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                                    {wc.accessible && <Accessibility size={10} className="text-blue-400" />}
+                                    {wc.diapers    && <Baby size={10}          className="text-amber-400" />}
+                                    {wc.emergencyBell && <Bell size={10}       className="text-rose-400" />}
+                                    {wc.station && (
+                                        <span className="text-[9px] text-zinc-400 font-bold">{wc.station}</span>
+                                    )}
+                                </div>
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
         </div>
     );
 });
