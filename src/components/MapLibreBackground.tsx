@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, memo, useRef, useMemo, useCallback, useEffect } from "react";
-import { Marker, useMap, Source, Layer } from "react-map-gl/maplibre";
+import { useState, memo, useMemo, useCallback, useEffect } from "react";
+import { useMap } from "react-map-gl/maplibre";
 import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival, Station } from "@/types/metro";
-import { fetchTrainCongestion } from "@/services/arrivalApi";
 import { 
     convertSubwayToGeoJSON, 
     convertBusStopsToGeoJSON, 
@@ -289,10 +288,15 @@ function MapLibreBackground(props: MapLibreProps) {
             <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
-            <RouteLayers 
+            <RouteLayers
                 activeTab={activeTab} pathLineData={pathGeoJSON.lines} routeStationData={pathGeoJSON.stations}
                 showAllRouteBubbles={showAllRouteBubbles} focusedBubble={focusedBubble} setFocusedBubble={setFocusedBubble}
                 timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} verifiedPlats={verifiedPlats}
+                onStationTap={(name, coords) => {
+                    onStationClick?.(name, [coords[1], coords[0]]);
+                    setPopupCoords(coords);
+                    setSelectedWC(null);
+                }}
             />
             <TransitRealtimeLayers activeTab={activeTab} activeLine={activeLine} activePath={pathResult} />
             <UserLocationLayer />

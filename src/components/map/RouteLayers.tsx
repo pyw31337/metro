@@ -14,6 +14,7 @@ interface RouteLayersProps {
   timeDisplayMode: "duration" | "arrival";
   onToggleTimeDisplay?: () => void;
   verifiedPlats: Record<string, string>;
+  onStationTap?: (name: string, coords: [number, number]) => void;
 }
 
 const RouteLayers = ({
@@ -25,7 +26,8 @@ const RouteLayers = ({
   setFocusedBubble,
   timeDisplayMode,
   onToggleTimeDisplay,
-  verifiedPlats
+  verifiedPlats,
+  onStationTap
 }: RouteLayersProps) => {
   if (activeTab !== "subway" && activeTab !== "subway+bus") return null;
 
@@ -93,11 +95,12 @@ const RouteLayers = ({
             offset={[0, 15]}
             style={{ zIndex: isFocused ? 5000 : 2000 }}
           >
-            <button 
+            <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setFocusedBubble(name);
                   onToggleTimeDisplay?.();
+                  onStationTap?.(name, [lng, lat]);
                 }}
                 className={`flex flex-col gap-0.5 p-1 px-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center justify-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
             >
