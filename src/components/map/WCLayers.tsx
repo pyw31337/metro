@@ -41,21 +41,44 @@ const WCLayers = ({ wcData, activeTab }: WCLayersProps) => {
           "text-color": "white" 
         }} 
       />
-      <Layer 
-        id="wc-unclustered" 
-        type="circle" 
-        filter={["!", ["has", "point_count"]]} 
-        paint={{ 
+      <Layer
+        id="wc-unclustered"
+        type="circle"
+        filter={["!", ["has", "point_count"]]}
+        paint={{
           "circle-radius": [
             "interpolate", ["linear"], ["zoom"],
             12, 4,
             14, 8,
             16, 11
-          ], 
-          "circle-color": "white", 
-          "circle-stroke-width": 3, 
-          "circle-stroke-color": "#3b82f6" 
-        }} 
+          ],
+          "circle-color": "#3b82f6",
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "white",
+          "circle-opacity": 0.9
+        }}
+      />
+      <Layer
+        id="wc-unclustered-label"
+        type="symbol"
+        filter={["!", ["has", "point_count"]]}
+        layout={{
+          "text-field": "🚻",
+          "text-size": [
+            "interpolate", ["linear"], ["zoom"],
+            14, 10,
+            16, 14
+          ],
+          "text-allow-overlap": false,
+          "text-anchor": "center",
+        }}
+        paint={{
+          "text-opacity": [
+            "interpolate", ["linear"], ["zoom"],
+            13, 0,
+            14, 1
+          ]
+        }}
       />
     </Source>
   );

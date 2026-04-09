@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone, Bell, ArrowUpDown } from "lucide-react";
+import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone, Bell, ArrowUpDown, Share2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
@@ -17,6 +17,7 @@ import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
 import { useRouteStore } from "@/store/useRouteStore";
 import { useMapStore } from "@/store/useMapStore";
+import { hapticLight, hapticMedium } from "@/utils/haptic";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 
 interface UnifiedBottomPanelProps {
@@ -249,7 +250,7 @@ const WCPanel = memo(() => {
                         return (
                             <button
                                 key={wc.id}
-                                onClick={() => setSelectedWC(isSelected ? null : wc)}
+                                onClick={() => { hapticLight(); setSelectedWC(isSelected ? null : wc); }}
                                 className={`flex items-center justify-between px-3 py-2 rounded-xl border text-left transition-all active:scale-[0.98] ${
                                     isSelected
                                         ? 'bg-blue-500/10 border-blue-500/30 dark:bg-blue-500/15'
@@ -587,10 +588,34 @@ export default function UnifiedBottomPanel({
                                                 </div>
                                             );
                                         })}
-                                        {/* Fare Information */}
+                                        {/* Fare Information + Share */}
                                         <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-zinc-500 dark:text-zinc-400 font-bold">
                                             <span className="text-[11px]">성인 교통카드 기준</span>
-                                            <span className="text-[13px] text-zinc-900 dark:text-white font-black">{activePath.fare?.toLocaleString()}원</span>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[13px] text-zinc-900 dark:text-white font-black">{activePath.fare?.toLocaleString()}원</span>
+                                                <button
+                                                    onClick={() => {
+                                                        hapticLight();
+                                                        const start = activePath.path[0];
+                                                        const end = activePath.path[activePath.path.length - 1];
+                                                        const mins = Math.round(activePath.totalWeight || 0);
+                                                        const transfers = activePath.transferCount || 0;
+                                                        const fare = activePath.fare?.toLocaleString() || '1400';
+                                                        const text = `[Metro Live] ${start} → ${end}\n소요: ${mins}분 | 환승: ${transfers}회 | 요금: ${fare}원\n경로: ${activePath.path.join(' → ')}`;
+                                                        if (navigator.share) {
+                                                            navigator.share({ title: 'Metro Live 경로', text });
+                                                        } else {
+                                                            navigator.clipboard?.writeText(text).then(() => {
+                                                                // brief visual feedback
+                                                            });
+                                                        }
+                                                    }}
+                                                    className="p-1 rounded-lg bg-zinc-100 dark:bg-white/10 text-zinc-400 hover:text-blue-500 transition-all active:scale-90"
+                                                    title="경로 공유"
+                                                >
+                                                    <Share2 size={12} />
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </motion.div>
@@ -707,6 +732,7 @@ export default function UnifiedBottomPanel({
                                 <div className="flex justify-end -my-0.5 pr-1 z-10 relative">
                                     <button
                                         onClick={() => {
+                                            hapticLight();
                                             const prevSource = source;
                                             const prevDest = destination;
                                             setSource(prevDest);
@@ -741,7 +767,7 @@ export default function UnifiedBottomPanel({
                     <div className="flex items-center gap-2">
                         <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl">
                             {TABS.map((tab) => (
-                                <button key={tab.id} onClick={() => onTabChange(tab.id)} className={`flex-1 flex flex-col items-center justify-center py-1 rounded-lg transition-all ${activeTab === tab.id ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-400"}`}>
+                                <button key={tab.id} onClick={() => { hapticLight(); onTabChange(tab.id); }} className={`flex-1 flex flex-col items-center justify-center py-1 rounded-lg transition-all ${activeTab === tab.id ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-400"}`}>
                                     {tab.icon}
                                     <span className="text-[9px] font-black mt-0.5">{tab.label}</span>
                                 </button>
@@ -749,8 +775,8 @@ export default function UnifiedBottomPanel({
                         </div>
                         {activeTab !== "wc" && (
                             <>
-                                <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { setValidationError("source"); return; } if (!destination) { setValidationError("dest"); return; } onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
-                                <button onClick={onReset} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
+                                <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { hapticLight(); setValidationError("source"); return; } if (!destination) { hapticLight(); setValidationError("dest"); return; } hapticMedium(); onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
+                                <button onClick={() => { hapticLight(); onReset?.(); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
                             </>
                         )}
                     </div>

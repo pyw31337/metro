@@ -227,6 +227,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setTrainArrivalDetail(null);
             setPopupCoords(null);
             setSelectedWC(null);
+            onWCClick(null); // also clear global → dismisses DirectionCompass
             onActiveLineChange(null);
             onStationClick?.("", undefined);
             return;
@@ -256,6 +257,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 if (!activeLine || !lines.includes(activeLine)) onActiveLineChange(lines[0]);
             }
             setSelectedWC(null);
+            onWCClick(null);
         } else if (feature.layer.id === 'wc-unclustered') {
             const fp = feature.properties;
             const wcItem: WCItem = {
