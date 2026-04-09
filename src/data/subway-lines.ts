@@ -5840,7 +5840,11 @@ export const SUBWAY_LINES: SubwayLine[] = [
     }
 ];
 
+// Module-level cache — built once at import time
+let _allStationsCache: Station[] | null = null;
+
 export function getAllStations(): Station[] {
+    if (_allStationsCache) return _allStationsCache;
     const map = new Map<string, Station>();
     SUBWAY_LINES.forEach(line => {
         line.stations.forEach(station => {
@@ -5853,5 +5857,15 @@ export function getAllStations(): Station[] {
             }
         });
     });
-    return Array.from(map.values());
+    _allStationsCache = Array.from(map.values());
+    return _allStationsCache;
+}
+
+// Pre-built name→station lookup for O(1) access
+let _stationByName: Map<string, Station> | null = null;
+export function getStationByName(name: string): Station | undefined {
+    if (!_stationByName) {
+        _stationByName = new Map(getAllStations().map(s => [s.name, s]));
+    }
+    return _stationByName.get(name);
 }

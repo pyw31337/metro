@@ -1,4 +1,4 @@
-import { SUBWAY_LINES, Station as SubwayStation, SubwayLine, getAllStations } from "@/data/subway-lines";
+import { SUBWAY_LINES, Station as SubwayStation, SubwayLine, getStationByName } from "@/data/subway-lines";
 import { WCItem, BusStop, PathResult, WCFilters } from "@/types/metro";
 
 export interface GeoJsonFeatureCollection {
@@ -131,26 +131,25 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
     const weights = pathResult.weights;
     const lineFeatures: any[] = [];
     const stationFeatures: any[] = [];
-    const allStations = getAllStations();
 
     for (let i = 0; i < path.length; i++) {
         const sName = path[i];
-        const s = allStations.find(st => st.name === sName);
+        const s = getStationByName(sName);
         if (!s) continue;
 
         const cumulativeWeight = weights[i] || 0;
 
-        const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000); 
+        const arrivalDate = new Date(startTime + cumulativeWeight * 60 * 1000);
         const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
         let isActualTransfer = false;
         let routeColor = "#3b82f6";
-        
+
         if (i > 0 && i < path.length - 1) {
             const prevName = path[i-1];
             const nextName = path[i+1];
-            const prevS = allStations.find(st => st.name === prevName);
-            const nextS = allStations.find(st => st.name === nextName);
+            const prevS = getStationByName(prevName);
+            const nextS = getStationByName(nextName);
             
             if (prevS && nextS) {
                 const incomingLines = s.lines.filter(l => prevS.lines.includes(l));
@@ -173,7 +172,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             }
         } else if (i === 0 && path.length > 1) {
             const nextName = path[1];
-            const nextS = allStations.find(st => st.name === nextName);
+            const nextS = getStationByName(nextName);
             if (nextS) {
                 const commonLines = s.lines.filter(l => nextS.lines.includes(l));
                 if (commonLines.length > 0) {
@@ -204,7 +203,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
 
         if (i < path.length - 1) {
             const nextName = path[i+1];
-            const nextS = allStations.find(st => st.name === nextName);
+            const nextS = getStationByName(nextName);
             if (nextS) {
                 lineFeatures.push({
                     type: "Feature" as const,

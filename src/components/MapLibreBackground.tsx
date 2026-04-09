@@ -150,7 +150,8 @@ function MapLibreBackground(props: MapLibreProps) {
         arrivalLoading, isLiveArrival, onRefreshArrival,
         onCenterChange, onBoundsChange, timeDisplayMode, onToggleTimeDisplay,
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
-        nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData
+        nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData,
+        onWCClick
     } = props;
 
     const [mapInstance, setMapInstance] = useState<any | null>(null);
@@ -162,6 +163,23 @@ function MapLibreBackground(props: MapLibreProps) {
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
     const verifiedPlats = useTransferVerification(pathResult, stations);
+
+    // Sync external selectedWC (from panel/global store) → local state + map fly
+    const { selectedWC: externalWC } = props;
+    useEffect(() => {
+        if (!externalWC) {
+            setSelectedWC(null);
+            return;
+        }
+        setSelectedWC(prev => {
+            if (prev?.id === externalWC.id) return prev;
+            // Panel selection: fly map to WC location
+            if (mapInstance) {
+                mapInstance.flyTo({ center: [externalWC.lng, externalWC.lat], zoom: 18, duration: 1000 });
+            }
+            return externalWC;
+        });
+    }, [externalWC, mapInstance]);
 
     // High performance realtime hooks
     useUserLocation(mapInstance);
@@ -239,18 +257,19 @@ function MapLibreBackground(props: MapLibreProps) {
             }
             setSelectedWC(null);
         } else if (feature.layer.id === 'wc-unclustered') {
-            const props = feature.properties;
-            setSelectedWC({
-                id: props.id, name: props.name, lat: coords.lat, lng: coords.lng,
-                accessible: props.accessible === 'true', diapers: props.diapers === 'true',
-                emergencyBell: props.emergencyBell === 'true', address: props.address,
-                station: props.station, isInsideGate: props.isInsideGate === 'true',
-                location: props.location, femaleStalls: parseInt(props.femaleStalls || '0'),
-                maleStalls: parseInt(props.maleStalls || '0'), maleUrinals: parseInt(props.maleUrinals || '0'),
-                openTime: props.openTime
-            });
+            const fp = feature.properties;
+            const wcItem: WCItem = {
+                id: fp.id, name: fp.name, lat: coords.lat, lng: coords.lng,
+                accessible: fp.accessible === 'true', diapers: fp.diapers === 'true',
+                emergencyBell: fp.emergencyBell === 'true', address: fp.address,
+                station: fp.station, isInsideGate: fp.isInsideGate === 'true',
+                location: fp.location, femaleStalls: parseInt(fp.femaleStalls || '0'),
+                maleStalls: parseInt(fp.maleStalls || '0'), maleUrinals: parseInt(fp.maleUrinals || '0'),
+                openTime: fp.openTime
+            };
+            setSelectedWC(wcItem);
+            onWCClick(wcItem); // sync global store → enables DirectionCompass
             setPopupCoords([coords.lng, coords.lat]);
-            // Close any open station/bus popup, but don't touch subway.selectedWC
             setSelectedTrain(null);
             setFocusedBubble(null);
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label' || feature.layer.id === 'bus-unclustered-hitbox') {
@@ -267,7 +286,7 @@ function MapLibreBackground(props: MapLibreProps) {
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
             onActiveLineChange(feature.properties.name);
         }
-    }, [busStops, onStationClick, onBusStopClick, activeLine, onActiveLineChange, mapInstance]);
+    }, [busStops, onStationClick, onBusStopClick, onWCClick, activeLine, onActiveLineChange, mapInstance]);
 
     return (
         <MapBase

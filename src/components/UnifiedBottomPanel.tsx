@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone, Bell } from "lucide-react";
+import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone, Bell, ArrowUpDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
@@ -16,6 +16,7 @@ import IngestionProgress from "./IngestionProgress";
 import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
 import { useRouteStore } from "@/store/useRouteStore";
+import { useMapStore } from "@/store/useMapStore";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 
 interface UnifiedBottomPanelProps {
@@ -143,7 +144,18 @@ const WCPanel = memo(() => {
     const { wcFilters, updateWcFilter } = useUIStore();
     const { nearestWCs, selectedWC, wcItems } = useSubwayStore();
     const setSelectedWC = useSubwayStore(s => s.setSelectedWC);
+    const userLocation = useMapStore(s => s.userLocation);
     const [wcQuery, setWcQuery] = useState("");
+
+    const formatDist = useCallback((wc: typeof nearestWCs[0]) => {
+        if (!userLocation) return null;
+        const R = 6371000;
+        const dLat = (wc.lat - userLocation[0]) * Math.PI / 180;
+        const dLon = (wc.lng - userLocation[1]) * Math.PI / 180;
+        const a = Math.sin(dLat/2)**2 + Math.cos(userLocation[0]*Math.PI/180)*Math.cos(wc.lat*Math.PI/180)*Math.sin(dLon/2)**2;
+        const d = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return d < 1000 ? `${Math.round(d)}m` : `${(d/1000).toFixed(1)}km`;
+    }, [userLocation]);
 
     const filterDefs = [
         { key: 'accessible' as const, icon: <Accessibility size={12} />, label: '장애인' },
@@ -254,7 +266,11 @@ const WCPanel = memo(() => {
                                     {wc.accessible && <Accessibility size={10} className="text-blue-400" />}
                                     {wc.diapers    && <Baby size={10}          className="text-amber-400" />}
                                     {wc.emergencyBell && <Bell size={10}       className="text-rose-400" />}
-                                    {wc.station && (
+                                    {(() => {
+                                        const dist = formatDist(wc);
+                                        return dist ? <span className="text-[9px] font-black text-zinc-400">{dist}</span> : null;
+                                    })()}
+                                    {!userLocation && wc.station && (
                                         <span className="text-[9px] text-zinc-400 font-bold">{wc.station}</span>
                                     )}
                                 </div>
@@ -684,6 +700,27 @@ export default function UnifiedBottomPanel({
                                             </button>
                                         </div>
                                     ))}
+                                </div>
+                            )}
+                            {/* Swap Button */}
+                            {(source || destination) && waypoints.length === 0 && (
+                                <div className="flex justify-end -my-0.5 pr-1 z-10 relative">
+                                    <button
+                                        onClick={() => {
+                                            const prevSource = source;
+                                            const prevDest = destination;
+                                            setSource(prevDest);
+                                            setDestination(prevSource);
+                                            onSetSource?.(prevDest);
+                                            onSetDestination?.(prevSource);
+                                            setSearchResults([]);
+                                            setActiveField(null);
+                                        }}
+                                        className="p-1.5 rounded-full bg-zinc-200/80 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90 shadow-sm"
+                                        title="출발/도착 바꾸기"
+                                    >
+                                        <ArrowUpDown size={12} />
+                                    </button>
                                 </div>
                             )}
                             {/* Destination Second */}

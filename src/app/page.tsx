@@ -479,9 +479,9 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-      {/* 화장실 나침반 */}
+      {/* 화장실 나침반 - 탭 무관하게 화장실 선택 시 표시 */}
       <AnimatePresence>
-        {ui.activeTab === 'wc' && subway.selectedWC && mapSt.userLocation && (
+        {subway.selectedWC && mapSt.userLocation && (
           <DirectionCompass
             key={subway.selectedWC.id}
             userLocation={mapSt.userLocation}
