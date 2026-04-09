@@ -55,6 +55,30 @@ interface UnifiedBottomPanelProps {
     userHeading?: number | null;
 }
 
+const LINE_COLORS: Record<string, string> = {
+    "1호선": "#0052A4", "2호선": "#00A84D", "3호선": "#EF7C1C", "4호선": "#00A5DE",
+    "5호선": "#996CAC", "6호선": "#CD7C2F", "7호선": "#747F00", "8호선": "#E6186C",
+    "9호선": "#BDB092", "수인분당선": "#F5A200", "신분당선": "#D4003B", "경의중앙선": "#77C4A3",
+    "공항철도": "#0090D2", "경춘선": "#0C8E72", "인천1호선": "#7CA8D5", "인천2호선": "#ED8B00"
+};
+
+const getLineBadge = (lineStr: string) => {
+    const cleanLine = lineStr.replace(/[()]/g, "").trim();
+    const color = LINE_COLORS[cleanLine] || LINE_COLORS[cleanLine + "호선"] || "#999999";
+    const short = getLineShortName(cleanLine);
+    return (
+        <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm" style={{ backgroundColor: color }}>
+            {short}
+        </span>
+    );
+};
+
+const TABS = [
+    { id: "subway", label: "지하철", icon: <Train size={14} /> },
+    { id: "bus", label: "버스", icon: <Bus size={14} /> },
+    { id: "wc", label: "화장실", icon: <Bath size={14} /> },
+];
+
 const matchChosung = (query: string, target: string) => {
     if (!query) return false;
     const disassembledQuery = Hangul.disassemble(query).join("");
@@ -244,6 +268,7 @@ export default function UnifiedBottomPanel({
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const { waypoints, removeWaypoint } = useRouteStore();
+    const setSelectedBusStop = useSubwayStore(s => s.setSelectedBusStop);
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -383,22 +408,6 @@ export default function UnifiedBottomPanel({
         setActiveField(null);
     };
 
-    const getLineBadge = (lineStr: string) => {
-        const lineColors: Record<string, string> = {
-            "1호선": "#0052A4", "2호선": "#00A84D", "3호선": "#EF7C1C", "4호선": "#00A5DE",
-            "5호선": "#996CAC", "6호선": "#CD7C2F", "7호선": "#747F00", "8호선": "#E6186C",
-            "9호선": "#BDB092", "수인분당선": "#F5A200", "신분당선": "#D4003B", "경의중앙선": "#77C4A3",
-            "공항철도": "#0090D2", "경춘선": "#0C8E72", "인천1호선": "#7CA8D5", "인천2호선": "#ED8B00"
-        };
-        const cleanLine = lineStr.replace(/[()]/g, "").trim();
-        const color = lineColors[cleanLine] || lineColors[cleanLine + "호선"] || "#999999";
-        const short = getLineShortName(cleanLine);
-        return (
-            <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black text-white shrink-0 shadow-sm" style={{ backgroundColor: color }}>
-                {short}
-            </span>
-        );
-    };
 
     const formatInputDisplay = (value: string, isDest: boolean = false) => {
         if (!value) return null;
@@ -431,11 +440,6 @@ export default function UnifiedBottomPanel({
         );
     };
 
-    const tabs = [
-        { id: "subway", label: "지하철", icon: <Train size={14} /> },
-        { id: "bus", label: "버스", icon: <Bus size={14} /> },
-        { id: "wc", label: "화장실", icon: <Bath size={14} /> },
-    ];
 
     return (
         <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center transition-all duration-300" style={{ bottom: `${keyboardOffset}px` }}>
@@ -630,7 +634,7 @@ export default function UnifiedBottomPanel({
 
                     <div className="flex items-center gap-2">
                         <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl">
-                            {tabs.map((tab) => (
+                            {TABS.map((tab) => (
                                 <button key={tab.id} onClick={() => onTabChange(tab.id)} className={`flex-1 flex flex-col items-center justify-center py-1 rounded-lg transition-all ${activeTab === tab.id ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-400"}`}>
                                     {tab.icon}
                                     <span className="text-[9px] font-black mt-0.5">{tab.label}</span>
@@ -648,7 +652,7 @@ export default function UnifiedBottomPanel({
                     {activeTab === 'bus' && selectedBusStop && (
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative group">
                             <div className="absolute top-0 right-0 p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => onSelectStation?.(null)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400">
+                                <button onClick={() => setSelectedBusStop(null)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400">
                                     <X size={14} />
                                 </button>
                             </div>
