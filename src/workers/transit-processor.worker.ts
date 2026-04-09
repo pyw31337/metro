@@ -9,6 +9,7 @@ interface TransitUnit {
   lastUpdateTime: number;
   nextUpdateTime: number;
   lineName: string;
+  lineColor: string;
   label: string;
 }
 
@@ -42,6 +43,7 @@ function processUpdates(units: any[]) {
       existing.lastUpdateTime = existing.nextUpdateTime;
       existing.nextUpdateTime = now;
       existing.lineName = unit.lineName;
+      existing.lineColor = unit.lineColor;
       existing.label = unit.label;
     }
   });
@@ -73,6 +75,7 @@ function startTick() {
         type: unit.type,
         pos: currentPos,
         lineName: unit.lineName,
+        lineColor: unit.lineColor,
         label: unit.label,
         bearing: calculateBearing(unit.lastPos, unit.nextPos)
       });

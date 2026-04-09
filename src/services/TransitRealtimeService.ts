@@ -208,30 +208,67 @@ class TransitRealtimeService extends EventEmitter {
       this.worker?.postMessage({ type: 'UPDATE_UNITS', data: subwayUnits.filter(u => u !== null) });
   }
 
+  private simulatedTrains: any[] | null = null;
+
   /**
    * Generates mock subway results for UI verification when API is down
    */
   private generateSimulatedSubwayResults(): any[] {
-      const results: any[] = [];
-      const linesToSimulate = SUBWAY_LINES.slice(0, 9); // Lines 1-9
-      
-      linesToSimulate.forEach(line => {
-          if (!line.stations || line.stations.length < 5) return;
+      if (!this.simulatedTrains) {
+          this.simulatedTrains = [];
+          const linesToSimulate = SUBWAY_LINES.slice(0, 9); // Lines 1-9
           
-          // Add 2-3 random trains per line
-          for (let i = 0; i < 3; i++) {
-              const randomIndex = Math.floor(Math.random() * (line.stations.length - 1));
-              const station = line.stations[randomIndex];
-              const nextStation = line.stations[randomIndex + 1];
+          linesToSimulate.forEach(line => {
+              if (!line.stations || line.stations.length < 5) return;
               
-              results.push({
-                  subwayId: line.id,
-                  subwayNm: line.name,
-                  statnNm: station.name,
-                  trainNo: `SIM${line.id.substring(0,1)}${i}`,
-                  arrivalNm: nextStation.name + '행',
-                  trainSttus: "1" // STOPPED (better for interpolation start)
-              });
+              // Add 10 trains per line!
+              for (let i = 0; i < 10; i++) {
+                  const randomIndex = Math.floor(Math.random() * (line.stations.length - 1));
+                  this.simulatedTrains!.push({
+                      subwayId: line.id,
+                      subwayNm: line.name,
+                      currentStationIndex: randomIndex,
+                      direction: Math.random() > 0.5 ? 1 : -1,
+                      trainNo: `SIM${line.id.substring(0,1)}${i}`,
+                  });
+              }
+          });
+      } else {
+         // Move each train forward smoothly!
+         this.simulatedTrains.forEach(train => {
+             const line = SUBWAY_LINES.find(l => l.id === train.subwayId);
+             if (line) {
+                 // 80% chance to move to next station every 15 sec (so they don't get stuck too long)
+                 if (Math.random() < 0.8) {
+                    let nextIndex = train.currentStationIndex + train.direction;
+                    // Bounce at the ends of the line
+                    if (nextIndex < 0 || nextIndex >= line.stations.length) {
+                        train.direction *= -1; 
+                        nextIndex = train.currentStationIndex + train.direction;
+                    }
+                    train.currentStationIndex = nextIndex;
+                 }
+             }
+         });
+      }
+
+      const results: any[] = [];
+      this.simulatedTrains.forEach(train => {
+          const line = SUBWAY_LINES.find(l => l.id === train.subwayId);
+          if (line) {
+             const station = line.stations[train.currentStationIndex];
+             let nextIndex = train.currentStationIndex + train.direction;
+             if (nextIndex < 0 || nextIndex >= line.stations.length) nextIndex = train.currentStationIndex;
+             const nextStation = line.stations[nextIndex];
+             
+             results.push({
+                 subwayId: train.subwayId,
+                 subwayNm: train.subwayNm,
+                 statnNm: station.name,
+                 trainNo: train.trainNo,
+                 arrivalNm: nextStation.name + '행',
+                 trainSttus: "1" // STOPPED/MOVING
+             });
           }
       });
       return results;
