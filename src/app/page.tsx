@@ -362,6 +362,9 @@ export default function Home() {
           onStationClick={handleStationClick}
           selectedStationName={subway.selectedStationName}
           stationArrivals={arrivalInfo.arrivals}
+          arrivalLoading={arrivalInfo.loading}
+          isLiveArrival={arrivalInfo.isLive}
+          onRefreshArrival={arrivalInfo.refresh}
           selectedWC={subway.selectedWC}
           selectedBusStop={subway.selectedBusStop}
           onSetStart={route.setStartStation}

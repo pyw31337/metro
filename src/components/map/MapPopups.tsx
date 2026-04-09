@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import { X, MapPin, Accessibility, Bell, Baby } from "lucide-react";
+import { X, MapPin, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
@@ -37,6 +37,9 @@ interface MapPopupsProps {
   selectedWC?: WCItem | null;
   onWCClick?: (item: WCItem | null) => void;
   isDarkMode?: boolean;
+  arrivalLoading?: boolean;
+  isLiveArrival?: boolean;
+  onRefreshArrival?: () => void;
 }
 
 const getLineInfo = (lineName: string) => {
@@ -159,7 +162,10 @@ const MapPopups = ({
   onSelectBusRoute,
   selectedWC,
   onWCClick,
-  isDarkMode
+  isDarkMode,
+  arrivalLoading,
+  isLiveArrival,
+  onRefreshArrival,
 }: MapPopupsProps) => {
   const { data: realTimeCongestion, loading: isStationCongestionLoading } = useCongestion(selectedStationName);
 
@@ -212,20 +218,37 @@ const MapPopups = ({
             >
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
                     <div className="flex items-center gap-2 overflow-hidden">
-                        <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[170px]">
+                        <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[150px]">
                             {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
                         </h3>
+                        {activeTab === 'subway' && (
+                            arrivalLoading
+                                ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
+                                : isLiveArrival
+                                    ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                    : <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" />
+                        )}
                     </div>
-                    <button 
-                        onClick={(e) => { 
-                            e.stopPropagation(); 
-                            setPopupCoords(null);
-                            onActiveLineChange(null);
-                        }}
-                        className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
-                    >
-                        <X size={16} />
-                    </button>
+                    <div className="flex items-center gap-1 shrink-0">
+                        {activeTab === 'subway' && onRefreshArrival && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onRefreshArrival(); }}
+                                className={`p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500 transition-all active:scale-90 ${arrivalLoading ? 'animate-spin' : ''}`}
+                            >
+                                <RefreshCw size={12} />
+                            </button>
+                        )}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setPopupCoords(null);
+                                onActiveLineChange(null);
+                            }}
+                            className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
                 </div>
 
                 {activeTab === 'subway' && badges.length > 0 && (

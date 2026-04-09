@@ -44,6 +44,9 @@ interface MapLibreProps {
     selectedBusStop: BusStop | null;
     selectedStationName: string | null;
     stationArrivals: any[];
+    arrivalLoading?: boolean;
+    isLiveArrival?: boolean;
+    onRefreshArrival?: () => void;
     onCenterChange?: (lat: number, lng: number) => void;
     onBoundsChange?: (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => void;
     onMapReady?: (map: any) => void;
@@ -144,7 +147,8 @@ function MapLibreBackground(props: MapLibreProps) {
         pathResult, startStation, activeTab, isDarkMode, wcItems, wcFilters, busStops,
         onStationClick, onBusStopClick, onMapReady,
         onSetStart, onSetEnd, onSetWaypoint, selectedStationName, stationArrivals,
-        onCenterChange, onBoundsChange, timeDisplayMode, onToggleTimeDisplay, 
+        arrivalLoading, isLiveArrival, onRefreshArrival,
+        onCenterChange, onBoundsChange, timeDisplayMode, onToggleTimeDisplay,
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
         nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData
     } = props;
@@ -299,6 +303,9 @@ function MapLibreBackground(props: MapLibreProps) {
                 selectedBusStop={selectedBusStop}
                 activeTab={activeTab}
                 stationArrivals={stationArrivals}
+                arrivalLoading={arrivalLoading}
+                isLiveArrival={isLiveArrival}
+                onRefreshArrival={onRefreshArrival}
                 timeDisplayMode={timeDisplayMode}
                 onToggleTimeDisplay={onToggleTimeDisplay || (() => {})}
                 onSetStart={onSetStart}
