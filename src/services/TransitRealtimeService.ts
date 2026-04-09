@@ -1,10 +1,11 @@
 import { EventEmitter } from 'events';
 import { fetchTrainPositions } from './arrivalApi';
 import { MetropolitanBusService } from './busApi';
-
 import { SUBWAY_LINES } from '@/data/subway-lines';
-import { normalizeLineName } from '@/utils/stationUtils';
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 공개 인터페이스
+// ─────────────────────────────────────────────────────────────────────────────
 export interface RealtimeUnit {
   id: string;
   type: 'bus' | 'subway';
@@ -13,331 +14,362 @@ export interface RealtimeUnit {
   label: string;
   lineName: string;
   lineColor: string;
+  isSimulated: boolean;   // 시뮬레이션 열차 여부
+  opacity: number;        // 페이드 인/아웃 (0~1)
   updnLine?: string;
   currentStationName?: string;
 }
 
+// 서비스 전체 시뮬레이션 상태 (UI에서 구독 가능)
+export type SimStatus = 'starting' | 'simulated' | 'mixed' | 'live';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 상수
+// ─────────────────────────────────────────────────────────────────────────────
+const POLLING_INTERVAL_MS = 12_500;
+const STAGGER_MS          = 150;    // 노선 간 폴링 간격
+const SIM_EXPIRE_MS       = 90_000; // 90초 후 실측 없으면 시뮬 유지 (이미 표시 중이므로 OK)
+const REAL_EXPIRE_MS      = 90_000; // 90초 이상 업데이트 없으면 실측 열차 제거
+
 const SUBWAY_POLLING_NAMES = [
-  '1호선', '2호선', '3호선', '4호선', '5호선', '6호선', '7호선', '8호선', '9호선',
-  '경의중앙선', '공항철도', '수인분당선', '신분당선', '경춘선', '신림선', '우이신설선'
+  '1호선', '2호선', '3호선', '4호선', '5호선',
+  '6호선', '7호선', '8호선', '9호선',
+  '경의중앙선', '공항철도', '수인분당선', '신분당선',
+  '경춘선', '신림선', '우이신설선',
 ];
 
-// ============================================================
-// 🚀 정적 데이터 사전 인덱싱 (모듈 로드 시 1회 실행)
-// ============================================================
-// 각 역명 → {coord, lineId, stationIndex} 매핑
+// ─────────────────────────────────────────────────────────────────────────────
+// 정적 인덱스 (모듈 로드 시 1회 빌드)
+// ─────────────────────────────────────────────────────────────────────────────
 interface StationMeta {
   coord: [number, number];
   lineId: string;
   lineName: string;
   stationIndex: number;
 }
-const STATION_META_MAP = new Map<string, StationMeta>();
-const LINE_COLOR_MAP = new Map<string, string>();
+
+const STATION_META = new Map<string, StationMeta>();
+const LINE_COLOR   = new Map<string, string>();
 
 (function buildIndex() {
-  const seen = new Set<string>(); // 중복 노선명 처리
   for (const line of SUBWAY_LINES) {
-    LINE_COLOR_MAP.set(line.name, line.color);
+    LINE_COLOR.set(line.name, line.color);
     line.stations.forEach((station, idx) => {
-      // 동일 역명이 여러 노선에 있는 경우 먼저 발견된 것 우선
       const key = station.name;
-      if (!STATION_META_MAP.has(key)) {
-        STATION_META_MAP.set(key, {
+      if (!STATION_META.has(key)) {
+        STATION_META.set(key, {
           coord: [station.lng, station.lat],
           lineId: line.id,
           lineName: line.name,
           stationIndex: idx,
         });
       }
-      // 괄호 제거 변형도 등록
-      const clean = key.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
-      if (clean !== key && !STATION_META_MAP.has(clean)) {
-        STATION_META_MAP.set(clean, {
-          coord: [station.lng, station.lat],
-          lineId: line.id,
-          lineName: line.name,
-          stationIndex: idx,
-        });
+      // 괄호 제거 + 역 접미사 제거 별칭도 등록
+      const alias = key.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
+      if (alias !== key && !STATION_META.has(alias)) {
+        STATION_META.set(alias, STATION_META.get(key)!);
       }
     });
   }
-  console.log(`📍 Station index built: ${STATION_META_MAP.size} entries`);
 })();
 
-// 역명으로 메타 즉시(동기) 조회
 function getStationMeta(name: string): StationMeta | null {
   if (!name) return null;
-  if (STATION_META_MAP.has(name)) return STATION_META_MAP.get(name)!;
+  if (STATION_META.has(name)) return STATION_META.get(name)!;
   const clean = name.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
-  return STATION_META_MAP.get(clean) || STATION_META_MAP.get(clean + '역') || null;
+  return STATION_META.get(clean) ?? STATION_META.get(clean + '역') ?? null;
 }
 
-// 같은 노선에서 인접 역 좌표 반환 (prevPos 계산용)
-function getAdjacentStationCoord(
+// ─────────────────────────────────────────────────────────────────────────────
+// 방향 파싱 — 숫자형 / 한국어 문자열 모두 처리
+// ─────────────────────────────────────────────────────────────────────────────
+function parseIsDownward(updnLine: string | undefined): boolean {
+  if (!updnLine) return true;
+  const v = updnLine.trim();
+  // 숫자형: 1 = 하행/외선
+  if (v === '1') return true;
+  if (v === '0') return false;
+  // 문자형
+  if (v.includes('하행') || v.includes('외선') || v.includes('outer')) return true;
+  if (v.includes('상행') || v.includes('내선') || v.includes('inner')) return false;
+  return true; // 알 수 없으면 하행으로 기본 처리
+}
+
+// 인접 역 좌표 반환
+function getAdjacentCoord(
   lineName: string,
-  currentStationName: string,
-  isDownward: boolean // true = 하행(index 증가), false = 상행(index 감소)
+  stationName: string,
+  isDownward: boolean
 ): [number, number] | null {
   const line = SUBWAY_LINES.find(l => l.name === lineName);
   if (!line) return null;
-  const idx = line.stations.findIndex(s => s.name === currentStationName);
+  const idx = line.stations.findIndex(s => s.name === stationName);
   if (idx < 0) return null;
   const prevIdx = isDownward ? idx - 1 : idx + 1;
   if (prevIdx < 0 || prevIdx >= line.stations.length) return null;
-  const prev = line.stations[prevIdx];
-  return [prev.lng, prev.lat];
+  const s = line.stations[prevIdx];
+  return [s.lng, s.lat];
 }
 
-// ============================================================
+function getNextCoord(
+  lineName: string,
+  stationName: string,
+  isDownward: boolean
+): [number, number] | null {
+  const line = SUBWAY_LINES.find(l => l.name === lineName);
+  if (!line) return null;
+  const idx = line.stations.findIndex(s => s.name === stationName);
+  if (idx < 0) return null;
+  const nextIdx = isDownward ? idx + 1 : idx - 1;
+  if (nextIdx < 0 || nextIdx >= line.stations.length) return null;
+  const s = line.stations[nextIdx];
+  return [s.lng, s.lat];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 열차 유닛 빌드
+// ─────────────────────────────────────────────────────────────────────────────
+function buildUnit(train: any, isSimulated: boolean): any | null {
+  const meta = getStationMeta(train.statnNm);
+  if (!meta) return null;
+
+  const coord    = meta.coord;
+  const lineName = train.subwayNm;
+  const color    = (LINE_COLOR.get(lineName) ?? '#3b82f6').replace('#', '').toUpperCase();
+
+  const isDownward = parseIsDownward(train.updnLine);
+  const prevPos    = getAdjacentCoord(lineName, train.statnNm, isDownward) ?? coord;
+  const futurePos  = getNextCoord(lineName, train.statnNm, isDownward) ?? coord;
+
+  const dest  = train.lstnyNm ?? train.statnTnm ?? '';
+  const arrow = isDownward ? '◀' : '▶';
+  const label = dest ? `${arrow} ${dest}행` : (isDownward ? '◀ 하행' : '상행 ▶');
+
+  return {
+    id: `train-${train.subwayId ?? 'u'}-${train.trainNo}`,
+    type: 'subway' as const,
+    prevPos,
+    nextPos: coord,
+    futurePos,
+    lineName,
+    lineColor: color,
+    label,
+    status: train.arvlCd ?? '99',
+    updnLine: train.updnLine,
+    currentStationName: train.statnNm,
+    isSimulated,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // TransitRealtimeService
-// ============================================================
+// ─────────────────────────────────────────────────────────────────────────────
 class TransitRealtimeService extends EventEmitter {
   private worker: Worker | null = null;
-  private isRunning: boolean = false;
-  private currentUnits: RealtimeUnit[] = [];
-  private trackedBusRoutes: Set<string> = new Set();
+  private isRunning = false;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
-  private hasSentRealData: boolean = false;
+  private trackedBusRoutes = new Set<string>();
+
+  // 노선별 실제 데이터 수신 여부 추적
+  private linesWithRealData = new Set<string>();
+  // 전체 시뮬레이션 상태
+  private _simStatus: SimStatus = 'starting';
+
+  // 시뮬레이션 열차 상태 (재사용)
+  private simTrains: any[] | null = null;
 
   constructor() {
     super();
-    if (typeof window !== 'undefined') {
-      this.initWorker();
-    }
+    if (typeof window !== 'undefined') this._initWorker();
   }
 
-  private initWorker() {
+  private _initWorker() {
     this.worker = new Worker(
       new URL('../workers/transit-processor.worker.ts', import.meta.url)
     );
     this.worker.onmessage = (e) => {
       const { type, data } = e.data;
       if (type === 'TICK_UPDATE') {
-        this.currentUnits = data;
-        this.emit('update', data);
+        this.emit('update', data as RealtimeUnit[]);
+      } else if (type === 'SIM_STATUS') {
+        this._simStatus = data as SimStatus;
+        this.emit('simStatus', this._simStatus);
       }
     };
   }
 
-  public trackBusRoute(cityCode: string, routeId: string) {
-    this.trackedBusRoutes.add(`${cityCode}:${routeId}`);
-  }
+  get simStatus(): SimStatus { return this._simStatus; }
 
-  public untrackBusRoute(cityCode: string, routeId: string) {
-    this.trackedBusRoutes.delete(`${cityCode}:${routeId}`);
-  }
-
-  public start() {
+  // ───── 공개 API ─────
+  start() {
     if (this.isRunning) return;
     this.isRunning = true;
 
-    // ✅ 1. 즉시 시뮬레이션 열차 표시 (이동 포함)
-    this.sendSimulation();
+    // 즉시 시뮬레이션 열차 표시
+    this._sendSimulation();
 
-    // ✅ 2. 즉시 실시간 폴링 시작
-    this.poll();
-
-    console.log('💎 TransitRealtimeService started (instant coord cache, per-line fire-and-forget)');
+    // 즉시 첫 폴링 시작
+    this._poll();
   }
 
-  public stop() {
+  stop() {
     this.isRunning = false;
     if (this.pollTimer) clearTimeout(this.pollTimer);
+    this.worker?.postMessage({ type: 'STOP' });
   }
 
-  // ============================================================
-  // 단일 열차 유닛 빌드 (동기 - 캐시 조회)
-  // ============================================================
-  private buildUnit(train: any): any | null {
-    const meta = getStationMeta(train.statnNm);
-    if (!meta) return null;
-
-    const coord = meta.coord;
-    const lineName = train.subwayNm;
-    const rawColor = LINE_COLOR_MAP.get(lineName) || '#3b82f6';
-    const lineColor = rawColor.replace('#', '').toUpperCase();
-
-    // 이전 역 좌표 계산 → prevPos로 사용
-    const isDownward = train.updnLine === '1';
-    const prevPos = getAdjacentStationCoord(lineName, train.statnNm, isDownward) || coord;
-
-    // ✅ 예측 이동을 위한 "다다음 역" 좌표 계산 (Overshooting 대비)
-    let futurePos = coord;
-    const line = SUBWAY_LINES.find(l => l.name === lineName);
-    if (line) {
-      const idx = line.stations.findIndex(s => s.name === train.statnNm);
-      if (idx >= 0) {
-        // 하행(1)이면 index 증가 방향, 상행(0)이면 index 감소 방향이 다다음 역
-        const nextIdx = isDownward ? idx + 1 : idx - 1;
-        if (nextIdx >= 0 && nextIdx < line.stations.length) {
-          const nextStation = line.stations[nextIdx];
-          futurePos = [nextStation.lng, nextStation.lat];
-        }
-      }
-    }
-
-    // 레이블: 종착역명 + 방향 화살표
-    const destination = train.lstnyNm || train.statnTnm || '';
-    const label = destination
-      ? (isDownward ? `◀ ${destination}행` : `${destination}행 ▶`)
-      : (isDownward ? '◀ 하행' : '상행 ▶');
-
-    return {
-      id: `train-${train.subwayId || 'sim'}-${train.trainNo}`,
-      type: 'subway' as const,
-      prevPos,
-      nextPos: coord,
-      futurePos, // ✅ 추가
-      lineName,
-      lineColor,
-      label,
-      status: train.arvlCd || '99',
-      updnLine: train.updnLine,
-      currentStationName: train.statnNm, // ✅ 추가: 현재 역 이름
-    };
+  trackBusRoute(cityCode: string, routeId: string) {
+    this.trackedBusRoutes.add(`${cityCode}:${routeId}`);
   }
 
-  // ============================================================
-  // 실시간 폴링 — 노선별 150ms 간격으로 스태거링(Staggering) 호출
-  // ============================================================
-  private poll() {
-    if (!this.isRunning) return;
-
-    // 각 노선을 150ms 간격으로 띄엄띄엄 요청 (브라우저 커넥션 병목 방지)
-    SUBWAY_POLLING_NAMES.forEach((lineName, i) => {
-      setTimeout(() => {
-        if (!this.isRunning) return;
-        
-        fetchTrainPositions(lineName)
-          .then(trains => {
-            if (!this.isRunning || trains.length === 0) return;
-            
-            const units = trains.map(t => this.buildUnit(t)).filter(Boolean);
-            if (units.length === 0) return;
-
-            if (!this.hasSentRealData) {
-              this.hasSentRealData = true;
-              this.worker?.postMessage({ type: 'CLEAR_SIMULATED' });
-            }
-
-            this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
-          })
-          .catch(() => {});
-      }, i * 150); // 0ms, 150ms, 300ms... 순차적으로 실행
-    });
-
-    // 버스 폴링 (동일하게 간격 배치)
-    if (this.trackedBusRoutes.size > 0) {
-      Array.from(this.trackedBusRoutes).forEach((key, i) => {
-        const [cityCode, routeId] = key.split(':');
-        setTimeout(() => {
-          Promise.all([
-            MetropolitanBusService.fetchBusPositions(cityCode, routeId),
-            MetropolitanBusService.fetchLocalRouteInfo(routeId)
-          ]).then(([positions, routeInfo]) => {
-            const busUnits = positions.map(pos => ({
-              id: `bus-${routeId}-${pos.id}`,
-              type: 'bus' as const,
-              prevPos: [pos.lng, pos.lat] as [number, number],
-              nextPos: [pos.lng, pos.lat] as [number, number],
-              futurePos: [pos.lng, pos.lat] as [number, number],
-              lineName: routeInfo?.no || routeId,
-              lineColor: '3b82f6',
-              label: pos.no || routeInfo?.no || 'BUS',
-            }));
-            if (busUnits.length > 0) {
-              this.worker?.postMessage({ type: 'UPDATE_UNITS', data: busUnits });
-            }
-          }).catch(() => {});
-        }, (SUBWAY_POLLING_NAMES.length + i) * 150);
-      });
-    }
-
-    // 12초 후 재폴링
-    this.pollTimer = setTimeout(() => {
-      this.poll();
-    }, 12500); // 0.5초 여유를 두어 겹침 방지
+  untrackBusRoute(cityCode: string, routeId: string) {
+    this.trackedBusRoutes.delete(`${cityCode}:${routeId}`);
   }
 
-  // ============================================================
-  // 시뮬레이션 — prevPos/nextPos 모두 설정해 즉시 이동
-  // ============================================================
-  private simulatedTrains: any[] | null = null;
-
-  private sendSimulation() {
-    const results = this.generateSimResults();
-    const units = results.map(train => this.buildUnit(train)).filter(Boolean);
+  // ───── 시뮬레이션 ─────
+  private _sendSimulation() {
+    const results = this._generateSimResults();
+    const units   = results.map(t => buildUnit(t, true)).filter(Boolean);
     if (units.length > 0) {
       this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
-      console.log(`🎭 Simulation: ${units.length} trains rendered`);
+      this._updateSimStatus();
     }
   }
 
-  private generateSimResults(): any[] {
-    const LINE_NAMES = [
-      '1호선','2호선','3호선','4호선','5호선','6호선','7호선','8호선','9호선',
-      '경의중앙선','수인분당선','신분당선','공항철도','경춘선','신림선','우이신설선','인천1호선','인천2호선'
-    ];
-
-    if (!this.simulatedTrains) {
-      this.simulatedTrains = [];
+  private _generateSimResults(): any[] {
+    if (!this.simTrains) {
+      this.simTrains = [];
       const seen = new Set<string>();
-
       for (const line of SUBWAY_LINES) {
-        if (!LINE_NAMES.includes(line.name)) continue;
         if (seen.has(line.name)) continue;
         if (!line.stations || line.stations.length < 4) continue;
         seen.add(line.name);
 
         const step = Math.max(1, Math.floor(line.stations.length / 10));
         for (let i = 0; i < line.stations.length; i += step) {
-          const direction = (i % 2 === 0) ? 1 : -1;
-          this.simulatedTrains.push({
-            subwayId: line.id,
-            subwayNm: line.name,
-            currentStationIndex: i,
-            direction,
+          this.simTrains.push({
+            lineId: line.id, lineName: line.name,
+            stationIndex: i,
+            direction: i % 2 === 0 ? 1 : -1,
             trainNo: `SIM-${line.id}-${i}`,
           });
         }
       }
     } else {
-      // 매 12초마다 한 역 전진
-      for (const train of this.simulatedTrains) {
-        const line = SUBWAY_LINES.find(l => l.id === train.subwayId);
+      // 매 폴링 주기마다 한 역씩 이동
+      for (const t of this.simTrains) {
+        const line = SUBWAY_LINES.find(l => l.id === t.lineId);
         if (!line) continue;
-        let next = train.currentStationIndex + train.direction;
+        let next = t.stationIndex + t.direction;
         if (next < 0 || next >= line.stations.length) {
-          train.direction *= -1;
-          next = train.currentStationIndex + train.direction;
+          t.direction *= -1;
+          next = t.stationIndex + t.direction;
         }
-        train.currentStationIndex = Math.max(0, Math.min(line.stations.length - 1, next));
+        t.stationIndex = Math.max(0, Math.min(line.stations.length - 1, next));
       }
     }
 
     const results: any[] = [];
-    for (const train of this.simulatedTrains) {
-      const line = SUBWAY_LINES.find(l => l.id === train.subwayId);
+    for (const t of this.simTrains) {
+      const line = SUBWAY_LINES.find(l => l.id === t.lineId);
       if (!line) continue;
-      const idx = train.currentStationIndex;
-      const station = line.stations[idx];
-      const terminal = train.direction > 0
+      const st       = line.stations[t.stationIndex];
+      const terminal = t.direction > 0
         ? line.stations[line.stations.length - 1]
         : line.stations[0];
-
       results.push({
-        subwayId: train.subwayId,
-        subwayNm: line.name,
-        statnNm: station.name,
-        trainNo: train.trainNo,
-        lstnyNm: terminal.name,
-        statnTnm: terminal.name,
-        updnLine: train.direction > 0 ? '1' : '0',
+        subwayId : t.lineId,
+        subwayNm : line.name,
+        statnNm  : st.name,
+        trainNo  : t.trainNo,
+        lstnyNm  : terminal.name,
+        updnLine : t.direction > 0 ? '1' : '0',
         trainSttus: '1',
       });
     }
     return results;
+  }
+
+  // ───── 실시간 폴링 ─────
+  private _poll() {
+    if (!this.isRunning) return;
+
+    // 지하철 노선 순차 폴링 (STAGGER_MS 간격)
+    SUBWAY_POLLING_NAMES.forEach((lineName, i) => {
+      setTimeout(() => {
+        if (!this.isRunning) return;
+
+        fetchTrainPositions(lineName)
+          .then(trains => {
+            if (!this.isRunning || trains.length === 0) return;
+
+            const units = trains.map(t => buildUnit(t, false)).filter(Boolean);
+            if (units.length === 0) return;
+
+            // 이 노선에 실측 데이터 도착 → 시뮬 열차 제거 요청
+            if (!this.linesWithRealData.has(lineName)) {
+              this.linesWithRealData.add(lineName);
+              this.worker?.postMessage({ type: 'CLEAR_LINE_SIM', lineName });
+              this._updateSimStatus();
+            }
+
+            this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
+          })
+          .catch(() => {});
+
+      }, i * STAGGER_MS);
+    });
+
+    // 버스 폴링
+    if (this.trackedBusRoutes.size > 0) {
+      Array.from(this.trackedBusRoutes).forEach((key, i) => {
+        const [cityCode, routeId] = key.split(':');
+        setTimeout(() => {
+          Promise.all([
+            MetropolitanBusService.fetchBusPositions(cityCode, routeId),
+            MetropolitanBusService.fetchLocalRouteInfo(routeId),
+          ]).then(([positions, routeInfo]) => {
+            const busUnits = positions.map(pos => ({
+              id: `bus-${routeId}-${pos.id}`,
+              type: 'bus' as const,
+              prevPos:   [pos.lng, pos.lat] as [number, number],
+              nextPos:   [pos.lng, pos.lat] as [number, number],
+              futurePos: [pos.lng, pos.lat] as [number, number],
+              lineName:  routeInfo?.no ?? routeId,
+              lineColor: '3b82f6',
+              label:     pos.no ?? routeInfo?.no ?? 'BUS',
+              isSimulated: false,
+            }));
+            if (busUnits.length > 0) {
+              this.worker?.postMessage({ type: 'UPDATE_UNITS', data: busUnits });
+            }
+          }).catch(() => {});
+        }, (SUBWAY_POLLING_NAMES.length + i) * STAGGER_MS);
+      });
+    }
+
+    // 다음 폴링 예약
+    this.pollTimer = setTimeout(() => {
+      // 시뮬레이션도 주기에 맞춰 전진
+      if (this.simTrains) this._sendSimulation();
+      this._poll();
+    }, POLLING_INTERVAL_MS);
+  }
+
+  private _updateSimStatus() {
+    const total = SUBWAY_POLLING_NAMES.length;
+    const live  = this.linesWithRealData.size;
+
+    let status: SimStatus;
+    if (live === 0)            status = 'simulated';
+    else if (live < total / 2) status = 'mixed';
+    else if (live >= total)    status = 'live';
+    else                       status = 'mixed';
+
+    if (status !== this._simStatus) {
+      this._simStatus = status;
+      this.emit('simStatus', status);
+    }
   }
 }
 

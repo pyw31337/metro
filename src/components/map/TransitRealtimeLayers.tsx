@@ -1,303 +1,294 @@
 "use client";
 
+import { memo, useState, useEffect, useRef } from "react";
 import { Source, Layer, useMap } from "react-map-gl/maplibre";
-import { memo, useState, useEffect, useRef, useCallback } from "react";
-import { transitRealtimeService, RealtimeUnit } from '@/services/TransitRealtimeService';
+import { transitRealtimeService, RealtimeUnit, SimStatus } from '@/services/TransitRealtimeService';
 import { PathResult } from "@/types/metro";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 
-interface TransitRealtimeLayersProps {
+interface Props {
   activeTab: string;
   activeLine?: string | null;
   activePath?: PathResult | null;
 }
 
-const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: TransitRealtimeLayersProps) => {
+const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+
+const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
 
-  const [geoData, setGeoData] = useState<GeoJSON.FeatureCollection>({
-    type: "FeatureCollection",
-    features: []
-  });
-  const [isSimulated, setIsSimulated] = useState(false);
+  const [geoData, setGeoData]         = useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
+  const [simStatus, setSimStatus]     = useState<SimStatus>('starting');
+  const [selectedId, setSelectedId]   = useState<string | null>(null);
+  const [selectedInfo, setSelectedInfo] = useState<{ label: string; lineName: string; lineColor: string } | null>(null);
 
-  // 클릭으로 선택된 열차 ID (toggle)
-  const [selectedTrainId, setSelectedTrainId] = useState<string | null>(null);
+  // activePath를 ref로 유지해서 매 tick마다 클로저 최신값 참조
+  const activePathRef = useRef(activePath);
+  useEffect(() => { activePathRef.current = activePath; }, [activePath]);
 
-  // 선택된 열차의 팝업 정보
-  const [selectedTrainInfo, setSelectedTrainInfo] = useState<{
-    label: string;
-    lineName: string;
-    pos: [number, number];
-  } | null>(null);
+  const activeLineRef = useRef(activeLine);
+  useEffect(() => { activeLineRef.current = activeLine; }, [activeLine]);
 
+  // ─── 실시간 업데이트 구독 ───
   useEffect(() => {
     if (!map) return;
 
     const handleUpdate = (units: RealtimeUnit[]) => {
-      const hasSim = units.some(u => u.id.includes('sim'));
-      setIsSimulated(hasSim);
+      const ap = activePathRef.current;
 
-      // ✅ 길찾기 경로 활성화 시: 초정밀 동선 맞춤 필팅
-      const filteredUnits = units.filter(unit => {
-        if (activePath && activePath.segments && activePath.segments.length > 0) {
-          const segment = activePath.segments.find(s => s.line === unit.lineName);
-          if (!segment) return false; 
-          
-          if (unit.updnLine !== segment.direction) return false;
+      // 경로 탐색 활성 시: 해당 경로 노선의 열차만 표시
+      const filtered = ap?.segments?.length
+        ? units.filter(u => filterByPath(u, ap))
+        : units;
 
-          const lineData = SUBWAY_LINES.find(l => l.name === unit.lineName);
-          if (lineData && unit.currentStationName) {
-             const stations = lineData.stations;
-             const currIdx = stations.findIndex(s => s.name === unit.currentStationName || s.name === unit.currentStationName + '역');
-             
-             // 해당 세그먼트의 진입역과 진출역 인덱스
-             const entryStation = segment.stations[0];
-             const exitStation = segment.stations[segment.stations.length - 1];
-             
-             const entryIdx = stations.findIndex(s => s.name === entryStation || s.name === entryStation + '역');
-             const exitIdx = stations.findIndex(s => s.name === exitStation || s.name === exitStation + '역');
-
-             if (currIdx !== -1 && entryIdx !== -1 && exitIdx !== -1) {
-                // 상행(0) : 인덱스 감소 방향
-                if (segment.direction === '0') {
-                  // 진입역 '이전' 2개 정거장부터 ~ 진출역 '도착' 전까지 노출
-                  // 진출역을 지나면(currIdx < exitIdx) 즉시 제거
-                  if (currIdx < exitIdx) return false;
-                  // 너무 멀리 있는(진입역보다 한참 뒤) 열차도 제거 (집중도 향상)
-                  if (currIdx > entryIdx + 2) return false;
-                } 
-                // 하행(1) : 인덱스 증가 방향
-                else {
-                  // 진출역을 지나면(currIdx > exitIdx) 즉시 제거
-                  if (currIdx > exitIdx) return false;
-                  // 진입역보다 한참 뒤 열차 제거
-                  if (currIdx < entryIdx - 2) return false;
-                }
-             }
-          }
-          return true;
-        }
-        return true;
-      });
-
-      const features: any[] = filteredUnits.map(unit => ({
+      const features: GeoJSON.Feature[] = filtered.map(u => ({
         type: "Feature",
-        geometry: {
-          type: "Point",
-          coordinates: unit.pos
-        },
+        geometry: { type: "Point", coordinates: u.pos },
         properties: {
-          id: unit.id,
-          type: unit.type,
-          label: unit.label,
-          lineName: unit.lineName,
-          lineColor: unit.lineColor,
-          bearing: unit.bearing,
-          updnLine: unit.updnLine
-        }
+          id:          u.id,
+          type:        u.type,
+          label:       u.label,
+          lineName:    u.lineName,
+          lineColor:   u.lineColor,
+          bearing:     u.bearing,
+          isSimulated: u.isSimulated,
+          opacity:     u.opacity,
+          updnLine:    u.updnLine ?? '',
+          currentStation: u.currentStationName ?? '',
+        },
       }));
 
-      // 직접 source 업데이트 (60fps 유지)
-      const source: any = map.getSource('transit-realtime-source');
-      if (source) {
-        source.setData({ type: "FeatureCollection", features });
+      // source 직접 업데이트 (React 렌더 우회 → 60fps)
+      const src = map.getSource('transit-realtime-source') as any;
+      if (src?.setData) {
+        src.setData({ type: "FeatureCollection", features });
       } else {
         setGeoData({ type: "FeatureCollection", features });
       }
     };
 
+    const handleSimStatus = (s: SimStatus) => setSimStatus(s);
+
     transitRealtimeService.on('update', handleUpdate);
+    transitRealtimeService.on('simStatus', handleSimStatus);
     transitRealtimeService.start();
 
     return () => {
       transitRealtimeService.off('update', handleUpdate);
+      transitRealtimeService.off('simStatus', handleSimStatus);
     };
-  }, [map, activePath]); // activePath 변경 시 필터링 다시 적용
+  }, [map]);
 
-  // 열차 클릭 핸들러
+  // ─── 열차 클릭 ───
   useEffect(() => {
     if (!map) return;
 
-    const handleTrainClick = (e: any) => {
-      if (!e.features || e.features.length === 0) return;
-      const feature = e.features[0];
-      const props = feature.properties;
-      const clickedId = props.id;
-      const pos = feature.geometry.coordinates as [number, number];
+    const onTrainClick = (e: any) => {
+      const feat  = e.features?.[0];
+      if (!feat) return;
+      const props = feat.properties;
+      const id    = props.id as string;
 
-      if (selectedTrainId === clickedId) {
-        // 같은 열차 다시 클릭 → 해제
-        setSelectedTrainId(null);
-        setSelectedTrainInfo(null);
+      if (selectedId === id) {
+        setSelectedId(null); setSelectedInfo(null);
       } else {
-        setSelectedTrainId(clickedId);
-        setSelectedTrainInfo({
-          label: props.label,
-          lineName: props.lineName,
-          pos,
-        });
-      }
-      e.preventDefault?.();
-    };
-
-    // 지도 다른 곳 클릭 → 선택 해제
-    const handleMapClick = (e: any) => {
-      // subway-realtime-layer 위에서 클릭하지 않은 경우
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: ['subway-realtime-layer']
-      });
-      if (features.length === 0) {
-        setSelectedTrainId(null);
-        setSelectedTrainInfo(null);
+        setSelectedId(id);
+        setSelectedInfo({ label: props.label, lineName: props.lineName, lineColor: props.lineColor });
       }
     };
 
-    map.on('click', 'subway-realtime-layer', handleTrainClick);
-    map.on('click', handleMapClick);
+    const onMapClick = (e: any) => {
+      const hits = map.queryRenderedFeatures(e.point, { layers: ['transit-trains'] });
+      if (!hits.length) { setSelectedId(null); setSelectedInfo(null); }
+    };
 
-    // 커서 변경
-    map.on('mouseenter', 'subway-realtime-layer', () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', 'subway-realtime-layer', () => {
-      map.getCanvas().style.cursor = '';
-    });
+    map.on('click', 'transit-trains', onTrainClick);
+    map.on('click', onMapClick);
+    map.on('mouseenter', 'transit-trains', () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'transit-trains', () => { map.getCanvas().style.cursor = ''; });
 
     return () => {
-      map.off('click', 'subway-realtime-layer', handleTrainClick);
-      map.off('click', handleMapClick);
+      map.off('click', 'transit-trains', onTrainClick);
+      map.off('click', onMapClick);
     };
-  }, [map, selectedTrainId]);
+  }, [map, selectedId]);
 
-  // 선택된 열차의 label 레이어 필터 업데이트
+  // ─── 선택 레이블 필터 동기화 ───
   useEffect(() => {
     if (!map) return;
     try {
-      if (selectedTrainId) {
-        map.setFilter('subway-selected-label-layer', ['==', ['get', 'id'], selectedTrainId]);
-      } else {
-        // 아무것도 선택 안됨 → 아무것도 안 보임
-        map.setFilter('subway-selected-label-layer', ['==', ['get', 'id'], '']);
-      }
-    } catch (e) {}
-  }, [map, selectedTrainId]);
+      map.setFilter('transit-train-label',
+        selectedId
+          ? ['==', ['get', 'id'], selectedId]
+          : ['==', ['get', 'id'], '']
+      );
+    } catch {}
+  }, [map, selectedId]);
 
-  const isVisible = activeTab === "subway" || activeTab === "bus" || activeTab === "subway+bus";
+  // ─── activeLine 변경 시 열차 opacity 레이어 표현식 갱신 ───
+  useEffect(() => {
+    if (!map) return;
+    try {
+      map.setPaintProperty(
+        'transit-trains',
+        'icon-opacity',
+        buildOpacityExpr(activeLineRef.current)
+      );
+    } catch {}
+  }, [map, activeLine]);
+
+  const isVisible = activeTab === 'subway' || activeTab === 'bus' || activeTab === 'subway+bus';
   if (!isVisible) return null;
 
   return (
     <>
       <Source id="transit-realtime-source" type="geojson" data={geoData}>
-        {/* 열차 아이콘 (텍스트 없음) */}
+
+        {/* 열차 아이콘 */}
         <Layer
-          id="subway-realtime-layer"
+          id="transit-trains"
           type="symbol"
-          filter={["==", ["get", "type"], "subway"]}
+          filter={['==', ['get', 'type'], 'subway']}
           layout={{
-            "icon-image": ["concat", "train-card-", ["get", "lineColor"]],
-            "icon-size": [
-              "interpolate", ["linear"], ["zoom"],
-              10, 0.12,
-              14, 0.25,
-              18, 0.5
-            ],
-            "icon-allow-overlap": true,
-            "icon-ignore-placement": true,
-            "symbol-sort-key": 1000, // ✅ 높은 가중치로 최상단 정렬
+            'icon-image':              ['concat', 'train-card-', ['get', 'lineColor']],
+            'icon-size':               ['interpolate', ['linear'], ['zoom'], 10, 0.12, 14, 0.25, 18, 0.5],
+            'icon-allow-overlap':      true,
+            'icon-ignore-placement':   true,
+            'symbol-sort-key':         1000,
           }}
           paint={{
-            "icon-opacity": activeLine
-              ? ["case", ["==", ["get", "lineName"], activeLine], 1.0, 0.2]
-              : 1.0,
+            'icon-opacity': buildOpacityExpr(activeLine),
           }}
         />
 
-        {/* 선택된 열차의 레이블 (클릭 시만 표시) */}
+        {/* 선택된 열차 레이블 */}
         <Layer
-          id="subway-selected-label-layer"
+          id="transit-train-label"
           type="symbol"
-          filter={["==", ["get", "id"], ""]}  // 초기: 아무것도 선택 안됨
+          filter={['==', ['get', 'id'], '']}
           layout={{
-            "text-field": ["get", "label"],
-            "text-font": ["Open Sans Bold"],
-            "text-size": 11,
-            "text-offset": [0, 1.8],
-            "text-anchor": "top",
-            "text-allow-overlap": true,
-            "text-ignore-placement": true,
+            'text-field':            ['get', 'label'],
+            'text-font':             ['Open Sans Bold'],
+            'text-size':             11,
+            'text-offset':           [0, 1.8],
+            'text-anchor':           'top',
+            'text-allow-overlap':    true,
+            'text-ignore-placement': true,
           }}
           paint={{
-            "text-color": "#ffffff",
-            "text-halo-color": "#000000",
-            "text-halo-width": 2,
+            'text-color':       '#ffffff',
+            'text-halo-color':  '#000000',
+            'text-halo-width':  2,
           }}
         />
 
         {/* 버스 */}
         <Layer
-          id="bus-realtime-layer"
+          id="transit-buses"
           type="symbol"
-          filter={["==", ["get", "type"], "bus"]}
+          filter={['==', ['get', 'type'], 'bus']}
           layout={{
-            "icon-image": "rocket",
-            "icon-rotate": ["get", "bearing"],
-            "icon-rotation-alignment": "map",
-            "icon-size": [
-              "interpolate", ["linear"], ["zoom"],
-              10, 0.1,
-              14, 0.2,
-              18, 0.4
-            ],
-            "icon-allow-overlap": true,
-            "icon-ignore-placement": true,
+            'icon-image':            'rocket',
+            'icon-rotate':           ['get', 'bearing'],
+            'icon-rotation-alignment': 'map',
+            'icon-size':             ['interpolate', ['linear'], ['zoom'], 10, 0.1, 14, 0.2, 18, 0.4],
+            'icon-allow-overlap':    true,
+            'icon-ignore-placement': true,
           }}
           paint={{}}
         />
       </Source>
 
-      {/* 시뮬레이션 배너 */}
-      {isSimulated && (
-        <div className="absolute top-20 right-4 bg-yellow-500/90 text-black px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-pulse z-[9999]">
-          ⚠️ 시뮬레이션 모드 (API 점검 중)
+      {/* 시뮬레이션 상태 배지 */}
+      {(simStatus === 'simulated' || simStatus === 'mixed') && (
+        <div className="absolute top-20 right-4 z-[9999] pointer-events-none">
+          <div className={`
+            flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg
+            ${simStatus === 'simulated'
+              ? 'bg-amber-500/90 text-black'
+              : 'bg-blue-500/90 text-white'}
+          `}>
+            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+            {simStatus === 'simulated' ? '시뮬레이션 (API 연결 중)' : '일부 노선 예측 이동'}
+          </div>
         </div>
       )}
 
-      {/* 선택된 열차 상세 토스트 팝업 */}
-      {selectedTrainInfo && (
-        <div
-          className="absolute bottom-32 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto"
-          style={{ minWidth: 180 }}
-        >
+      {/* 선택된 열차 정보 토스트 */}
+      {selectedInfo && (
+        <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto">
           <div
-            className="flex items-center gap-2 px-4 py-2 rounded-2xl shadow-xl text-white text-sm font-semibold"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-xl text-white text-sm font-semibold"
             style={{
-              background: 'rgba(20,20,30,0.92)',
-              border: `2px solid #${geoData.features.find(f => (f as any).properties.id === selectedTrainId)?.properties?.lineColor || '3b82f6'}`,
-              backdropFilter: 'blur(8px)',
+              background: 'rgba(15,15,20,0.93)',
+              border: `2px solid #${selectedInfo.lineColor}`,
+              backdropFilter: 'blur(10px)',
             }}
           >
-            <span
-              className="w-3 h-3 rounded-full flex-shrink-0"
-              style={{
-                background: `#${geoData.features.find(f => (f as any).properties.id === selectedTrainId)?.properties?.lineColor || '3b82f6'}`
-              }}
-            />
-            <span>{selectedTrainInfo.lineName}</span>
-            <span className="opacity-50">|</span>
-            <span>{selectedTrainInfo.label}</span>
+            <span className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+              style={{ background: `#${selectedInfo.lineColor}` }} />
+            <span className="text-zinc-300">{selectedInfo.lineName}</span>
+            <span className="opacity-30">|</span>
+            <span>{selectedInfo.label}</span>
             <button
-              onClick={() => { setSelectedTrainId(null); setSelectedTrainInfo(null); }}
-              className="ml-2 opacity-60 hover:opacity-100 text-base leading-none"
-            >
-              ×
-            </button>
+              onClick={() => { setSelectedId(null); setSelectedInfo(null); }}
+              className="ml-1.5 text-zinc-400 hover:text-white transition-colors text-base leading-none"
+            >×</button>
           </div>
         </div>
       )}
     </>
   );
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 경로별 열차 필터링
+// ─────────────────────────────────────────────────────────────────────────────
+function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
+  const segs = activePath.segments;
+  if (!segs?.length) return true;
+
+  const seg = segs.find(s => s.line === unit.lineName);
+  if (!seg) return false;
+
+  // 방향 검사 (숫자형/문자형 모두 처리)
+  const unitDir = unit.updnLine === '1' || (unit.updnLine ?? '').includes('하행') ? '1' : '0';
+  if (unitDir !== seg.direction) return false;
+
+  // 구간 범위 내 열차만 표시
+  const lineData = SUBWAY_LINES.find(l => l.name === unit.lineName);
+  if (!lineData || !unit.currentStationName) return true;
+
+  const sts     = lineData.stations;
+  const currIdx = sts.findIndex(s => s.name === unit.currentStationName);
+  const entryIdx = sts.findIndex(s => s.name === seg.stations[0]);
+  const exitIdx  = sts.findIndex(s => s.name === seg.stations[seg.stations.length - 1]);
+
+  if (currIdx < 0 || entryIdx < 0 || exitIdx < 0) return true;
+
+  const [minIdx, maxIdx] = entryIdx < exitIdx
+    ? [entryIdx - 2, exitIdx]
+    : [exitIdx,      entryIdx + 2];
+
+  return currIdx >= minIdx && currIdx <= maxIdx;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// opacity MapLibre 표현식 빌더
+// ─────────────────────────────────────────────────────────────────────────────
+function buildOpacityExpr(activeLine: string | null | undefined): any {
+  // 항상 GeoJSON의 opacity 속성 반영 (페이드 인/아웃)
+  // activeLine이 있으면 해당 노선만 100%, 나머지 20%
+  if (activeLine) {
+    return [
+      'case',
+      ['==', ['get', 'lineName'], activeLine],
+      ['get', 'opacity'],                          // 선택 노선: 자체 opacity
+      ['*', ['get', 'opacity'], 0.2],              // 나머지: 20%로 감쇠
+    ];
+  }
+  return ['get', 'opacity'];
+}
 
 export default memo(TransitRealtimeLayers);

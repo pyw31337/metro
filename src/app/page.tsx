@@ -1,542 +1,467 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useRef } from "react";
 import dynamic from "next/dynamic";
-
-import { Train, Bus, Bath } from "lucide-react";
-import { SUBWAY_LINES, Station as SubwayStation } from "@/data/subway-lines";
-import { ActiveTab, BusStop, Station, WCItem, PathResult, WCFilters, StationArrival } from "@/types/metro";
-import { fetchStationArrivals } from "@/services/arrivalApi";
-import { useDataWorker } from "@/hooks/useDataWorker";
-import { findBusPath, BusPathResult } from "@/utils/busRouting";
-import { normalizeStationName } from "@/utils/stationUtils";
-import { db } from "@/services/db";
-import { useArrivalInfo } from "@/hooks/useArrivalInfo";
-import { useBusPositions } from "@/hooks/useBusPositions";
-import { DataIngestionService } from "@/services/dataIngestion";
-import { getCityCodeByCoords } from "@/utils/regionUtils";
-import { 
-  convertSubwayToGeoJSON, 
-  convertWCToGeoJSON, 
-  convertBusStopsToGeoJSON,
-  convertRouteStationsToGeoJSON 
-} from "@/utils/geoJsonUtils";
-
-const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"), { ssr: false });
-const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"), { ssr: false });
-const MapControls = dynamic(() => import("@/components/MapControls"), { ssr: false });
-const WeatherPopup = dynamic(() => import("@/components/WeatherPopup"), { ssr: false });
-const BusDetailPanel = dynamic(() => import("@/components/panels/BusDetailPanel"), { ssr: false });
 import { AnimatePresence } from "framer-motion";
-import DirectionCompass from "@/components/ui/DirectionCompass";
 
-type PathStrategy = "time" | "transfer";
+import { SUBWAY_LINES, Station as SubwayStation } from "@/data/subway-lines";
+import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 
+import { useDataWorker }      from "@/hooks/useDataWorker";
+import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
+import { normalizeStationName } from "@/utils/stationUtils";
+import { findBusPath }         from "@/utils/busRouting";
+import { getCityCodeByCoords } from "@/utils/regionUtils";
+import { db }                  from "@/services/db";
+import { DataIngestionService } from "@/services/dataIngestion";
+
+import { useRouteStore }  from "@/store/useRouteStore";
+import { useMapStore }    from "@/store/useMapStore";
+import { useUIStore }     from "@/store/useUIStore";
+import { useSubwayStore } from "@/store/useSubwayStore";
+
+// ── dynamic imports ──
+const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"),  { ssr: false });
+const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"),  { ssr: false });
+const MapControls        = dynamic(() => import("@/components/MapControls"),         { ssr: false });
+const WeatherPopup       = dynamic(() => import("@/components/WeatherPopup"),        { ssr: false });
+const BusDetailPanel     = dynamic(() => import("@/components/panels/BusDetailPanel"), { ssr: false });
+import DirectionCompass  from "@/components/ui/DirectionCompass";
+
+// ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
-    const { findPath, findNearestStation, sortWCs } = useDataWorker();
-    
-    const [pathResults, setPathResults] = useState<Record<string, PathResult> | null>(null);
-    const [selectedStrategy, setSelectedStrategy] = useState<PathStrategy>("time");
+  const { findPath, findNearestStation, sortWCs } = useDataWorker();
+  const mapRef = useRef<any>(null);
+  const initLocRef = useRef(false);
 
-    const activePath = useMemo(() => {
-        if (!pathResults) return null;
-        return pathResults[selectedStrategy] || Object.values(pathResults)[0];
-    }, [pathResults, selectedStrategy]);
+  // ── stores ──
+  const route   = useRouteStore();
+  const mapSt   = useMapStore();
+  const ui      = useUIStore();
+  const subway  = useSubwayStore();
 
-    const [startStation, setStartStation] = useState<string | null>(null);
-    const [endStation, setEndStation] = useState<string | null>(null);
-    const [waypoints, setWaypoints] = useState<string[]>([]);
-    const [activeTab, setActiveTab] = useState<ActiveTab>("subway");
-    const [isDarkMode, setIsDarkMode] = useState(false);
-    const [isLocating, setIsLocating] = useState(false);
-    const [hasInitialLocation, setHasInitialLocation] = useState(false);
-    const [locatingTimer, setLocatingTimer] = useState(5);
-    const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
-    const [activeBusStop, setActiveBusStop] = useState<BusStop | null>(null);
-    const [routePathData, setRoutePathData] = useState<any | null>(null);
-    const [toiletData, setToiletData] = useState<any | null>(null);
-    const [selectedBusStop, setSelectedBusStop] = useState<BusStop | null>(null);
-    const [wcItems, setWcItems] = useState<WCItem[]>([]);
-    const [nearestWCs, setNearestWCs] = useState<WCItem[]>([]);
-    const [wcLoading, setWcLoading] = useState(false);
-    const [isCalculating, setIsCalculating] = useState(false);
-    const [busPathResult, setBusPathResult] = useState<BusPathResult | null>(null);
-    const [validationError, setValidationError] = useState<"source" | "dest" | "no_route" | null>(null);
-    const [wcFilters, setWcFilters] = useState<WCFilters>({ accessible: false, diapers: false, emergencyBell: false });
-    const [userLocation, setUserLocation] = useState<[number, number] | null>(null);
-    const [currentCenter, setCurrentCenter] = useState<[number, number]>([37.5546, 126.9706]);
-    const [weatherOpen, setWeatherOpen] = useState(false);
-    const [selectedStationName, setSelectedStationName] = useState<string | null>(null);
-    const [stationArrivals, setStationArrivals] = useState<StationArrival[]>([]);
-    const [timeDisplayMode, setTimeDisplayMode] = useState<"duration" | "arrival">("duration");
-    const [showAllRouteBubbles, setShowAllRouteBubbles] = useState(false);
-    const [busStops, setBusStops] = useState<BusStop[]>([]);
-    const [activeLine, setActiveLine] = useState<string | null>(null);
-    const [selectedBusRoute, setSelectedBusRoute] = useState<string | null>(null);
-    const [nearestStation, setNearestStation] = useState<Station | null>(null);
-    const [nearestBusStop, setNearestBusStop] = useState<BusStop | null>(null);
-    const [nearestWC, setNearestWC] = useState<WCItem | null>(null);
+  // ── 모든 역 목록 (고유) ──
+  const stations = useMemo(() => {
+    const seen = new Map<string, SubwayStation>();
+    SUBWAY_LINES.forEach(line => line.stations.forEach(s => { if (!seen.has(s.name)) seen.set(s.name, s); }));
+    return Array.from(seen.values());
+  }, []);
 
-    const handleActiveLineChange = useCallback((line: string | null) => {
-        setActiveLine(prev => {
-            if (line === null) return null;
-            return prev === line ? null : line;
-        });
-    }, []);
+  // ── activePath computed ──
+  const activePath = route.getActivePath();
 
-    const stations = useMemo(() => {
-        const unique = new Map<string, SubwayStation>();
-        SUBWAY_LINES.forEach(line => {
-            line.stations.forEach(s => {
-                if(!unique.has(s.name)) unique.set(s.name, s);
-            });
-        });
-        return Array.from(unique.values());
-    }, []);
+  // ── 도착 정보 훅 ──
+  const arrivalInfo = useArrivalInfo(subway.selectedStationName);
 
-    const mapRef = useRef<any>(null);
+  // ─────────────────────────────────────────────────────────────────────────
+  // 초기 데이터 로드
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      await db.initializeData();
+      const [allBusStops, allWCs] = await Promise.all([
+        db.busStops.toArray() as Promise<BusStop[]>,
+        db.wc.toArray()       as Promise<WCItem[]>,
+      ]);
+      subway.setBusStops(allBusStops);
+      subway.setWcItems(allWCs);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    useEffect(() => {
-        const init = async () => {
-            await db.initializeData();
-            const allBusStops = await db.busStops.toArray() as BusStop[];
-            setBusStops(allBusStops);
-            const allWCs = await db.wc.toArray() as WCItem[];
-            setWcItems(allWCs);
-        };
-        init();
-    }, []);
+  // ─────────────────────────────────────────────────────────────────────────
+  // GPS 위치 추적 (최초 1회 → 이후 30초 주기)
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!navigator.geolocation) return;
+    let timerInterval: NodeJS.Timeout;
 
-    const initLocRef = useRef(false);
-
-    useEffect(() => {
-        if (!navigator.geolocation) return;
-        
-        let timerInterval: NodeJS.Timeout;
-
-        const updateLocation = () => {
-            if (!initLocRef.current) {
-                setIsLocating(true);
-                setLocatingTimer(10);
-            }
-            
-            // Start countdown timer for UI if needed
-            if (!initLocRef.current) {
-                if (timerInterval) clearInterval(timerInterval);
-                timerInterval = setInterval(() => {
-                    setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
-                }, 1000);
-            }
-
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                console.log("📍 Updated Location:", latitude, longitude);
-                setUserLocation([latitude, longitude]);
-                
-                // On first location, also set start station
-                setStartStation(prev => {
-                    if (!prev && stations.length > 0) {
-                        findNearestStation(latitude, longitude, stations).then((nearest: any) => {
-                            if (nearest?.name) {
-                                setStartStation(current => current ? current : `내 위치 : ${nearest.name} (내 위치)`);
-                            }
-                        });
-                    }
-                    return prev;
-                });
-
-                if (!initLocRef.current) {
-                    initLocRef.current = true;
-                    setHasInitialLocation(true);
-                    setIsLocating(false);
-                    if (timerInterval) clearInterval(timerInterval);
-                }
-            }, (err) => {
-                console.error("Geolocation error:", err);
-                if (!initLocRef.current) {
-                    setIsLocating(false);
-                    setLocatingTimer(0);
-                    if (timerInterval) clearInterval(timerInterval);
-                }
-            }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
-        };
-
-        // Initial update
-        updateLocation();
-
-        // Real-time update every 10 seconds
-        const mainInterval = setInterval(updateLocation, 10000);
-        
-        return () => {
-            clearInterval(mainInterval);
-            if (timerInterval) clearInterval(timerInterval);
-        };
-    }, [stations, findNearestStation]);
-
-    // Automatically follow user location
-    useEffect(() => {
-        if (userLocation && mapRef.current && !hasInitialLocation) {
-            mapRef.current?.flyTo({ 
-                center: [userLocation[1], userLocation[0]], 
-                zoom: 15, 
-                duration: 2000 
-            });
-        }
-    }, [userLocation, hasInitialLocation]);
-
-    useEffect(() => {
-        if (validationError === "no_route") {
-            const timer = setTimeout(() => setValidationError(null), 5000);
-            return () => clearTimeout(timer);
-        }
-    }, [validationError]);
-
-    useEffect(() => {
-        const updateWCs = async () => {
-            if (activeTab === "wc" && userLocation && wcItems.length > 0) {
-                const sorted = await sortWCs(wcItems, userLocation[0], userLocation[1]) as WCItem[];
-                setNearestWCs(sorted);
-            }
-        };
-        updateWCs();
-    }, [activeTab, userLocation, wcItems, sortWCs]);
-
-    const { arrivals: hookArrivals, schedules: hookSchedules } = useArrivalInfo(selectedStationName);
-
-    useEffect(() => {
-        if (hookArrivals) {
-            setStationArrivals(hookArrivals);
-        }
-    }, [hookArrivals]);
-
-    useEffect(() => {
-        const updateNearest = async () => {
-            if (!userLocation) {
-                setNearestStation(null);
-                setNearestBusStop(null);
-                setNearestWC(null);
-                return;
-            }
-            const [lat, lng] = userLocation;
-            if (stations.length > 0) {
-                const nearest = await findNearestStation(lat, lng, stations);
-                if (nearest) setNearestStation(nearest as Station);
-            }
-            if (busStops.length > 0) {
-                let min = Infinity;
-                let found: BusStop | null = null;
-                for (const s of busStops) {
-                    const dist = Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2);
-                    if (dist < min) { min = dist; found = s; }
-                }
-                setNearestBusStop(found);
-            }
-            if (wcItems.length > 0) {
-                let min = Infinity;
-                let found: WCItem | null = null;
-                for (const s of wcItems) {
-                    const dist = Math.pow(s.lat - lat, 2) + Math.pow(s.lng - lng, 2);
-                    if (dist < min) { min = dist; found = s; }
-                }
-                setNearestWC(found);
-            }
-        };
-        updateNearest();
-    }, [userLocation, stations, busStops, wcItems, findNearestStation]);
-
-    const handleBusStopClick = useCallback((stop: BusStop, coords?: [number, number]) => {
-        setSelectedBusStop(stop);
-        setSelectedStationName(null);
-        setSelectedWC(null);
-        if (coords) {
-            setCurrentCenter([coords[1], coords[0]]);
-        }
-    }, []);
-
-    const handleStationClick = useCallback((name: string, latlng?: [number, number]) => {
-        const normalized = normalizeStationName(name);
-        setSelectedStationName(normalized);
-        if (latlng) {
-            setCurrentCenter([latlng[0], latlng[1]]);
-        }
-    }, []);
-
-    const calculatePath = useCallback(async (start: string | null, waypoints: string[], end: string | null) => {
-        if (!start || !end) {
-            setPathResults(null);
-            return;
-        }
-        setIsCalculating(true);
-        setValidationError(null);
-
-        if (activeTab === "bus") {
-            const res = findBusPath(start, end, busStops);
-            if (res) {
-                setBusPathResult(res);
-                setPathResults(null); 
-            } else {
-                setBusPathResult(null);
-                setValidationError("no_route");
-            }
-            setIsCalculating(false);
-            return;
-        }
-
-        if (activeTab === "wc") {
-            setPathResults(null);
-            setBusPathResult(null);
-            setIsCalculating(false);
-            return;
-        }
-
-        const normalize = normalizeStationName;
-        const nStart = normalize(start);
-        const nEnd = normalize(end);
-        const nWaypoints = waypoints.map(w => normalize(w)).filter(w => w.trim() !== "");
-        const points = [nStart, ...nWaypoints, nEnd];
-        
-        try {
-            const res = await findPath(points) as Record<string, PathResult>;
-            setIsCalculating(false);
-            if (res && res.time && res.transfer) {
-                setPathResults({ time: res.time, transfer: res.transfer });
-                setBusPathResult(null);
-            } else {
-                setPathResults(null);
-                setValidationError("no_route");
-            }
-        } catch (error) {
-            console.error("Pathfinding error:", error);
-            setPathResults(null);
-            setValidationError("no_route");
-            setIsCalculating(false);
-        }
-    }, [activeTab, busStops, findPath, waypoints, normalizeStationName]);
-
-    useEffect(() => {
-        calculatePath(startStation, waypoints, endStation);
-    }, [startStation, waypoints, endStation, calculatePath]);
-
-    // ✅ 길찾기 시 기존 활성화 노선 해제 (배타적 하이라이트)
-    useEffect(() => {
-        if (activePath && activeLine) {
-            handleActiveLineChange(null);
-        }
-    }, [activePath, activeLine, handleActiveLineChange]);
-
-    const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
-        if (!cityCode) return;
-        try {
-            const res = await fetch("/data/master-bus-routes.json");
-            const routes = await res.json();
-            const route = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
-            if (route) {
-                const { MetropolitanBusService } = await import("@/services/busApi");
-                const path = await MetropolitanBusService.fetchRoutePath(cityCode, route.id);
-                if (path) {
-                    setRoutePathData(path);
-                    if (path.features[0]?.geometry?.coordinates[0]) {
-                        const [lng, lat] = path.features[0].geometry.coordinates[0];
-                        mapRef.current?.flyTo({ center: [lng, lat], zoom: 13, duration: 2000 });
-                    }
-                }
-            }
-        } catch (err) { console.error("Route selection failed:", err); }
-    }, []);
-
-    const handleReset = () => {
-        setStartStation(null);
-        setEndStation(null);
-        setWaypoints([]);
-        setPathResults(null);
-        setSelectedStationName(null);
-        setSelectedWC(null);
-        setSelectedBusStop(null);
-        setShowAllRouteBubbles(false);
-    };
-
-    const handleZoomIn = () => mapRef.current?.zoomIn();
-    const handleZoomOut = () => mapRef.current?.zoomOut();
-
-    const handleLocate = useCallback(() => {
-        if (userLocation && mapRef.current) {
-            mapRef.current?.flyTo({ center: [userLocation[1], userLocation[0]], zoom: 15, duration: 1500 });
-        } else if (navigator.geolocation && mapRef.current) {
-            navigator.geolocation.getCurrentPosition((pos) => {
-                const { latitude, longitude } = pos.coords;
-                mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
-                setUserLocation([latitude, longitude]);
-            });
-        }
-    }, [userLocation]);
-
-    const handleLocateStation = async (type: "source" | "dest") => {
-        if (isLocating) return; 
-        setIsLocating(true);
-        setLocatingTimer(5);
-        const interval = setInterval(() => {
-            setLocatingTimer(prev => (prev > 0 ? prev - 1 : 0));
+    const updateLocation = () => {
+      if (!initLocRef.current) {
+        mapSt.setIsLocating(true);
+        mapSt.setLocatingTimer(10);
+        timerInterval = setInterval(() => {
+          mapSt.setLocatingTimer(Math.max(0, mapSt.locatingTimer - 1));
         }, 1000);
-        const cleanup = () => {
-            clearInterval(interval);
-            setIsLocating(false);
-            setLocatingTimer(0);
-        };
-        if (!userLocation && navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(async (pos) => {
-                const { latitude, longitude } = pos.coords;
-                setUserLocation([latitude, longitude]);
-                const nearest = await findNearestStation(latitude, longitude, stations) as any;
-                if (nearest) {
-                    const val = `내 위치 : ${nearest.name} (내 위치)`;
-                    if (type === "source") setStartStation(val);
-                    else setEndStation(val);
-                }
-                cleanup();
-            }, () => cleanup(), { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
-            return;
-        }
-        if (userLocation) {
-            const nearest = await findNearestStation(userLocation[0], userLocation[1], stations) as any;
-            if (nearest) {
-                const val = `내 위치 : ${nearest.name} (내 위치)`;
-                if (type === "source") setStartStation(val);
-                else setEndStation(val);
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          const { latitude, longitude } = pos.coords;
+          mapSt.setUserLocation([latitude, longitude]);
+
+          if (!initLocRef.current) {
+            initLocRef.current = true;
+            mapSt.setHasInitialLocation(true);
+            mapSt.setIsLocating(false);
+            clearInterval(timerInterval);
+
+            // 최초 위치 → 가장 가까운 역을 출발역으로
+            if (stations.length > 0) {
+              const nearest: any = await findNearestStation(latitude, longitude, stations);
+              if (nearest?.name && !route.startStation) {
+                route.setStartStation(`내 위치 : ${nearest.name} (내 위치)`);
+              }
             }
-            cleanup();
-        } else { cleanup(); }
+          }
+        },
+        (err) => {
+          if (!initLocRef.current) {
+            mapSt.setIsLocating(false);
+            clearInterval(timerInterval);
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 }
+      );
     };
 
-    const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
-        if (activeTab !== "bus" && activeTab !== "subway+bus") return;
-        const existingStops = await db.busStops
-            .where('lat').between(bounds.minLat, bounds.maxLat)
-            .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
-            .limit(1)
-            .count();
-        if (existingStops === 0) {
-            const centerLat = (bounds.minLat + bounds.maxLat) / 2;
-            const centerLng = (bounds.minLng + bounds.maxLng) / 2;
-            const cityCode = getCityCodeByCoords(centerLat, centerLng);
-            if (cityCode) {
-                console.log(`🌍 New region discovered: ${cityCode}. Fetching stops...`);
-                await DataIngestionService.fetchRegionalBusStops(cityCode);
-                const allBusStops = await db.busStops.toArray() as BusStop[];
-                setBusStops(allBusStops);
-            }
+    updateLocation();
+    // 배터리 절약: 탭 숨겨지면 폴링 안 함
+    const LOCATION_INTERVAL_MS = 30_000;
+    const mainInterval = setInterval(() => {
+      if (!document.hidden) updateLocation();
+    }, LOCATION_INTERVAL_MS);
+
+    return () => {
+      clearInterval(mainInterval);
+      clearInterval(timerInterval);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stations]);
+
+  // 최초 위치 감지 시 지도 이동
+  useEffect(() => {
+    const loc = mapSt.userLocation;
+    if (loc && mapRef.current && !mapSt.hasInitialLocation) {
+      mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 15, duration: 2000 });
+    }
+  }, [mapSt.userLocation, mapSt.hasInitialLocation]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 가장 가까운 시설 계산 (userLocation 변경 시)
+  // ─────────────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    const loc = mapSt.userLocation;
+    if (!loc) { mapSt.setNearestStation(null); mapSt.setNearestBusStop(null); mapSt.setNearestWC(null); return; }
+    const [lat, lng] = loc;
+
+    if (stations.length > 0) {
+      findNearestStation(lat, lng, stations).then(n => { if (n) mapSt.setNearestStation(n as Station); });
+    }
+
+    // 버스정류장 선형 탐색 (최적화: squared Euclidean)
+    if (subway.busStops.length > 0) {
+      let min = Infinity, found: BusStop | null = null;
+      for (const s of subway.busStops) {
+        const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
+        if (d < min) { min = d; found = s; }
+      }
+      mapSt.setNearestBusStop(found);
+    }
+
+    if (subway.wcItems.length > 0) {
+      let min = Infinity, found: WCItem | null = null;
+      for (const s of subway.wcItems) {
+        const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
+        if (d < min) { min = d; found = s; }
+      }
+      mapSt.setNearestWC(found);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapSt.userLocation, stations]);
+
+  // 화장실 탭 전환 시 거리 정렬
+  useEffect(() => {
+    if (ui.activeTab === 'wc' && mapSt.userLocation && subway.wcItems.length > 0) {
+      sortWCs(subway.wcItems, mapSt.userLocation[0], mapSt.userLocation[1]).then(sorted => {
+        subway.setNearestWCs(sorted as WCItem[]);
+      });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ui.activeTab, mapSt.userLocation, subway.wcItems]);
+
+  // validationError 5초 자동 해제
+  useEffect(() => {
+    if (route.validationError === 'no_route') {
+      const t = setTimeout(() => route.setValidationError(null), 5000);
+      return () => clearTimeout(t);
+    }
+  }, [route.validationError]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 경로 탐색
+  // ─────────────────────────────────────────────────────────────────────────
+  const calculatePath = useCallback(async (
+    start: string | null,
+    waypoints: string[],
+    end: string | null
+  ) => {
+    if (!start || !end) { route.setPathResults(null); return; }
+    route.setIsCalculating(true);
+    route.setValidationError(null);
+
+    // 버스 경로
+    if (ui.activeTab === 'bus') {
+      const res = findBusPath(start, end, subway.busStops);
+      route.setIsCalculating(false);
+      // 버스 경로 결과는 별도 store가 없어서 여기서 처리 (추후 분리 가능)
+      return;
+    }
+
+    // 지하철 경로
+    const normalize = normalizeStationName;
+    const points = [normalize(start), ...waypoints.map(normalize).filter(Boolean), normalize(end)];
+
+    try {
+      const res = await findPath(points) as Record<string, PathResult>;
+      route.setIsCalculating(false);
+      if (res?.time && res?.transfer) {
+        route.setPathResults({ time: res.time, transfer: res.transfer });
+      } else {
+        route.setPathResults(null);
+        route.setValidationError('no_route');
+      }
+    } catch {
+      route.setPathResults(null);
+      route.setValidationError('no_route');
+      route.setIsCalculating(false);
+    }
+  }, [ui.activeTab, subway.busStops, findPath, route]);
+
+  // start/end/waypoints 바뀔 때마다 자동 탐색
+  useEffect(() => {
+    calculatePath(route.startStation, route.waypoints, route.endStation);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [route.startStation, route.waypoints, route.endStation]);
+
+  // 길찾기 활성화 시 activeLine 해제
+  useEffect(() => {
+    if (activePath && mapSt.activeLine) mapSt.setActiveLine(null);
+  }, [activePath, mapSt.activeLine]);
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 이벤트 핸들러
+  // ─────────────────────────────────────────────────────────────────────────
+  const handleStationClick = useCallback((name: string, latlng?: [number, number]) => {
+    subway.setSelectedStationName(normalizeStationName(name));
+    subway.setSelectedBusStop(null);
+    subway.setSelectedWC(null);
+    if (latlng) mapSt.setCenter([latlng[0], latlng[1]]);
+  }, [subway, mapSt]);
+
+  const handleBusStopClick = useCallback((stop: BusStop, coords?: [number, number]) => {
+    subway.setSelectedBusStop(stop);
+    subway.setSelectedStationName(null);
+    subway.setSelectedWC(null);
+    if (coords) mapSt.setCenter([coords[1], coords[0]]);
+  }, [subway, mapSt]);
+
+  const handleReset = useCallback(() => {
+    route.reset();
+    subway.clearStationSelection();
+    subway.setSelectedWC(null);
+    subway.setSelectedBusStop(null);
+  }, [route, subway]);
+
+  const handleLocate = useCallback(() => {
+    const loc = mapSt.userLocation;
+    if (loc && mapRef.current) {
+      mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 15, duration: 1500 });
+    } else if (navigator.geolocation && mapRef.current) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        mapSt.setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+        mapRef.current.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1500 });
+      });
+    }
+  }, [mapSt]);
+
+  const handleLocateStation = useCallback(async (type: 'source' | 'dest') => {
+    if (mapSt.isLocating) return;
+    mapSt.setIsLocating(true);
+    mapSt.setLocatingTimer(5);
+    const interval = setInterval(() => {
+      mapSt.setLocatingTimer(Math.max(0, mapSt.locatingTimer - 1));
+    }, 1000);
+    const cleanup = () => { clearInterval(interval); mapSt.setIsLocating(false); mapSt.setLocatingTimer(0); };
+
+    const doNearest = async (lat: number, lng: number) => {
+      const nearest: any = await findNearestStation(lat, lng, stations);
+      if (nearest?.name) {
+        const val = `내 위치 : ${nearest.name} (내 위치)`;
+        if (type === 'source') route.setStartStation(val);
+        else route.setEndStation(val);
+      }
+      cleanup();
+    };
+
+    if (mapSt.userLocation) {
+      await doNearest(mapSt.userLocation[0], mapSt.userLocation[1]);
+    } else {
+      navigator.geolocation.getCurrentPosition(
+        async pos => {
+          mapSt.setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+          await doNearest(pos.coords.latitude, pos.coords.longitude);
+        },
+        () => cleanup(),
+        { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 }
+      );
+    }
+  }, [mapSt, route, findNearestStation, stations]);
+
+  const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
+    if (!cityCode) return;
+    try {
+      const res = await fetch('/data/master-bus-routes.json');
+      const routes = await res.json();
+      const route_ = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
+      if (route_) {
+        const { MetropolitanBusService } = await import('@/services/busApi');
+        const path = await MetropolitanBusService.fetchRoutePath(cityCode, route_.id);
+        if (path) {
+          subway.setRoutePathData(path);
+          const coord = path.features[0]?.geometry?.coordinates[0];
+          if (coord) mapRef.current?.flyTo({ center: coord, zoom: 13, duration: 2000 });
         }
-    }, [activeTab]);
+      }
+    } catch {}
+  }, [subway]);
 
-    return (
-        <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
-            <div className="absolute inset-0 z-10">
-                <MapLibreBackground
-                    startStation={startStation}
-                    endStation={endStation}
-                    isDarkMode={isDarkMode}
-                    wcItems={wcItems}
-                    wcFilters={wcFilters}
-                    busStops={busStops}
-                    activeTab={activeTab}
-                    selectedBusStopId={selectedBusStop?.id ?? null}
-                    selectedBusRoute={selectedBusRoute}
-                    routePathData={routePathData}
-                    onWCClick={setSelectedWC}
-                    onBusStopClick={handleBusStopClick}
-                    onStationClick={handleStationClick}
-                    selectedStationName={selectedStationName}
-                    stationArrivals={stationArrivals}
-                    selectedWC={selectedWC}
-                    selectedBusStop={selectedBusStop}
-                    onSetStart={setStartStation}
-                    onSetEnd={setEndStation}
-                    onSetWaypoint={(name) => setWaypoints([...waypoints, name])}
-                    onCenterChange={(lat, lng) => setCurrentCenter([lat, lng])}
-                    onBoundsChange={handleBoundsChange}
-                    stations={stations}
-                    activeLine={activeLine}
-                    onActiveLineChange={handleActiveLineChange}
-                    onMapReady={(m) => { mapRef.current = m; }}
-                    pathResult={activePath}
-                    userLocation={userLocation}
-                    nearestStation={nearestStation}
-                    nearestBusStop={nearestBusStop}
-                    nearestWC={nearestWC}
-                    timeDisplayMode={timeDisplayMode}
-                    onToggleTimeDisplay={() => setTimeDisplayMode(prev => prev === "duration" ? "arrival" : "duration")}
-                    showAllRouteBubbles={showAllRouteBubbles}
-                    onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
-                    onSelectBusRoute={handleSelectBusRoute}
-                />
-            </div>
+  const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
+    if (ui.activeTab !== 'bus' && ui.activeTab !== 'subway+bus') return;
+    const count = await db.busStops
+      .where('lat').between(bounds.minLat, bounds.maxLat)
+      .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
+      .limit(1).count();
+    if (count === 0) {
+      const lat = (bounds.minLat + bounds.maxLat) / 2;
+      const lng = (bounds.minLng + bounds.maxLng) / 2;
+      const cityCode = getCityCodeByCoords(lat, lng);
+      if (cityCode) {
+        await DataIngestionService.fetchRegionalBusStops(cityCode);
+        const all = await db.busStops.toArray() as BusStop[];
+        subway.setBusStops(all);
+      }
+    }
+  }, [ui.activeTab, subway]);
 
-            <UnifiedBottomPanel 
-                activeTab={activeTab}
-                onTabChange={(tab: any) => setActiveTab(tab)}
-                onSearch={(start, end) => calculatePath(start, waypoints, end)}
-                onReset={handleReset}
-                startStation={startStation}
-                endStation={endStation}
-                onSetSource={setStartStation}
-                onSetDestination={setEndStation}
-                isDarkMode={isDarkMode}
-                onLocate={handleLocateStation}
-                stations={stations}
-                busStops={busStops}
-                selectedStrategy={selectedStrategy}
-                onStrategyChange={setSelectedStrategy}
-                pathResults={pathResults}
-                activePath={activePath}
-                timeDisplayMode={timeDisplayMode}
-                setTimeDisplayMode={setTimeDisplayMode}
-                isLocating={isLocating}
-                locatingTimer={locatingTimer}
-                isCalculating={isCalculating}
-                validationError={validationError}
-                busPathResult={busPathResult}
-                showAllRouteBubbles={showAllRouteBubbles}
-                onToggleShowAll={() => setShowAllRouteBubbles(prev => !prev)}
-                selectedStationName={selectedStationName}
-                stationArrivals={hookArrivals}
-                schedules={hookSchedules}
-                onSelectStation={setSelectedStationName}
-                activeLine={activeLine}
-                onActiveLineChange={handleActiveLineChange}
-                selectedBusStop={selectedBusStop}
-                onSelectBusRoute={handleSelectBusRoute}
-            />
+  // ─────────────────────────────────────────────────────────────────────────
+  // 렌더
+  // ─────────────────────────────────────────────────────────────────────────
+  return (
+    <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
 
-            <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
-                <MapControls 
-                    onZoomIn={handleZoomIn}
-                    onZoomOut={handleZoomOut}
-                    onLocate={handleLocate}
-                    onWeatherToggle={() => setWeatherOpen(!weatherOpen)}
-                    isDarkMode={isDarkMode}
-                    onDarkModeToggle={() => setIsDarkMode(!isDarkMode)}
-                />
-            </div>
+      {/* 지도 */}
+      <div className="absolute inset-0 z-10">
+        <MapLibreBackground
+          startStation={route.startStation}
+          endStation={route.endStation}
+          isDarkMode={ui.isDarkMode}
+          wcItems={subway.wcItems}
+          wcFilters={ui.wcFilters}
+          busStops={subway.busStops}
+          activeTab={ui.activeTab}
+          selectedBusStopId={subway.selectedBusStop?.id ?? null}
+          selectedBusRoute={subway.selectedBusRoute}
+          routePathData={subway.routePathData}
+          onWCClick={subway.setSelectedWC}
+          onBusStopClick={handleBusStopClick}
+          onStationClick={handleStationClick}
+          selectedStationName={subway.selectedStationName}
+          stationArrivals={arrivalInfo.arrivals}
+          selectedWC={subway.selectedWC}
+          selectedBusStop={subway.selectedBusStop}
+          onSetStart={route.setStartStation}
+          onSetEnd={route.setEndStation}
+          onSetWaypoint={route.addWaypoint}
+          onCenterChange={(lat, lng) => mapSt.setCenter([lat, lng])}
+          onBoundsChange={handleBoundsChange}
+          stations={stations}
+          activeLine={mapSt.activeLine}
+          onActiveLineChange={(line) => line ? mapSt.toggleActiveLine(line) : mapSt.setActiveLine(null)}
+          onMapReady={(m) => { mapRef.current = m; }}
+          pathResult={activePath}
+          userLocation={mapSt.userLocation}
+          nearestStation={mapSt.nearestStation}
+          nearestBusStop={mapSt.nearestBusStop}
+          nearestWC={mapSt.nearestWC}
+          timeDisplayMode={ui.timeDisplayMode}
+          onToggleTimeDisplay={ui.toggleTimeDisplayMode}
+          showAllRouteBubbles={route.showAllRouteBubbles}
+          onToggleShowAll={() => route.setShowAllRouteBubbles(!route.showAllRouteBubbles)}
+          onSelectBusRoute={handleSelectBusRoute}
+        />
+      </div>
 
-            <AnimatePresence>
-                {weatherOpen && (
-                    <WeatherPopup 
-                        lat={currentCenter[0]}
-                        lng={currentCenter[1]}
-                        isDarkMode={isDarkMode}
-                        onClose={() => setWeatherOpen(false)}
-                    />
-                )}
-            </AnimatePresence>
+      {/* 하단 패널 */}
+      <UnifiedBottomPanel
+        activeTab={ui.activeTab}
+        onTabChange={(tab: any) => ui.setActiveTab(tab)}
+        onSearch={(start, end) => calculatePath(start, route.waypoints, end)}
+        onReset={handleReset}
+        startStation={route.startStation}
+        endStation={route.endStation}
+        onSetSource={route.setStartStation}
+        onSetDestination={route.setEndStation}
+        isDarkMode={ui.isDarkMode}
+        onLocate={handleLocateStation}
+        stations={stations}
+        busStops={subway.busStops}
+        selectedStrategy={route.selectedStrategy}
+        onStrategyChange={route.setSelectedStrategy}
+        pathResults={route.pathResults}
+        activePath={activePath}
+        timeDisplayMode={ui.timeDisplayMode}
+        setTimeDisplayMode={ui.setTimeDisplayMode}
+        isLocating={mapSt.isLocating}
+        locatingTimer={mapSt.locatingTimer}
+        isCalculating={route.isCalculating}
+        validationError={route.validationError}
+        busPathResult={null}
+        showAllRouteBubbles={route.showAllRouteBubbles}
+        onToggleShowAll={() => route.setShowAllRouteBubbles(!route.showAllRouteBubbles)}
+        selectedStationName={subway.selectedStationName}
+        stationArrivals={arrivalInfo.arrivals}
+        schedules={arrivalInfo.schedules}
+        onSelectStation={subway.setSelectedStationName}
+        activeLine={mapSt.activeLine}
+        onActiveLineChange={(line) => line ? mapSt.toggleActiveLine(line) : mapSt.setActiveLine(null)}
+        selectedBusStop={subway.selectedBusStop}
+        onSelectBusRoute={handleSelectBusRoute}
+      />
 
-            {/* Direction Compass for WC Navigation */}
-            {activeTab === "wc" && selectedWC && userLocation && (
-                <DirectionCompass 
-                    userLocation={userLocation}
-                    targetLocation={[selectedWC.lat, selectedWC.lng]}
-                    targetName={selectedWC.name}
-                    onClose={() => setSelectedWC(null)}
-                />
-            )}
-        </main>
-    );
+      {/* 지도 컨트롤 */}
+      <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
+        <MapControls
+          onZoomIn={() => mapRef.current?.zoomIn()}
+          onZoomOut={() => mapRef.current?.zoomOut()}
+          onLocate={handleLocate}
+          onWeatherToggle={ui.toggleWeather}
+          isDarkMode={ui.isDarkMode}
+          onDarkModeToggle={ui.toggleDarkMode}
+        />
+      </div>
+
+      {/* 날씨 팝업 */}
+      <AnimatePresence>
+        {ui.weatherOpen && (
+          <WeatherPopup
+            lat={mapSt.center[0]}
+            lng={mapSt.center[1]}
+            isDarkMode={ui.isDarkMode}
+            onClose={() => ui.setWeatherOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* 화장실 나침반 */}
+      {ui.activeTab === 'wc' && subway.selectedWC && mapSt.userLocation && (
+        <DirectionCompass
+          userLocation={mapSt.userLocation}
+          targetLocation={[subway.selectedWC.lat, subway.selectedWC.lng]}
+          targetName={subway.selectedWC.name}
+          onClose={() => subway.setSelectedWC(null)}
+        />
+      )}
+    </main>
+  );
 }
