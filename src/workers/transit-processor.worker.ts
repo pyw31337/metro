@@ -6,6 +6,7 @@ interface TransitUnit {
   type: 'bus' | 'subway';
   lastPos: [number, number];
   nextPos: [number, number];
+  futurePos?: [number, number]; // ✅ 추가: 다다음 역 위치
   lastUpdateTime: number;
   nextUpdateTime: number;
   lineName: string;
@@ -18,7 +19,7 @@ interface TransitUnit {
 const transitState: Map<string, TransitUnit> = new Map();
 let isTicking = false;
 
-// 12초 주기에 맞춘 애니메이션 지속 시간
+// 12초 주기에 맞춘 애니메이션 지속 시간 (실제 폴링 주기와 근접하게 설정)
 const ANIM_DURATION = 12000;
 
 self.onmessage = (e: MessageEvent) => {
@@ -61,14 +62,23 @@ function processUpdates(units: any[]) {
         currentBearing: calculateBearing(startPos, unit.nextPos),
       });
     } else {
-      // ✅ Smooth transition: Calculate where we are visually now
+      // ✅ Smooth transition: 현재 시각적 위치 계산
       const elapsed = now - existing.lastUpdateTime;
-      const t = Math.min(1.0, elapsed / ANIM_DURATION);
-      const easedT = easeInOutCubic(t);
-      const visualCurrentPos = interpolate(existing.lastPos, existing.nextPos, easedT);
+      // 이전 이동 비율 (0~1: last->next, 1~2: next->future)
+      let oldRatio = elapsed / ANIM_DURATION;
+      
+      let visualCurrentPos;
+      if (oldRatio <= 1.0) {
+        visualCurrentPos = interpolate(existing.lastPos, existing.nextPos, easeInOutCubic(oldRatio));
+      } else {
+        // 이미 오버슈팅 중이었던 경우
+        const overT = Math.min(1.0, oldRatio - 1.0);
+        visualCurrentPos = interpolate(existing.nextPos, existing.futurePos || existing.nextPos, easeInOutCubic(overT));
+      }
 
       existing.lastPos = visualCurrentPos;
       existing.nextPos = unit.nextPos;
+      existing.futurePos = unit.futurePos;
       existing.lastUpdateTime = now;
       existing.nextUpdateTime = now + ANIM_DURATION;
       existing.lineName = unit.lineName;
@@ -93,27 +103,35 @@ function startTick() {
 
     for (const unit of transitState.values()) {
       const elapsed = now - unit.lastUpdateTime;
-      let ratio = Math.min(1.0, elapsed / ANIM_DURATION);
+      let ratio = elapsed / ANIM_DURATION;
 
       // ✅ API 상태(status/arvlCd) 기반 보정
-      // 0: 진입(Entering) - 역에 거의 다 옴
-      // 1: 도착(Arrived) - 역에 멈춤
-      // 2: 출발(Departed) - 역을 막 떠남
       if (unit.status === '1') {
-        ratio = 1.0; // 강제 도착 고정
-      } else if (unit.status === '0') {
-        ratio = Math.max(0.9, ratio); // 진입 중이면 최소 90% 이상 지점
-      } else if (unit.status === '2') {
-        ratio = Math.max(0.1, ratio); // 출발했으면 최소 10% 이상 지점
+        ratio = Math.min(1.0, ratio); // 도착(1)이면 역에 멈춤
+      } else {
+        // 주행 중이면 최대 1.5배(다다음 역 방향으로 50%)까지 관성 이동 허용
+        ratio = Math.min(1.5, ratio); 
       }
 
-      // ✅ Easing 적용 (가속/감속)
-      const easedRatio = easeInOutCubic(ratio);
-      const currentPos = interpolate(unit.lastPos, unit.nextPos, easedRatio);
+      // ✅ 위치 계산
+      let currentPos: [number, number];
+      let targetForBearing: [number, number];
+
+      if (ratio <= 1.0) {
+        // 구간 1: 이전 역 -> 목표 역
+        currentPos = interpolate(unit.lastPos, unit.nextPos, easeInOutCubic(ratio));
+        targetForBearing = unit.nextPos;
+      } else {
+        // 구간 2: 목표 역 -> 다다음 역 (오버슈팅/관성 이동)
+        // ratio 1.0~1.5 범위를 0.0~0.5로 변환
+        const overT = ratio - 1.0;
+        currentPos = interpolate(unit.nextPos, unit.futurePos || unit.nextPos, easeInOutCubic(overT));
+        targetForBearing = unit.futurePos || unit.nextPos;
+      }
 
       // ✅ Bearing Smoothing
-      const targetBearing = calculateBearing(unit.lastPos, unit.nextPos);
-      unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, 0.1);
+      const targetBearing = calculateBearing(currentPos, targetForBearing);
+      unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, 0.08);
 
       result.push({
         id: unit.id,

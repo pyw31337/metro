@@ -144,10 +144,6 @@ class TransitRealtimeService extends EventEmitter {
     if (this.pollTimer) clearTimeout(this.pollTimer);
   }
 
-  public getUnits() {
-    return this.currentUnits;
-  }
-
   // ============================================================
   // 단일 열차 유닛 빌드 (동기 - 캐시 조회)
   // ============================================================
@@ -160,9 +156,24 @@ class TransitRealtimeService extends EventEmitter {
     const rawColor = LINE_COLOR_MAP.get(lineName) || '#3b82f6';
     const lineColor = rawColor.replace('#', '').toUpperCase();
 
-    // 이전 역 좌표 계산 → prevPos로 사용, 열차가 처음 나타날 때도 이동 시작
+    // 이전 역 좌표 계산 → prevPos로 사용
     const isDownward = train.updnLine === '1';
     const prevPos = getAdjacentStationCoord(lineName, train.statnNm, isDownward) || coord;
+
+    // ✅ 예측 이동을 위한 "다다음 역" 좌표 계산 (Overshooting 대비)
+    let futurePos = coord;
+    const line = SUBWAY_LINES.find(l => l.name === lineName);
+    if (line) {
+      const idx = line.stations.findIndex(s => s.name === train.statnNm);
+      if (idx >= 0) {
+        // 하행(1)이면 index 증가 방향, 상행(0)이면 index 감소 방향이 다다음 역
+        const nextIdx = isDownward ? idx + 1 : idx - 1;
+        if (nextIdx >= 0 && nextIdx < line.stations.length) {
+          const nextStation = line.stations[nextIdx];
+          futurePos = [nextStation.lng, nextStation.lat];
+        }
+      }
+    }
 
     // 레이블: 종착역명 + 방향 화살표
     const destination = train.lstnyNm || train.statnTnm || '';
@@ -175,72 +186,74 @@ class TransitRealtimeService extends EventEmitter {
       type: 'subway' as const,
       prevPos,
       nextPos: coord,
+      futurePos, // ✅ 추가
       lineName,
       lineColor,
       label,
-      status: train.arvlCd || '99', // 0:진입, 1:도착, 2:출발, 99:운행중
+      status: train.arvlCd || '99',
     };
   }
 
   // ============================================================
-  // 실시간 폴링 — 노선별 fire-and-forget, 완료 즉시 워커 업데이트
+  // 실시간 폴링 — 노선별 150ms 간격으로 스태거링(Staggering) 호출
   // ============================================================
   private poll() {
     if (!this.isRunning) return;
 
-    let anySuccess = false;
+    // 각 노선을 150ms 간격으로 띄엄띄엄 요청 (브라우저 커넥션 병목 방지)
+    SUBWAY_POLLING_NAMES.forEach((lineName, i) => {
+      setTimeout(() => {
+        if (!this.isRunning) return;
+        
+        fetchTrainPositions(lineName)
+          .then(trains => {
+            if (!this.isRunning || trains.length === 0) return;
+            
+            const units = trains.map(t => this.buildUnit(t)).filter(Boolean);
+            if (units.length === 0) return;
 
-    // 각 노선을 독립적으로 폴링 — 응답 오는 즉시 화면 반영
-    SUBWAY_POLLING_NAMES.forEach(lineName => {
-      fetchTrainPositions(lineName)
-        .then(trains => {
-          if (!this.isRunning || trains.length === 0) return;
-          
-          const units = trains.map(t => this.buildUnit(t)).filter(Boolean);
-          if (units.length === 0) return;
+            if (!this.hasSentRealData) {
+              this.hasSentRealData = true;
+              this.worker?.postMessage({ type: 'CLEAR_SIMULATED' });
+            }
 
-          if (!this.hasSentRealData) {
-            // 첫 실제 데이터가 오면 시뮬레이션 제거
-            this.hasSentRealData = true;
-            this.worker?.postMessage({ type: 'CLEAR_SIMULATED' });
-          }
-
-          this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
-          anySuccess = true;
-        })
-        .catch(() => {});
+            this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
+          })
+          .catch(() => {});
+      }, i * 150); // 0ms, 150ms, 300ms... 순차적으로 실행
     });
 
-    // 버스 폴링
+    // 버스 폴링 (동일하게 간격 배치)
     if (this.trackedBusRoutes.size > 0) {
-      Array.from(this.trackedBusRoutes).forEach(key => {
+      Array.from(this.trackedBusRoutes).forEach((key, i) => {
         const [cityCode, routeId] = key.split(':');
-        Promise.all([
-          MetropolitanBusService.fetchBusPositions(cityCode, routeId),
-          MetropolitanBusService.fetchLocalRouteInfo(routeId)
-        ]).then(([positions, routeInfo]) => {
-          const busUnits = positions.map(pos => ({
-            id: `bus-${routeId}-${pos.id}`,
-            type: 'bus' as const,
-            prevPos: [pos.lng, pos.lat] as [number, number],
-            nextPos: [pos.lng, pos.lat] as [number, number],
-            lineName: routeInfo?.no || routeId,
-            lineColor: '3b82f6',
-            label: pos.no || routeInfo?.no || 'BUS',
-          }));
-          if (busUnits.length > 0) {
-            this.worker?.postMessage({ type: 'UPDATE_UNITS', data: busUnits });
-          }
-        }).catch(() => {});
+        setTimeout(() => {
+          Promise.all([
+            MetropolitanBusService.fetchBusPositions(cityCode, routeId),
+            MetropolitanBusService.fetchLocalRouteInfo(routeId)
+          ]).then(([positions, routeInfo]) => {
+            const busUnits = positions.map(pos => ({
+              id: `bus-${routeId}-${pos.id}`,
+              type: 'bus' as const,
+              prevPos: [pos.lng, pos.lat] as [number, number],
+              nextPos: [pos.lng, pos.lat] as [number, number],
+              futurePos: [pos.lng, pos.lat] as [number, number],
+              lineName: routeInfo?.no || routeId,
+              lineColor: '3b82f6',
+              label: pos.no || routeInfo?.no || 'BUS',
+            }));
+            if (busUnits.length > 0) {
+              this.worker?.postMessage({ type: 'UPDATE_UNITS', data: busUnits });
+            }
+          }).catch(() => {});
+        }, (SUBWAY_POLLING_NAMES.length + i) * 150);
       });
     }
 
     // 12초 후 재폴링
     this.pollTimer = setTimeout(() => {
-      this.hasSentRealData = false; // 매 사이클 초기화 (시뮬 → 실제 전환 재처리)
-      this.hasSentRealData = true;  // 실제로는 계속 실제 모드 유지
       this.poll();
-    }, 12000);
+    }, 12500); // 0.5초 여유를 두어 겹침 방지
   }
 
   // ============================================================
