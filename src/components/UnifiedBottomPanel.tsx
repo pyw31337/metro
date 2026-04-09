@@ -543,22 +543,31 @@ export default function UnifiedBottomPanel({
                     )}
 
                     <AnimatePresence mode="wait">
-                        {searchResults.length > 0 && activeField && (
-                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
-                                <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
-                                    {searchResults.map((s, i) => (
-                                        <SuggestionItem 
-                                            key={`${s.type}-${s.id || s.name}-${i}`}
-                                            item={s}
-                                            isActive={activeIndex === i}
-                                            onClick={() => selectLocation(s)}
-                                            onMouseEnter={() => setActiveIndex(i)}
-                                            getLineBadge={getLineBadge}
-                                        />
-                                    ))}
-                                </div>
-                            </motion.div>
-                        )}
+                        {activeField && (() => {
+                            const query = (activeField === "source" ? source : destination).trim();
+                            if (searchResults.length > 0) return (
+                                <motion.div key="results" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
+                                    <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
+                                        {searchResults.map((s, i) => (
+                                            <SuggestionItem
+                                                key={`${s.type}-${s.id || s.name}-${i}`}
+                                                item={s}
+                                                isActive={activeIndex === i}
+                                                onClick={() => selectLocation(s)}
+                                                onMouseEnter={() => setActiveIndex(i)}
+                                                getLineBadge={getLineBadge}
+                                            />
+                                        ))}
+                                    </div>
+                                </motion.div>
+                            );
+                            if (query.length >= 1) return (
+                                <motion.div key="no-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 mb-1">
+                                    &apos;{query}&apos; 검색 결과가 없습니다
+                                </motion.div>
+                            );
+                            return null;
+                        })()}
                     </AnimatePresence>
 
 

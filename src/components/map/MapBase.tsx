@@ -46,7 +46,7 @@ const MapBase = ({
         cursor={cursor}
         interactiveLayerIds={interactiveLayerIds}
         onClick={onClick}
-        onMouseEnter={onHover}
+        onMouseEnter={(e) => { setCursor("pointer"); onHover?.(e); }}
         onMouseLeave={() => setCursor("auto")}
         onMove={(e) => {
           const { latitude, longitude } = e.viewState;
