@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Compass, Navigation2, X } from "lucide-react";
 
 interface DirectionCompassProps {
@@ -72,13 +72,12 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
     const relativeAngle = heading !== null ? (bearing - heading + 360) % 360 : 0;
 
     return (
-        <AnimatePresence>
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[1000] w-[260px] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-5"
-            >
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 20 }}
+            className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[1000] w-[260px] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-5"
+        >
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-500">
@@ -126,7 +125,6 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                         <p className="text-[9px] font-bold text-rose-500">나침반 권한이 거부되었습니다.<br/>브라우저 설정에서 센서 권한을 허용해주세요.</p>
                     </div>
                 )}
-            </motion.div>
-        </AnimatePresence>
+        </motion.div>
     );
 }

@@ -457,14 +457,17 @@ export default function Home() {
       </AnimatePresence>
 
       {/* 화장실 나침반 */}
-      {ui.activeTab === 'wc' && subway.selectedWC && mapSt.userLocation && (
-        <DirectionCompass
-          userLocation={mapSt.userLocation}
-          targetLocation={[subway.selectedWC.lat, subway.selectedWC.lng]}
-          targetName={subway.selectedWC.name}
-          onClose={() => subway.setSelectedWC(null)}
-        />
-      )}
+      <AnimatePresence>
+        {ui.activeTab === 'wc' && subway.selectedWC && mapSt.userLocation && (
+          <DirectionCompass
+            key={subway.selectedWC.id}
+            userLocation={mapSt.userLocation}
+            targetLocation={[subway.selectedWC.lat, subway.selectedWC.lng]}
+            targetName={subway.selectedWC.name}
+            onClose={() => subway.setSelectedWC(null)}
+          />
+        )}
+      </AnimatePresence>
     </main>
   );
 }

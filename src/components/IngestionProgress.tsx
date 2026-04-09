@@ -11,9 +11,9 @@ interface IngestionProgressProps {
 }
 
 export default function IngestionProgress({ tasks, isVisible }: IngestionProgressProps) {
-    const overallProgress = Math.round(
-        tasks.reduce((acc, task) => acc + task.progress, 0) / tasks.length
-    );
+    const overallProgress = tasks.length > 0
+        ? Math.round(tasks.reduce((acc, task) => acc + task.progress, 0) / tasks.length)
+        : 0;
 
     const isAllCompleted = tasks.every(t => t.status === 'completed');
 
