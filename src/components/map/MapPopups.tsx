@@ -323,7 +323,13 @@ const MapPopups = ({
 
                 <div className="space-y-2">
                     {(activeTab === 'subway' && selectedStationName) ? (
-                         stationArrivals.length > 0 ? (() => {
+                        arrivalLoading && stationArrivals.length === 0 ? (
+                            <div className="py-4 flex items-center justify-center gap-2 text-zinc-400 dark:text-white/30 text-[11px] font-bold">
+                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse [animation-delay:0.2s]" />
+                                <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse [animation-delay:0.4s]" />
+                            </div>
+                        ) : stationArrivals.length > 0 ? (() => {
                             const upTrains  = filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'));
                             const downTrains = filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'));
                             const offHourMsg = (() => { const h = new Date().getHours(); return (h >= 1 && h < 5) ? "운행 종료" : "정보 없음"; })();
