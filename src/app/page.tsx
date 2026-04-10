@@ -21,6 +21,7 @@ import { useRouteStore }  from "@/store/useRouteStore";
 import { useMapStore }    from "@/store/useMapStore";
 import { useUIStore }     from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
+import { useShallow }     from "zustand/shallow";
 
 // ── dynamic imports ──
 const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground"),  { ssr: false });
@@ -55,7 +56,7 @@ export default function Home() {
   const selectedStrategy    = useRouteStore(s => s.selectedStrategy);
   const showAllRouteBubbles = useRouteStore(s => s.showAllRouteBubbles);
   const busPathResult       = useRouteStore(s => s.busPathResult);
-  const routeActions        = useRouteStore(s => ({
+  const routeActions        = useRouteStore(useShallow(s => ({
     setStartStation:      s.setStartStation,
     setEndStation:        s.setEndStation,
     addWaypoint:          s.addWaypoint,
@@ -67,7 +68,7 @@ export default function Home() {
     setBusPathResult:     s.setBusPathResult,
     reset:                s.reset,
     getActivePath:        s.getActivePath,
-  }));
+  })));
 
   // useMapStore
   const userLocation      = useMapStore(s => s.userLocation);
@@ -78,7 +79,7 @@ export default function Home() {
   const isLocating        = useMapStore(s => s.isLocating);
   const locatingTimer     = useMapStore(s => s.locatingTimer);
   const hasInitialLocation = useMapStore(s => s.hasInitialLocation);
-  const mapActions        = useMapStore(s => ({
+  const mapActions        = useMapStore(useShallow(s => ({
     setUserLocation:   s.setUserLocation,
     setActiveLine:     s.setActiveLine,
     toggleActiveLine:  s.toggleActiveLine,
@@ -88,7 +89,7 @@ export default function Home() {
     setIsLocating:     s.setIsLocating,
     setLocatingTimer:  s.setLocatingTimer,
     setHasInitialLocation: s.setHasInitialLocation,
-  }));
+  })));
 
   // useUIStore
   const activeTab         = useUIStore(s => s.activeTab);
@@ -96,14 +97,14 @@ export default function Home() {
   const weatherOpen       = useUIStore(s => s.weatherOpen);
   const wcFilters         = useUIStore(s => s.wcFilters);
   const timeDisplayMode   = useUIStore(s => s.timeDisplayMode);
-  const uiActions         = useUIStore(s => ({
+  const uiActions         = useUIStore(useShallow(s => ({
     setActiveTab:          s.setActiveTab,
     toggleDarkMode:        s.toggleDarkMode,
     toggleWeather:         s.toggleWeather,
     setWeatherOpen:        s.setWeatherOpen,
     toggleTimeDisplayMode: s.toggleTimeDisplayMode,
     setTimeDisplayMode:    s.setTimeDisplayMode,
-  }));
+  })));
 
   // useSubwayStore
   const selectedStationName = useSubwayStore(s => s.selectedStationName);
@@ -113,7 +114,7 @@ export default function Home() {
   const routePathData       = useSubwayStore(s => s.routePathData);
   const busStops            = useSubwayStore(s => s.busStops);
   const wcItems             = useSubwayStore(s => s.wcItems);
-  const subwayActions       = useSubwayStore(s => ({
+  const subwayActions       = useSubwayStore(useShallow(s => ({
     setSelectedStationName: s.setSelectedStationName,
     setSelectedBusStop:     s.setSelectedBusStop,
     setSelectedWC:          s.setSelectedWC,
@@ -122,7 +123,7 @@ export default function Home() {
     setNearestWCs:          s.setNearestWCs,
     clearStationSelection:  s.clearStationSelection,
     setRoutePathData:       s.setRoutePathData,
-  }));
+  })));
 
   // ── 편의 별칭 (기존 코드 최소 수정) ──
   const route   = { startStation, endStation, waypoints, pathResults, isCalculating, validationError, selectedStrategy, showAllRouteBubbles, busPathResult, ...routeActions, getActivePath: routeActions.getActivePath };
