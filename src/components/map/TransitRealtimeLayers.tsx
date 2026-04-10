@@ -323,11 +323,18 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   const idxMap = STATION_IDX.get(unit.lineName);
   if (!idxMap) return true;
 
-  const currIdx  = idxMap.get(unit.currentStationName) ?? -1;
-  const entryIdx = idxMap.get(seg.stations[0]) ?? -1;
-  const exitIdx  = idxMap.get(seg.stations[seg.stations.length - 1]) ?? -1;
+  const normName = (n: string) => n.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
+  const lookupIdx = (m: Map<string, number>, name: string): number =>
+    m.get(name) ?? m.get(normName(name)) ?? -1;
 
-  if (currIdx < 0 || entryIdx < 0 || exitIdx < 0) return true;
+  const currIdx  = lookupIdx(idxMap, unit.currentStationName);
+  const entryIdx = lookupIdx(idxMap, seg.stations[0]);
+  const exitIdx  = lookupIdx(idxMap, seg.stations[seg.stations.length - 1]);
+
+  // entryIdx/exitIdx가 -1이면 경로 데이터 자체가 잘못된 것 → 숨김
+  if (entryIdx < 0 || exitIdx < 0) return false;
+  // currIdx만 -1이면 위치 미확인 → 일단 표시
+  if (currIdx < 0) return true;
 
   // 하행(entryIdx < exitIdx) / 상행(entryIdx > exitIdx) 구분
   const isDownward = entryIdx < exitIdx;
