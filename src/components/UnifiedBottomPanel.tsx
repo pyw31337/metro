@@ -816,7 +816,7 @@ export default function UnifiedBottomPanel({
                     {activeTab === 'bus' && selectedBusStop && (
                         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative">
                             <div className="absolute top-2 right-2">
-                                <button onClick={() => setSelectedBusStop(null)} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400 active:scale-90 transition-all">
+                                <button onClick={() => { hapticLight(); setSelectedBusStop(null); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400 active:scale-90 transition-all">
                                     <X size={14} />
                                 </button>
                             </div>
@@ -833,9 +833,9 @@ export default function UnifiedBottomPanel({
 
                                 <div className="flex flex-wrap gap-1.5">
                                     {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
-                                        <button 
-                                            key={i} 
-                                            onClick={() => onSelectBusRoute?.(r, selectedBusStop.cityCode)}
+                                        <button
+                                            key={i}
+                                            onClick={() => { hapticLight(); onSelectBusRoute?.(r, selectedBusStop.cityCode); }}
                                             className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 dark:text-emerald-400 hover:text-white text-[12px] font-black border border-emerald-500/20 transition-all active:scale-95"
                                         >
                                             {r}
@@ -844,14 +844,14 @@ export default function UnifiedBottomPanel({
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-2 mt-1">
-                                    <button 
-                                        onClick={() => { onSetSource?.(selectedBusStop.name); onSetDestination?.(""); }} 
+                                    <button
+                                        onClick={() => { hapticLight(); onSetSource?.(selectedBusStop.name); onSetDestination?.(""); }}
                                         className="h-9 rounded-xl bg-blue-500 text-white text-[12px] font-black shadow-sm active:scale-95 transition-all"
                                     >
                                         출발지로 설정
                                     </button>
-                                    <button 
-                                        onClick={() => { onSetDestination?.(selectedBusStop.name); }} 
+                                    <button
+                                        onClick={() => { hapticLight(); onSetDestination?.(selectedBusStop.name); }}
                                         className="h-9 rounded-xl bg-rose-500 text-white text-[12px] font-black shadow-sm active:scale-95 transition-all"
                                     >
                                         도착지로 설정

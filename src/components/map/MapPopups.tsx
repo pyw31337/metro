@@ -43,11 +43,12 @@ interface MapPopupsProps {
   onRefreshArrival?: () => void;
 }
 
+const LINE_COLOR_MAP = new Map(SUBWAY_LINES.map(l => [l.name, l.color]));
 const getLineInfo = (lineName: string) => {
     if (!lineName) return { num: '?', color: '#ccc' };
     const num = lineName.replace('호선', '').replace('서울배차', '').trim();
-    const line = SUBWAY_LINES.find(l => l.name.includes(num));
-    return { num, color: line?.color || '#ccc' };
+    const color = LINE_COLOR_MAP.get(lineName) ?? LINE_COLOR_MAP.get(num + '호선') ?? '#ccc';
+    return { num, color };
 };
 
 const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, address?: string }) => (

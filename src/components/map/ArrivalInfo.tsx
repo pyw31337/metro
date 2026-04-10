@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect, useRef } from "react";
 import { StationArrival } from "@/types/metro";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 
@@ -37,19 +38,38 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
   // ── 정거장 수 파싱 ──
   let stopsLeft = parseStopsLeft(arr);
 
-  // ── 도착 시간 계산 ──
-  let timeSec = parseInt(arr.barvlDt) || 0;
-  if (timeSec === 0) {
-    if (stopsLeft.includes("당역"))  timeSec = 30;
-    else if (/(\d+)역/.test(stopsLeft)) {
-      const m = stopsLeft.match(/(\d+)역/);
-      if (m) timeSec = parseInt(m[1]) * 150; // 역당 2.5분 추정
+  // ── 도착 시간 계산 (초 단위, 마운트 시점 기준) ──
+  const initialSec = useRef<number>((() => {
+    let t = parseInt(arr.barvlDt) || 0;
+    if (t === 0) {
+      if (stopsLeft.includes("당역")) t = 30;
+      else {
+        const m = stopsLeft.match(/(\d+)역/);
+        if (m) t = parseInt(m[1]) * 150;
+      }
     }
-  }
+    return t;
+  })());
+  const mountedAt = useRef(Date.now());
+
+  // Live countdown state — ticks every second only while timeSec > 0
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const elapsed = () => Math.floor((Date.now() - mountedAt.current) / 1000);
+    const remaining = () => Math.max(0, initialSec.current - elapsed());
+    if (remaining() <= 0) return;
+    const id = setInterval(() => {
+      setTick(t => t + 1);
+      if (remaining() <= 0) clearInterval(id);
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  const timeSec = Math.max(0, initialSec.current - Math.floor((Date.now() - mountedAt.current) / 1000));
 
   const relativeStr = formatRelative(timeSec);
-  const clockStr    = timeSec > 0
-    ? new Date(Date.now() + timeSec * 1000).toLocaleTimeString('ko-KR', {
+  const clockStr    = initialSec.current > 0
+    ? new Date(mountedAt.current + initialSec.current * 1000).toLocaleTimeString('ko-KR', {
         hour: '2-digit', minute: '2-digit', hour12: false
       })
     : '';
@@ -180,7 +200,9 @@ function parseStopsLeft(arr: StationArrival): string {
 // ─────────────────────────────────────────────────────────────────────────────
 function formatRelative(sec: number): string {
   if (sec <= 0) return '정보 없음';
-  if (sec < 60) return '곧 도착';
+  if (sec < 30) return '곧 도착';
+  if (sec < 60) return `${sec}초 후`;
   const m = Math.floor(sec / 60);
-  return `${m}분 후`;
+  const s = sec % 60;
+  return s > 0 ? `${m}분 ${s}초 후` : `${m}분 후`;
 }
