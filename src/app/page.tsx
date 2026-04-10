@@ -186,12 +186,20 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapSt.userLocation, stations]);
 
-  // 화장실 탭 전환 시 거리 정렬
+  // 화장실 탭 전환 시 거리 정렬 + 내 위치로 지도 이동
   useEffect(() => {
-    if (ui.activeTab === 'wc' && mapSt.userLocation && subway.wcItems.length > 0) {
-      sortWCs(subway.wcItems, mapSt.userLocation[0], mapSt.userLocation[1]).then(sorted => {
-        subway.setNearestWCs(sorted as WCItem[]);
+    if (ui.activeTab === 'wc' && mapSt.userLocation) {
+      // 내 위치 중심으로 지도 이동 (zoom 15)
+      mapRef.current?.flyTo({
+        center: [mapSt.userLocation[1], mapSt.userLocation[0]],
+        zoom: 15,
+        duration: 800,
       });
+      if (subway.wcItems.length > 0) {
+        sortWCs(subway.wcItems, mapSt.userLocation[0], mapSt.userLocation[1]).then(sorted => {
+          subway.setNearestWCs(sorted as WCItem[]);
+        });
+      }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ui.activeTab, mapSt.userLocation, subway.wcItems]);
