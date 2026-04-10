@@ -11,6 +11,7 @@ import type { PathResult } from "@/types/metro";
 import type { PathStrategy } from "@/store/useRouteStore";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
+import { getBusRouteStyle } from "@/utils/busRouting";
 import { useIngestion } from "@/hooks/useIngestion";
 import IngestionProgress from "./IngestionProgress";
 import { useUIStore } from "@/store/useUIStore";
@@ -812,9 +813,10 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                             {busPathResult.type === 'direct' ? (
                                 <>
                                     <div className="flex flex-wrap gap-1.5 mb-3">
-                                        {busPathResult.commonRoutes.map((r, i) => (
-                                            <span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">{r}</span>
-                                        ))}
+                                        {busPathResult.commonRoutes.map((r, i) => {
+                                            const s = getBusRouteStyle(r);
+                                            return <span key={i} className="px-3 py-1.5 rounded-xl text-[13px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
+                                        })}
                                     </div>
                                     <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-bold">
                                         <MapPin size={10} className="text-blue-500 shrink-0" />
@@ -828,9 +830,10 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 <>
                                     <div className="flex flex-col gap-2">
                                         <div className="flex items-center gap-2">
-                                            {busPathResult.commonRoutes.map((r, i) => (
-                                                <span key={i} className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white text-[13px] font-black shadow-sm">{r}</span>
-                                            ))}
+                                            {busPathResult.commonRoutes.map((r, i) => {
+                                                const s = getBusRouteStyle(r);
+                                                return <span key={i} className="px-3 py-1.5 rounded-xl text-[13px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
+                                            })}
                                             <span className="text-[11px] text-zinc-400 font-bold">타고 →</span>
                                             {busPathResult.transferStop && (
                                                 <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-300">{busPathResult.transferStop.name}</span>
@@ -838,9 +841,10 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                         </div>
                                         {busPathResult.transferRoutes && (
                                             <div className="flex items-center gap-2">
-                                                {busPathResult.transferRoutes.map((r, i) => (
-                                                    <span key={i} className="px-3 py-1.5 rounded-xl bg-amber-500 text-white text-[13px] font-black shadow-sm">{r}</span>
-                                                ))}
+                                                {busPathResult.transferRoutes.map((r, i) => {
+                                                    const s = getBusRouteStyle(r);
+                                                    return <span key={i} className="px-3 py-1.5 rounded-xl text-[13px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
+                                                })}
                                                 <span className="text-[11px] text-zinc-400 font-bold">환승</span>
                                             </div>
                                         )}

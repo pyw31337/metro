@@ -1,5 +1,20 @@
 import { BusStop } from "@/types/metro";
 
+/** 노선 번호 기반 색상 분류 (서울 간선/지선/광역/야간 기준) */
+export const getBusRouteStyle = (r: string): { bg: string; text: string } => {
+    if (/^N/i.test(r)) return { bg: '#1d2b55', text: '#93c5fd' };   // 야간
+    if (/^M/i.test(r)) return { bg: '#7c0000', text: '#fca5a5' };   // 광역급행
+    const num = parseInt(r.replace(/\D/g, ''));
+    if (!isNaN(num) && num > 0) {
+        if (num >= 9000) return { bg: '#d97706', text: '#fff' };     // 공항/특수
+        if (num >= 5000) return { bg: '#dc2626', text: '#fff' };     // 광역
+        if (num >= 1000) return { bg: '#16a34a', text: '#fff' };     // 지선
+        if (num >= 100)  return { bg: '#1d4ed8', text: '#fff' };     // 간선
+        return { bg: '#ca8a04', text: '#fff' };                       // 순환/마을
+    }
+    return { bg: '#52525b', text: '#e4e4e7' };
+};
+
 export interface BusPathResult {
     type: 'direct' | 'transfer';
     commonRoutes: string[];

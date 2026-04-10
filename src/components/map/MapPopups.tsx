@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, memo } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import { X, MapPin, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
+import { X, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
@@ -14,6 +14,7 @@ import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
 import { hapticLight } from "@/utils/haptic";
+import { getBusRouteStyle } from "@/utils/busRouting";
 
 interface MapPopupsProps {
   popupCoords: [number, number] | null;
@@ -117,21 +118,6 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string
       ))}
     </div>
   );
-};
-
-// 노선 번호 기반 색상 분류 (서울 기준, 타 지자체 fallback 포함)
-const getBusRouteStyle = (r: string): { bg: string; text: string } => {
-    if (/^N/i.test(r)) return { bg: '#1d2b55', text: '#93c5fd' };   // 야간
-    if (/^M/i.test(r)) return { bg: '#7c0000', text: '#fca5a5' };   // 광역급행
-    const num = parseInt(r.replace(/\D/g, ''));
-    if (!isNaN(num) && num > 0) {
-        if (num >= 9000) return { bg: '#d97706', text: '#fff' };     // 공항/특수
-        if (num >= 5000) return { bg: '#dc2626', text: '#fff' };     // 광역
-        if (num >= 1000) return { bg: '#16a34a', text: '#fff' };     // 지선
-        if (num >= 100)  return { bg: '#1d4ed8', text: '#fff' };     // 간선
-        return { bg: '#ca8a04', text: '#fff' };                       // 순환/마을
-    }
-    return { bg: '#52525b', text: '#e4e4e7' };
 };
 
 const BusRouteStaticList = ({ routes, cityCode, onSelectBusRoute }: { routes: string[], cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
