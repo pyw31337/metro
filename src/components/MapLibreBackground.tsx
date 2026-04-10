@@ -382,7 +382,7 @@ function MapLibreBackground(props: MapLibreProps) {
             interactiveLayerIds={INTERACTIVE_LAYER_IDS}
         >
             <MapIconRegister />
-            <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} />
+            <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} selectedStationName={selectedStationName} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
             <RouteLayers

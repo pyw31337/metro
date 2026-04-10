@@ -9,6 +9,7 @@ interface SubwayLayersProps {
   isDarkMode: boolean;
   pathResult: any;
   focusedLine: string | null;
+  selectedStationName?: string | null;
 }
 
 const SubwayLayers = ({
@@ -16,7 +17,8 @@ const SubwayLayers = ({
   activeTab,
   isDarkMode,
   pathResult,
-  focusedLine
+  focusedLine,
+  selectedStationName = null,
 }: SubwayLayersProps) => {
   // visibility는 return null 대신 사용 — 제거 시 레이어 스택 순서가 깨짐
   const isActive = activeTab === "subway" || activeTab === "subway+bus";
@@ -119,6 +121,22 @@ const SubwayLayers = ({
       </Source>
 
       <Source id="subway-stations" type="geojson" data={subwayData.stations}>
+        {/* 선택된 역 강조 링 (바탕 레이어) */}
+        <Layer
+          id="subway-station-selected-ring"
+          type="circle"
+          filter={['==', ['get', 'name'], selectedStationName ?? '']}
+          layout={{ "visibility": vis }}
+          paint={{
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 6, 12, 10, 14, 16, 16, 20],
+            "circle-color": "transparent",
+            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 14, 3.5],
+            "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
+            "circle-opacity": 0,
+            "circle-stroke-opacity": 0.5,
+          }}
+        />
+
         {/* 역 점 */}
         <Layer
           id="subway-station-circle"
@@ -127,7 +145,12 @@ const SubwayLayers = ({
           paint={{
             "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 12, 4, 14, 7, 16, 9],
             "circle-color": "white",
-            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 12, 1.5, 14, 2.5, 16, 3],
+            "circle-stroke-width": [
+              "case",
+              ["==", ["get", "name"], selectedStationName ?? ''],
+              ["interpolate", ["linear"], ["zoom"], 12, 3, 14, 4.5, 16, 5.5],
+              ["interpolate", ["linear"], ["zoom"], 12, 1.5, 14, 2.5, 16, 3],
+            ],
             "circle-stroke-color": stationStrokeColor,
           }}
         />
