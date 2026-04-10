@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchTransferPlatform } from "@/services/arrivalApi";
 import { PathResult } from "@/types/metro";
+import { STATION_LINE_IDX } from "@/data/subway-lines";
 
-export const useTransferVerification = (pathResult: PathResult | null, stations: any[]) => {
+export const useTransferVerification = (pathResult: PathResult | null, stations?: any[]) => {
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
     const fetchingRef = useRef<Set<string>>(new Set());
     // Keep a ref to the latest verifiedPlats to avoid stale closures in async callbacks
@@ -20,10 +21,11 @@ export const useTransferVerification = (pathResult: PathResult | null, stations:
         }
 
         const fetchAll = async () => {
-            const getLine = (sName: string) => {
+            // O(1) lookup via module-level STATION_LINE_IDX — no stations.find() needed
+            const getLine = (sName: string): string[] => {
                 const cleanName = sName.replace(/\(.*\)/, '').replace(/역$/, '').trim();
-                const station = stations.find(s => s.name.replace(/\(.*\)/, '').replace(/역$/, '').trim() === cleanName);
-                return station?.lines || [];
+                const entries = STATION_LINE_IDX.get(cleanName) ?? STATION_LINE_IDX.get(cleanName + '역') ?? [];
+                return entries.map(e => e.lineName);
             };
 
             const promises = pathResult.path.map(async (curr, idx) => {
@@ -67,7 +69,7 @@ export const useTransferVerification = (pathResult: PathResult | null, stations:
         };
 
         fetchAll();
-    // stations is stable (from useMemo in page.tsx), pathResult identity changes when route changes
+    // pathResult identity changes when route changes; STATION_LINE_IDX is module-level (stable)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathResult]);
 

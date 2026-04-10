@@ -170,7 +170,7 @@ function MapLibreBackground(props: MapLibreProps) {
     const [trainArrivalDetail, setTrainArrivalDetail] = useState<StationArrival | null>(null);
     const [isLoadingCongestion, setIsLoadingCongestion] = useState(false);
     const [selectedWC, setSelectedWC] = useState<WCItem | null>(null);
-    const verifiedPlats = useTransferVerification(pathResult, stations);
+    const verifiedPlats = useTransferVerification(pathResult);
 
     // Sync external selectedWC (from panel/global store) → local state + map fly
     const { selectedWC: externalWC } = props;
