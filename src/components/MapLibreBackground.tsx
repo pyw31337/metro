@@ -221,6 +221,24 @@ function MapLibreBackground(props: MapLibreProps) {
         } catch (err) { console.error(err); } finally { setIsLoadingCongestion(false); }
     };
 
+    const handleMapReady = useCallback((map: any) => {
+        setMapInstance(map);
+        if (onMapReady) onMapReady(map);
+    }, [onMapReady]);
+
+    const handleStationTap = useCallback((name: string, coords: [number, number]) => {
+        onStationClick?.(name, [coords[1], coords[0]]);
+        setPopupCoords(coords);
+        setSelectedWC(null);
+    }, [onStationClick]);
+
+    const handlePopupWCClick = useCallback((item: WCItem | null) => {
+        setSelectedWC(item);
+        props.onWCClick(item);
+        // Keep coords if showing WC popup; clear if dismissed
+        setPopupCoords(prev => item ? prev : null);
+    }, [props.onWCClick]);
+
     const handleMapClick = useCallback((e: any) => {
         const feature = e.features?.[0];
         if (!feature) {
@@ -295,10 +313,7 @@ function MapLibreBackground(props: MapLibreProps) {
     return (
         <MapBase
             isDarkMode={isDarkMode}
-            onMapReady={(map) => {
-                setMapInstance(map);
-                if (onMapReady) onMapReady(map);
-            }}
+            onMapReady={handleMapReady}
             onClick={handleMapClick}
             onCenterChange={onCenterChange}
             onBoundsChange={onBoundsChange}
@@ -317,11 +332,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 activeTab={activeTab} pathLineData={pathGeoJSON.lines} routeStationData={pathGeoJSON.stations}
                 showAllRouteBubbles={showAllRouteBubbles} focusedBubble={focusedBubble} setFocusedBubble={setFocusedBubble}
                 timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} verifiedPlats={verifiedPlats}
-                onStationTap={(name, coords) => {
-                    onStationClick?.(name, [coords[1], coords[0]]);
-                    setPopupCoords(coords);
-                    setSelectedWC(null);
-                }}
+                onStationTap={handleStationTap}
             />
             <TransitRealtimeLayers activeTab={activeTab} activeLine={activeLine} activePath={pathResult} />
             <UserLocationLayer />
@@ -350,7 +361,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 onActiveLineChange={onActiveLineChange}
                 onSelectBusRoute={props.onSelectBusRoute}
                 selectedWC={selectedWC}
-                onWCClick={(item) => { setSelectedWC(item); props.onWCClick(item); setPopupCoords(item ? popupCoords : null); }}
+                onWCClick={handlePopupWCClick}
                 isDarkMode={isDarkMode}
             />
             <NearbyPulseMarkers nearestStation={nearestStation} nearestBusStop={nearestBusStop} nearestWC={nearestWC} isDarkMode={isDarkMode} activeTab={activeTab} />
