@@ -330,6 +330,7 @@ export default function UnifiedBottomPanel({
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [shareCopied, setShareCopied] = useState(false);
+    const [noRouteStale, setNoRouteStale] = useState(false); // persists until input changes or route found
     const [now, setNow] = useState(() => Date.now());
     const { tasks, isIngesting } = useIngestion();
 
@@ -387,10 +388,16 @@ export default function UnifiedBottomPanel({
     useEffect(() => {
         if (endStation !== null) setDestination(endStation);
         if (startStation !== null) setSource(startStation);
-        if (pathResults) { setSearchResults([]); setIsCollapsed(false); }
+        if (pathResults) { setSearchResults([]); setIsCollapsed(false); setNoRouteStale(false); }
     }, [startStation, endStation, pathResults]);
 
+    // When external error says no_route, latch the stale state
+    useEffect(() => {
+        if (externalValidationError === 'no_route') setNoRouteStale(true);
+    }, [externalValidationError]);
+
     const handleSearch = (val: string, type: "source" | "dest") => {
+        setNoRouteStale(false);
         if (type === "dest") {
             setDestination(val);
             onSetDestination?.(val);
@@ -499,6 +506,17 @@ export default function UnifiedBottomPanel({
                 </div>
 
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
+                    {activeTab === "subway" && noRouteStale && !pathResults && !isCalculating && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-rose-500/8 dark:bg-rose-500/12 border border-rose-500/20 mb-1"
+                        >
+                            <span className="text-[12px] font-black text-rose-500">경로를 찾을 수 없습니다</span>
+                            <span className="text-[10px] font-bold text-rose-400/70">· 역명을 확인해주세요</span>
+                        </motion.div>
+                    )}
+
                     {activeTab === "subway" && pathResults && pathResults.time && pathResults.transfer && (
                         <div className="flex flex-col gap-2 mb-2">
                             <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 border border-black/5 dark:border-white/5 relative">
