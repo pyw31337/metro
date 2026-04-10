@@ -93,6 +93,7 @@ const LINE_STATION_IDX = new Map(
 // 그래프 빌드 (모듈 초기화 시 1회 실행)
 // ─────────────────────────────────────────────────────────────────────────────
 let cachedGraph: Map<string, GraphNode> | null = null;
+let cachedGraphKeys: Set<string> | null = null;
 
 function buildGraph(): Map<string, GraphNode> {
   const graph = new Map<string, GraphNode>();
@@ -357,9 +358,9 @@ self.onmessage = async (e: MessageEvent) => {
     case 'FIND_PATH': {
       const { points } = payload as { points: string[] };
 
-      if (!cachedGraph) cachedGraph = buildGraph();
+      if (!cachedGraph) { cachedGraph = buildGraph(); cachedGraphKeys = new Set(cachedGraph.keys()); }
       const graph = cachedGraph;
-      const graphKeys = new Set(graph.keys());
+      const graphKeys = cachedGraphKeys!;
 
       const strategies: PathStrategy[] = ['time', 'transfer'];
       const results: Record<string, any> = {};
@@ -386,14 +387,11 @@ self.onmessage = async (e: MessageEvent) => {
           const result = dijkstra(from, to, graph, strategy, FAST_TRANSFER_SET);
           if (!result) { failed = true; break; }
 
-          // 첫 구간이 아니면 시작역 중복 제거
-          const segPath    = i === 0 ? result.path : result.path.slice(1);
-          const segWeights = i === 0 ? result.weights : result.weights.slice(1).map(w => w + totalTime);
-          const segLines   = result.linePath;
-
-          fullPath    = [...fullPath, ...segPath.slice(i === 0 ? 0 : 0)];
-          fullWeights = [...fullWeights, ...segWeights];
-          fullLinePath = [...fullLinePath, ...segLines];
+          // 첫 구간이 아니면 시작역 중복 제거 (push 사용 — spread보다 O(n) 복사 없음)
+          const skip = i === 0 ? 0 : 1;
+          for (let j = skip; j < result.path.length; j++) fullPath.push(result.path[j]);
+          for (let j = skip; j < result.weights.length; j++) fullWeights.push(result.weights[j] + (i === 0 ? 0 : totalTime));
+          for (const l of result.linePath) fullLinePath.push(l);
           totalTime += result.totalTimeMin;
           totalTransfers += result.transferCount;
         }
