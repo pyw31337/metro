@@ -17,6 +17,15 @@ const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: "FeatureCollection", fe
 // Module-level O(1) line lookup for filterByPath (called on every realtime tick)
 const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
 
+// Pre-built station index maps for O(1) lookup in filterByPath
+// Map<lineName, Map<stationName, index>>
+const STATION_IDX: Map<string, Map<string, number>> = new Map(
+  SUBWAY_LINES.map(l => [
+    l.name,
+    new Map(l.stations.map((s, i) => [s.name, i]))
+  ])
+);
+
 const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => {
   const { current: mapRef } = useMap();
   const map = mapRef?.getMap();
@@ -260,13 +269,13 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   if (unitDir !== seg.direction) return false;
 
   // 구간 범위 내 열차만 표시
-  const lineData = LINE_BY_NAME.get(unit.lineName);
-  if (!lineData || !unit.currentStationName) return true;
+  if (!unit.currentStationName) return true;
+  const idxMap = STATION_IDX.get(unit.lineName);
+  if (!idxMap) return true;
 
-  const sts     = lineData.stations;
-  const currIdx = sts.findIndex(s => s.name === unit.currentStationName);
-  const entryIdx = sts.findIndex(s => s.name === seg.stations[0]);
-  const exitIdx  = sts.findIndex(s => s.name === seg.stations[seg.stations.length - 1]);
+  const currIdx  = idxMap.get(unit.currentStationName) ?? -1;
+  const entryIdx = idxMap.get(seg.stations[0]) ?? -1;
+  const exitIdx  = idxMap.get(seg.stations[seg.stations.length - 1]) ?? -1;
 
   if (currIdx < 0 || entryIdx < 0 || exitIdx < 0) return true;
 
