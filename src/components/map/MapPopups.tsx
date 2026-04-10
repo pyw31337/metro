@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, memo } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X, MapPin, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
@@ -639,4 +639,4 @@ const MapPopups = ({
   );
 };
 
-export default MapPopups;
+export default memo(MapPopups);
