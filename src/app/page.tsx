@@ -399,6 +399,24 @@ export default function Home() {
     }
   }, [ui.activeTab, subway]);
 
+  // Stable callbacks for MapLibreBackground to preserve memo boundary
+  const handleCenterChange = useCallback((lat: number, lng: number) => {
+    mapSt.setCenter([lat, lng]);
+  }, [mapSt]);
+
+  const handleActiveLineChange = useCallback((line: string | null) => {
+    if (line) mapSt.toggleActiveLine(line);
+    else mapSt.setActiveLine(null);
+  }, [mapSt]);
+
+  const handleMapReady = useCallback((m: any) => { mapRef.current = m; }, []);
+
+  const handleToggleShowAll = useCallback(() => {
+    route.setShowAllRouteBubbles(!route.showAllRouteBubbles);
+  }, [route]);
+
+  const handleTabChange = useCallback((tab: any) => ui.setActiveTab(tab), [ui]);
+
   // ─────────────────────────────────────────────────────────────────────────
   // 렌더
   // ─────────────────────────────────────────────────────────────────────────
@@ -431,12 +449,12 @@ export default function Home() {
           onSetStart={route.setStartStation}
           onSetEnd={route.setEndStation}
           onSetWaypoint={route.addWaypoint}
-          onCenterChange={(lat, lng) => mapSt.setCenter([lat, lng])}
+          onCenterChange={handleCenterChange}
           onBoundsChange={handleBoundsChange}
           stations={stations}
           activeLine={mapSt.activeLine}
-          onActiveLineChange={(line) => line ? mapSt.toggleActiveLine(line) : mapSt.setActiveLine(null)}
-          onMapReady={(m) => { mapRef.current = m; }}
+          onActiveLineChange={handleActiveLineChange}
+          onMapReady={handleMapReady}
           pathResult={activePath}
           userLocation={mapSt.userLocation}
           nearestStation={mapSt.nearestStation}
@@ -445,7 +463,7 @@ export default function Home() {
           timeDisplayMode={ui.timeDisplayMode}
           onToggleTimeDisplay={ui.toggleTimeDisplayMode}
           showAllRouteBubbles={route.showAllRouteBubbles}
-          onToggleShowAll={() => route.setShowAllRouteBubbles(!route.showAllRouteBubbles)}
+          onToggleShowAll={handleToggleShowAll}
           onSelectBusRoute={handleSelectBusRoute}
         />
       </div>
@@ -453,7 +471,7 @@ export default function Home() {
       {/* 하단 패널 */}
       <UnifiedBottomPanel
         activeTab={ui.activeTab}
-        onTabChange={(tab: any) => ui.setActiveTab(tab)}
+        onTabChange={handleTabChange}
         onSearch={(start, end) => calculatePath(start, route.waypoints, end)}
         onReset={handleReset}
         startStation={route.startStation}
@@ -476,13 +494,13 @@ export default function Home() {
         validationError={route.validationError}
         busPathResult={route.busPathResult}
         showAllRouteBubbles={route.showAllRouteBubbles}
-        onToggleShowAll={() => route.setShowAllRouteBubbles(!route.showAllRouteBubbles)}
+        onToggleShowAll={handleToggleShowAll}
         selectedStationName={subway.selectedStationName}
         stationArrivals={arrivalInfo.arrivals}
         schedules={arrivalInfo.schedules}
         onSelectStation={subway.setSelectedStationName}
         activeLine={mapSt.activeLine}
-        onActiveLineChange={(line) => line ? mapSt.toggleActiveLine(line) : mapSt.setActiveLine(null)}
+        onActiveLineChange={handleActiveLineChange}
         selectedBusStop={subway.selectedBusStop}
         onSelectBusRoute={handleSelectBusRoute}
       />
