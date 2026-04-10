@@ -51,22 +51,19 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
   // ── 도착 시간 계산 (초 단위, 마운트 시점 기준) ──
   const initialSec = useRef<number>((() => {
-    // arvlCd "0"=진입, "1"=당역 → treat as ~20s remaining
-    if (arr.arvlCd === '0' || arr.arvlCd === '1') return 20;
+    if (arr.arvlCd === '1') return 0;     // 당역: 이미 도착 (카운트다운 없음)
+    if (arr.arvlCd === '0') return 15;    // 진입: 약 15초
     let t = parseInt(arr.barvlDt) || 0;
     if (t === 0) {
-      if (stopsLeft.includes("당역")) t = 30;
-      else {
-        const m = stopsLeft.match(/(\d+)역/);
-        if (m) t = parseInt(m[1]) * 150;
-      }
+      const m = stopsLeft.match(/(\d+)역/);
+      if (m) t = parseInt(m[1]) * 150;
     }
     return t;
   })());
   const mountedAt = useRef(Date.now());
 
-  // Live countdown state — ticks every second only while timeSec > 0
-  const [tick, setTick] = useState(0);
+  // 1초 tick — timeSec > 0 인 동안만 구동
+  const [, setTick] = useState(0);
   useEffect(() => {
     const elapsed = () => Math.floor((Date.now() - mountedAt.current) / 1000);
     const remaining = () => Math.max(0, initialSec.current - elapsed());
@@ -78,30 +75,42 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     return () => clearInterval(id);
   }, []);
 
-  const timeSec = Math.max(0, initialSec.current - Math.floor((Date.now() - mountedAt.current) / 1000));
+  const elapsed = Math.floor((Date.now() - mountedAt.current) / 1000);
+  const timeSec = initialSec.current - elapsed;
 
-  const relativeStr = formatRelative(timeSec);
-  const clockStr    = initialSec.current > 0
-    ? new Date(mountedAt.current + initialSec.current * 1000).toLocaleTimeString('ko-KR', {
-        hour: '2-digit', minute: '2-digit', hour12: false
-      })
-    : '';
-
-  const displayTime = timeDisplayMode === "duration" ? relativeStr : (clockStr || relativeStr);
+  // ── 당역(정차중): 항상 표시 ──
+  const isAtStation = arr.arvlCd === '1';
+  // ── 시간 만료: 당역 아니면 숨김 (이미 떠난 열차) ──
+  if (timeSec <= 0 && !isAtStation) return null;
 
   // ── 종착역 / 분기 ──
   const rawDest = (arr.bstatnNm || arr.trainLineNm?.split('-')[0] || '').replace('행', '').trim();
   const isDivergent = /인천|서동탄|병점|신창|고색|광명|천안/.test(rawDest);
 
-  // ── 강조 여부 ──
-  const isHighlight = stopsLeft.includes("당역") || stopsLeft.includes("진입")
-    || arr.arvlCd === "0" || arr.arvlCd === "1";
-
   const lineColor = getLineColor(arr.subwayId ?? '');
 
-  // ── 도착 코드 오버라이드 ──
-  if (arr.arvlCd === "1") stopsLeft = "당역";
-  else if (arr.arvlCd === "0") stopsLeft = "진입";
+  // ── 시간 표시 결정 ──
+  let displayTime: string;
+  if (isAtStation) {
+    displayTime = '정차중';
+  } else if (arr.arvlCd === '0') {
+    displayTime = '곧 도착';
+  } else if (timeDisplayMode === 'arrival' && initialSec.current > 0) {
+    displayTime = new Date(mountedAt.current + initialSec.current * 1000).toLocaleTimeString('ko-KR', {
+      hour: '2-digit', minute: '2-digit', hour12: false
+    });
+  } else {
+    displayTime = formatRelative(Math.max(0, timeSec));
+  }
+
+  // ── 오른쪽 거리 표시 결정 ──
+  // "곧 도착"은 시간 표시와 중복 → 표시 안 함
+  // arvlCd 오버라이드
+  if (isAtStation)           stopsLeft = '';        // 정차중이면 역수 불필요
+  else if (arr.arvlCd === '0') stopsLeft = '진입중';
+  else if (stopsLeft === '곧 도착' || stopsLeft === '당역' || stopsLeft === '진입') stopsLeft = '';
+
+  const isHighlight = isAtStation || arr.arvlCd === '0';
 
   return (
     <button
@@ -110,10 +119,10 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
         w-full flex items-center justify-between px-3 py-1.5 rounded-xl
         bg-black/[0.03] dark:bg-white/5
         border transition-transform active:scale-[0.98]
-        ${isDivergent ? 'border-orange-400/60' : 'border-black/5 dark:border-white/5'}
+        ${isAtStation ? 'border-blue-400/50' : isDivergent ? 'border-orange-400/60' : 'border-black/5 dark:border-white/5'}
       `}
     >
-      {/* 왼쪽: 데이터 유형 배지 + 시간 */}
+      {/* 왼쪽: LIVE 배지 + 시간 */}
       <div className="flex items-center gap-1.5 min-w-0">
         {!arr.isScheduled && (
           <span className="shrink-0 flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black border border-emerald-500/30">
@@ -134,13 +143,15 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
         )}
       </div>
 
-      {/* 오른쪽: 몇 역 전 */}
-      <span
-        className="text-[11px] font-bold leading-tight shrink-0 ml-2"
-        style={isHighlight ? { color: lineColor } : { color: '#94a3b8' }}
-      >
-        {stopsLeft}
-      </span>
+      {/* 오른쪽: 역 수 */}
+      {stopsLeft ? (
+        <span
+          className="text-[11px] font-bold leading-tight shrink-0 ml-2"
+          style={isHighlight ? { color: lineColor } : { color: '#94a3b8' }}
+        >
+          {stopsLeft}
+        </span>
+      ) : null}
     </button>
   );
 };
@@ -208,7 +219,6 @@ function parseStopsLeft(arr: StationArrival): string {
 // 유틸: 상대 시간 포매팅
 // ─────────────────────────────────────────────────────────────────────────────
 function formatRelative(sec: number): string {
-  if (sec <= 0) return '정보 없음';
   if (sec < 30) return '곧 도착';
   if (sec < 60) return `${sec}초 후`;
   const m = Math.floor(sec / 60);
