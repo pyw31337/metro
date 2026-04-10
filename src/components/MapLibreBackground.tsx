@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, memo, useMemo, useCallback, useEffect } from "react";
+import { useState, memo, useMemo, useCallback, useEffect, useRef } from "react";
 import { useMap } from "react-map-gl/maplibre";
 import { PathResult, WCItem, BusStop, ActiveTab, WCFilters, StationArrival, Station } from "@/types/metro";
 import { 
@@ -212,6 +212,14 @@ function MapLibreBackground(props: MapLibreProps) {
     // O(1) bus stop lookup for click handler (busStops can be 50K+ items)
     const busStopById = useMemo(() => new Map(busStops.map(s => [s.id, s])), [busStops]);
 
+    // Mutable refs — let handleMapClick stay stable while reading latest values
+    const busStopByIdRef = useRef(busStopById);
+    busStopByIdRef.current = busStopById;
+    const activeLineRef = useRef(activeLine);
+    activeLineRef.current = activeLine;
+    const mapInstanceRef = useRef(mapInstance);
+    mapInstanceRef.current = mapInstance;
+
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
         setIsLoadingCongestion(true);
@@ -262,12 +270,13 @@ function MapLibreBackground(props: MapLibreProps) {
         }
 
         const coords = e.lngLat;
+        const map = mapInstanceRef.current;
         if (feature.layer.id === 'wc-clusters' || feature.layer.id === 'bus-clusters') {
             const sourceId = feature.layer.id === 'wc-clusters' ? 'wc-source' : 'bus-source';
-            const source = mapInstance.getSource(sourceId);
+            const source = map.getSource(sourceId);
             source.getClusterExpansionZoom(feature.properties.cluster_id, (err: any, zoom: number) => {
                 if (err) return;
-                mapInstance.flyTo({
+                map.flyTo({
                     center: [coords.lng, coords.lat],
                     zoom: zoom + 1,
                     duration: 500
@@ -282,7 +291,8 @@ function MapLibreBackground(props: MapLibreProps) {
             onStationClick?.(name, [coords.lat, coords.lng]);
             setPopupCoords([coords.lng, coords.lat]);
             if (lines && Array.isArray(lines) && lines.length > 0) {
-                if (!activeLine || !lines.includes(activeLine)) onActiveLineChange(lines[0]);
+                const curLine = activeLineRef.current;
+                if (!curLine || !lines.includes(curLine)) onActiveLineChange(lines[0]);
             }
             setSelectedWC(null);
             onWCClick(null);
@@ -303,7 +313,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setSelectedTrain(null);
             setFocusedBubble(null);
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label' || feature.layer.id === 'bus-unclustered-hitbox') {
-            const stop = busStopById.get(feature.properties.id);
+            const stop = busStopByIdRef.current.get(feature.properties.id);
             if (stop) {
                 onBusStopClick(stop, [coords.lat, coords.lng]);
                 setPopupCoords([coords.lng, coords.lat]);
@@ -316,7 +326,7 @@ function MapLibreBackground(props: MapLibreProps) {
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
             onActiveLineChange(feature.properties.name);
         }
-    }, [busStopById, onStationClick, onBusStopClick, onWCClick, activeLine, onActiveLineChange, mapInstance]);
+    }, [onStationClick, onBusStopClick, onWCClick, onActiveLineChange]);
 
     return (
         <MapBase
