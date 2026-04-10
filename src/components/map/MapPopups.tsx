@@ -96,12 +96,18 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string
       {arrivals.map((bus: any, idx: number) => (
         <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-500/10">
           <div className="flex items-center gap-2">
-             <button 
-                onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(bus.routeNo, cityCode); }}
-                className="px-2 py-0.5 rounded-md bg-emerald-500 text-white text-[11px] font-black hover:bg-emerald-600 transition-colors shadow-sm"
-             >
-                {bus.routeNo}
-             </button>
+             {(() => {
+                const style = getBusRouteStyle(bus.routeNo);
+                return (
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(bus.routeNo, cityCode); }}
+                        className="px-2 py-0.5 rounded-md text-[11px] font-black transition-all shadow-sm active:scale-95"
+                        style={{ backgroundColor: style.bg, color: style.text }}
+                    >
+                        {bus.routeNo}
+                    </button>
+                );
+             })()}
              <span className="text-[10px] text-zinc-400 font-medium">{bus.remainStops}정류장 남음</span>
           </div>
           <span className="text-[11px] font-black text-rose-500">
@@ -113,21 +119,40 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string
   );
 };
 
+// 노선 번호 기반 색상 분류 (서울 기준, 타 지자체 fallback 포함)
+const getBusRouteStyle = (r: string): { bg: string; text: string } => {
+    if (/^N/i.test(r)) return { bg: '#1d2b55', text: '#93c5fd' };   // 야간
+    if (/^M/i.test(r)) return { bg: '#7c0000', text: '#fca5a5' };   // 광역급행
+    const num = parseInt(r.replace(/\D/g, ''));
+    if (!isNaN(num) && num > 0) {
+        if (num >= 9000) return { bg: '#d97706', text: '#fff' };     // 공항/특수
+        if (num >= 5000) return { bg: '#dc2626', text: '#fff' };     // 광역
+        if (num >= 1000) return { bg: '#16a34a', text: '#fff' };     // 지선
+        if (num >= 100)  return { bg: '#1d4ed8', text: '#fff' };     // 간선
+        return { bg: '#ca8a04', text: '#fff' };                       // 순환/마을
+    }
+    return { bg: '#52525b', text: '#e4e4e7' };
+};
+
 const BusRouteStaticList = ({ routes, cityCode, onSelectBusRoute }: { routes: string[], cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
     if (!routes || routes.length === 0) return null;
     return (
         <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
             <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 mb-2 uppercase tracking-tight">전체 노선 ({routes.length})</h4>
             <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto no-scrollbar">
-                {routes.map((r, i) => (
-                    <button 
-                        key={i}
-                        onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(r, cityCode); }}
-                        className="px-2 py-0.5 rounded-md bg-zinc-100 dark:bg-white/5 text-zinc-600 dark:text-zinc-300 text-[10px] font-black hover:bg-emerald-500 hover:text-white transition-all active:scale-95 border border-transparent hover:border-emerald-400 shadow-sm"
-                    >
-                        {r}
-                    </button>
-                ))}
+                {routes.map((r, i) => {
+                    const style = getBusRouteStyle(r);
+                    return (
+                        <button
+                            key={i}
+                            onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(r, cityCode); }}
+                            className="px-2 py-0.5 rounded-md text-[10px] font-black transition-all active:scale-95 shadow-sm opacity-90 hover:opacity-100 hover:scale-105"
+                            style={{ backgroundColor: style.bg, color: style.text }}
+                        >
+                            {r}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
