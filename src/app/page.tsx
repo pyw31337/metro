@@ -309,27 +309,31 @@ export default function Home() {
   // 이벤트 핸들러
   // ─────────────────────────────────────────────────────────────────────────
   const handleStationClick = useCallback((name: string, latlng?: [number, number]) => {
-    subway.setSelectedStationName(normalizeStationName(name));
-    subway.setSelectedBusStop(null);
-    subway.setSelectedWC(null);
+    const st = useSubwayStore.getState();
+    st.setSelectedStationName(normalizeStationName(name));
+    st.setSelectedBusStop(null);
+    st.setSelectedWC(null);
     if (latlng) setMapCenter(latlng[0], latlng[1]);
-  }, [subway, mapSt]);
+  }, []);
 
   const handleBusStopClick = useCallback((stop: BusStop, coords?: [number, number]) => {
-    subway.setSelectedBusStop(stop);
-    subway.setSelectedStationName(null);
-    subway.setSelectedWC(null);
+    const st = useSubwayStore.getState();
+    st.setSelectedBusStop(stop);
+    st.setSelectedStationName(null);
+    st.setSelectedWC(null);
     if (coords) setMapCenter(coords[1], coords[0]);
-  }, [subway, mapSt]);
+  }, []);
 
   const handleReset = useCallback(() => {
-    route.reset();
-    subway.clearStationSelection();
-    subway.setSelectedWC(null);
-    subway.setSelectedBusStop(null);
-  }, [route, subway]);
+    useRouteStore.getState().reset();
+    const st = useSubwayStore.getState();
+    st.clearStationSelection();
+    st.setSelectedWC(null);
+    st.setSelectedBusStop(null);
+  }, []);
 
   const handleLocate = useCallback(() => {
+    const mapSt = useMapStore.getState();
     const loc = mapSt.userLocation;
     if (loc && mapRef.current) {
       mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 15, duration: 1500 });
@@ -339,40 +343,49 @@ export default function Home() {
         mapRef.current.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1500 });
       });
     }
-  }, [mapSt]);
+  }, []);
 
   const handleLocateStation = useCallback(async (type: 'source' | 'dest') => {
+    const mapSt = useMapStore.getState();
     if (mapSt.isLocating) return;
     mapSt.setIsLocating(true);
     mapSt.setLocatingTimer(5);
     const interval = setInterval(() => {
-      mapSt.setLocatingTimer(Math.max(0, useMapStore.getState().locatingTimer - 1));
+      const st = useMapStore.getState();
+      st.setLocatingTimer(Math.max(0, st.locatingTimer - 1));
     }, 1000);
-    const cleanup = () => { clearInterval(interval); mapSt.setIsLocating(false); mapSt.setLocatingTimer(0); };
+    const cleanup = () => {
+      clearInterval(interval);
+      const st = useMapStore.getState();
+      st.setIsLocating(false);
+      st.setLocatingTimer(0);
+    };
 
     const doNearest = async (lat: number, lng: number) => {
       const nearest: any = await findNearestStation(lat, lng, stations);
       if (nearest?.name) {
         const val = `내 위치 : ${nearest.name} (내 위치)`;
-        if (type === 'source') route.setStartStation(val);
-        else route.setEndStation(val);
+        const rst = useRouteStore.getState();
+        if (type === 'source') rst.setStartStation(val);
+        else rst.setEndStation(val);
       }
       cleanup();
     };
 
-    if (mapSt.userLocation) {
-      await doNearest(mapSt.userLocation[0], mapSt.userLocation[1]);
+    const loc = useMapStore.getState().userLocation;
+    if (loc) {
+      await doNearest(loc[0], loc[1]);
     } else {
       navigator.geolocation.getCurrentPosition(
         async pos => {
-          mapSt.setUserLocation([pos.coords.latitude, pos.coords.longitude]);
+          useMapStore.getState().setUserLocation([pos.coords.latitude, pos.coords.longitude]);
           await doNearest(pos.coords.latitude, pos.coords.longitude);
         },
         () => cleanup(),
         { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 }
       );
     }
-  }, [mapSt, route, findNearestStation, stations]);
+  }, [findNearestStation, stations]);
 
   const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
     if (!cityCode) return;
@@ -383,16 +396,17 @@ export default function Home() {
         const { MetropolitanBusService } = await import('@/services/busApi');
         const path = await MetropolitanBusService.fetchRoutePath(cityCode, route_.id);
         if (path) {
-          subway.setRoutePathData(path);
+          useSubwayStore.getState().setRoutePathData(path);
           const coord = path.features[0]?.geometry?.coordinates[0];
           if (coord) mapRef.current?.flyTo({ center: coord, zoom: 13, duration: 2000 });
         }
       }
     } catch {}
-  }, [subway]);
+  }, []);
 
   const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
-    if (ui.activeTab !== 'bus' && ui.activeTab !== 'subway+bus') return;
+    const activeTab = useUIStore.getState().activeTab;
+    if (activeTab !== 'bus' && activeTab !== 'subway+bus') return;
     const count = await db.busStops
       .where('lat').between(bounds.minLat, bounds.maxLat)
       .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
@@ -404,10 +418,10 @@ export default function Home() {
       if (cityCode) {
         await DataIngestionService.fetchRegionalBusStops(cityCode);
         const all = await db.busStops.toArray() as BusStop[];
-        subway.setBusStops(all);
+        useSubwayStore.getState().setBusStops(all);
       }
     }
-  }, [ui.activeTab, subway]);
+  }, []);
 
   // Stable callbacks — use getState() for Zustand actions so no subscription needed
   // (Zustand actions are always the same reference; getState() avoids re-render triggers)
