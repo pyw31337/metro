@@ -334,6 +334,7 @@ export default function UnifiedBottomPanel({
     const [stationFacilities, setStationFacilities] = useState<Facility[]>([]);
     const [hasDiapers, setHasDiapers] = useState(false);
     const [shareCopied, setShareCopied] = useState(false);
+    const [now, setNow] = useState(() => Date.now());
     const { tasks, isIngesting } = useIngestion();
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
@@ -400,10 +401,16 @@ export default function UnifiedBottomPanel({
         }
     }, [validationError]);
 
+    // Keep "now" fresh so arrival times in route display don't go stale
+    useEffect(() => {
+        const id = setInterval(() => setNow(Date.now()), 60_000);
+        return () => clearInterval(id);
+    }, []);
+
     useEffect(() => {
         if (endStation !== null) setDestination(endStation);
         if (startStation !== null) setSource(startStation);
-        if (pathResults) setSearchResults([]);
+        if (pathResults) { setSearchResults([]); setIsCollapsed(false); }
     }, [startStation, endStation, pathResults]);
 
     const handleSearch = (val: string, type: "source" | "dest") => {
@@ -520,11 +527,11 @@ export default function UnifiedBottomPanel({
                             <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 border border-black/5 dark:border-white/5 relative">
                                 <button onClick={() => { hapticLight(); if (selectedStrategy === "time") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("time"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최소시간</span>
-                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(now + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                                 </button>
                                 <button onClick={() => { hapticLight(); if (selectedStrategy === "transfer") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("transfer"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
-                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` : new Date(Date.now() + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` : new Date(now + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                                 </button>
                                 <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
                                 <button onClick={() => { hapticLight(); onToggleShowAll(); }} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${showAllRouteBubbles ? "bg-zinc-800 dark:bg-white text-white dark:text-black shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
@@ -560,7 +567,7 @@ export default function UnifiedBottomPanel({
                                             const isStart = idx === 0;
                                             const isEnd = idx === activePath.path.length - 1;
                                             const weight = activePath.weights[idx] ?? 0;
-                                            const arrivalTime = new Date(Date.now() + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                            const arrivalTime = new Date(now + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                                             const transfer = activePath.transfers.find(t => t.stationName === stationName);
                                             const seg = segmentByStation.get(stationName);
                                             const lineColor = seg?.color || '#3b82f6';
@@ -612,7 +619,7 @@ export default function UnifiedBottomPanel({
                                                             </div>
                                                         </div>
                                                         <span className="text-[11px] font-black text-zinc-400 font-mono tracking-tight">
-                                                            {isStart ? new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : arrivalTime}
+                                                            {isStart ? new Date(now).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : arrivalTime}
                                                         </span>
                                                     </div>
                                                 </div>

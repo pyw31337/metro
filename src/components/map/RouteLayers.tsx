@@ -2,7 +2,7 @@
 
 import { Source, Layer, Marker } from "react-map-gl/maplibre";
 import { Flag, MapPin } from "lucide-react";
-import { memo } from "react";
+import { memo, useState, useEffect } from "react";
 
 interface RouteLayersProps {
   activeTab: string;
@@ -29,6 +29,13 @@ const RouteLayers = ({
   verifiedPlats,
   onStationTap
 }: RouteLayersProps) => {
+  // Tick every 60s so arrival times stay fresh
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   if (activeTab !== "subway" && activeTab !== "subway+bus") return null;
 
   return (
@@ -117,10 +124,10 @@ const RouteLayers = ({
               
               <span className="text-[11px] font-black text-zinc-900 dark:text-white leading-tight">
                 {i === 0
-                    ? new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    ? new Date(now).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
                     : timeDisplayMode === "duration"
                     ? `${Math.round(arrivalTimeWeight || 0)}분`
-                    : new Date(Date.now() + (arrivalTimeWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    : new Date(now + (arrivalTimeWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })
                 }
               </span>
 

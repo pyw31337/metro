@@ -213,7 +213,7 @@ const MapPopups = ({
                     <div className="flex items-center gap-1 shrink-0">
                         {activeTab === 'subway' && onRefreshArrival && (
                             <button
-                                onClick={(e) => { e.stopPropagation(); onRefreshArrival(); }}
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); onRefreshArrival(); }}
                                 className={`p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500 transition-all active:scale-90 ${arrivalLoading ? 'animate-spin' : ''}`}
                             >
                                 <RefreshCw size={12} />
@@ -222,6 +222,7 @@ const MapPopups = ({
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
+                                hapticLight();
                                 setPopupCoords(null);
                                 onActiveLineChange(null);
                             }}
@@ -245,12 +246,13 @@ const MapPopups = ({
                             const isActive = activeLine === badge.lineName;
                             
                             return (
-                                <button 
+                                <button
                                     key={idx}
-                                    onClick={(e) => { 
-                                      e.stopPropagation(); 
+                                    onClick={(e) => {
+                                      e.stopPropagation();
                                       e.preventDefault();
-                                      onActiveLineChange(badge.lineName); 
+                                      hapticLight();
+                                      onActiveLineChange(badge.lineName);
                                     }}
                                     className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 scroll-snap-align-start ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
                                     style={{ 
