@@ -236,42 +236,45 @@ export default function Home() {
     waypoints: string[],
     end: string | null
   ) => {
-    if (!start || !end) { route.setPathResults(null); return; }
-    route.setIsCalculating(true);
-    route.setValidationError(null);
+    const rst = useRouteStore.getState();
+    if (!start || !end) { rst.setPathResults(null); return; }
+    rst.setIsCalculating(true);
+    rst.setValidationError(null);
 
     // 버스 경로
-    if (ui.activeTab === 'bus') {
-      const res = findBusPath(start, end, subway.busStops);
-      route.setBusPathResult(res);
-      if (!res) route.setValidationError('no_route');
-      route.setIsCalculating(false);
+    if (useUIStore.getState().activeTab === 'bus') {
+      const res = findBusPath(start, end, useSubwayStore.getState().busStops);
+      rst.setBusPathResult(res);
+      if (!res) rst.setValidationError('no_route');
+      rst.setIsCalculating(false);
       return;
     }
 
     // 지하철 경로 — bus result 초기화
-    route.setBusPathResult(null);
+    rst.setBusPathResult(null);
     const normalize = normalizeStationName;
     const points = [normalize(start), ...waypoints.map(normalize).filter(Boolean), normalize(end)];
 
     try {
       const res = await findPath(points) as Record<string, PathResult>;
-      route.setIsCalculating(false);
+      const rst2 = useRouteStore.getState();
+      rst2.setIsCalculating(false);
       if (res?.time && res?.transfer) {
         hapticSuccess();
-        route.setPathResults({ time: res.time, transfer: res.transfer });
+        rst2.setPathResults({ time: res.time, transfer: res.transfer });
       } else {
         hapticError();
-        route.setPathResults(null);
-        route.setValidationError('no_route');
+        rst2.setPathResults(null);
+        rst2.setValidationError('no_route');
       }
     } catch {
       hapticError();
-      route.setPathResults(null);
-      route.setValidationError('no_route');
-      route.setIsCalculating(false);
+      const rst2 = useRouteStore.getState();
+      rst2.setPathResults(null);
+      rst2.setValidationError('no_route');
+      rst2.setIsCalculating(false);
     }
-  }, [ui.activeTab, subway.busStops, findPath, route]);
+  }, [findPath]);
 
   // start/end/waypoints 바뀔 때마다 자동 탐색
   useEffect(() => {
