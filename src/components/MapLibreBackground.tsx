@@ -66,6 +66,8 @@ interface MapLibreProps {
     onSelectBusRoute?: (routeNo: string, cityCode?: string) => void;
 }
 
+const NOOP = () => {};
+
 // Module-level constant — prevents new array reference on every render, preserving memo(MapBase)
 const INTERACTIVE_LAYER_IDS = [
     'subway-station-circle', 'subway-station-label',
@@ -159,7 +161,7 @@ function MapLibreBackground(props: MapLibreProps) {
         onCenterChange, onBoundsChange, timeDisplayMode, onToggleTimeDisplay,
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
         nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData,
-        onWCClick
+        onWCClick, onSelectBusRoute
     } = props;
 
     const [mapInstance, setMapInstance] = useState<any | null>(null);
@@ -250,10 +252,10 @@ function MapLibreBackground(props: MapLibreProps) {
 
     const handlePopupWCClick = useCallback((item: WCItem | null) => {
         setSelectedWC(item);
-        props.onWCClick(item);
+        onWCClick(item);
         // Keep coords if showing WC popup; clear if dismissed
         setPopupCoords(prev => item ? prev : null);
-    }, [props.onWCClick]);
+    }, [onWCClick]);
 
     const handleMapClick = useCallback((e: any) => {
         const feature = e.features?.[0];
@@ -359,7 +361,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 isLiveArrival={isLiveArrival}
                 onRefreshArrival={onRefreshArrival}
                 timeDisplayMode={timeDisplayMode}
-                onToggleTimeDisplay={onToggleTimeDisplay || (() => {})}
+                onToggleTimeDisplay={onToggleTimeDisplay ?? NOOP}
                 onSetStart={onSetStart}
                 onSetEnd={onSetEnd}
                 onSetWaypoint={onSetWaypoint}
@@ -372,7 +374,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 trainArrivalDetail={trainArrivalDetail}
                 activeLine={activeLine}
                 onActiveLineChange={onActiveLineChange}
-                onSelectBusRoute={props.onSelectBusRoute}
+                onSelectBusRoute={onSelectBusRoute}
                 selectedWC={selectedWC}
                 onWCClick={handlePopupWCClick}
                 isDarkMode={isDarkMode}
