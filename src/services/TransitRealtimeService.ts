@@ -151,6 +151,17 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const arrow = isDownward ? '◀' : '▶';
   const label = dest ? `${arrow} ${dest}행` : (isDownward ? '◀ 하행' : '상행 ▶');
 
+  const arvlCd = train.arvlCd ?? '99';
+
+  // arvlCd → initial animation ratio (where in the prevPos→nextPos→futurePos journey the train is)
+  // '0' 진입:      entering current station (~85% to station)
+  // '1' 당역:      at station (100% = nextPos)
+  // '2' 출발:      just departed (5% into overshoot zone, nextPos→futurePos)
+  // '3' 전역출발:  departed previous station (~25% to current station)
+  // '99' 운행중:   midway estimate
+  const ARVL_RATIO: Record<string, number> = { '0': 0.85, '1': 1.0, '2': 1.05, '3': 0.25 };
+  const initialRatio = ARVL_RATIO[arvlCd] ?? 0.5;
+
   return {
     id: `train-${train.subwayId ?? 'u'}-${train.trainNo}`,
     type: 'subway' as const,
@@ -160,7 +171,8 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
     lineName,
     lineColor: color,
     label,
-    status: train.arvlCd ?? '99',
+    status: arvlCd,
+    initialRatio,
     updnLine: train.updnLine,
     currentStationName: train.statnNm,
     isSimulated,

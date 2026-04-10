@@ -82,18 +82,28 @@ function processUpdates(units: any[]) {
     const existing = state.get(unit.id);
 
     if (!existing) {
-      // 신규 등장 — 페이드-인 시작
+      // 신규 등장 — initialRatio로 올바른 위치에서 시작 (페이드-인)
       const startPos: [number, number] =
         unit.prevPos &&
         (unit.prevPos[0] !== unit.nextPos[0] || unit.prevPos[1] !== unit.nextPos[1])
           ? unit.prevPos
           : unit.nextPos;
 
+      // lastUpdateTime을 과거로 설정해 ratio = initialRatio가 되도록 맞춤
+      // 이렇게 하면 첫 tick에서 열차가 실제 위치(역 진입 중/도착/출발 직후)에 바로 표시됨
+      const startRatio = unit.initialRatio ?? 0;
+      const backwardMs = Math.min(startRatio * ANIM_DURATION, 1.5 * ANIM_DURATION);
+
+      // 출발 이후(ratio ≥ 1.0)이면 nextPos→futurePos 방향으로 bearing 설정
+      const bearingTarget: [number, number] = startRatio >= 1.0
+        ? (unit.futurePos ?? unit.nextPos)
+        : unit.nextPos;
+
       state.set(unit.id, {
         ...unit,
         lastPos: startPos,
-        lastUpdateTime: now,
-        currentBearing: calcBearing(startPos, unit.nextPos),
+        lastUpdateTime: now - backwardMs,
+        currentBearing: calcBearing(startPos, bearingTarget),
         birthTime: now,
         deathTime: null,
       });
@@ -111,10 +121,18 @@ function processUpdates(units: any[]) {
         visualPos = lerp(existing.nextPos, existing.futurePos ?? existing.nextPos, easeInOut(overT));
       }
 
+      const newInitialRatio = unit.initialRatio ?? 0.5;
+
+      // API가 출발(≥1.0)을 반환했는데 아직 접근 중(<1.0)으로 표시되면
+      // lastUpdateTime을 보정해 즉시 오버슈트 구간으로 진입시킴
+      const correctedUpdateTime = (newInitialRatio >= 1.0 && ratio < 1.0)
+        ? now - newInitialRatio * ANIM_DURATION
+        : now;
+
       existing.lastPos        = visualPos;
       existing.nextPos        = unit.nextPos;
       existing.futurePos      = unit.futurePos ?? unit.nextPos;
-      existing.lastUpdateTime = now;
+      existing.lastUpdateTime = correctedUpdateTime;
       existing.lineName       = unit.lineName;
       existing.lineColor      = unit.lineColor;
       existing.label          = unit.label;
