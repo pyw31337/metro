@@ -338,6 +338,7 @@ export default function UnifiedBottomPanel({
     const sourceInputRef = useRef<HTMLInputElement>(null);
     const destInputRef = useRef<HTMLInputElement>(null);
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const routeUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     // Module-level line color map (static, never changes)
     const lineColorById = useMemo(() => new Map(SUBWAY_LINES.map(l => [l.id, l.color])), []);
@@ -414,13 +415,16 @@ export default function UnifiedBottomPanel({
 
     const handleSearch = (val: string, type: "source" | "dest") => {
         setNoRouteStale(false);
-        if (type === "dest") {
-            setDestination(val);
-            onSetDestination?.(val);
-        } else {
-            setSource(val);
-            onSetSource?.(val);
-        }
+        // Local state updates immediately for responsive input display
+        if (type === "dest") setDestination(val);
+        else setSource(val);
+
+        // Debounce store update to avoid triggering route calculation on every keystroke
+        if (routeUpdateRef.current) clearTimeout(routeUpdateRef.current);
+        routeUpdateRef.current = setTimeout(() => {
+            if (type === "dest") onSetDestination?.(val);
+            else onSetSource?.(val);
+        }, 400);
 
         if (!val || val.trim().length === 0) {
             setSearchResults([]);
@@ -461,6 +465,9 @@ export default function UnifiedBottomPanel({
         if (line && !s.name.includes(line.replace('호선', ''))) {
             fullName = `${s.name} (${line.replace('호선', '')})`;
         }
+
+        // Cancel any pending debounced route update — we'll set immediately on selection
+        if (routeUpdateRef.current) clearTimeout(routeUpdateRef.current);
 
         if (activeField === "dest") {
             setDestination(fullName);
