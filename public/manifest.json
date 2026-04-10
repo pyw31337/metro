@@ -38,6 +38,13 @@
       "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
     },
     {
+      "name": "버스 길찾기",
+      "short_name": "버스",
+      "description": "주변 버스정류장 및 노선 안내",
+      "url": "/metro/?tab=bus",
+      "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
+    },
+    {
       "name": "주변 화장실",
       "short_name": "화장실",
       "description": "내 주변 공중화장실 찾기",

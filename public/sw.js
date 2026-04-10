@@ -19,6 +19,7 @@ const DATA_FILES = [
     '/metro/data/master-bus-stops.json',
     '/metro/data/master-bus-routes.json',
     '/metro/data/capitalStations.json',
+    '/metro/data/master-toilets.json',
 ];
 
 self.addEventListener('install', (event) => {

@@ -50,6 +50,8 @@ interface StationMeta {
 
 const STATION_META = new Map<string, StationMeta>();
 const LINE_COLOR   = new Map<string, string>();
+const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
+const LINE_BY_ID   = new Map(SUBWAY_LINES.map(l => [l.id,   l]));
 
 (function buildIndex() {
   for (const line of SUBWAY_LINES) {
@@ -101,7 +103,7 @@ function getAdjacentCoord(
   stationName: string,
   isDownward: boolean
 ): [number, number] | null {
-  const line = SUBWAY_LINES.find(l => l.name === lineName);
+  const line = LINE_BY_NAME.get(lineName);
   if (!line) return null;
   const idx = line.stations.findIndex(s => s.name === stationName);
   if (idx < 0) return null;
@@ -116,7 +118,7 @@ function getNextCoord(
   stationName: string,
   isDownward: boolean
 ): [number, number] | null {
-  const line = SUBWAY_LINES.find(l => l.name === lineName);
+  const line = LINE_BY_NAME.get(lineName);
   if (!line) return null;
   const idx = line.stations.findIndex(s => s.name === stationName);
   if (idx < 0) return null;
@@ -258,7 +260,7 @@ class TransitRealtimeService extends EventEmitter {
     } else {
       // 매 폴링 주기마다 한 역씩 이동
       for (const t of this.simTrains) {
-        const line = SUBWAY_LINES.find(l => l.id === t.lineId);
+        const line = LINE_BY_ID.get(t.lineId);
         if (!line) continue;
         let next = t.stationIndex + t.direction;
         if (next < 0 || next >= line.stations.length) {
@@ -271,7 +273,7 @@ class TransitRealtimeService extends EventEmitter {
 
     const results: any[] = [];
     for (const t of this.simTrains) {
-      const line = SUBWAY_LINES.find(l => l.id === t.lineId);
+      const line = LINE_BY_ID.get(t.lineId);
       if (!line) continue;
       const st       = line.stations[t.stationIndex];
       const terminal = t.direction > 0
