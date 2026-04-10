@@ -5,7 +5,7 @@ import { Popup } from "react-map-gl/maplibre";
 import { X, MapPin, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
-import { getLineShortName, getLineLongName } from "@/utils/stationUtils";
+import { getLineLongName } from "@/utils/stationUtils";
 import { WCItem, BusStop } from "@/types/metro";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
 import { SUBWAY_LINES } from "@/data/subway-lines";
@@ -44,6 +44,18 @@ interface MapPopupsProps {
 }
 
 const LINE_COLOR_MAP = new Map(SUBWAY_LINES.map(l => [l.name, l.color]));
+
+// Reverse index: station name → [{lineName, color}] — O(1) lookup for badges
+const STATION_LINE_IDX = new Map<string, { lineName: string; color: string }[]>();
+for (const l of SUBWAY_LINES) {
+  for (const s of l.stations) {
+    const entry = { lineName: l.name, color: l.color };
+    const existing = STATION_LINE_IDX.get(s.name);
+    if (existing) existing.push(entry);
+    else STATION_LINE_IDX.set(s.name, [entry]);
+  }
+}
+
 const getLineInfo = (lineName: string) => {
     if (!lineName) return { num: '?', color: '#ccc' };
     const num = lineName.replace('호선', '').replace('서울배차', '').trim();
@@ -163,8 +175,7 @@ const MapPopups = ({
   // Default line selection on popup open
   const badges = useMemo(() => {
     if (activeTab !== 'subway' || !selectedStationName) return [];
-    const lines = SUBWAY_LINES.filter(l => l.stations.some(s => s.name === selectedStationName));
-    return lines.map(l => ({ lineName: l.name, color: l.color }));
+    return STATION_LINE_IDX.get(selectedStationName) ?? [];
   }, [activeTab, selectedStationName]);
 
   useEffect(() => {
