@@ -68,6 +68,9 @@ interface MapLibreProps {
 
 const NOOP = () => {};
 
+// Built once at module load — SUBWAY_LINES is static, no need to recompute per-mount
+const SUBWAY_GEOJSON = convertSubwayToGeoJSON();
+
 // Module-level constant — prevents new array reference on every render, preserving memo(MapBase)
 const INTERACTIVE_LAYER_IDS = [
     'subway-station-circle', 'subway-station-label',
@@ -94,7 +97,7 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
     }
 };
 
-const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
+const MapIconRegister = memo(() => {
     const { current: mapRef } = useMap();
     const map = mapRef?.getMap();
 
@@ -104,7 +107,6 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
         const registerIcons = () => {
             const uniqueColors = new Set<string>();
             SUBWAY_LINES.forEach((line: any) => { if (line.color) uniqueColors.add(line.color.toUpperCase()); });
-            stations.forEach(s => { if (s.lineColors) s.lineColors.forEach((c: string) => uniqueColors.add(c.toUpperCase())); });
             
             // Add explicitly required dynamic colors
             uniqueColors.add('FF5722'); // Simulation Color
@@ -147,7 +149,7 @@ const MapIconRegister = memo(({ stations }: { stations: any[] }) => {
         if (map.isStyleLoaded()) registerIcons();
         map.on('style.load', registerIcons);
         return () => { map.off('style.load', registerIcons); };
-    }, [map, stations]);
+    }, [map]);
 
     return null;
 });
@@ -207,7 +209,7 @@ function MapLibreBackground(props: MapLibreProps) {
         return () => transitRealtimeService.untrackBusRoute(cityCode, selectedBusRoute);
     }, [selectedBusRoute, selectedBusStop]);
 
-    const subwayData = useMemo(() => convertSubwayToGeoJSON(), []);
+    const subwayData = SUBWAY_GEOJSON;
     const filteredWCs = useMemo(() => convertWCToGeoJSON(wcItems, wcFilters), [wcItems, wcFilters]);
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
     const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult), [pathResult]);
@@ -339,7 +341,7 @@ function MapLibreBackground(props: MapLibreProps) {
             onBoundsChange={onBoundsChange}
             interactiveLayerIds={INTERACTIVE_LAYER_IDS}
         >
-            <MapIconRegister stations={stations} />
+            <MapIconRegister />
             <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
             <WCLayers wcData={filteredWCs} activeTab={activeTab} />
