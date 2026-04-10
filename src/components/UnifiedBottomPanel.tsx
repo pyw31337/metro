@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Map as MapIcon, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Car, Clock, Phone, Bell, ArrowUpDown, Share2 } from "lucide-react";
+import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Clock, Bell, ArrowUpDown, Share2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
@@ -9,8 +9,6 @@ import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLo
 import type { PathResult, PathStrategy } from "@/utils/pathfinding";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
-import { db } from "@/services/db";
-import { Facility } from "@/types/metro";
 import { useIngestion } from "@/hooks/useIngestion";
 import IngestionProgress from "./IngestionProgress";
 import { useUIStore } from "@/store/useUIStore";
@@ -331,8 +329,6 @@ export default function UnifiedBottomPanel({
     const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
-    const [stationFacilities, setStationFacilities] = useState<Facility[]>([]);
-    const [hasDiapers, setHasDiapers] = useState(false);
     const [shareCopied, setShareCopied] = useState(false);
     const [now, setNow] = useState(() => Date.now());
     const { tasks, isIngesting } = useIngestion();
@@ -374,25 +370,6 @@ export default function UnifiedBottomPanel({
             onLocate("source");
         }
     }, [activeTab, onLocate]);
-
-    useEffect(() => {
-        if (selectedStationName) {
-            const cleanName = selectedStationName.replace(/역$/, '');
-            db.getStationFacilities(cleanName).then(setStationFacilities);
-            
-            // Try matching station name in WC table with flexibility
-            db.wc.where('station').startsWith(cleanName).first().then(wc => {
-                if (wc) setHasDiapers(!!wc.diapers);
-                else {
-                    // Try another variant if direct query fails
-                    db.wc.filter(x => x.name.includes(cleanName)).first().then(w => setHasDiapers(!!w?.diapers));
-                }
-            });
-        } else {
-            setStationFacilities([]);
-            setHasDiapers(false);
-        }
-    }, [selectedStationName]);
 
     useEffect(() => {
         if (validationError) {
