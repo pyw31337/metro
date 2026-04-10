@@ -154,11 +154,14 @@ const MapPopups = ({
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
-    const shortActive = activeLine.replace(/[^0-9]/g, '');
-    return stationArrivals.filter(arr => 
-        arr.lineName.includes(activeLine) || 
-        arr.lineName.includes(shortActive) ||
-        (shortActive && arr.subwayId.endsWith(shortActive.padStart(2, '0')))
+    // activeLine 예: "2호선", "수인분당선", "경의중앙선"
+    // lineName은 "2호선", "수인분당선" 등 정확히 일치하거나 포함 관계
+    const norm = (s: string) => s.replace(/[호\s]/g, '').replace(/선$/, '');
+    const activeNorm = norm(activeLine);
+    return stationArrivals.filter(arr =>
+        arr.lineName === activeLine ||
+        arr.lineName.includes(activeLine) ||
+        norm(arr.lineName) === activeNorm
     );
   }, [stationArrivals, activeLine]);
 

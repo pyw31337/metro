@@ -1,31 +1,306 @@
 [
-  {
-    "stationName": "영등포구청",
-    "transfers": [
-      { "from": "2", "to": "5", "platform": "2-4" },
-      { "from": "5", "to": "2", "platform": "6-3" }
-    ]
-  },
-  {
-    "stationName": "신도림",
-    "transfers": [
-      { "from": "1", "to": "2", "platform": "4-1" },
-      { "from": "2", "to": "1", "platform": "3-2" }
-    ]
-  },
-  {
-    "stationName": "대림",
-    "transfers": [
-      { "from": "2", "to": "7", "platform": "1-1" },
-      { "from": "7", "to": "2", "platform": "8-4" }
-    ]
-  },
-  {
-    "stationName": "고속터미널",
-    "transfers": [
-      { "from": "3", "to": "7", "platform": "5-2" },
-      { "from": "7", "to": "3", "platform": "4-1" },
-      { "from": "9", "to": "3", "platform": "2-2" }
-    ]
-  }
+  { "stationName": "영등포구청", "transfers": [
+    { "from": "2", "to": "5", "platform": "2-4" },
+    { "from": "5", "to": "2", "platform": "6-3" }
+  ]},
+  { "stationName": "신도림", "transfers": [
+    { "from": "1", "to": "2", "platform": "4-1" },
+    { "from": "2", "to": "1", "platform": "3-2" }
+  ]},
+  { "stationName": "대림", "transfers": [
+    { "from": "2", "to": "7", "platform": "1-1" },
+    { "from": "7", "to": "2", "platform": "8-4" }
+  ]},
+  { "stationName": "고속터미널", "transfers": [
+    { "from": "3", "to": "7", "platform": "5-2" },
+    { "from": "7", "to": "3", "platform": "4-1" },
+    { "from": "9", "to": "3", "platform": "2-2" },
+    { "from": "3", "to": "9", "platform": "8-4" },
+    { "from": "9", "to": "7", "platform": "5-2" },
+    { "from": "7", "to": "9", "platform": "4-1" }
+  ]},
+  { "stationName": "서울역", "transfers": [
+    { "from": "1", "to": "4", "platform": "10-4" },
+    { "from": "4", "to": "1", "platform": "1-1" },
+    { "from": "1", "to": "경의중앙", "platform": "1-3" },
+    { "from": "경의중앙", "to": "1", "platform": "10-2" },
+    { "from": "4", "to": "공항철도", "platform": "1-4" },
+    { "from": "공항철도", "to": "4", "platform": "8-1" }
+  ]},
+  { "stationName": "시청", "transfers": [
+    { "from": "1", "to": "2", "platform": "2-3" },
+    { "from": "2", "to": "1", "platform": "9-2" }
+  ]},
+  { "stationName": "종로3가", "transfers": [
+    { "from": "1", "to": "3", "platform": "4-4" },
+    { "from": "3", "to": "1", "platform": "7-1" },
+    { "from": "1", "to": "5", "platform": "4-4" },
+    { "from": "5", "to": "1", "platform": "1-2" },
+    { "from": "3", "to": "5", "platform": "1-4" },
+    { "from": "5", "to": "3", "platform": "8-1" }
+  ]},
+  { "stationName": "동대문역사문화공원", "transfers": [
+    { "from": "2", "to": "4", "platform": "1-4" },
+    { "from": "4", "to": "2", "platform": "10-1" },
+    { "from": "2", "to": "5", "platform": "1-2" },
+    { "from": "5", "to": "2", "platform": "10-4" },
+    { "from": "4", "to": "5", "platform": "1-1" },
+    { "from": "5", "to": "4", "platform": "10-4" }
+  ]},
+  { "stationName": "충무로", "transfers": [
+    { "from": "3", "to": "4", "platform": "5-3" },
+    { "from": "4", "to": "3", "platform": "6-2" }
+  ]},
+  { "stationName": "교대", "transfers": [
+    { "from": "2", "to": "3", "platform": "3-3" },
+    { "from": "3", "to": "2", "platform": "8-2" }
+  ]},
+  { "stationName": "강남", "transfers": [
+    { "from": "2", "to": "신분당", "platform": "2-1" },
+    { "from": "신분당", "to": "2", "platform": "9-4" }
+  ]},
+  { "stationName": "양재", "transfers": [
+    { "from": "3", "to": "신분당", "platform": "1-3" },
+    { "from": "신분당", "to": "3", "platform": "10-2" }
+  ]},
+  { "stationName": "사당", "transfers": [
+    { "from": "2", "to": "4", "platform": "1-1" },
+    { "from": "4", "to": "2", "platform": "10-4" }
+  ]},
+  { "stationName": "이수", "transfers": [
+    { "from": "4", "to": "7", "platform": "4-4" },
+    { "from": "7", "to": "4", "platform": "7-1" }
+  ]},
+  { "stationName": "총신대입구", "transfers": [
+    { "from": "4", "to": "7", "platform": "4-4" },
+    { "from": "7", "to": "4", "platform": "7-1" }
+  ]},
+  { "stationName": "약수", "transfers": [
+    { "from": "3", "to": "6", "platform": "2-3" },
+    { "from": "6", "to": "3", "platform": "9-2" }
+  ]},
+  { "stationName": "삼각지", "transfers": [
+    { "from": "4", "to": "6", "platform": "3-2" },
+    { "from": "6", "to": "4", "platform": "8-3" }
+  ]},
+  { "stationName": "공덕", "transfers": [
+    { "from": "5", "to": "6", "platform": "2-2" },
+    { "from": "6", "to": "5", "platform": "9-3" },
+    { "from": "5", "to": "경의중앙", "platform": "1-1" },
+    { "from": "경의중앙", "to": "5", "platform": "10-4" },
+    { "from": "5", "to": "공항철도", "platform": "1-4" },
+    { "from": "공항철도", "to": "5", "platform": "10-1" },
+    { "from": "6", "to": "공항철도", "platform": "2-4" },
+    { "from": "공항철도", "to": "6", "platform": "9-1" }
+  ]},
+  { "stationName": "합정", "transfers": [
+    { "from": "2", "to": "6", "platform": "9-3" },
+    { "from": "6", "to": "2", "platform": "2-2" }
+  ]},
+  { "stationName": "홍대입구", "transfers": [
+    { "from": "2", "to": "공항철도", "platform": "1-2" },
+    { "from": "공항철도", "to": "2", "platform": "10-3" },
+    { "from": "2", "to": "경의중앙", "platform": "1-4" },
+    { "from": "경의중앙", "to": "2", "platform": "10-1" }
+  ]},
+  { "stationName": "디지털미디어시티", "transfers": [
+    { "from": "6", "to": "공항철도", "platform": "3-3" },
+    { "from": "공항철도", "to": "6", "platform": "8-2" },
+    { "from": "6", "to": "경의중앙", "platform": "3-1" },
+    { "from": "경의중앙", "to": "6", "platform": "8-4" },
+    { "from": "공항철도", "to": "경의중앙", "platform": "5-2" },
+    { "from": "경의중앙", "to": "공항철도", "platform": "6-3" }
+  ]},
+  { "stationName": "왕십리", "transfers": [
+    { "from": "2", "to": "5", "platform": "1-4" },
+    { "from": "5", "to": "2", "platform": "10-1" },
+    { "from": "2", "to": "경의중앙", "platform": "10-4" },
+    { "from": "경의중앙", "to": "2", "platform": "1-1" },
+    { "from": "2", "to": "수인분당", "platform": "10-2" },
+    { "from": "수인분당", "to": "2", "platform": "1-3" },
+    { "from": "5", "to": "수인분당", "platform": "10-2" },
+    { "from": "수인분당", "to": "5", "platform": "1-3" }
+  ]},
+  { "stationName": "청량리", "transfers": [
+    { "from": "1", "to": "경의중앙", "platform": "10-1" },
+    { "from": "경의중앙", "to": "1", "platform": "1-4" },
+    { "from": "1", "to": "수인분당", "platform": "10-3" },
+    { "from": "수인분당", "to": "1", "platform": "1-2" },
+    { "from": "1", "to": "경춘", "platform": "10-2" },
+    { "from": "경춘", "to": "1", "platform": "1-3" }
+  ]},
+  { "stationName": "회기", "transfers": [
+    { "from": "1", "to": "경의중앙", "platform": "10-2" },
+    { "from": "경의중앙", "to": "1", "platform": "1-3" },
+    { "from": "1", "to": "경춘", "platform": "10-2" },
+    { "from": "경춘", "to": "1", "platform": "1-3" }
+  ]},
+  { "stationName": "석계", "transfers": [
+    { "from": "1", "to": "6", "platform": "3-2" },
+    { "from": "6", "to": "1", "platform": "8-3" }
+  ]},
+  { "stationName": "태릉입구", "transfers": [
+    { "from": "6", "to": "7", "platform": "4-1" },
+    { "from": "7", "to": "6", "platform": "7-4" }
+  ]},
+  { "stationName": "도봉산", "transfers": [
+    { "from": "1", "to": "7", "platform": "1-4" },
+    { "from": "7", "to": "1", "platform": "10-1" }
+  ]},
+  { "stationName": "가산디지털단지", "transfers": [
+    { "from": "1", "to": "7", "platform": "2-3" },
+    { "from": "7", "to": "1", "platform": "9-2" }
+  ]},
+  { "stationName": "온수", "transfers": [
+    { "from": "1", "to": "7", "platform": "10-4" },
+    { "from": "7", "to": "1", "platform": "1-1" }
+  ]},
+  { "stationName": "부평구청", "transfers": [
+    { "from": "7", "to": "인천1", "platform": "8-1" },
+    { "from": "인천1", "to": "7", "platform": "3-4" }
+  ]},
+  { "stationName": "선릉", "transfers": [
+    { "from": "2", "to": "수인분당", "platform": "10-2" },
+    { "from": "수인분당", "to": "2", "platform": "1-3" }
+  ]},
+  { "stationName": "한양대", "transfers": [
+    { "from": "2", "to": "수인분당", "platform": "1-1" },
+    { "from": "수인분당", "to": "2", "platform": "10-4" }
+  ]},
+  { "stationName": "복정", "transfers": [
+    { "from": "8", "to": "수인분당", "platform": "4-2" },
+    { "from": "수인분당", "to": "8", "platform": "7-3" }
+  ]},
+  { "stationName": "수서", "transfers": [
+    { "from": "3", "to": "수인분당", "platform": "1-2" },
+    { "from": "수인분당", "to": "3", "platform": "10-3" }
+  ]},
+  { "stationName": "잠실", "transfers": [
+    { "from": "2", "to": "8", "platform": "8-4" },
+    { "from": "8", "to": "2", "platform": "3-1" }
+  ]},
+  { "stationName": "천호", "transfers": [
+    { "from": "5", "to": "8", "platform": "1-2" },
+    { "from": "8", "to": "5", "platform": "10-3" }
+  ]},
+  { "stationName": "강동", "transfers": [
+    { "from": "5", "to": "8", "platform": "1-2" },
+    { "from": "8", "to": "5", "platform": "10-3" }
+  ]},
+  { "stationName": "당산", "transfers": [
+    { "from": "2", "to": "9", "platform": "1-3" },
+    { "from": "9", "to": "2", "platform": "10-2" }
+  ]},
+  { "stationName": "여의도", "transfers": [
+    { "from": "5", "to": "9", "platform": "4-1" },
+    { "from": "9", "to": "5", "platform": "7-4" }
+  ]},
+  { "stationName": "노량진", "transfers": [
+    { "from": "1", "to": "9", "platform": "9-1" },
+    { "from": "9", "to": "1", "platform": "2-4" }
+  ]},
+  { "stationName": "동작", "transfers": [
+    { "from": "4", "to": "9", "platform": "1-2" },
+    { "from": "9", "to": "4", "platform": "10-3" }
+  ]},
+  { "stationName": "신논현", "transfers": [
+    { "from": "9", "to": "신분당", "platform": "4-4" },
+    { "from": "신분당", "to": "9", "platform": "7-1" }
+  ]},
+  { "stationName": "봉은사", "transfers": [
+    { "from": "9", "to": "수인분당", "platform": "3-3" },
+    { "from": "수인분당", "to": "9", "platform": "8-2" }
+  ]},
+  { "stationName": "종합운동장", "transfers": [
+    { "from": "2", "to": "9", "platform": "9-2" },
+    { "from": "9", "to": "2", "platform": "2-3" }
+  ]},
+  { "stationName": "미금", "transfers": [
+    { "from": "수인분당", "to": "신분당", "platform": "1-2" },
+    { "from": "신분당", "to": "수인분당", "platform": "10-3" }
+  ]},
+  { "stationName": "정자", "transfers": [
+    { "from": "수인분당", "to": "신분당", "platform": "1-4" },
+    { "from": "신분당", "to": "수인분당", "platform": "10-1" }
+  ]},
+  { "stationName": "광교중앙", "transfers": [
+    { "from": "수인분당", "to": "신분당", "platform": "1-1" },
+    { "from": "신분당", "to": "수인분당", "platform": "10-4" }
+  ]},
+  { "stationName": "인천논현", "transfers": [
+    { "from": "수인분당", "to": "인천2", "platform": "1-3" },
+    { "from": "인천2", "to": "수인분당", "platform": "10-2" }
+  ]},
+  { "stationName": "소사", "transfers": [
+    { "from": "1", "to": "서해", "platform": "1-2" },
+    { "from": "서해", "to": "1", "platform": "10-3" }
+  ]},
+  { "stationName": "부천종합운동장", "transfers": [
+    { "from": "7", "to": "서해", "platform": "2-1" },
+    { "from": "서해", "to": "7", "platform": "9-4" }
+  ]},
+  { "stationName": "김포공항", "transfers": [
+    { "from": "5", "to": "공항철도", "platform": "1-4" },
+    { "from": "공항철도", "to": "5", "platform": "10-1" },
+    { "from": "5", "to": "김포골드", "platform": "1-2" },
+    { "from": "김포골드", "to": "5", "platform": "10-3" },
+    { "from": "공항철도", "to": "김포골드", "platform": "3-2" },
+    { "from": "김포골드", "to": "공항철도", "platform": "8-3" }
+  ]},
+  { "stationName": "지축", "transfers": [
+    { "from": "3", "to": "경의중앙", "platform": "1-3" },
+    { "from": "경의중앙", "to": "3", "platform": "10-2" }
+  ]},
+  { "stationName": "서울숲", "transfers": [
+    { "from": "수인분당", "to": "경의중앙", "platform": "1-3" },
+    { "from": "경의중앙", "to": "수인분당", "platform": "10-2" }
+  ]},
+  { "stationName": "을지로3가", "transfers": [
+    { "from": "2", "to": "3", "platform": "6-4" },
+    { "from": "3", "to": "2", "platform": "5-1" }
+  ]},
+  { "stationName": "을지로4가", "transfers": [
+    { "from": "2", "to": "5", "platform": "10-1" },
+    { "from": "5", "to": "2", "platform": "1-4" }
+  ]},
+  { "stationName": "신촌", "transfers": [
+    { "from": "2", "to": "경의중앙", "platform": "1-2" },
+    { "from": "경의중앙", "to": "2", "platform": "10-3" }
+  ]},
+  { "stationName": "금정", "transfers": [
+    { "from": "1", "to": "4", "platform": "5-3" },
+    { "from": "4", "to": "1", "platform": "6-2" }
+  ]},
+  { "stationName": "오금", "transfers": [
+    { "from": "3", "to": "5", "platform": "8-4" },
+    { "from": "5", "to": "3", "platform": "3-1" }
+  ]},
+  { "stationName": "방화", "transfers": [
+    { "from": "5", "to": "공항철도", "platform": "10-3" },
+    { "from": "공항철도", "to": "5", "platform": "1-2" }
+  ]},
+  { "stationName": "부평", "transfers": [
+    { "from": "1", "to": "인천1", "platform": "10-4" },
+    { "from": "인천1", "to": "1", "platform": "1-1" }
+  ]},
+  { "stationName": "수원", "transfers": [
+    { "from": "1", "to": "수인분당", "platform": "1-3" },
+    { "from": "수인분당", "to": "1", "platform": "10-2" }
+  ]},
+  { "stationName": "인덕원", "transfers": [
+    { "from": "4", "to": "수인분당", "platform": "1-1" },
+    { "from": "수인분당", "to": "4", "platform": "10-4" }
+  ]},
+  { "stationName": "상왕십리", "transfers": [
+    { "from": "2", "to": "수인분당", "platform": "1-3" },
+    { "from": "수인분당", "to": "2", "platform": "10-2" }
+  ]},
+  { "stationName": "신이문", "transfers": [
+    { "from": "1", "to": "경의중앙", "platform": "2-1" },
+    { "from": "경의중앙", "to": "1", "platform": "9-4" }
+  ]},
+  { "stationName": "가좌", "transfers": [
+    { "from": "경의중앙", "to": "공항철도", "platform": "4-1" },
+    { "from": "공항철도", "to": "경의중앙", "platform": "7-4" }
+  ]}
 ]

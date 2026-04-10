@@ -3,7 +3,7 @@ import { fetchTransferPlatform } from "@/services/arrivalApi";
 import { PathResult } from "@/types/metro";
 import { STATION_LINE_IDX } from "@/data/subway-lines";
 
-export const useTransferVerification = (pathResult: PathResult | null, stations?: any[]) => {
+export const useTransferVerification = (pathResult: PathResult | null) => {
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
     const fetchingRef = useRef<Set<string>>(new Set());
     // Keep a ref to the latest verifiedPlats to avoid stale closures in async callbacks
@@ -54,12 +54,12 @@ export const useTransferVerification = (pathResult: PathResult | null, stations?
                 fetchingRef.current.add(key);
                 try {
                     const plat = await fetchTransferPlatform(curr, common[0], outLines[0]);
-                    setVerifiedPlats(prev => ({
-                        ...prev,
-                        [key]: plat || "정보없음"
-                    }));
+                    if (plat) {
+                        setVerifiedPlats(prev => ({ ...prev, [key]: plat }));
+                    }
+                    // plat이 null이면 key를 세팅하지 않아 UI에서 숨김 처리됨
                 } catch {
-                    setVerifiedPlats(prev => ({ ...prev, [key]: "정보없음" }));
+                    // 조회 실패 시 key 미세팅 → UI 숨김
                 } finally {
                     fetchingRef.current.delete(key);
                 }

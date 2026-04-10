@@ -284,12 +284,15 @@ export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds
 /**
  * Merges live API data with scheduled DB data to ensure no "정보 없음" states.
  */
-export const mergeLiveAndScheduled = (live: StationArrival[], scheduled: StationArrival[]): StationArrival[] => {
-    const upLive = live.filter(l => l.updnLine.includes('상행') || l.updnLine.includes('내선'));
-    const downLive = live.filter(l => !l.updnLine.includes('상행') && !l.updnLine.includes('내선'));
+const isUpDirection = (updnLine: string) =>
+    updnLine.includes('상행') || updnLine.includes('내선') || updnLine.includes('상선');
 
-    const upSched = scheduled.filter(s => s.updnLine.includes('상행') || s.updnLine.includes('내선'));
-    const downSched = scheduled.filter(s => !s.updnLine.includes('상행') && !s.updnLine.includes('내선'));
+export const mergeLiveAndScheduled = (live: StationArrival[], scheduled: StationArrival[]): StationArrival[] => {
+    const upLive   = live.filter(l => isUpDirection(l.updnLine));
+    const downLive = live.filter(l => !isUpDirection(l.updnLine));
+
+    const upSched   = scheduled.filter(s => isUpDirection(s.updnLine));
+    const downSched = scheduled.filter(s => !isUpDirection(s.updnLine));
 
     const mergeSide = (lSide: StationArrival[], sSide: StationArrival[]) => {
         const side = [...lSide];

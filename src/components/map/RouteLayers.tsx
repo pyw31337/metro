@@ -131,20 +131,19 @@ const RouteLayers = ({
                 }
               </span>
 
-              {platformInfo && (
-                <div className="flex items-center gap-1 justify-center mt-0.5">
-                  <div className={`w-1 h-1 rounded-full ${!verifiedPlats[`${name}-${f.properties.fromLine}-${f.properties.toLine}`] ? 'bg-amber-500 animate-pulse' : 'bg-blue-500'}`} />
-                  <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
-                    {(() => {
-                        const key = `${name}-${f.properties.fromLine}-${f.properties.toLine}`;
-                        const plat = verifiedPlats[key];
-                        if (plat && plat !== "정보없음") return `환승 ${plat}`;
-                        if (plat === "정보없음") return "정보 없음";
-                        return ""; // Hide "Checking..." status per user request
-                    })()}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const key = `${name}-${f.properties.fromLine}-${f.properties.toLine}`;
+                const plat = verifiedPlats[key];
+                if (!platformInfo || !plat) return null;
+                return (
+                  <div className="flex items-center gap-1 justify-center mt-0.5">
+                    <div className="w-1 h-1 rounded-full bg-blue-500" />
+                    <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
+                      환승 {plat}
+                    </span>
+                  </div>
+                );
+              })()}
             </button>
           </Marker>
         );
