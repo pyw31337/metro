@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { X, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Wind } from "lucide-react";
 import { motion } from "framer-motion";
+import { hapticLight } from "@/utils/haptic";
 
 interface WeatherData {
     address: string;
@@ -43,14 +44,20 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
 
+    // Snapshot lat/lng at mount — do NOT re-fetch when map pans (lat/lng changes in parent)
+    const mountLat = useRef(lat);
+    const mountLng = useRef(lng);
+
     useEffect(() => {
         const fetchData = async () => {
             setLoading(true);
+            const snapLat = mountLat.current;
+            const snapLng = mountLng.current;
             try {
                 // 1. Reverse Geocoding
-                const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=14&addressdetails=1`);
+                const geoRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${snapLat}&lon=${snapLng}&zoom=14&addressdetails=1`);
                 const geoJson = await geoRes.json();
-                
+
                 // Extract Gu and Dong specifically
                 const addr = geoJson.address;
                 const gu = addr.city_district || addr.borough || addr.suburb || "";
@@ -58,7 +65,7 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
                 const formattedAddress = `${gu} ${dong}`.trim() || geoJson.display_name.split(',')[0];
 
                 // 2. Weather Forecast (14 days)
-                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=14`);
+                const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${snapLat}&longitude=${snapLng}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=14`);
                 const weatherJson = await weatherRes.json();
 
                 setData({
@@ -73,7 +80,8 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
         };
 
         fetchData();
-    }, [lat, lng]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only fetch once on mount, not on every map pan
 
     const displayDays = isExpanded ? (data?.daily.time || []) : (data?.daily.time.slice(0, 7) || []);
 
@@ -96,7 +104,7 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
                                 주간날씨
                             </h3>
                         </div>
-                        <button onClick={onClose} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
+                        <button onClick={() => { hapticLight(); onClose(); }} className="p-2 hover:bg-black/5 dark:hover:bg-white/5 rounded-full transition-colors">
                             <X size={18} className="text-zinc-400" />
                         </button>
                     </div>
@@ -131,7 +139,7 @@ export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: 
 
                                 {data && data.daily.time.length > 7 && (
                                     <button
-                                        onClick={() => setIsExpanded(v => !v)}
+                                        onClick={() => { hapticLight(); setIsExpanded(v => !v); }}
                                         className="w-full py-3 rounded-2xl bg-zinc-100 dark:bg-white/5 hover:bg-zinc-200 dark:hover:bg-white/10 text-zinc-600 dark:text-zinc-400 text-[11px] font-black transition-all"
                                     >
                                         {isExpanded ? '접기' : '7일 더보기'}
