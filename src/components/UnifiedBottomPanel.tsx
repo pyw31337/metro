@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Clock, Bell, ArrowUpDown, Share2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
 import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
@@ -781,14 +781,23 @@ export default function UnifiedBottomPanel({
                     )}
 
                     <div className="flex items-center gap-2">
-                        <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl">
+                        <LayoutGroup id="tab-bar">
+                        <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl relative">
                             {TABS.map((tab) => (
-                                <button key={tab.id} onClick={() => { hapticLight(); onTabChange(tab.id); }} className={`flex-1 flex flex-col items-center justify-center py-1 rounded-lg transition-all ${activeTab === tab.id ? "bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm" : "text-zinc-400"}`}>
-                                    {tab.icon}
-                                    <span className="text-[9px] font-black mt-0.5">{tab.label}</span>
+                                <button key={tab.id} onClick={() => { hapticLight(); onTabChange(tab.id); }} className={`flex-1 relative flex flex-col items-center justify-center py-1 rounded-lg transition-colors ${activeTab === tab.id ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
+                                    {activeTab === tab.id && (
+                                        <motion.div
+                                            layoutId="tab-indicator"
+                                            className="absolute inset-0 bg-white dark:bg-zinc-800 rounded-lg shadow-sm"
+                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                        />
+                                    )}
+                                    <span className="relative z-10">{tab.icon}</span>
+                                    <span className="relative z-10 text-[9px] font-black mt-0.5">{tab.label}</span>
                                 </button>
                             ))}
                         </div>
+                        </LayoutGroup>
                         {activeTab !== "wc" && (
                             <>
                                 <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { hapticLight(); setValidationError("source"); return; } if (!destination) { hapticLight(); setValidationError("dest"); return; } hapticMedium(); onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
