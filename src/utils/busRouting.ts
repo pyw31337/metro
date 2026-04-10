@@ -24,27 +24,35 @@ const getDistance = (lat1: number, lng1: number, lat2: number, lng2: number) => 
  * Finds optimized bus paths including transfers and nearby stop discovery.
  * High-fidelity implementation using spatial candidate search and optimized transfer discovery.
  */
-export const findBusPath = (startName: string, endName: string, busStops: BusStop[]): BusPathResult | null => {
+export const findBusPath = (
+    startName: string,
+    endName: string,
+    busStops: BusStop[],
+    userLocation?: [number, number] | null   // [lat, lng] — GPS fallback for "내 위치"
+): BusPathResult | null => {
     // 1. Helper to normalize input (handling "내 위치 : 강남역 (내 위치)" etc)
     const normalize = (s: string) => {
         if (!s) return "";
         let clean = s.includes(' : ') ? s.split(' : ')[1] : s;
         clean = clean.replace(/\(.*\)/g, '').trim();
-        return clean.split(' ')[0]; // Take first word for broader matching
+        // Keep up to 4 chars for Korean station names (don't split on space aggressively)
+        return clean.split(' ')[0].replace(/역$/, '');
     };
 
+    const isMyLocation = (s: string) => s.includes('내 위치') || s.includes('(내 위치)');
     const nStart = normalize(startName);
     const nEnd = normalize(endName);
 
-    // 2. Extract coordinates if input is "내 위치" format
-    const getCoords = (s: string) => {
-        const match = s.match(/\[([\d.]+),\s*([\d.]+)\]/); // Sometimes passed as string coords
+    // 2. GPS 좌표 추출 — "내 위치" 입력이면 userLocation 사용
+    const getCoords = (s: string): [number, number] | null => {
+        const match = s.match(/\[([\d.]+),\s*([\d.]+)\]/);
         if (match) return [parseFloat(match[1]), parseFloat(match[2])];
+        if (isMyLocation(s) && userLocation) return userLocation; // [lat, lng]
         return null;
     };
 
     const startCoords = getCoords(startName);
-    const endCoords = getCoords(endName);
+    const endCoords   = getCoords(endName);
 
     // 3. Find candidate stops
     // We look for stops matching the name OR near the coordinates (within ~500m)

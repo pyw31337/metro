@@ -74,9 +74,10 @@ const SUBWAY_GEOJSON = convertSubwayToGeoJSON();
 // Module-level constant — prevents new array reference on every render, preserving memo(MapBase)
 const INTERACTIVE_LAYER_IDS = [
     'subway-station-circle', 'subway-station-label',
-    'subway-line-layer', 'subway-line-interaction', 'bus-unclustered',
-    'bus-unclustered-hitbox', 'bus-clusters',
-    'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-unclustered-label', 'wc-clusters'
+    'subway-line-layer', 'subway-line-interaction',
+    'bus-unclustered', 'bus-unclustered-hitbox', 'bus-clusters', 'bus-station-label',
+    'train-layer',
+    'wc-dot-0', 'wc-dot-1', 'wc-dot-2', 'wc-icon',
 ];
 
 const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
@@ -315,16 +316,11 @@ function MapLibreBackground(props: MapLibreProps) {
 
         const coords = e.lngLat;
         const map = mapInstanceRef.current;
-        if (feature.layer.id === 'wc-clusters' || feature.layer.id === 'bus-clusters') {
-            const sourceId = feature.layer.id === 'wc-clusters' ? 'wc-source' : 'bus-source';
-            const source = map.getSource(sourceId);
+        if (feature.layer.id === 'bus-clusters') {
+            const source = map.getSource('bus-source');
             source.getClusterExpansionZoom(feature.properties.cluster_id, (err: any, zoom: number) => {
                 if (err) return;
-                map.flyTo({
-                    center: [coords.lng, coords.lat],
-                    zoom: zoom + 1,
-                    duration: 500
-                });
+                map.flyTo({ center: [coords.lng, coords.lat], zoom: zoom + 1, duration: 500 });
             });
             return;
         }
@@ -340,7 +336,7 @@ function MapLibreBackground(props: MapLibreProps) {
             }
             setSelectedWC(null);
             onWCClick(null);
-        } else if (feature.layer.id === 'wc-unclustered' || feature.layer.id === 'wc-unclustered-label') {
+        } else if (['wc-dot-0','wc-dot-1','wc-dot-2','wc-icon'].includes(feature.layer.id)) {
             const fp = feature.properties;
             const wcItem: WCItem = {
                 id: fp.id, name: fp.name, lat: coords.lat, lng: coords.lng,
@@ -384,7 +380,7 @@ function MapLibreBackground(props: MapLibreProps) {
             <MapIconRegister />
             <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} selectedStationName={selectedStationName} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
-            <WCLayers wcData={filteredWCs} activeTab={activeTab} />
+            <WCLayers wcData={filteredWCs} activeTab={activeTab} selectedWCId={selectedWC?.id ?? null} />
             <RouteLayers
                 activeTab={activeTab} pathLineData={pathGeoJSON.lines} routeStationData={pathGeoJSON.stations}
                 showAllRouteBubbles={showAllRouteBubbles} focusedBubble={focusedBubble} setFocusedBubble={setFocusedBubble}

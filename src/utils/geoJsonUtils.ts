@@ -91,7 +91,9 @@ export const convertWCToGeoJSON = (items: WCItem[], filters?: WCFilters): GeoJso
       geometry: { type: "Point" as const, coordinates: [item.lng, item.lat] },
       properties: {
         ...item,
-        type: "wc"
+        type: "wc",
+        // 우선순위: 0=역사내, 1=역근처, 2=독립 — 줌 기반 밀도에 사용
+        priority: item.isInsideGate ? 0 : (item.station ? 1 : 2),
       }
     }))
   };

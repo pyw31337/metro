@@ -55,26 +55,34 @@ const getLineInfo = (lineName: string) => {
     return { num, color };
 };
 
-const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, address?: string }) => (
-  <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
-    <a 
-      href={`https://map.naver.com/v5/search/${encodeURIComponent(address || `${lat},${lng}`)}`} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
-    >
-      네이버 거리뷰
-    </a>
-    <a 
-      href={`https://map.kakao.com/link/roadview/${lat},${lng}`} 
-      target="_blank" 
-      rel="noopener noreferrer"
-      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
-    >
-      카카오 로드뷰
-    </a>
-  </div>
-);
+const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, address?: string }) => {
+  // Naver Map: 좌표 기반 지도 열기 (거리뷰 버튼은 지도 내에서 클릭)
+  // 모바일: nmap 딥링크, 웹 fallback: 좌표 + zoom17
+  const naverWeb = address
+    ? `https://map.naver.com/v5/search/${encodeURIComponent(address)}?c=${lng},${lat},17,0,0,0,dh`
+    : `https://map.naver.com/v5/entry/coordinates/${lng},${lat}?c=${lng},${lat},17,0,0,0,dh`;
+  const naverApp = `nmap://map?lat=${lat}&lng=${lng}&zoom=17${address ? `&query=${encodeURIComponent(address)}` : ''}&appname=metro.live`;
+  const kakao    = `https://map.kakao.com/link/roadview/${lat},${lng}`;
+  return (
+    <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
+      <a
+        href={naverApp}
+        onClick={e => { e.preventDefault(); window.location.href = naverApp; setTimeout(() => { window.open(naverWeb, '_blank'); }, 300); }}
+        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
+      >
+        네이버지도
+      </a>
+      <a
+        href={kakao}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
+      >
+        카카오 로드뷰
+      </a>
+    </div>
+  );
+};
 
 const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
   const { arrivals, loading } = useBusArrivals(stopId, cityCode);

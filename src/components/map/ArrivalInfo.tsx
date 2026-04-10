@@ -6,6 +6,38 @@ import { SUBWAY_LINES } from "@/data/subway-lines";
 import { normStation, lineStationIdxMap } from "@/data/stationRegistry";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 공유 1초 틱 (모듈 레벨 singleton) — N개 도착 아이템이 interval 1개만 사용
+// ─────────────────────────────────────────────────────────────────────────────
+const _tickListeners = new Set<() => void>();
+let _tickInterval: ReturnType<typeof setInterval> | null = null;
+
+function _subscribe(fn: () => void) {
+  _tickListeners.add(fn);
+  if (!_tickInterval) {
+    _tickInterval = setInterval(() => { _tickListeners.forEach(f => f()); }, 1000);
+  }
+}
+function _unsubscribe(fn: () => void) {
+  _tickListeners.delete(fn);
+  if (_tickListeners.size === 0 && _tickInterval) {
+    clearInterval(_tickInterval);
+    _tickInterval = null;
+  }
+}
+
+/** 모든 도착 아이템이 공유하는 1초 틱 — 1개의 setInterval만 실행됨 */
+function useSharedTick(active: boolean): number {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!active) return;
+    const fn = () => setTick(t => t + 1);
+    _subscribe(fn);
+    return () => _unsubscribe(fn);
+  }, [active]);
+  return tick;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Station index lookup — delegates to stationRegistry (built once at module init)
 // ─────────────────────────────────────────────────────────────────────────────
 const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
@@ -58,19 +90,10 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     return t;
   })());
   const mountedAt = useRef(Date.now());
+  const needsCountdown = initialSec.current > 0 && arr.arvlCd !== '1';
 
-  // 1초 tick — timeSec > 0 인 동안만 구동
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    const elapsed = () => Math.floor((Date.now() - mountedAt.current) / 1000);
-    const remaining = () => Math.max(0, initialSec.current - elapsed());
-    if (remaining() <= 0) return;
-    const id = setInterval(() => {
-      setTick(t => t + 1);
-      if (remaining() <= 0) clearInterval(id);
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
+  // 공유 1초 틱 — N개 아이템이 interval 1개만 사용
+  useSharedTick(needsCountdown);
 
   const elapsed = Math.floor((Date.now() - mountedAt.current) / 1000);
   const timeSec = initialSec.current - elapsed;

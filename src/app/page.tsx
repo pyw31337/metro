@@ -332,7 +332,7 @@ export default function Home() {
 
     // 버스 경로
     if (useUIStore.getState().activeTab === 'bus') {
-      const res = findBusPath(start, end, useSubwayStore.getState().busStops);
+      const res = findBusPath(start, end, useSubwayStore.getState().busStops, useMapStore.getState().userLocation);
       rst.setBusPathResult(res);
       if (!res && showError) rst.setValidationError('no_route');
       rst.setIsCalculating(false);
