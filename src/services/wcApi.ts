@@ -208,6 +208,35 @@ async function fetchGyeonggiWC(apiKey: string): Promise<WCItem[]> {
 }
 
 /**
+ * 인천 공중화장실 정적 데이터 (서구·미추홀구 CSV → JSON 변환)
+ * 출처: 인천광역시 공공데이터포털 / data.go.kr CSV 다운로드
+ * 포함: 서구 26건, 미추홀구 65건 (위도·경도 있는 항목)
+ */
+async function fetchIncheonWC(): Promise<WCItem[]> {
+  try {
+    const res = await fetch('/incheon-wc.json', { next: { revalidate: 86400 * 7 } });
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    const data: any[] = await res.json();
+    return data.map((r, i) => ({
+      id: r.id ?? `ic-wc-${i}`,
+      name: r.name ?? '인천화장실',
+      lat: r.lat,
+      lng: r.lng,
+      address: r.address ?? '',
+      openTime: r.openTime ?? '',
+      maleStalls: r.maleStalls ?? 0,
+      maleUrinals: r.maleUrinals ?? 0,
+      femaleStalls: r.femaleStalls ?? 0,
+      accessible: r.accessible ?? false,
+      gender: r.gender ?? 'separated',
+    } as WCItem)).filter(r => r.lat && r.lng);
+  } catch (err) {
+    console.warn('[WC] Incheon static data load failed:', err);
+    return [];
+  }
+}
+
+/**
  * 전용 서비스: 모든 화장실 데이터 통합 (서울/경기/인천)
  */
 export async function fetchWCData(): Promise<WCItem[]> {
@@ -216,6 +245,10 @@ export async function fetchWCData(): Promise<WCItem[]> {
   const ggKey = "bb76ade40706413f977749ddd28d5e38"; // Provided GG Key
 
   let allItems: WCItem[] = [];
+
+  // 0. 인천 정적 데이터 (서구·미추홀구 CSV 기반, API 의존 없음)
+  const incheonData = await fetchIncheonWC();
+  allItems = [...allItems, ...incheonData];
 
   // 1. 경기도 데이터 (최신)
   if (ggKey) {
