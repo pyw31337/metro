@@ -201,6 +201,8 @@ function MapLibreBackground(props: MapLibreProps) {
     const filteredWCs = useMemo(() => convertWCToGeoJSON(wcItems, wcFilters), [wcItems, wcFilters]);
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
     const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult), [pathResult]);
+    // O(1) bus stop lookup for click handler (busStops can be 50K+ items)
+    const busStopById = useMemo(() => new Map(busStops.map(s => [s.id, s])), [busStops]);
 
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
@@ -275,7 +277,7 @@ function MapLibreBackground(props: MapLibreProps) {
             setSelectedTrain(null);
             setFocusedBubble(null);
         } else if (feature.layer.id === 'bus-unclustered' || feature.layer.id === 'bus-station-label' || feature.layer.id === 'bus-unclustered-hitbox') {
-            const stop = busStops.find(s => s.id === feature.properties.id);
+            const stop = busStopById.get(feature.properties.id);
             if (stop) {
                 onBusStopClick(stop, [coords.lat, coords.lng]);
                 setPopupCoords([coords.lng, coords.lat]);
@@ -288,7 +290,7 @@ function MapLibreBackground(props: MapLibreProps) {
         } else if (feature.layer.id === 'subway-line-layer' || feature.layer.id === 'subway-line-interaction') {
             onActiveLineChange(feature.properties.name);
         }
-    }, [busStops, onStationClick, onBusStopClick, onWCClick, activeLine, onActiveLineChange, mapInstance]);
+    }, [busStopById, onStationClick, onBusStopClick, onWCClick, activeLine, onActiveLineChange, mapInstance]);
 
     return (
         <MapBase
