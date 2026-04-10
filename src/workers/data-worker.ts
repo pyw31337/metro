@@ -83,6 +83,12 @@ const FAST_TRANSFER_SET = new Set([
   '이촌', '수서', '복정',
 ]);
 
+// Module-level line and station index maps (built once at module init)
+const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
+const LINE_STATION_IDX = new Map(
+  SUBWAY_LINES.map(l => [l.name, new Map(l.stations.map((s, i) => [s.name, i]))])
+);
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 그래프 빌드 (모듈 초기화 시 1회 실행)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -498,12 +504,14 @@ function makeSegment(
   lineName: string,
   stations: string[]
 ): { line: string; direction: '0' | '1'; stations: string[] } {
-  const lineData = SUBWAY_LINES.find(l => l.name === lineName);
   let direction: '0' | '1' = '1';
-  if (lineData && stations.length >= 2) {
-    const i1 = lineData.stations.findIndex(s => s.name === stations[0]);
-    const i2 = lineData.stations.findIndex(s => s.name === stations[stations.length - 1]);
-    direction = i2 > i1 ? '1' : '0';
+  if (stations.length >= 2) {
+    const idxMap = LINE_STATION_IDX.get(lineName);
+    if (idxMap) {
+      const i1 = idxMap.get(stations[0]) ?? -1;
+      const i2 = idxMap.get(stations[stations.length - 1]) ?? -1;
+      if (i1 !== -1 && i2 !== -1) direction = i2 > i1 ? '1' : '0';
+    }
   }
   return { line: lineName, direction, stations };
 }
