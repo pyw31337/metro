@@ -448,10 +448,15 @@ export default function UnifiedBottomPanel({
                     return (b as any).lines?.length - (a as any).lines?.length;
                 });
 
-            const filteredBus = (busStops || [])
-                .filter(s => s.name.toLowerCase().includes(q) || s.name.toLowerCase().includes(raw))
-                .map(s => ({ ...s, type: 'bus' }))
-                .slice(0, 3);
+            // Early-termination bus stop search — can be 50K+ items
+            const filteredBus: any[] = [];
+            for (const s of (busStops || [])) {
+                const n = s.name.toLowerCase();
+                if (n.includes(q) || n.includes(raw)) {
+                    filteredBus.push({ ...s, type: 'bus' });
+                    if (filteredBus.length === 3) break;
+                }
+            }
 
             setSearchResults([...filteredSubway, ...filteredBus].slice(0, 8));
             setActiveIndex(-1);
