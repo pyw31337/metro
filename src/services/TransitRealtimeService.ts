@@ -52,6 +52,10 @@ const STATION_META = new Map<string, StationMeta>();
 const LINE_COLOR   = new Map<string, string>();
 const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
 const LINE_BY_ID   = new Map(SUBWAY_LINES.map(l => [l.id,   l]));
+// Per-line O(1) station index: Map<lineName, Map<stationName, stationIndex>>
+const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
+  SUBWAY_LINES.map(l => [l.name, new Map(l.stations.map((s, i) => [s.name, i]))])
+);
 
 (function buildIndex() {
   for (const line of SUBWAY_LINES) {
@@ -105,7 +109,7 @@ function getAdjacentCoord(
 ): [number, number] | null {
   const line = LINE_BY_NAME.get(lineName);
   if (!line) return null;
-  const idx = line.stations.findIndex(s => s.name === stationName);
+  const idx = LINE_STATION_IDX.get(lineName)?.get(stationName) ?? -1;
   if (idx < 0) return null;
   const prevIdx = isDownward ? idx - 1 : idx + 1;
   if (prevIdx < 0 || prevIdx >= line.stations.length) return null;
@@ -120,7 +124,7 @@ function getNextCoord(
 ): [number, number] | null {
   const line = LINE_BY_NAME.get(lineName);
   if (!line) return null;
-  const idx = line.stations.findIndex(s => s.name === stationName);
+  const idx = LINE_STATION_IDX.get(lineName)?.get(stationName) ?? -1;
   if (idx < 0) return null;
   const nextIdx = isDownward ? idx + 1 : idx - 1;
   if (nextIdx < 0 || nextIdx >= line.stations.length) return null;

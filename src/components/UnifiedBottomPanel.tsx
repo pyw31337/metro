@@ -64,6 +64,9 @@ const LINE_COLORS: Record<string, string> = {
     "공항철도": "#0090D2", "경춘선": "#0C8E72", "인천1호선": "#7CA8D5", "인천2호선": "#ED8B00"
 };
 
+// Module-level: SUBWAY_LINES never changes so no need for useMemo inside component
+const LINE_COLOR_BY_ID = new Map(SUBWAY_LINES.map(l => [l.id, l.color]));
+
 const getLineBadge = (lineStr: string) => {
     const cleanLine = lineStr.replace(/[()]/g, "").trim();
     const color = LINE_COLORS[cleanLine] || LINE_COLORS[cleanLine + "호선"] || "#999999";
@@ -340,19 +343,16 @@ export default function UnifiedBottomPanel({
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const routeUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Module-level line color map (static, never changes)
-    const lineColorById = useMemo(() => new Map(SUBWAY_LINES.map(l => [l.id, l.color])), []);
-
     // Per-route memos — only recompute when activePath changes
     const segmentByStation = useMemo(() => {
         const m = new Map<string, { line: string; color: string }>();
         if (!activePath?.segments) return m;
         activePath.segments.forEach(seg => {
-            const color = lineColorById.get(seg.line) || LINE_COLORS[seg.line] || '#6b7280';
+            const color = LINE_COLOR_BY_ID.get(seg.line) || LINE_COLORS[seg.line] || '#6b7280';
             seg.stations.forEach(s => m.set(s, { line: seg.line, color }));
         });
         return m;
-    }, [activePath, lineColorById]);
+    }, [activePath]);
 
     const transferByStation = useMemo(() => {
         const m = new Map(activePath?.transfers?.map(t => [t.stationName, t]) ?? []);
@@ -584,7 +584,7 @@ export default function UnifiedBottomPanel({
                                             const seg = segmentByStation.get(stationName);
                                             const lineColor = seg?.color || '#3b82f6';
                                             const tc = transfer
-                                                ? (lineColorById.get(transfer.toLine) || LINE_COLORS[transfer.toLine] || '#3b82f6')
+                                                ? (LINE_COLOR_BY_ID.get(transfer.toLine) || LINE_COLORS[transfer.toLine] || '#3b82f6')
                                                 : '#3b82f6';
 
                                             return (
