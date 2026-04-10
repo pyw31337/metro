@@ -447,6 +447,10 @@ export default function Home() {
 
   const handleTabChange = useCallback((tab: any) => useUIStore.getState().setActiveTab(tab), []);
 
+  const handleSearch = useCallback((start: string, end: string) => {
+    calculatePath(start, useRouteStore.getState().waypoints, end);
+  }, [calculatePath]);
+
   // ─────────────────────────────────────────────────────────────────────────
   // 렌더
   // ─────────────────────────────────────────────────────────────────────────
@@ -502,7 +506,7 @@ export default function Home() {
       <UnifiedBottomPanel
         activeTab={ui.activeTab}
         onTabChange={handleTabChange}
-        onSearch={(start, end) => calculatePath(start, route.waypoints, end)}
+        onSearch={handleSearch}
         onReset={handleReset}
         startStation={route.startStation}
         endStation={route.endStation}
