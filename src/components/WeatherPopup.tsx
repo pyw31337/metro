@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { X, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Wind } from "lucide-react";
 import { motion } from "framer-motion";
 import { hapticLight } from "@/utils/haptic";
+import { useMapStore } from "@/store/useMapStore";
 
 interface WeatherData {
     address: string;
@@ -16,10 +17,7 @@ interface WeatherData {
 }
 
 interface WeatherPopupProps {
-    lat: number;
-    lng: number;
     onClose: () => void;
-    isDarkMode?: boolean;
 }
 
 const getWeatherIcon = (code: number) => {
@@ -39,14 +37,15 @@ const getDayName = (dateStr: string) => {
     return days[d.getDay()];
 };
 
-export default function WeatherPopup({ lat, lng, onClose, isDarkMode = false }: WeatherPopupProps) {
+export default function WeatherPopup({ onClose }: WeatherPopupProps) {
     const [data, setData] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Snapshot lat/lng at mount — do NOT re-fetch when map pans (lat/lng changes in parent)
-    const mountLat = useRef(lat);
-    const mountLng = useRef(lng);
+    // Snapshot center at mount via getState() — no subscription, no re-renders when map pans
+    const mountCenter = useRef(useMapStore.getState().center);
+    const mountLat = useRef(mountCenter.current[0]);
+    const mountLng = useRef(mountCenter.current[1]);
 
     useEffect(() => {
         const fetchData = async () => {

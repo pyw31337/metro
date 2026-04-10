@@ -399,23 +399,26 @@ export default function Home() {
     }
   }, [ui.activeTab, subway]);
 
-  // Stable callbacks for MapLibreBackground to preserve memo boundary
+  // Stable callbacks — use getState() for Zustand actions so no subscription needed
+  // (Zustand actions are always the same reference; getState() avoids re-render triggers)
   const handleCenterChange = useCallback((lat: number, lng: number) => {
-    mapSt.setCenter([lat, lng]);
-  }, [mapSt]);
+    useMapStore.getState().setCenter([lat, lng]);
+  }, []);
 
   const handleActiveLineChange = useCallback((line: string | null) => {
-    if (line) mapSt.toggleActiveLine(line);
-    else mapSt.setActiveLine(null);
-  }, [mapSt]);
+    const st = useMapStore.getState();
+    if (line) st.toggleActiveLine(line);
+    else st.setActiveLine(null);
+  }, []);
 
   const handleMapReady = useCallback((m: any) => { mapRef.current = m; }, []);
 
   const handleToggleShowAll = useCallback(() => {
-    route.setShowAllRouteBubbles(!route.showAllRouteBubbles);
-  }, [route]);
+    const s = useRouteStore.getState();
+    s.setShowAllRouteBubbles(!s.showAllRouteBubbles);
+  }, []);
 
-  const handleTabChange = useCallback((tab: any) => ui.setActiveTab(tab), [ui]);
+  const handleTabChange = useCallback((tab: any) => useUIStore.getState().setActiveTab(tab), []);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 렌더
@@ -521,9 +524,6 @@ export default function Home() {
       <AnimatePresence>
         {ui.weatherOpen && (
           <WeatherPopup
-            lat={mapSt.center[0]}
-            lng={mapSt.center[1]}
-            isDarkMode={ui.isDarkMode}
             onClose={() => ui.setWeatherOpen(false)}
           />
         )}
