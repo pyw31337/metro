@@ -4,7 +4,7 @@ import { memo, useState, useEffect, useRef, useCallback } from "react";
 import { Source, Layer, Popup, useMap } from "react-map-gl/maplibre";
 import { transitRealtimeService, RealtimeUnit, SimStatus } from '@/services/TransitRealtimeService';
 import { PathResult } from "@/types/metro";
-import { SUBWAY_LINES } from "@/data/subway-lines";
+import { normStation, stationIdx } from "@/data/stationRegistry";
 
 interface Props {
   activeTab: string;
@@ -19,22 +19,6 @@ interface TrainInfo {
 }
 
 const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
-
-// Module-level O(1) line lookup
-const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
-
-// Pre-built station index maps for O(1) lookup
-const STATION_IDX: Map<string, Map<string, number>> = new Map(
-  SUBWAY_LINES.map(l => [
-    l.name,
-    new Map(l.stations.map((s, i) => [s.name, i]))
-  ])
-);
-
-// 역명 정규화: 역 suffix · 괄호 제거 (module level for reuse)
-const normName = (n: string) => n.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
-const lookupIdx = (m: Map<string, number>, name: string): number =>
-  m.get(name) ?? m.get(normName(name)) ?? -1;
 
 const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => {
   const { current: mapRef } = useMap();
@@ -70,20 +54,25 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   }, []);
 
   // ─── 레이어 z-order 보장 ───
+  // sourcedata는 매 프레임 발생할 수 있으므로 debounce로 처리
   useEffect(() => {
     if (!map) return;
     const TRAIN_LAYERS = ['transit-trains', 'transit-train-label', 'transit-buses'];
     const ensureOnTop = () => {
       try { TRAIN_LAYERS.forEach(id => { if (map.getLayer(id)) map.moveLayer(id); }); } catch {}
     };
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const debouncedEnsure = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(ensureOnTop, 200);
+    };
     if (map.isStyleLoaded()) ensureOnTop();
     map.on('style.load', ensureOnTop);
-    map.on('sourcedata', ensureOnTop);
-    const interval = setInterval(ensureOnTop, 2000);
+    map.on('sourcedata', debouncedEnsure);
     return () => {
       map.off('style.load', ensureOnTop);
-      map.off('sourcedata', ensureOnTop);
-      clearInterval(interval);
+      map.off('sourcedata', debouncedEnsure);
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, [map]);
 
@@ -139,8 +128,8 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             if (seg && seg.stations.length >= 2) {
               const exitStation    = seg.stations[seg.stations.length - 1];
               const preExitStation = seg.stations[seg.stations.length - 2];
-              const curNorm = normName(boardedUnit.currentStationName);
-              const preNorm = normName(preExitStation);
+              const curNorm = normStation(boardedUnit.currentStationName);
+              const preNorm = normStation(preExitStation);
               // 1정거장 전 역에 진입하는 순간 알림 (중복 방지)
               if (curNorm === preNorm && alertedStationRef.current !== exitStation) {
                 alertedStationRef.current = exitStation;
@@ -468,12 +457,10 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   if (unitDir !== seg.direction) return false;
 
   if (!unit.currentStationName) return true;
-  const idxMap = STATION_IDX.get(unit.lineName);
-  if (!idxMap) return true;
-
-  const currIdx  = lookupIdx(idxMap, unit.currentStationName);
-  const entryIdx = lookupIdx(idxMap, seg.stations[0]);
-  const exitIdx  = lookupIdx(idxMap, seg.stations[seg.stations.length - 1]);
+  const ln = unit.lineName;
+  const currIdx  = stationIdx(ln, unit.currentStationName);
+  const entryIdx = stationIdx(ln, seg.stations[0]);
+  const exitIdx  = stationIdx(ln, seg.stations[seg.stations.length - 1]);
 
   if (entryIdx < 0 || exitIdx < 0) return false;
   if (currIdx < 0) return true;

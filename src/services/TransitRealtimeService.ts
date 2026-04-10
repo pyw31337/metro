@@ -2,6 +2,7 @@ import { EventEmitter } from 'events';
 import { fetchTrainPositions } from './arrivalApi';
 import { MetropolitanBusService } from './busApi';
 import { SUBWAY_LINES } from '@/data/subway-lines';
+import { normStation } from '@/data/stationRegistry';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공개 인터페이스
@@ -71,7 +72,7 @@ const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
         });
       }
       // 괄호 제거 + 역 접미사 제거 별칭도 등록
-      const alias = key.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
+      const alias = normStation(key);
       if (alias !== key && !STATION_META.has(alias)) {
         STATION_META.set(alias, STATION_META.get(key)!);
       }
@@ -82,7 +83,7 @@ const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
 function getStationMeta(name: string): StationMeta | null {
   if (!name) return null;
   if (STATION_META.has(name)) return STATION_META.get(name)!;
-  const clean = name.replace(/\(.*?\)/g, '').replace(/역$/, '').trim();
+  const clean = normStation(name);
   return STATION_META.get(clean) ?? STATION_META.get(clean + '역') ?? null;
 }
 
@@ -164,7 +165,7 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
 
   // 노선 위 1차원 순서 정보: 워커에서 충돌 방지에 사용
   const stationIdx = LINE_STATION_IDX.get(lineName)?.get(train.statnNm)
-    ?? LINE_STATION_IDX.get(lineName)?.get(train.statnNm.replace(/역$/, ''))
+    ?? LINE_STATION_IDX.get(lineName)?.get(normStation(train.statnNm))
     ?? 0;
   const lineDir = isDownward ? 1 : -1; // +1 = 하행(idx 증가), -1 = 상행(idx 감소)
 

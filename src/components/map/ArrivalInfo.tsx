@@ -3,16 +3,13 @@
 import { useState, useEffect, useRef } from "react";
 import { StationArrival } from "@/types/metro";
 import { SUBWAY_LINES } from "@/data/subway-lines";
+import { normStation, lineStationIdxMap } from "@/data/stationRegistry";
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Pre-built station position lookup (module-level, built once)
-// Map<lineName, Map<normalizedName, index>>
+// Station index lookup — delegates to stationRegistry (built once at module init)
 // ─────────────────────────────────────────────────────────────────────────────
 const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
-  SUBWAY_LINES.map(l => [
-    l.name,
-    new Map(l.stations.map((s, i) => [s.name.replace(/역$/, ''), i]))
-  ])
+  SUBWAY_LINES.map(l => [l.name, lineStationIdxMap(l.name)!])
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -210,8 +207,8 @@ function parseStopsLeft(arr: StationArrival): string {
 
   // arvlMsg3 기반 거리 계산
   if (!arr.isScheduled && msg3 && arr.statnNm) {
-    const cleanTrain = msg3.replace(/역$/, '');
-    const cleanUser  = arr.statnNm.replace(/역$/, '');
+    const cleanTrain = normStation(msg3);
+    const cleanUser  = normStation(arr.statnNm);
     if (cleanTrain !== cleanUser) {
       let dist = -1;
       for (const [, idxMap] of LINE_STATION_IDX) {

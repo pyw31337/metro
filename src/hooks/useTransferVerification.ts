@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { fetchTransferPlatform } from "@/services/arrivalApi";
 import { PathResult } from "@/types/metro";
-import { STATION_LINE_IDX } from "@/data/subway-lines";
+import { stationLines } from "@/data/stationRegistry";
 
 export const useTransferVerification = (pathResult: PathResult | null) => {
     const [verifiedPlats, setVerifiedPlats] = useState<Record<string, string>>({});
@@ -21,16 +21,8 @@ export const useTransferVerification = (pathResult: PathResult | null) => {
         }
 
         const fetchAll = async () => {
-            // O(1) lookup via module-level STATION_LINE_IDX — no stations.find() needed
-            const getLine = (sName: string): string[] => {
-                // Try exact name first (handles "양평(5호선)", "양평(경의중앙선)" etc.)
-                const direct = STATION_LINE_IDX.get(sName) ?? STATION_LINE_IDX.get(sName.replace(/역$/, ''));
-                if (direct && direct.length > 0) return direct.map(e => e.lineName);
-                // Fallback: strip parenthesised line hint and retry
-                const cleanName = sName.replace(/\(.*\)/, '').replace(/역$/, '').trim();
-                const entries = STATION_LINE_IDX.get(cleanName) ?? STATION_LINE_IDX.get(cleanName + '역') ?? [];
-                return entries.map(e => e.lineName);
-            };
+            const getLine = (sName: string): string[] =>
+                stationLines(sName).map(e => e.lineName);
 
             const promises = pathResult.path.map(async (curr, idx) => {
                 if (idx === 0) return;

@@ -1,5 +1,6 @@
 import { TimetableEntry, StationArrival } from '@/types/metro';
 import { SUBWAY_LINES } from './subway-lines';
+import { normStation } from './stationRegistry';
 
 // 노선별 배차 간격 [피크(분), 비피크(분)]
 const LINE_HEADWAY: Record<string, [number, number]> = {
@@ -18,7 +19,7 @@ function generateFromSubwayLines(stationName: string): StationArrival[] {
   const isPeak = (h >= 7 && h <= 9) || (h >= 17 && h <= 20);
 
   const results: StationArrival[] = [];
-  const clean = stationName.replace(/역$/, '').trim();
+  const clean = normStation(stationName);
 
   for (const line of SUBWAY_LINES) {
     // 이 역이 해당 노선에 있는지 확인
@@ -185,7 +186,7 @@ export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?:
 
     const dayType = now.getDay() === 0 ? "sun" : (now.getDay() === 6 ? "sat" : "week");
 
-    const clean = stationName.replace(/역$/, '').trim();
+    const clean = normStation(stationName);
     const allEntries = STATIC_TIMETABLE_REGISTRY[clean] || STATIC_TIMETABLE_REGISTRY[stationName] || [];
     const filteredByDay = allEntries.filter(e => e.dayType === dayType);
 

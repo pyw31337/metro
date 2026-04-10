@@ -2,6 +2,7 @@ import { db } from './db';
 import { Station, Facility, WCItem, OperationalData, TimetableEntry, TransferInfo, ParkingLot, StationExit } from '@/types/metro';
 import { fetchWithFallbacks } from './arrivalApi';
 import { normalizeLineName } from '@/utils/stationUtils';
+import { normStation } from '@/data/stationRegistry';
 
 export interface IngestionTask {
     id: string;
@@ -473,7 +474,7 @@ export class DataIngestionService {
                 // Try exact match then fuzzy (strip parentheses)
                 let existing = await db.getStationByName(item.STATION_NM);
                 if (!existing) {
-                    const cleanName = item.STATION_NM.replace(/\(.*\)/, '').replace(/역$/, '').trim();
+                    const cleanName = normStation(item.STATION_NM);
                     existing = await db.getStationByName(cleanName);
                 }
 

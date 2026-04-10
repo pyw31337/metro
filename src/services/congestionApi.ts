@@ -1,4 +1,5 @@
 import { fetchWithFallbacks } from './arrivalApi';
+import { normStation } from '@/data/stationRegistry';
 
 export interface CongestionData {
     areaName: string;
@@ -115,7 +116,7 @@ const STATION_AREA_MAP: Record<string, string> = {
 };
 
 export const fetchStationCongestion = async (stationName: string): Promise<CongestionData | null> => {
-    const cleanName = stationName.replace(/역$/, '');
+    const cleanName = normStation(stationName);
     const areaName = STATION_AREA_MAP[cleanName] || STATION_AREA_MAP[stationName];
     
     if (!areaName) return null;

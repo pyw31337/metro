@@ -44,11 +44,91 @@ export default function Home() {
   const mapRef = useRef<any>(null);
   const initLocRef = useRef(false);
 
-  // ── stores ──
-  const route   = useRouteStore();
-  const mapSt   = useMapStore();
-  const ui      = useUIStore();
-  const subway  = useSubwayStore();
+  // ── stores (selectors로 필요한 슬라이스만 구독 → 불필요한 re-render 방지) ──
+  // useRouteStore
+  const startStation        = useRouteStore(s => s.startStation);
+  const endStation          = useRouteStore(s => s.endStation);
+  const waypoints           = useRouteStore(s => s.waypoints);
+  const pathResults         = useRouteStore(s => s.pathResults);
+  const isCalculating       = useRouteStore(s => s.isCalculating);
+  const validationError     = useRouteStore(s => s.validationError);
+  const selectedStrategy    = useRouteStore(s => s.selectedStrategy);
+  const showAllRouteBubbles = useRouteStore(s => s.showAllRouteBubbles);
+  const busPathResult       = useRouteStore(s => s.busPathResult);
+  const routeActions        = useRouteStore(s => ({
+    setStartStation:      s.setStartStation,
+    setEndStation:        s.setEndStation,
+    addWaypoint:          s.addWaypoint,
+    setPathResults:       s.setPathResults,
+    setIsCalculating:     s.setIsCalculating,
+    setValidationError:   s.setValidationError,
+    setSelectedStrategy:  s.setSelectedStrategy,
+    setShowAllRouteBubbles: s.setShowAllRouteBubbles,
+    setBusPathResult:     s.setBusPathResult,
+    reset:                s.reset,
+    getActivePath:        s.getActivePath,
+  }));
+
+  // useMapStore
+  const userLocation      = useMapStore(s => s.userLocation);
+  const activeLine        = useMapStore(s => s.activeLine);
+  const nearestStation    = useMapStore(s => s.nearestStation);
+  const nearestBusStop    = useMapStore(s => s.nearestBusStop);
+  const nearestWC         = useMapStore(s => s.nearestWC);
+  const isLocating        = useMapStore(s => s.isLocating);
+  const locatingTimer     = useMapStore(s => s.locatingTimer);
+  const hasInitialLocation = useMapStore(s => s.hasInitialLocation);
+  const mapActions        = useMapStore(s => ({
+    setUserLocation:   s.setUserLocation,
+    setActiveLine:     s.setActiveLine,
+    toggleActiveLine:  s.toggleActiveLine,
+    setNearestStation: s.setNearestStation,
+    setNearestBusStop: s.setNearestBusStop,
+    setNearestWC:      s.setNearestWC,
+    setIsLocating:     s.setIsLocating,
+    setLocatingTimer:  s.setLocatingTimer,
+    setHasInitialLocation: s.setHasInitialLocation,
+  }));
+
+  // useUIStore
+  const activeTab         = useUIStore(s => s.activeTab);
+  const isDarkMode        = useUIStore(s => s.isDarkMode);
+  const weatherOpen       = useUIStore(s => s.weatherOpen);
+  const wcFilters         = useUIStore(s => s.wcFilters);
+  const timeDisplayMode   = useUIStore(s => s.timeDisplayMode);
+  const uiActions         = useUIStore(s => ({
+    setActiveTab:          s.setActiveTab,
+    toggleDarkMode:        s.toggleDarkMode,
+    toggleWeather:         s.toggleWeather,
+    setWeatherOpen:        s.setWeatherOpen,
+    toggleTimeDisplayMode: s.toggleTimeDisplayMode,
+    setTimeDisplayMode:    s.setTimeDisplayMode,
+  }));
+
+  // useSubwayStore
+  const selectedStationName = useSubwayStore(s => s.selectedStationName);
+  const selectedBusStop     = useSubwayStore(s => s.selectedBusStop);
+  const selectedWC          = useSubwayStore(s => s.selectedWC);
+  const selectedBusRoute    = useSubwayStore(s => s.selectedBusRoute);
+  const routePathData       = useSubwayStore(s => s.routePathData);
+  const busStops            = useSubwayStore(s => s.busStops);
+  const wcItems             = useSubwayStore(s => s.wcItems);
+  const subwayActions       = useSubwayStore(s => ({
+    setSelectedStationName: s.setSelectedStationName,
+    setSelectedBusStop:     s.setSelectedBusStop,
+    setSelectedWC:          s.setSelectedWC,
+    setBusStops:            s.setBusStops,
+    setWcItems:             s.setWcItems,
+    setNearestWCs:          s.setNearestWCs,
+    clearStationSelection:  s.clearStationSelection,
+    setRoutePathData:       s.setRoutePathData,
+  }));
+
+  // ── 편의 별칭 (기존 코드 최소 수정) ──
+  const route   = { startStation, endStation, waypoints, pathResults, isCalculating, validationError, selectedStrategy, showAllRouteBubbles, busPathResult, ...routeActions, getActivePath: routeActions.getActivePath };
+  const mapSt   = { userLocation, activeLine, nearestStation, nearestBusStop, nearestWC, isLocating, locatingTimer, hasInitialLocation, ...mapActions };
+  const ui      = { activeTab, isDarkMode, weatherOpen, wcFilters, timeDisplayMode, ...uiActions };
+  const subway  = { selectedStationName, selectedBusStop, selectedWC, selectedBusRoute, routePathData, busStops, wcItems, ...subwayActions };
 
   // ── 온라인/오프라인 상태 ──
   const [isOffline, setIsOffline] = useState(false);

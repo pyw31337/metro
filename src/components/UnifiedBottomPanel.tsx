@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import * as Hangul from "hangul-js";
-import { Station, SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
+import { Station, SUBWAY_LINES } from "@/data/subway-lines";
+import { normStation, stationLines } from "@/data/stationRegistry";
 import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
 import type { PathResult } from "@/types/metro";
 import type { PathStrategy } from "@/store/useRouteStore";
@@ -285,7 +286,7 @@ const WCPanel = memo(() => {
 });
 WCPanel.displayName = "WCPanel";
 
-export default function UnifiedBottomPanel({
+const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     activeTab,
     onTabChange,
     onSearch,
@@ -354,9 +355,7 @@ export default function UnifiedBottomPanel({
 
     const badges = useMemo(() => {
         if (!selectedStationName) return [];
-        const cleanName = selectedStationName.replace(/역+$/, '');
-        const entries = STATION_LINE_IDX.get(cleanName) ?? STATION_LINE_IDX.get(cleanName + '역') ?? [];
-        return entries.map(e => ({ num: getLineShortName(e.lineName), color: e.color, lineName: e.lineName }));
+        return stationLines(selectedStationName).map(e => ({ num: getLineShortName(e.lineName), color: e.color, lineName: e.lineName }));
     }, [selectedStationName]);
 
     useEffect(() => {
@@ -422,7 +421,7 @@ export default function UnifiedBottomPanel({
         searchDebounceRef.current = setTimeout(() => {
             const raw = val.toLowerCase().trim();
             // Strip common Korean station suffixes so "강남역" finds "강남"
-            const q = raw.replace(/역$/, '').trim() || raw;
+            const q = normStation(raw) || raw;
             const filteredSubway = stations
                 .filter(s => matchChosung(q, s.name) || matchChosung(raw, s.name) || s.name.toLowerCase().includes(q))
                 .map(s => ({ ...s, type: 'subway' }))
@@ -861,4 +860,6 @@ export default function UnifiedBottomPanel({
             </motion.div>
         </div>
     );
-}
+});
+
+export default UnifiedBottomPanel;

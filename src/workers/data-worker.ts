@@ -400,14 +400,14 @@ self.onmessage = async (e: MessageEvent) => {
 
         // 환승 메타데이터 조회 (DB)
         // DB는 정규화된 노선명("5", "2")으로 저장되므로 조회 전에 정규화
-        const normLine = (s: string) => s.replace(/호선$|선$/, '');
+        const lineToCode = (s: string) => s.replace(/호선$|선$/, '');
         const pathTransfers: any[] = [];
         for (let i = 1; i < fullLinePath.length; i++) {
           const fromLine = fullLinePath[i - 1];
           const toLine   = fullLinePath[i];
           if (fromLine && toLine && fromLine !== toLine) {
             const stationName = fullPath[i];
-            const tInfo = await db.getTransferInfo(stationName, normLine(fromLine), normLine(toLine));
+            const tInfo = await db.getTransferInfo(stationName, lineToCode(fromLine), lineToCode(toLine));
             let fastStr: string | null = null;
             if (tInfo?.fastCar || tInfo?.fastDoor) {
               fastStr = [tInfo.fastCar, tInfo.fastDoor].filter(Boolean).join('-');

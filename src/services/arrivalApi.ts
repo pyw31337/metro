@@ -5,6 +5,7 @@ import { getStaticTimetable, getEstimatedArrivalsFromStatic } from '@/data/stati
 import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
 import { normalizeLineName } from '@/utils/stationUtils';
+import { normStation } from '@/data/stationRegistry';
 
 const LINE_ID_MAP: { [key: string]: string } = {
     "1": "1001", "2": "1002", "3": "1003", "4": "1004", "5": "1005",
@@ -354,7 +355,7 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
 
 export const fetchTransferPlatform = async (stationName: string, fromLine: string, toLine: string) => {
     if (!stationName) return null;
-    const cleanStation = stationName.replace(/\(.*\)/, '').replace(/역$/, '').trim();
+    const cleanStation = normStation(stationName);
     const cleanFromLine = normalizeLineName(fromLine);
     const cleanToLine = normalizeLineName(toLine);
 
@@ -362,13 +363,13 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         const stored = await db.getTransferInfo(cleanStation, cleanFromLine, cleanToLine);
         if (stored) return stored.platform;
         if (stationName !== cleanStation) {
-            const storedOrig = await db.getTransferInfo(stationName.replace(/역$/, ''), cleanFromLine, cleanToLine);
+            const storedOrig = await db.getTransferInfo(normStation(stationName), cleanFromLine, cleanToLine);
             if (storedOrig) return storedOrig.platform;
         }
     } catch (e) {}
 
     const staticStation = (transferData as any[]).find(s => 
-        s.stationName === cleanStation || s.stationName === stationName.replace(/역$/, '')
+        s.stationName === cleanStation || s.stationName === normStation(stationName)
     );
     if (staticStation) {
         const staticMatch = staticStation.transfers.find((t: any) => 
@@ -411,7 +412,7 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     let result = await tryFetch(cleanStation);
     if (result) return result;
     if (stationName !== cleanStation) {
-        result = await tryFetch(stationName.replace(/역$/, ''));
+        result = await tryFetch(normStation(stationName));
         if (result) return result;
     }
     return null;
