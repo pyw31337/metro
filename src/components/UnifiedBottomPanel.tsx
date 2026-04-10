@@ -756,17 +756,50 @@ export default function UnifiedBottomPanel({
                                     </motion.div>
                                 </div>
                             )}
-                            {/* Source (Departure) First */}
-                            <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
-                                <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
-                                <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
-                                    {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(source)}</div>)}
-                                    <input ref={sourceInputRef} type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
+                            {/* Row 1: 도착지 입력 + [+경유지][바꾸기] 정사각형 버튼 */}
+                            <div className="flex items-center gap-1.5">
+                                <div className={`relative flex items-center px-3 h-9 flex-1 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
+                                    <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
+                                    <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
+                                        {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(destination, true)}</div>)}
+                                        <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
+                                    </div>
+                                    <div className="flex items-center gap-1 shrink-0">
+                                        {destination && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
+                                        <button disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-1 shrink-0">
-                                    {source && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                    <button disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
-                                </div>
+                                {/* + 경유지 버튼 (정사각형) */}
+                                <button
+                                    onClick={() => {
+                                        hapticLight();
+                                        setWaypointInput("");
+                                        setActiveField(activeField === "waypoint" ? null : "waypoint");
+                                        setSearchResults([]);
+                                    }}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-500/15'}`}
+                                    title="경유지 추가"
+                                >
+                                    <Plus size={16} />
+                                </button>
+                                {/* 출발↔도착 바꾸기 버튼 (정사각형) */}
+                                <button
+                                    onClick={() => {
+                                        hapticLight();
+                                        const prevSource = source;
+                                        const prevDest = destination;
+                                        setSource(prevDest);
+                                        setDestination(prevSource);
+                                        onSetSource?.(prevDest);
+                                        onSetDestination?.(prevSource);
+                                        setSearchResults([]);
+                                        setActiveField(null);
+                                    }}
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90"
+                                    title="출발/도착 바꾸기"
+                                >
+                                    <ArrowUpDown size={16} />
+                                </button>
                             </div>
                             {/* Waypoints */}
                             {waypoints.length > 0 && (
@@ -777,12 +810,7 @@ export default function UnifiedBottomPanel({
                                             <span className="flex-1 text-[13px] font-bold text-zinc-900 dark:text-white truncate px-2">
                                                 {wp.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, '')}
                                             </span>
-                                            <button
-                                                onClick={() => { hapticLight(); removeWaypoint(idx); }}
-                                                className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"
-                                            >
-                                                <X size={14} />
-                                            </button>
+                                            <button onClick={() => { hapticLight(); removeWaypoint(idx); }} className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"><X size={14} /></button>
                                         </div>
                                     ))}
                                 </div>
@@ -809,54 +837,16 @@ export default function UnifiedBottomPanel({
                                     <button onMouseDown={(e) => e.preventDefault()} onClick={() => { setActiveField(null); setWaypointInput(""); setSearchResults([]); }} className="p-1 text-violet-400 hover:text-violet-600 transition-all"><X size={14} /></button>
                                 </div>
                             )}
-                            {/* Action Row: 경유지 추가 + 출발↔도착 바꾸기 */}
-                            {(source || destination) && (
-                                <div className="flex items-center justify-between -my-0.5 px-1 z-10 relative">
-                                    <button
-                                        onClick={() => {
-                                            hapticLight();
-                                            setWaypointInput("");
-                                            setActiveField(activeField === "waypoint" ? null : "waypoint");
-                                            setSearchResults([]);
-                                        }}
-                                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-500/25'}`}
-                                        title="경유지 추가"
-                                    >
-                                        <Plus size={11} />
-                                        <span>경유지</span>
-                                    </button>
-                                    {waypoints.length === 0 && (
-                                        <button
-                                            onClick={() => {
-                                                hapticLight();
-                                                const prevSource = source;
-                                                const prevDest = destination;
-                                                setSource(prevDest);
-                                                setDestination(prevSource);
-                                                onSetSource?.(prevDest);
-                                                onSetDestination?.(prevSource);
-                                                setSearchResults([]);
-                                                setActiveField(null);
-                                            }}
-                                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-200/80 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 text-[10px] font-bold hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90"
-                                            title="출발/도착 바꾸기"
-                                        >
-                                            <ArrowUpDown size={11} />
-                                            <span>바꾸기</span>
-                                        </button>
-                                    )}
-                                </div>
-                            )}
-                            {/* Destination Second */}
-                            <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "dest" ? "border-rose-500 ring-1 ring-rose-500/20" : "border-transparent"}`}>
-                                <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
+                            {/* Row 2: 출발지 입력 (전체 너비) */}
+                            <div className={`relative flex items-center px-3 h-9 bg-zinc-100 dark:bg-white/5 rounded-xl border transition-all ${activeField === "source" ? "border-blue-500 ring-1 ring-blue-500/20" : "border-transparent"}`}>
+                                <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
-                                    {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(destination, true)}</div>)}
-                                    <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
+                                    {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(source)}</div>)}
+                                    <input ref={sourceInputRef} type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
-                                    {destination && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                    <button disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                    {source && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
+                                    <button disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                 </div>
                             </div>
                         </div>

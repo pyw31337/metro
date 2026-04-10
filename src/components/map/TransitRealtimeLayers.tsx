@@ -218,21 +218,6 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
         />
       </Source>
 
-      {/* 시뮬레이션 상태 배지 */}
-      {isVisible && (simStatus === 'simulated' || simStatus === 'mixed') && (
-        <div className="absolute top-20 right-4 z-[9999] pointer-events-none">
-          <div className={`
-            flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg
-            ${simStatus === 'simulated'
-              ? 'bg-amber-500/90 text-black'
-              : 'bg-blue-500/90 text-white'}
-          `}>
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-            {simStatus === 'simulated' ? '시뮬레이션 (API 연결 중)' : '일부 노선 예측 이동'}
-          </div>
-        </div>
-      )}
-
       {/* 선택된 열차 정보 토스트 */}
       {isVisible && selectedInfo && (
         <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto">

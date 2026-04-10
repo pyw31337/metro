@@ -97,6 +97,32 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
     }
 };
 
+// 열차 카드 아이콘을 캔버스에 그려 ImageData 반환
+// 흰색 배경 fill → 노선 색 카드 → 흰색 열차 형상
+// (stroke 방식 대신 fill 방식을 써서 소형 아이콘에서도 흰 테두리가 확실히 렌더됨)
+function drawTrainCard(color: string): ImageData | null {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+
+    // 1) 흰색 배경 (약간 더 큰 라운드렉 → 흰 테두리 역할)
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); safeRoundRect(ctx, 6, 6, 116, 116, 26); ctx.fill();
+
+    // 2) 노선 색 카드
+    ctx.fillStyle = color;
+    ctx.beginPath(); safeRoundRect(ctx, 16, 16, 96, 96, 20); ctx.fill();
+
+    // 3) 흰색 열차 형상
+    ctx.fillStyle = 'white';
+    ctx.beginPath(); safeRoundRect(ctx, 30, 28, 68, 44, 8); ctx.fill(); // 차체
+    ctx.beginPath(); ctx.arc(44, 84, 10, 0, Math.PI * 2); ctx.fill(); // 바퀴 좌
+    ctx.beginPath(); ctx.arc(84, 84, 10, 0, Math.PI * 2); ctx.fill(); // 바퀴 우
+
+    return ctx.getImageData(0, 0, 128, 128);
+}
+
 const MapIconRegister = memo(() => {
     const { current: mapRef } = useMap();
     const map = mapRef?.getMap();
@@ -104,33 +130,20 @@ const MapIconRegister = memo(() => {
     useEffect(() => {
         if (!map) return;
 
-        const registerIcons = () => {
+        // 필요한 아이콘 사전 등록 (style.load 시에도 재등록)
+        const registerAllIcons = () => {
             const uniqueColors = new Set<string>();
             SUBWAY_LINES.forEach((line: any) => { if (line.color) uniqueColors.add(line.color.toUpperCase()); });
-            
-            // Add explicitly required dynamic colors
-            uniqueColors.add('FF5722'); // Simulation Color
-            uniqueColors.add('3B82F6'); // Bus Color
+            uniqueColors.add('FF5722');
+            uniqueColors.add('3B82F6');
 
             uniqueColors.forEach(c => {
                 const color = c.startsWith('#') ? c : `#${c}`;
                 const cleanColor = c.replace('#', '').toUpperCase();
                 const id = `train-card-${cleanColor}`;
                 if (map.hasImage(id)) return;
-                const canvas = document.createElement('canvas');
-                canvas.width = 128; canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.fillStyle = color;
-                    ctx.beginPath(); safeRoundRect(ctx, 14, 14, 100, 100, 20); ctx.fill();
-                    ctx.strokeStyle = 'white'; ctx.lineWidth = 12; ctx.stroke();
-                    ctx.fillStyle = 'white';
-                    ctx.beginPath(); safeRoundRect(ctx, 34, 34, 60, 40, 5); ctx.fill();
-                    ctx.beginPath(); ctx.arc(44, 84, 8, 0, Math.PI * 2); ctx.fill();
-                    ctx.beginPath(); ctx.arc(84, 84, 8, 0, Math.PI * 2); ctx.fill();
-                    const data = ctx.getImageData(0, 0, 128, 128);
-                    map.addImage(id, data);
-                }
+                const data = drawTrainCard(color);
+                if (data) map.addImage(id, data);
             });
 
             if (!map.hasImage('rocket')) {
@@ -138,17 +151,44 @@ const MapIconRegister = memo(() => {
                 canvas.width = 64; canvas.height = 64;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
-                    ctx.fillStyle = '#3b82f6'; ctx.beginPath();
-                    ctx.moveTo(32, 0); ctx.lineTo(64, 64); ctx.lineTo(32, 48); ctx.lineTo(0, 64); ctx.closePath(); ctx.fill();
-                    const data = ctx.getImageData(0, 0, 64, 64);
-                    map.addImage('rocket', data);
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.beginPath();
+                    ctx.moveTo(32, 0); ctx.lineTo(64, 64); ctx.lineTo(32, 48); ctx.lineTo(0, 64);
+                    ctx.closePath(); ctx.fill();
+                    map.addImage('rocket', ctx.getImageData(0, 0, 64, 64));
                 }
             }
         };
 
-        if (map.isStyleLoaded()) registerIcons();
-        map.on('style.load', registerIcons);
-        return () => { map.off('style.load', registerIcons); };
+        // styleimagemissing: 레이어가 아이콘을 찾지 못할 때 즉시 생성
+        // → style 재로드 타이밍 경쟁 없이 항상 확실하게 렌더됨
+        const onMissing = (e: any) => {
+            if (e.id?.startsWith('train-card-')) {
+                const cleanColor = e.id.replace('train-card-', '');
+                const color = `#${cleanColor}`;
+                const data = drawTrainCard(color);
+                if (data && !map.hasImage(e.id)) map.addImage(e.id, data);
+            } else if (e.id === 'rocket') {
+                const canvas = document.createElement('canvas');
+                canvas.width = 64; canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.fillStyle = '#3b82f6';
+                    ctx.beginPath();
+                    ctx.moveTo(32, 0); ctx.lineTo(64, 64); ctx.lineTo(32, 48); ctx.lineTo(0, 64);
+                    ctx.closePath(); ctx.fill();
+                    if (!map.hasImage('rocket')) map.addImage('rocket', ctx.getImageData(0, 0, 64, 64));
+                }
+            }
+        };
+
+        if (map.isStyleLoaded()) registerAllIcons();
+        map.on('style.load', registerAllIcons);
+        map.on('styleimagemissing', onMissing);
+        return () => {
+            map.off('style.load', registerAllIcons);
+            map.off('styleimagemissing', onMissing);
+        };
     }, [map]);
 
     return null;
