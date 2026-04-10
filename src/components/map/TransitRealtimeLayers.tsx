@@ -49,10 +49,39 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     const handleUpdate = (units: RealtimeUnit[]) => {
       const ap = activePathRef.current;
 
-      // 경로 탐색 활성 시: 해당 경로 노선의 열차만 표시
-      const filtered = ap?.segments?.length
+      // 1. 경로 탐색 필터 (기존)
+      let filtered: RealtimeUnit[] = ap?.segments?.length
         ? units.filter(u => filterByPath(u, ap))
         : units;
+
+      // 2. 활성 노선 필터: activeLine 설정 시 해당 노선만 표시
+      const al = activeLineRef.current;
+      if (al) {
+        filtered = filtered.filter(u => u.lineName === al);
+      }
+
+      // 3. 뷰포트 컬링: 화면 밖 열차 제거 (25% 버퍼 포함)
+      try {
+        const bounds = map.getBounds();
+        const sw = bounds.getSouthWest();
+        const ne = bounds.getNorthEast();
+        const bufLng = (ne.lng - sw.lng) * 0.25;
+        const bufLat = (ne.lat - sw.lat) * 0.25;
+        filtered = filtered.filter(u =>
+          u.pos[0] >= sw.lng - bufLng && u.pos[0] <= ne.lng + bufLng &&
+          u.pos[1] >= sw.lat - bufLat && u.pos[1] <= ne.lat + bufLat
+        );
+      } catch {}
+
+      // 4. 노선별 최대 열차수 캡 (노선당 25개)
+      const MAX_PER_LINE = 25;
+      const lineCount = new Map<string, number>();
+      filtered = filtered.filter(u => {
+        const cnt = lineCount.get(u.lineName) ?? 0;
+        if (cnt >= MAX_PER_LINE) return false;
+        lineCount.set(u.lineName, cnt + 1);
+        return true;
+      });
 
       const features: GeoJSON.Feature[] = filtered.map(u => ({
         type: "Feature",
@@ -150,11 +179,15 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     } catch {}
   }, [map, activeLine]);
 
-  const isVisible = activeTab === 'subway' || activeTab === 'bus' || activeTab === 'subway+bus';
+  // 탭 격리: subway탭=지하철 열차만, bus탭=버스만
+  const isTrainVisible = activeTab === 'subway' || activeTab === 'subway+bus';
+  const isBusVisible   = activeTab === 'bus'    || activeTab === 'subway+bus';
+  const isVisible = isTrainVisible || isBusVisible;
   // ⚠️ return null 대신 visibility를 사용한다.
   // return null이면 탭 전환 시 레이어가 언마운트되었다 재추가될 때
   // SubwayLayers 노선 레이어보다 아래에 쌓혀 열차가 가려진다.
-  const vis: "visible" | "none" = isVisible ? "visible" : "none";
+  const trainVis: "visible" | "none" = isTrainVisible ? "visible" : "none";
+  const busVis:   "visible" | "none" = isBusVisible   ? "visible" : "none";
 
   return (
     <>
@@ -166,7 +199,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'type'], 'subway']}
           layout={{
-            'visibility':              vis,
+            'visibility':              trainVis,
             'icon-image':              ['concat', 'train-card-', ['get', 'lineColor']],
             'icon-size':               ['interpolate', ['linear'], ['zoom'], 10, 0.12, 14, 0.25, 18, 0.5],
             'icon-allow-overlap':      true,
@@ -184,7 +217,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'id'], '']}
           layout={{
-            'visibility':            vis,
+            'visibility':            trainVis,
             'text-field':            ['get', 'label'],
             'text-font':             ['Open Sans Bold'],
             'text-size':             11,
@@ -206,7 +239,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'type'], 'bus']}
           layout={{
-            'visibility':            vis,
+            'visibility':            busVis,
             'icon-image':            'rocket',
             'icon-rotate':           ['get', 'bearing'],
             'icon-rotation-alignment': 'map',

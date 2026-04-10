@@ -69,6 +69,7 @@ export const convertBusStopsToGeoJSON = (stops: BusStop[]): GeoJsonFeatureCollec
         name: s.name,
         region: s.region,
         routes: s.routes,
+        rank: (s.routes && s.routes.length > 3 ? 0 : s.routes && s.routes.length > 1 ? 1 : 2),
         type: "bus"
       }
     }))

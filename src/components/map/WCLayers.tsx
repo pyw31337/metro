@@ -20,30 +20,33 @@ const WCLayers = ({ wcData, activeTab }: WCLayersProps) => {
       clusterMaxZoom={14} 
       clusterRadius={50}
     >
-      <Layer 
-        id="wc-clusters" 
-        type="circle" 
-        filter={["has", "point_count"]} 
-        paint={{ 
-          "circle-color": "#3b82f6", 
-          "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25] 
-        }} 
+      <Layer
+        id="wc-clusters"
+        type="circle"
+        minzoom={12}
+        filter={["has", "point_count"]}
+        paint={{
+          "circle-color": "#3b82f6",
+          "circle-radius": ["step", ["get", "point_count"], 15, 20, 20, 50, 25]
+        }}
       />
-      <Layer 
-        id="wc-cluster-count" 
-        type="symbol" 
-        filter={["has", "point_count"]} 
-        layout={{ 
-          "text-field": "{point_count}", 
-          "text-size": 12 
-        }} 
-        paint={{ 
-          "text-color": "white" 
-        }} 
+      <Layer
+        id="wc-cluster-count"
+        type="symbol"
+        minzoom={12}
+        filter={["has", "point_count"]}
+        layout={{
+          "text-field": "{point_count}",
+          "text-size": 12
+        }}
+        paint={{
+          "text-color": "white"
+        }}
       />
       <Layer
         id="wc-unclustered"
         type="circle"
+        minzoom={14}
         filter={["!", ["has", "point_count"]]}
         paint={{
           "circle-radius": [
@@ -61,6 +64,7 @@ const WCLayers = ({ wcData, activeTab }: WCLayersProps) => {
       <Layer
         id="wc-unclustered-label"
         type="symbol"
+        minzoom={14}
         filter={["!", ["has", "point_count"]]}
         layout={{
           "text-field": "🚻",

@@ -236,7 +236,7 @@ function startTick() {
     }
 
     if (state.size > 0) {
-      setTimeout(tick, TICK_INTERVAL);
+      setTimeout(tick, state.size > 150 ? 1000/15 : state.size > 80 ? 1000/20 : TICK_INTERVAL);
     } else {
       isTicking = false;
     }
