@@ -40,6 +40,7 @@ const getDayName = (dateStr: string) => {
 export default function WeatherPopup({ onClose }: WeatherPopupProps) {
     const [data, setData] = useState<WeatherData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Snapshot center at mount — module-level mutable ref, no Zustand subscription, no re-renders
@@ -73,6 +74,7 @@ export default function WeatherPopup({ onClose }: WeatherPopupProps) {
                 });
             } catch (err) {
                 console.error("Weather fetch failed", err);
+                setError(true);
             } finally {
                 setLoading(false);
             }
@@ -118,6 +120,11 @@ export default function WeatherPopup({ onClose }: WeatherPopupProps) {
                         {loading ? (
                             <div className="flex items-center justify-center py-10">
                                 <div className="w-8 h-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+                            </div>
+                        ) : error ? (
+                            <div className="flex flex-col items-center justify-center py-8 gap-2">
+                                <CloudRain className="text-zinc-300 dark:text-zinc-600" size={32} />
+                                <p className="text-[12px] font-bold text-zinc-400 text-center">날씨 정보를 불러올 수 없습니다<br/><span className="text-[10px] opacity-70">네트워크 연결을 확인해 주세요</span></p>
                             </div>
                         ) : (
                             <div className="flex flex-col gap-4">
