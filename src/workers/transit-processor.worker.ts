@@ -119,6 +119,9 @@ function processUpdates(units: any[]) {
       const elapsed = now - existing.lastUpdateTime;
       let ratio = Math.min(1.5, elapsed / ANIM_DURATION);
 
+      // 정차 중인 열차(status='1')는 다음 역으로 overshoot하지 않도록 ratio 1.0으로 제한
+      if (existing.status === '1') ratio = Math.min(1.0, ratio);
+
       let visualPos: [number, number];
       if (ratio <= 1.0) {
         visualPos = lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));

@@ -35,6 +35,21 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [selectedId, setSelectedId]   = useState<string | null>(null);
   const [selectedInfo, setSelectedInfo] = useState<{ label: string; lineName: string; lineColor: string } | null>(null);
 
+  // ─── 레이어 z-order 보장: 열차 레이어가 항상 노선/역사 레이어 위에 표시 ───
+  useEffect(() => {
+    if (!map) return;
+    const ensureOnTop = () => {
+      try {
+        ['transit-trains', 'transit-train-label', 'transit-buses'].forEach(id => {
+          if (map.getLayer(id)) map.moveLayer(id);
+        });
+      } catch {}
+    };
+    if (map.isStyleLoaded()) ensureOnTop();
+    map.on('style.load', ensureOnTop);
+    return () => { map.off('style.load', ensureOnTop); };
+  }, [map]);
+
   // activePath를 ref로 유지해서 매 tick마다 클로저 최신값 참조
   const activePathRef = useRef(activePath);
   useEffect(() => { activePathRef.current = activePath; }, [activePath]);
