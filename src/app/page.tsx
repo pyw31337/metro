@@ -12,6 +12,7 @@ import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
 import { normalizeStationName } from "@/utils/stationUtils";
 import { findBusPath }         from "@/utils/busRouting";
 import { getCityCodeByCoords } from "@/utils/regionUtils";
+import { hapticSuccess, hapticError } from "@/utils/haptic";
 import { db }                  from "@/services/db";
 import { DataIngestionService } from "@/services/dataIngestion";
 
@@ -247,12 +248,15 @@ export default function Home() {
       const res = await findPath(points) as Record<string, PathResult>;
       route.setIsCalculating(false);
       if (res?.time && res?.transfer) {
+        hapticSuccess();
         route.setPathResults({ time: res.time, transfer: res.transfer });
       } else {
+        hapticError();
         route.setPathResults(null);
         route.setValidationError('no_route');
       }
     } catch {
+      hapticError();
       route.setPathResults(null);
       route.setValidationError('no_route');
       route.setIsCalculating(false);
