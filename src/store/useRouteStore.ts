@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { PathResult, WCFilters } from '@/types/metro';
 import type { BusPathResult } from '@/utils/busRouting';
 
@@ -37,7 +38,7 @@ interface RouteStore {
   getActivePath: () => PathResult | null;
 }
 
-export const useRouteStore = create<RouteStore>((set, get) => ({
+export const useRouteStore = create<RouteStore>()(persist((set, get) => ({
   pathResults: null,
   busPathResult: null,
   selectedStrategy: 'time',
@@ -75,4 +76,12 @@ export const useRouteStore = create<RouteStore>((set, get) => ({
     if (!pathResults) return null;
     return pathResults[selectedStrategy] ?? Object.values(pathResults)[0] ?? null;
   },
+}), {
+  name: 'metro-route',
+  // Only persist user input — not transient calculation state
+  partialize: (s) => ({
+    startStation: s.startStation,
+    endStation: s.endStation,
+    selectedStrategy: s.selectedStrategy,
+  }),
 }));
