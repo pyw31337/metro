@@ -1,4 +1,66 @@
-import { TimetableEntry } from '@/types/metro';
+import { TimetableEntry, StationArrival } from '@/types/metro';
+import { SUBWAY_LINES } from './subway-lines';
+
+// 노선별 배차 간격 [피크(분), 비피크(분)]
+const LINE_HEADWAY: Record<string, [number, number]> = {
+  '1호선': [5, 9], '2호선': [3, 5], '3호선': [5, 8], '4호선': [5, 8],
+  '5호선': [5, 8], '6호선': [6, 9], '7호선': [5, 8], '8호선': [6, 9],
+  '9호선': [5, 8], '경의중앙선': [15, 20], '공항철도': [10, 15],
+  '수인분당선': [6, 10], '신분당선': [7, 12], '경춘선': [15, 20],
+  '신림선': [6, 10], '우이신설선': [6, 10],
+};
+
+// SUBWAY_LINES에서 역을 서비스하는 노선을 찾아 추정 도착 정보 생성
+function generateFromSubwayLines(stationName: string): StationArrival[] {
+  const now = new Date();
+  const h = now.getHours();
+  if (h >= 1 && h < 5) return []; // 운행 종료 시간대
+  const isPeak = (h >= 7 && h <= 9) || (h >= 17 && h <= 20);
+
+  const results: StationArrival[] = [];
+  const clean = stationName.replace(/역$/, '').trim();
+
+  for (const line of SUBWAY_LINES) {
+    // 이 역이 해당 노선에 있는지 확인
+    const idx = line.stations.findIndex(
+      s => s.name === clean || s.name === clean + '역' || s.name === stationName
+    );
+    if (idx === -1) continue;
+
+    const [peakFreq, offFreq] = LINE_HEADWAY[line.name] ?? [7, 10];
+    const freqMin = isPeak ? peakFreq : offFreq;
+
+    const isCircular = line.name === '2호선';
+    const dirs: Array<{ updnLine: string; dest: string }> = isCircular
+      ? [{ updnLine: '내선', dest: '내선순환' }, { updnLine: '외선', dest: '외선순환' }]
+      : [
+          { updnLine: '하행', dest: line.stations[line.stations.length - 1].name },
+          { updnLine: '상행', dest: line.stations[0].name },
+        ];
+
+    for (const { updnLine, dest } of dirs) {
+      for (let i = 1; i <= 2; i++) {
+        const waitSec = freqMin * 60 * i;
+        results.push({
+          lineName: line.name,
+          subwayId: line.id,
+          updnLine,
+          trainLineNm: `${dest}행`,
+          statnNm: clean,
+          arvlMsg2: waitSec < 60 ? '곧 도착' : `${Math.floor(waitSec / 60)}분 후`,
+          arvlMsg3: '',
+          arvlCd: '99',
+          bstatnNm: dest,
+          barvlDt: waitSec.toString(),
+          btrainNo: '',
+          isScheduled: true,
+        });
+      }
+    }
+  }
+
+  return results.sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt)).slice(0, 8);
+}
 
 /**
  * STATIC_TIMETABLE_REGISTRY
@@ -115,30 +177,27 @@ function generatePattern(
     return [...entries, ...weekendEntries, ...sundayEntries];
 }
 
-import { StationArrival } from '@/types/metro';
-
 export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?: string | null): StationArrival[] => {
     const now = new Date();
     const currentH = now.getHours();
     const currentM = now.getMinutes();
     const currentTimeInSeconds = currentH * 3600 + currentM * 60 + now.getSeconds();
-    
+
     const dayType = now.getDay() === 0 ? "sun" : (now.getDay() === 6 ? "sat" : "week");
-    
-    const allEntries = STATIC_TIMETABLE_REGISTRY[stationName] || [];
+
+    const clean = stationName.replace(/역$/, '').trim();
+    const allEntries = STATIC_TIMETABLE_REGISTRY[clean] || STATIC_TIMETABLE_REGISTRY[stationName] || [];
     const filteredByDay = allEntries.filter(e => e.dayType === dayType);
-    
-    // Sort and find upcoming
+
     const mapped: StationArrival[] = filteredByDay
         .map(e => {
             const [h, m, s] = e.arrivalTime.split(':').map(Number);
             const entryTimeInSeconds = h * 3600 + m * 60 + (s || 0);
             const waitTime = entryTimeInSeconds - currentTimeInSeconds;
-            
             return {
                 lineName: e.line,
-                subwayId: "", // Optional in types
-                updnLine: e.direction === 'up' ? '상행' : '하행',
+                subwayId: "",
+                updnLine: e.direction === 'up' ? '상행' : (e.direction === 'inner' ? '내선' : e.direction === 'outer' ? '외선' : '하행'),
                 trainLineNm: `${e.destination}행`,
                 statnNm: e.stationName,
                 arvlMsg2: waitTime < 60 ? "곧 도착" : `${Math.floor(waitTime / 60)}분 후`,
@@ -153,7 +212,11 @@ export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?:
         .filter(a => parseInt(a.barvlDt) > 0)
         .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt));
 
-    return mapped.slice(0, 8); // Top upcoming
+    // 정적 레지스트리에 데이터가 있으면 반환
+    if (mapped.length > 0) return mapped.slice(0, 8);
+
+    // 없으면 SUBWAY_LINES 배차 주기 기반 추정치 생성 (항상 최소한의 정보 제공)
+    return generateFromSubwayLines(clean);
 };
 
 export const getStaticTimetable = (stationName: string, line: string, dayType: string): TimetableEntry[] => {

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { StationArrival } from '@/types/metro';
 import { fetchStationArrivals, getScheduledArrivalsFromDB } from '@/services/arrivalApi';
+import { getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { normalizeStationName } from '@/utils/stationUtils';
 
 export interface ScheduleInfo {
@@ -37,15 +38,21 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
     setLoading(true);
     setError(null);
 
+    // 0. 즉각(동기) — 정적 추정치로 바로 표시 (API/DB 대기 없음)
+    //    SUBWAY_LINES 배차 주기 기반이므로 모든 역에서 동작
+    const staticArrivals = getEstimatedArrivalsFromStatic(cleanName);
+    if (staticArrivals.length > 0 && mountedRef.current) {
+      setArrivals(staticArrivals);
+      setIsLive(false);
+    }
+
     try {
-      // 1. 즉시 예정 데이터 표시 (로컬 DB)
+      // 1. 로컬 DB 예정 데이터 (IndexedDB master-timetables)
       const scheduled = await getScheduledArrivalsFromDB(cleanName);
 
       if (scheduled.length > 0 && mountedRef.current) {
-        // 첫 렌더 — 예정 데이터로 우선 표시
         setArrivals(scheduled.slice(0, 6).map(a => ({ ...a, isScheduled: true })));
         setIsLive(false);
-
         const lineScheds: Record<string, ScheduleInfo> = {};
         scheduled.forEach(s => {
           if (s.lineName && !lineScheds[s.lineName]) {
@@ -55,7 +62,7 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
         setSchedules(lineScheds);
       }
 
-      // 2. 실시간 데이터 병렬 fetch
+      // 2. 실시간 API
       const live = await fetchStationArrivals(cleanName);
 
       if (!mountedRef.current) return;
@@ -64,14 +71,18 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
         setArrivals(live);
         setIsLive(true);
         setLastUpdated(Date.now());
-      } else if (scheduled.length === 0) {
+      } else if (scheduled.length === 0 && staticArrivals.length === 0) {
+        // 정적/DB/실시간 모두 실패한 경우에만 에러
         setArrivals([]);
         setError('운행 정보가 없습니다.');
       }
-      // live가 비어있고 scheduled는 있으면 → 예정 유지 (already set above)
+      // live 없고 scheduled/static 있으면 → 이미 설정된 데이터 유지
     } catch (err) {
       if (!mountedRef.current) return;
-      setError('데이터를 불러오는 데 실패했습니다.');
+      // fetch 실패해도 staticArrivals가 있으면 에러 메시지 숨김
+      if (staticArrivals.length === 0) {
+        setError('데이터를 불러오는 데 실패했습니다.');
+      }
       console.error('[useArrivalInfo] fetch error:', err);
     } finally {
       if (mountedRef.current) setLoading(false);

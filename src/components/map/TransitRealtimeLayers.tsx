@@ -151,7 +151,10 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   }, [map, activeLine]);
 
   const isVisible = activeTab === 'subway' || activeTab === 'bus' || activeTab === 'subway+bus';
-  if (!isVisible) return null;
+  // ⚠️ return null 대신 visibility를 사용한다.
+  // return null이면 탭 전환 시 레이어가 언마운트되었다 재추가될 때
+  // SubwayLayers 노선 레이어보다 아래에 쌓혀 열차가 가려진다.
+  const vis: "visible" | "none" = isVisible ? "visible" : "none";
 
   return (
     <>
@@ -163,6 +166,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'type'], 'subway']}
           layout={{
+            'visibility':              vis,
             'icon-image':              ['concat', 'train-card-', ['get', 'lineColor']],
             'icon-size':               ['interpolate', ['linear'], ['zoom'], 10, 0.12, 14, 0.25, 18, 0.5],
             'icon-allow-overlap':      true,
@@ -180,6 +184,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'id'], '']}
           layout={{
+            'visibility':            vis,
             'text-field':            ['get', 'label'],
             'text-font':             ['Open Sans Bold'],
             'text-size':             11,
@@ -201,6 +206,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'type'], 'bus']}
           layout={{
+            'visibility':            vis,
             'icon-image':            'rocket',
             'icon-rotate':           ['get', 'bearing'],
             'icon-rotation-alignment': 'map',
@@ -213,7 +219,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
       </Source>
 
       {/* 시뮬레이션 상태 배지 */}
-      {(simStatus === 'simulated' || simStatus === 'mixed') && (
+      {isVisible && (simStatus === 'simulated' || simStatus === 'mixed') && (
         <div className="absolute top-20 right-4 z-[9999] pointer-events-none">
           <div className={`
             flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg
@@ -228,7 +234,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
       )}
 
       {/* 선택된 열차 정보 토스트 */}
-      {selectedInfo && (
+      {isVisible && selectedInfo && (
         <div className="absolute bottom-36 left-1/2 -translate-x-1/2 z-[9999] pointer-events-auto">
           <div
             className="flex items-center gap-2 px-4 py-2.5 rounded-2xl shadow-xl text-white text-sm font-semibold"
