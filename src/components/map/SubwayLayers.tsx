@@ -48,8 +48,8 @@ const SubwayLayers = ({
     lineColorExpr = ["get", "color"];
   }
 
-  // 노선 두께: 경로 검색 중엔 1.5px (RouteLayers가 굵은 경로선을 위에 그림)
-  const lineWidth: number = hasRoute ? 1.5 : 4;
+  // 노선 두께: 경로 검색 중엔 1.5px (RouteLayers가 굵은 경로선을 위에 그림), 일반엔 줌 기반
+  const lineWidth: any = hasRoute ? 1.5 : ["interpolate", ["linear"], ["zoom"], 9, 1.5, 12, 2.5, 14, 4, 16, 5];
 
   // ── 역 점 테두리 색 ───────────────────────────────────────────────────────
   let stationStrokeColor: any;
@@ -155,10 +155,11 @@ const SubwayLayers = ({
           }}
         />
 
-        {/* 역명 라벨 */}
+        {/* 역명 라벨 (zoom 12부터) */}
         <Layer
           id="subway-station-label"
           type="symbol"
+          minzoom={12}
           layout={{
             "visibility": vis,
             "text-field": ["get", "name"],

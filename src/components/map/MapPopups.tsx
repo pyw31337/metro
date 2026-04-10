@@ -8,7 +8,8 @@ import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
 import { WCItem, BusStop, RouteSegment } from "@/types/metro";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
-import { SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
+import { SUBWAY_LINES } from "@/data/subway-lines";
+import { stationLines } from "@/data/stationRegistry";
 import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
@@ -187,7 +188,7 @@ const MapPopups = ({
   // Default line selection on popup open
   const badges = useMemo(() => {
     if (activeTab !== 'subway' || !selectedStationName) return [];
-    return STATION_LINE_IDX.get(selectedStationName) ?? [];
+    return stationLines(selectedStationName);
   }, [activeTab, selectedStationName]);
 
   useEffect(() => {
@@ -264,7 +265,7 @@ const MapPopups = ({
                         onMouseDown={(e) => e.stopPropagation()}
                         onWheel={(e) => e.stopPropagation()}
                     >
-                        {badges.map((badge, idx) => {
+                        {badges.map((badge: { lineName: string; color: string }, idx: number) => {
                             const label = getLineLongName(badge.lineName);
                             const isActive = activeLine === badge.lineName;
                             
@@ -652,15 +653,21 @@ const MapPopups = ({
                 </div>
 
                 <div className="flex gap-1.5 mt-2 pt-2 border-t border-zinc-100 dark:border-white/5">
-                    <a
-                        href={`https://map.naver.com/v5/search/${encodeURIComponent(selectedWC.address || selectedWC.name)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => hapticLight()}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
-                    >
-                        네이버 길안내
-                    </a>
+                    {(() => {
+                        const { lat, lng } = selectedWC;
+                        const addr = selectedWC.address || selectedWC.name;
+                        const naverWeb = `https://map.naver.com/v5/entry/coordinates/${lng},${lat}?c=${lng},${lat},17,0,0,0,dh`;
+                        const naverApp = `nmap://map?lat=${lat}&lng=${lng}&zoom=17&query=${encodeURIComponent(addr)}&appname=metro.live`;
+                        return (
+                            <a
+                                href={naverApp}
+                                onClick={e => { e.preventDefault(); hapticLight(); window.location.href = naverApp; setTimeout(() => { window.open(naverWeb, '_blank'); }, 300); }}
+                                className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
+                            >
+                                네이버 길안내
+                            </a>
+                        );
+                    })()}
                     <a
                         href={`https://map.kakao.com/link/to/${encodeURIComponent(selectedWC.name || '화장실')},${selectedWC.lat},${selectedWC.lng}`}
                         target="_blank"
