@@ -1,13 +1,12 @@
 // Metro Live Service Worker
 // Caches the app shell and static assets for offline use
 
-const CACHE_NAME = 'metro-live-v2';
+const CACHE_NAME = 'metro-live-v3';
 const STATIC_CACHE = 'metro-static-v2';
 const TILE_CACHE = 'metro-tiles-v1';
 
 // App shell files to cache on install
 const APP_SHELL = [
-    '/metro/',
     '/metro/manifest.json',
     '/metro/icon-192.png',
     '/metro/icon-512.png',
@@ -102,7 +101,37 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // App shell: stale-while-revalidate
+    // _next/static/ chunks: cache-first (immutable — filenames include content hash)
+    if (url.pathname.startsWith('/metro/_next/static/')) {
+        event.respondWith(
+            caches.open(CACHE_NAME).then(async cache => {
+                const cached = await cache.match(event.request);
+                if (cached) return cached;
+                const response = await fetch(event.request);
+                if (response.ok) cache.put(event.request, response.clone());
+                return response;
+            })
+        );
+        return;
+    }
+
+    // HTML pages (index, 404, etc.): network-first so deployments take effect immediately
+    if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/metro/' || url.pathname === '/metro') {
+        event.respondWith(
+            fetch(event.request).then(response => {
+                if (response.ok) {
+                    caches.open(CACHE_NAME).then(cache => cache.put(event.request, response.clone()));
+                }
+                return response;
+            }).catch(async () => {
+                const cached = await caches.match(event.request);
+                return cached || new Response('Offline', { status: 503 });
+            })
+        );
+        return;
+    }
+
+    // Other app shell assets: stale-while-revalidate
     event.respondWith(
         caches.open(CACHE_NAME).then(async cache => {
             const cached = await cache.match(event.request);
