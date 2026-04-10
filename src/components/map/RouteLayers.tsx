@@ -132,15 +132,20 @@ const RouteLayers = ({
               </span>
 
               {(() => {
-                const key = `${name}-${f.properties.fromLine}-${f.properties.toLine}`;
-                const plat = verifiedPlats[key];
-                if (!platformInfo || !plat) return null;
+                if (!platformInfo) return null;
+                const prefix = `${name}-`;
+                const platEntries = Object.entries(verifiedPlats).filter(([k]) => k.startsWith(prefix));
+                if (platEntries.length === 0) return null;
                 return (
-                  <div className="flex items-center gap-1 justify-center mt-0.5">
-                    <div className="w-1 h-1 rounded-full bg-blue-500" />
-                    <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
-                      환승 {plat}
-                    </span>
+                  <div className="flex flex-col gap-0.5 items-center mt-0.5">
+                    {platEntries.map(([k, plat]) => (
+                      <div key={k} className="flex items-center gap-1 justify-center">
+                        <div className="w-1 h-1 rounded-full bg-blue-500" />
+                        <span className="text-[8.5px] font-black text-blue-500 dark:text-blue-400 whitespace-nowrap leading-tight">
+                          환승 {plat}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 );
               })()}

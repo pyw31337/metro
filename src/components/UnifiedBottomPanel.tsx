@@ -653,7 +653,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                         setActiveField(activeField === "waypoint" ? null : "waypoint");
                                         setSearchResults([]);
                                     }}
-                                    className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-violet-500 hover:bg-violet-100 dark:hover:bg-violet-500/15'}`}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
                                     title="경유지 추가"
                                 >
                                     <Plus size={16} />
