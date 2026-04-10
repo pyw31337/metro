@@ -420,6 +420,7 @@ function MapLibreBackground(props: MapLibreProps) {
                 selectedWC={selectedWC}
                 onWCClick={handlePopupWCClick}
                 isDarkMode={isDarkMode}
+                routeSegments={pathResult?.segments}
             />
             <NearbyPulseMarkers nearestStation={nearestStation} nearestBusStop={nearestBusStop} nearestWC={nearestWC} isDarkMode={isDarkMode} activeTab={activeTab} />
         </MapBase>

@@ -6,7 +6,7 @@ import { X, MapPin, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
-import { WCItem, BusStop } from "@/types/metro";
+import { WCItem, BusStop, RouteSegment } from "@/types/metro";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
 import { SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
 import { useCongestion } from "@/hooks/useCongestion";
@@ -41,6 +41,8 @@ interface MapPopupsProps {
   arrivalLoading?: boolean;
   isLiveArrival?: boolean;
   onRefreshArrival?: () => void;
+  /** 현재 경로의 세그먼트 (방향 필터용) */
+  routeSegments?: RouteSegment[];
 }
 
 const LINE_COLOR_MAP = new Map(SUBWAY_LINES.map(l => [l.name, l.color]));
@@ -149,7 +151,16 @@ const MapPopups = ({
   arrivalLoading,
   isLiveArrival,
   onRefreshArrival,
+  routeSegments,
 }: MapPopupsProps) => {
+  // 경로 검색 중일 때 해당 역의 방향 ('0'=상행/내선, '1'=하행/외선, null=필터 없음)
+  const routeDirection = useMemo<'0' | '1' | null>(() => {
+    if (!routeSegments || !selectedStationName) return null;
+    for (const seg of routeSegments) {
+      if (seg.stations.includes(selectedStationName)) return seg.direction;
+    }
+    return null;
+  }, [routeSegments, selectedStationName]);
   const { data: realTimeCongestion } = useCongestion(selectedStationName);
 
   const filteredArrivals = useMemo(() => {
@@ -318,11 +329,29 @@ const MapPopups = ({
                                 <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse [animation-delay:0.4s]" />
                             </div>
                         ) : stationArrivals.length > 0 ? (() => {
-                            const upTrains  = filteredArrivals.filter((arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선'));
-                            const downTrains = filteredArrivals.filter((arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선'));
+                            // 이미 지난 열차 제거 (barvlDt <= 0 이고 당역·진입 아닌 것)
+                            const notExpired = (arr: any) =>
+                                arr.arvlCd === '1' || arr.arvlCd === '0' || (parseInt(arr.barvlDt) || 0) > 0;
+                            const isUp   = (arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선');
+                            const isDown = (arr: any) => arr.updnLine.includes('하행') || arr.updnLine.includes('외선') || arr.updnLine.includes('하선');
+
+                            const validArrivals = filteredArrivals.filter(notExpired);
+                            const allUp   = validArrivals.filter(isUp);
+                            const allDown = validArrivals.filter(isDown);
+
+                            // 경로 검색 중: 해당 역의 경로 방향만 표시
+                            const showUp   = routeDirection === null || routeDirection === '0';
+                            const showDown = routeDirection === null || routeDirection === '1';
+                            const upTrains   = showUp   ? allUp   : [];
+                            const downTrains = showDown ? allDown : [];
+
                             const offHourMsg = (() => { const h = new Date().getHours(); return (h >= 1 && h < 5) ? "운행 종료" : "정보 없음"; })();
+
+                            // 경로 방향 한쪽만 표시할 때는 전체 너비로
+                            const singleDirection = routeDirection !== null;
                             return (
-                            <div className="grid grid-cols-2 gap-2 mt-1">
+                            <div className={`mt-1 ${singleDirection ? 'flex flex-col gap-1.5' : 'grid grid-cols-2 gap-2'}`}>
+                                {showUp && (
                                 <div className="flex flex-col gap-1.5">
                                     <ArrivalHeader
                                         defaultTitle="상행 · 내선"
@@ -342,6 +371,8 @@ const MapPopups = ({
                                         <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
                                     )}
                                 </div>
+                                )}
+                                {showDown && (
                                 <div className="flex flex-col gap-1.5">
                                     <ArrivalHeader
                                         defaultTitle="하행 · 외선"
@@ -361,6 +392,7 @@ const MapPopups = ({
                                         <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
                                     )}
                                 </div>
+                                )}
                             </div>
                         );
                     })() : (

@@ -147,7 +147,10 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
         const arrivalTimeStr = `${arrivalDate.getHours().toString().padStart(2, '0')}:${arrivalDate.getMinutes().toString().padStart(2, '0')}`;
 
         let isActualTransfer = false;
-        let routeColor = "#3b82f6";
+        // bubbleColor = 역 마커/버블에 표시할 색 (현재 타고 있는 노선 = 진입 노선)
+        // segmentColor = 이 역에서 다음 역까지 그릴 선 색 (이 역 이후 탑승할 노선)
+        let bubbleColor = "#3b82f6";
+        let segmentColor = "#3b82f6";
         let transferDetails: { fromLine: string; toLine: string } | null = null;
 
         if (i > 0 && i < path.length - 1) {
@@ -164,9 +167,17 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                     isActualTransfer = true;
                 }
 
+                // 버블: 진입 노선 색 (현재 타고 있는 노선)
+                if (incomingLines.length > 0) {
+                    const color = LINE_COLOR_MAP.get(incomingLines[0]);
+                    if (color) bubbleColor = color;
+                }
+                // 세그먼트: 출발 노선 색 (이 역 이후 탑승할 노선)
                 if (outgoingLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(outgoingLines[0]);
-                    if (color) routeColor = color;
+                    if (color) segmentColor = color;
+                } else {
+                    segmentColor = bubbleColor;
                 }
 
                 if (isActualTransfer) {
@@ -183,7 +194,18 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 const commonLines = s.lines.filter(l => nextS.lines.includes(l));
                 if (commonLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(commonLines[0]);
-                    if (color) routeColor = color;
+                    if (color) { bubbleColor = color; segmentColor = color; }
+                }
+            }
+        } else if (i === path.length - 1 && i > 0) {
+            // 종착역: 직전 역과 공통 노선 색
+            const prevName = path[i-1];
+            const prevS = getStationByName(prevName);
+            if (prevS) {
+                const incomingLines = s.lines.filter(l => prevS.lines.includes(l));
+                if (incomingLines.length > 0) {
+                    const color = LINE_COLOR_MAP.get(incomingLines[0]);
+                    if (color) bubbleColor = color;
                 }
             }
         }
@@ -196,7 +218,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             properties: {
                 name: s.name,
                 isRouteStation: true,
-                routeColor: routeColor,
+                routeColor: bubbleColor,
                 arrivalTime: arrivalTimeStr,
                 arrivalTimeWeight: cumulativeWeight,
                 platformInfo: platform,
@@ -218,7 +240,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                     },
                     properties: {
                         type: "path_segment",
-                        color: routeColor
+                        color: segmentColor
                     }
                 });
             }
