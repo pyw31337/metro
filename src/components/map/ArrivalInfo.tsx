@@ -115,11 +115,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     >
       {/* 왼쪽: 데이터 유형 배지 + 시간 */}
       <div className="flex items-center gap-1.5 min-w-0">
-        {arr.isScheduled ? (
-          <span className="shrink-0 text-[9px] px-1 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 font-black border border-amber-500/30">
-            예정
-          </span>
-        ) : (
+        {!arr.isScheduled && (
           <span className="shrink-0 flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black border border-emerald-500/30">
             <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
             LIVE
