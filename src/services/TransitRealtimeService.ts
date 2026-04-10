@@ -162,6 +162,12 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const ARVL_RATIO: Record<string, number> = { '0': 0.85, '1': 1.0, '2': 1.05, '3': 0.25 };
   const initialRatio = ARVL_RATIO[arvlCd] ?? 0.5;
 
+  // 노선 위 1차원 순서 정보: 워커에서 충돌 방지에 사용
+  const stationIdx = LINE_STATION_IDX.get(lineName)?.get(train.statnNm)
+    ?? LINE_STATION_IDX.get(lineName)?.get(train.statnNm.replace(/역$/, ''))
+    ?? 0;
+  const lineDir = isDownward ? 1 : -1; // +1 = 하행(idx 증가), -1 = 상행(idx 감소)
+
   return {
     id: `train-${train.subwayId ?? 'u'}-${train.trainNo}`,
     type: 'subway' as const,
@@ -176,6 +182,8 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
     updnLine: train.updnLine,
     currentStationName: train.statnNm,
     isSimulated,
+    lineStationIdx: stationIdx,
+    lineDir,
   };
 }
 

@@ -17,8 +17,11 @@ interface TransitUnit {
   status: string;
   currentBearing: number;
   isSimulated: boolean;
-  birthTime: number;   // 페이드-인 시작 시각
+  birthTime: number;        // 페이드-인 시작 시각
   deathTime: number | null; // 페이드-아웃 시작 시각 (null = 살아있음)
+  // ── 충돌 방지용 노선 순서 정보 ──
+  lineStationIdx: number;   // nextPos에 해당하는 역의 노선 인덱스
+  lineDir: number;          // +1 = 하행(idx 증가), -1 = 상행(idx 감소)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,6 +32,10 @@ const FADE_IN_MS     = 1_500;   // 페이드-인 시간
 const FADE_OUT_MS    = 1_500;   // 페이드-아웃 시간
 const EXPIRE_MS      = 90_000;  // 업데이트 없으면 사라지는 시간
 const TICK_INTERVAL  = 1000 / 30; // 30fps
+
+// 같은 방향 열차 간 최소 간격 (역 구간 단위)
+// 0.35 = 두 역 사이 거리의 35% 이상 유지
+const MIN_TRAIN_GAP  = 0.35;
 
 const state = new Map<string, TransitUnit>();
 let isTicking = false;
@@ -89,12 +96,9 @@ function processUpdates(units: any[]) {
           ? unit.prevPos
           : unit.nextPos;
 
-      // lastUpdateTime을 과거로 설정해 ratio = initialRatio가 되도록 맞춤
-      // 이렇게 하면 첫 tick에서 열차가 실제 위치(역 진입 중/도착/출발 직후)에 바로 표시됨
       const startRatio = unit.initialRatio ?? 0;
       const backwardMs = Math.min(startRatio * ANIM_DURATION, 1.5 * ANIM_DURATION);
 
-      // 출발 이후(ratio ≥ 1.0)이면 nextPos→futurePos 방향으로 bearing 설정
       const bearingTarget: [number, number] = startRatio >= 1.0
         ? (unit.futurePos ?? unit.nextPos)
         : unit.nextPos;
@@ -106,6 +110,8 @@ function processUpdates(units: any[]) {
         currentBearing: calcBearing(startPos, bearingTarget),
         birthTime: now,
         deathTime: null,
+        lineStationIdx: unit.lineStationIdx ?? 0,
+        lineDir:        unit.lineDir ?? 1,
       });
 
     } else {
@@ -122,34 +128,32 @@ function processUpdates(units: any[]) {
       }
 
       const newInitialRatio = unit.initialRatio ?? 0.5;
-
-      // API가 출발(≥1.0)을 반환했는데 아직 접근 중(<1.0)으로 표시되면
-      // lastUpdateTime을 보정해 즉시 오버슈트 구간으로 진입시킴
       const correctedUpdateTime = (newInitialRatio >= 1.0 && ratio < 1.0)
         ? now - newInitialRatio * ANIM_DURATION
         : now;
 
-      existing.lastPos        = visualPos;
-      existing.nextPos        = unit.nextPos;
-      existing.futurePos      = unit.futurePos ?? unit.nextPos;
-      existing.lastUpdateTime = correctedUpdateTime;
-      existing.lineName       = unit.lineName;
-      existing.lineColor      = unit.lineColor;
-      existing.label          = unit.label;
-      existing.status         = unit.status ?? '99';
-      existing.isSimulated    = unit.isSimulated;
-      // 실측 데이터로 교체될 때 페이드-아웃 취소
+      existing.lastPos         = visualPos;
+      existing.nextPos         = unit.nextPos;
+      existing.futurePos       = unit.futurePos ?? unit.nextPos;
+      existing.lastUpdateTime  = correctedUpdateTime;
+      existing.lineName        = unit.lineName;
+      existing.lineColor       = unit.lineColor;
+      existing.label           = unit.label;
+      existing.status          = unit.status ?? '99';
+      existing.isSimulated     = unit.isSimulated;
+      existing.lineStationIdx  = unit.lineStationIdx ?? existing.lineStationIdx;
+      existing.lineDir         = unit.lineDir ?? existing.lineDir;
       if (!unit.isSimulated && existing.deathTime !== null) {
         existing.deathTime = null;
-        existing.birthTime = now; // 실측 전환 시 페이드-인 재생
+        existing.birthTime = now;
       }
     }
   }
 
   // 오래된 유닛 페이드-아웃 예약
-  for (const [id, unit] of state) {
-    if (now - unit.lastUpdateTime > EXPIRE_MS && !unit.deathTime) {
-      unit.deathTime = now;
+  for (const [, unit] of state) {
+    if (Date.now() - unit.lastUpdateTime > EXPIRE_MS && !unit.deathTime) {
+      unit.deathTime = Date.now();
     }
   }
 }
@@ -161,21 +165,32 @@ function startTick() {
   isTicking = true;
 
   const tick = () => {
-    const now    = Date.now();
+    const now = Date.now();
     const result: any[] = [];
 
+    // ── Phase 1: 각 유닛의 unclamped ratio 계산 ──
+    const unitRatios = new Map<string, number>();
     for (const [id, unit] of state) {
-      // 페이드-아웃이 완료된 유닛 제거
+      if (unit.deathTime !== null && now - unit.deathTime > FADE_OUT_MS) continue;
+      const elapsed = now - unit.lastUpdateTime;
+      let ratio = Math.min(1.5, elapsed / ANIM_DURATION);
+      if (unit.status === '1') ratio = Math.min(1.0, ratio); // 당역 정차
+      unitRatios.set(id, ratio);
+    }
+
+    // ── Phase 2: 충돌 방지 — 같은 노선·방향 열차 간격 강제 ──
+    enforceTrainOrder(unitRatios);
+
+    // ── Phase 3: 렌더링 ──
+    for (const [id, unit] of state) {
+      // 페이드-아웃 완료된 유닛 제거
       if (unit.deathTime !== null && now - unit.deathTime > FADE_OUT_MS) {
         state.delete(id);
         continue;
       }
 
-      // 위치 계산
-      const elapsed = now - unit.lastUpdateTime;
-      let ratio = Math.min(1.5, elapsed / ANIM_DURATION);
-
-      if (unit.status === '1') ratio = Math.min(1.0, ratio); // 도착 정차
+      const ratio = unitRatios.get(id);
+      if (ratio === undefined) continue;
 
       let pos: [number, number];
       let bearingTarget: [number, number];
@@ -193,17 +208,16 @@ function startTick() {
       const targetBearing = calcBearing(pos, bearingTarget);
       unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, 0.08);
 
-      // 불투명도 계산 (페이드 인/아웃)
+      // 불투명도 (페이드 인/아웃)
       let opacity = 1;
       const age = now - unit.birthTime;
       if (age < FADE_IN_MS) opacity = age / FADE_IN_MS;
       if (unit.deathTime !== null) {
-        const dying = now - unit.deathTime;
-        opacity = Math.max(0, 1 - dying / FADE_OUT_MS);
+        opacity = Math.max(0, 1 - (now - unit.deathTime) / FADE_OUT_MS);
       }
 
       result.push({
-        id:              unit.id,
+        id,
         type:            unit.type,
         pos,
         bearing:         unit.currentBearing,
@@ -232,7 +246,104 @@ function startTick() {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 유틸리티
+// 충돌 방지: 같은 노선·방향 열차를 순서대로 정렬하고 최소 간격 강제
+//
+// 각 열차의 "노선 위 1차원 위치(progress)"를 계산:
+//   하행(lineDir=+1): progress = stationIdx - 1 + ratio  (높을수록 앞)
+//   상행(lineDir=-1): progress = ratio - stationIdx - 1  (높을수록 앞)
+//
+// progress 내림차순 정렬 후, 인접 쌍(선두, 후속)마다:
+//   gap = progress_lead - progress_follow
+//   gap < MIN_TRAIN_GAP 이면 후속 열차의 ratio를 클램프
+// ─────────────────────────────────────────────────────────────────────────────
+function enforceTrainOrder(unitRatios: Map<string, number>) {
+  // 그룹: 노선명 + 방향으로 묶기
+  const groups = new Map<string, string[]>(); // key → [id, ...]
+  for (const [id, unit] of state) {
+    if (unit.type !== 'subway') continue;
+    if (unit.deathTime !== null) continue; // 사라지는 중인 열차 제외
+    const ratio = unitRatios.get(id);
+    if (ratio === undefined) continue;
+    const key = `${unit.lineName}:${unit.lineDir}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(id);
+  }
+
+  for (const [key, ids] of groups) {
+    if (ids.length < 2) continue;
+
+    // 키에서 lineDir 파싱 (마지막 ':' 이후 값)
+    const colonIdx = key.lastIndexOf(':');
+    const lineDir  = parseInt(key.slice(colonIdx + 1), 10); // 1 또는 -1
+
+    // progress 내림차순 정렬 (선두 열차가 앞)
+    ids.sort((a, b) => {
+      const ua = state.get(a)!;
+      const ub = state.get(b)!;
+      const ra = unitRatios.get(a)!;
+      const rb = unitRatios.get(b)!;
+      return computeProgress(ub.lineStationIdx, rb, lineDir)
+           - computeProgress(ua.lineStationIdx, ra, lineDir);
+    });
+
+    // 인접 쌍마다 간격 강제
+    for (let i = 1; i < ids.length; i++) {
+      const leadId   = ids[i - 1];
+      const followId = ids[i];
+      const leadUnit   = state.get(leadId)!;
+      const followUnit = state.get(followId)!;
+      const leadRatio   = unitRatios.get(leadId)!;
+      const followRatio = unitRatios.get(followId)!;
+
+      const leadProg   = computeProgress(leadUnit.lineStationIdx,   leadRatio,   lineDir);
+      const followProg = computeProgress(followUnit.lineStationIdx, followRatio, lineDir);
+      const gap = leadProg - followProg;
+
+      if (gap < MIN_TRAIN_GAP) {
+        // 후속 열차의 최대 허용 progress → 그에 맞는 최대 ratio 계산
+        const maxFollowProg  = leadProg - MIN_TRAIN_GAP;
+        const maxFollowRatio = computeMaxRatio(followUnit.lineStationIdx, maxFollowProg, lineDir);
+        // 최소 0.01 보장 (위치가 완전히 역행하지 않도록)
+        unitRatios.set(followId, Math.max(0.01, Math.min(followRatio, maxFollowRatio)));
+      }
+    }
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 유틸리티 — progress 계산
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 노선 위 1차원 위치값.
+ * 하행(+1): stationIdx - 1 + ratio  → 높을수록 앞
+ * 상행(-1): ratio - stationIdx - 1  → 높을수록 앞 (덜 음수)
+ *
+ * 유도:
+ *   ratio=0 → lastPos (이전 역)
+ *   ratio=1 → nextPos (현재 역 = stationIdx)
+ *   ratio=1.5 → futurePos (다음 역)
+ *   하행: 실제 인덱스 위치 = (stationIdx - 1) + ratio
+ *   상행: lastPos = stationIdx+1, nextPos = stationIdx, futurePos = stationIdx-1
+ *         실제 "진행도" = -(stationIdx + 1) + ratio = ratio - stationIdx - 1
+ */
+function computeProgress(stationIdx: number, ratio: number, lineDir: number): number {
+  return lineDir > 0
+    ? stationIdx - 1 + ratio    // 하행
+    : ratio - stationIdx - 1;  // 상행
+}
+
+/**
+ * 주어진 최대 progress에서 해당 열차의 최대 ratio 역산.
+ */
+function computeMaxRatio(stationIdx: number, maxProgress: number, lineDir: number): number {
+  return lineDir > 0
+    ? maxProgress - stationIdx + 1    // 하행: ratio = progress - (stationIdx - 1)
+    : maxProgress + stationIdx + 1;  // 상행: ratio = progress + stationIdx + 1
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 수학 유틸리티
 // ─────────────────────────────────────────────────────────────────────────────
 function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
