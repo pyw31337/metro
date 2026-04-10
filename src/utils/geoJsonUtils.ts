@@ -147,13 +147,14 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
 
         let isActualTransfer = false;
         let routeColor = "#3b82f6";
+        let transferDetails: { fromLine: string; toLine: string } | null = null;
 
         if (i > 0 && i < path.length - 1) {
             const prevName = path[i-1];
             const nextName = path[i+1];
             const prevS = getStationByName(prevName);
             const nextS = getStationByName(nextName);
-            
+
             if (prevS && nextS) {
                 const incomingLines = s.lines.filter(l => prevS.lines.includes(l));
                 const outgoingLines = s.lines.filter(l => nextS.lines.includes(l));
@@ -161,16 +162,17 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 if (overlappingLines.length === 0 && incomingLines.length > 0 && outgoingLines.length > 0) {
                     isActualTransfer = true;
                 }
-                
+
                 if (outgoingLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(outgoingLines[0]);
                     if (color) routeColor = color;
                 }
-                
+
                 if (isActualTransfer) {
-                    const fromLine = incomingLines[0] || s.lines[0];
-                    const toLine = outgoingLines[0] || s.lines[0];
-                    (s as any).transferDetails = { fromLine, toLine };
+                    transferDetails = {
+                        fromLine: incomingLines[0] || s.lines[0],
+                        toLine: outgoingLines[0] || s.lines[0],
+                    };
                 }
             }
         } else if (i === 0 && path.length > 1) {
@@ -185,7 +187,6 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             }
         }
 
-        const transferDetails = (s as any).transferDetails;
         const platform = transferDetails ? "정보 확인" : "";
 
         stationFeatures.push({
