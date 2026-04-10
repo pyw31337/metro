@@ -5,6 +5,17 @@ import { StationArrival } from "@/types/metro";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Pre-built station position lookup (module-level, built once)
+// Map<lineName, Map<normalizedName, index>>
+// ─────────────────────────────────────────────────────────────────────────────
+const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
+  SUBWAY_LINES.map(l => [
+    l.name,
+    new Map(l.stations.map((s, i) => [s.name.replace(/역$/, ''), i]))
+  ])
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // 노선 색상 매핑
 // ─────────────────────────────────────────────────────────────────────────────
 const LINE_COLOR: Record<string, string> = {
@@ -181,9 +192,9 @@ function parseStopsLeft(arr: StationArrival): string {
     const cleanUser  = arr.statnNm.replace(/역$/, '');
     if (cleanTrain !== cleanUser) {
       let dist = -1;
-      for (const line of SUBWAY_LINES) {
-        const i1 = line.stations.findIndex(s => s.name.replace(/역$/, '') === cleanUser);
-        const i2 = line.stations.findIndex(s => s.name.replace(/역$/, '') === cleanTrain);
+      for (const [, idxMap] of LINE_STATION_IDX) {
+        const i1 = idxMap.get(cleanUser) ?? -1;
+        const i2 = idxMap.get(cleanTrain) ?? -1;
         if (i1 !== -1 && i2 !== -1) { dist = Math.abs(i1 - i2); break; }
       }
       if (dist > 0) return `${dist}역전`;
