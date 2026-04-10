@@ -66,6 +66,14 @@ interface MapLibreProps {
     onSelectBusRoute?: (routeNo: string, cityCode?: string) => void;
 }
 
+// Module-level constant — prevents new array reference on every render, preserving memo(MapBase)
+const INTERACTIVE_LAYER_IDS = [
+    'subway-station-circle', 'subway-station-label',
+    'subway-line-layer', 'subway-line-interaction', 'bus-unclustered',
+    'bus-unclustered-hitbox', 'bus-clusters',
+    'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-unclustered-label', 'wc-clusters'
+];
+
 const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) => {
     if (ctx.roundRect) {
         ctx.roundRect(x, y, w, h, r);
@@ -317,12 +325,7 @@ function MapLibreBackground(props: MapLibreProps) {
             onClick={handleMapClick}
             onCenterChange={onCenterChange}
             onBoundsChange={onBoundsChange}
-            interactiveLayerIds={[
-                'subway-station-circle', 'subway-station-label', 
-                'subway-line-layer', 'subway-line-interaction', 'bus-unclustered', 
-                'bus-unclustered-hitbox', 'bus-clusters',
-                'bus-station-label', 'train-layer', 'wc-unclustered', 'wc-unclustered-label', 'wc-clusters'
-            ]}
+            interactiveLayerIds={INTERACTIVE_LAYER_IDS}
         >
             <MapIconRegister stations={stations} />
             <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} />
