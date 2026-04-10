@@ -318,7 +318,7 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   const unitDir = unit.updnLine === '1' || (unit.updnLine ?? '').includes('하행') ? '1' : '0';
   if (unitDir !== seg.direction) return false;
 
-  // 구간 범위 내 열차만 표시
+  // 현재 역 정보 없으면 일단 표시
   if (!unit.currentStationName) return true;
   const idxMap = STATION_IDX.get(unit.lineName);
   if (!idxMap) return true;
@@ -329,11 +329,18 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
 
   if (currIdx < 0 || entryIdx < 0 || exitIdx < 0) return true;
 
-  const [minIdx, maxIdx] = entryIdx < exitIdx
-    ? [entryIdx - 2, exitIdx]
-    : [exitIdx,      entryIdx + 2];
+  // 하행(entryIdx < exitIdx) / 상행(entryIdx > exitIdx) 구분
+  const isDownward = entryIdx < exitIdx;
 
-  return currIdx >= minIdx && currIdx <= maxIdx;
+  if (isDownward) {
+    // 하행: 진입역 앞 2역부터 ~ 진출역 직전까지
+    // currIdx < exitIdx 조건: 이미 진출역에 도달하거나 통과한 열차는 제거
+    return currIdx >= entryIdx - 2 && currIdx < exitIdx;
+  } else {
+    // 상행: 진입역(인덱스 큰 쪽) 앞 2역부터 ~ 진출역(인덱스 작은 쪽) 직전까지
+    // currIdx > exitIdx 조건: 이미 진출역에 도달하거나 통과한 열차는 제거
+    return currIdx <= entryIdx + 2 && currIdx > exitIdx;
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
