@@ -5869,3 +5869,18 @@ export function getStationByName(name: string): Station | undefined {
     }
     return _stationByName.get(name);
 }
+
+// Pre-built station name → [{lineName, color}] reverse index for O(1) badge lookups
+// Both "역명" and base name map to the same entry list.
+export const STATION_LINE_IDX: Map<string, { lineName: string; color: string }[]> = (() => {
+    const idx = new Map<string, { lineName: string; color: string }[]>();
+    for (const l of SUBWAY_LINES) {
+        for (const s of l.stations) {
+            const entry = { lineName: l.name, color: l.color };
+            const existing = idx.get(s.name);
+            if (existing) existing.push(entry);
+            else idx.set(s.name, [entry]);
+        }
+    }
+    return idx;
+})();

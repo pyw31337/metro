@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Clock, Bell, ArrowUpDown, Share2 } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import * as Hangul from "hangul-js";
-import { Station, SUBWAY_LINES } from "@/data/subway-lines";
+import { Station, SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
 import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
 import type { PathResult } from "@/types/metro";
 import type { PathStrategy } from "@/store/useRouteStore";
@@ -371,23 +371,9 @@ export default function UnifiedBottomPanel({
     const badges = useMemo(() => {
         if (!selectedStationName) return [];
         const cleanName = selectedStationName.replace(/역+$/, '');
-        const b: { num: string; color: string; lineName: string }[] = [];
-        const addedLines = new Set<string>();
-
-        for (const line of SUBWAY_LINES) {
-            if (line.stations.some(s => s.name === cleanName || s.name === cleanName + '역')) {
-                if (!addedLines.has(line.name)) {
-                    b.push({ 
-                        num: getLineShortName(line.name), 
-                        color: line.color,
-                        lineName: line.name
-                    });
-                    addedLines.add(line.name);
-                }
-            }
-        }
-        return b;
-    }, [selectedStationName, stations]);
+        const entries = STATION_LINE_IDX.get(cleanName) ?? STATION_LINE_IDX.get(cleanName + '역') ?? [];
+        return entries.map(e => ({ num: getLineShortName(e.lineName), color: e.color, lineName: e.lineName }));
+    }, [selectedStationName]);
 
     useEffect(() => {
         if (badges.length > 0 && (!activeLine || !badges.find(b => b.lineName === activeLine))) {

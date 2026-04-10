@@ -8,7 +8,7 @@ import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
 import { WCItem, BusStop } from "@/types/metro";
 import { ArrivalHeader, ArrivalItemListItem } from "./ArrivalInfo";
-import { SUBWAY_LINES } from "@/data/subway-lines";
+import { SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
 import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
@@ -45,16 +45,6 @@ interface MapPopupsProps {
 
 const LINE_COLOR_MAP = new Map(SUBWAY_LINES.map(l => [l.name, l.color]));
 
-// Reverse index: station name → [{lineName, color}] — O(1) lookup for badges
-const STATION_LINE_IDX = new Map<string, { lineName: string; color: string }[]>();
-for (const l of SUBWAY_LINES) {
-  for (const s of l.stations) {
-    const entry = { lineName: l.name, color: l.color };
-    const existing = STATION_LINE_IDX.get(s.name);
-    if (existing) existing.push(entry);
-    else STATION_LINE_IDX.set(s.name, [entry]);
-  }
-}
 
 const getLineInfo = (lineName: string) => {
     if (!lineName) return { num: '?', color: '#ccc' };
