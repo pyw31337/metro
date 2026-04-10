@@ -85,8 +85,10 @@ const FAST_TRANSFER_SET = new Set([
 
 // Module-level line and station index maps (built once at module init)
 const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
-const LINE_STATION_IDX = new Map(
-  SUBWAY_LINES.map(l => [l.name, new Map(l.stations.map((s, i) => [s.name, i]))])
+// Per-branch index maps: supports multi-branch lines (e.g. 5호선 has 5-Hanam and 5-Macheon).
+// Using line.id as key avoids the "last branch wins" overwrite problem of name-keyed maps.
+const LINE_IDX_BY_ID = new Map(
+  SUBWAY_LINES.map(l => [l.id, new Map(l.stations.map((s, i) => [s.name, i]))])
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -508,11 +510,16 @@ function makeSegment(
 ): { line: string; direction: '0' | '1'; stations: string[] } {
   let direction: '0' | '1' = '1';
   if (stations.length >= 2) {
-    const idxMap = LINE_STATION_IDX.get(lineName);
-    if (idxMap) {
-      const i1 = idxMap.get(stations[0]) ?? -1;
-      const i2 = idxMap.get(stations[stations.length - 1]) ?? -1;
-      if (i1 !== -1 && i2 !== -1) direction = i2 > i1 ? '1' : '0';
+    const s0 = stations[0];
+    const sN = stations[stations.length - 1];
+    // Try all branches with this line name until both endpoints are found in the same branch.
+    // Needed for multi-branch lines like 5호선 (5-Hanam covers 방화~하남, 5-Macheon covers 강동~마천).
+    for (const line of SUBWAY_LINES) {
+      if (line.name !== lineName) continue;
+      const idxMap = LINE_IDX_BY_ID.get(line.id)!;
+      const i1 = idxMap.get(s0) ?? -1;
+      const i2 = idxMap.get(sN) ?? -1;
+      if (i1 !== -1 && i2 !== -1) { direction = i2 > i1 ? '1' : '0'; break; }
     }
   }
   return { line: lineName, direction, stations };

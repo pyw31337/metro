@@ -34,8 +34,10 @@ export function normLine(raw: string): string {
 /** Map< variant → canonical stationName >  (역 suffix 있는 변형 포함) */
 const VARIANT_TO_CANONICAL = new Map<string, string>();
 
-/** Map< lineName → Map< canonicalStationName → stationIndex > > */
+/** Map< lineName → Map< canonicalStationName → stationIndex > > (last branch wins for duplicates) */
 const LINE_STATION_IDX = new Map<string, Map<string, number>>();
+/** Map< lineId → Map< canonicalStationName → stationIndex > > (all branches, no overwrite) */
+const LINE_IDX_BY_ID = new Map<string, Map<string, number>>();
 
 /** Map< canonicalStationName → { lineName, color }[] > */
 const STATION_LINES = new Map<string, { lineName: string; color: string }[]>();
@@ -44,6 +46,7 @@ function buildRegistry() {
   for (const line of SUBWAY_LINES) {
     const idxMap = new Map<string, number>();
     LINE_STATION_IDX.set(line.name, idxMap);
+    LINE_IDX_BY_ID.set(line.id, idxMap);
 
     line.stations.forEach((s, i) => {
       const canonical = s.name; // subway-lines.ts 기준이 canonical
@@ -95,10 +98,22 @@ export function resolveStationName(raw: string): string {
  * raw에 "역", 괄호 등이 포함돼 있어도 자동 정규화.
  */
 export function stationIdx(lineName: string, raw: string): number {
-  const idxMap = LINE_STATION_IDX.get(lineName);
-  if (!idxMap) return -1;
   const canonical = resolveStationName(raw);
-  return idxMap.get(canonical) ?? idxMap.get(raw) ?? idxMap.get(normStation(raw)) ?? -1;
+  const bare = normStation(raw);
+  // Fast path: use the cached per-name map (works for single-branch lines)
+  const primary = LINE_STATION_IDX.get(lineName);
+  if (primary) {
+    const idx = primary.get(canonical) ?? primary.get(raw) ?? primary.get(bare) ?? -1;
+    if (idx !== -1) return idx;
+  }
+  // Fallback: search all branches with this line name (handles multi-branch lines like 5호선)
+  for (const line of SUBWAY_LINES) {
+    if (line.name !== lineName) continue;
+    const m = LINE_IDX_BY_ID.get(line.id)!;
+    const idx = m.get(canonical) ?? m.get(raw) ?? m.get(bare) ?? -1;
+    if (idx !== -1) return idx;
+  }
+  return -1;
 }
 
 /**

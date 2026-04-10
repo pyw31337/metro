@@ -453,7 +453,10 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   const seg = segs.find(s => s.line === unit.lineName);
   if (!seg) return false;
 
-  const unitDir = unit.updnLine === '1' || (unit.updnLine ?? '').includes('하행') ? '1' : '0';
+  const updn = unit.updnLine ?? '';
+  const unitDir: '0' | '1' =
+    updn === '1' || updn.includes('하행') || updn.includes('외선') || updn.includes('outer')
+      ? '1' : '0';
   if (unitDir !== seg.direction) return false;
 
   if (!unit.currentStationName) return true;
