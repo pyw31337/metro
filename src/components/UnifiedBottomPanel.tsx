@@ -338,6 +338,35 @@ export default function UnifiedBottomPanel({
     const destInputRef = useRef<HTMLInputElement>(null);
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    // Module-level line color map (static, never changes)
+    const lineColorById = useMemo(() => new Map(SUBWAY_LINES.map(l => [l.id, l.color])), []);
+
+    // Per-route memos — only recompute when activePath changes
+    const segmentByStation = useMemo(() => {
+        const m = new Map<string, { line: string; color: string }>();
+        if (!activePath?.segments) return m;
+        activePath.segments.forEach(seg => {
+            const color = lineColorById.get(seg.line) || LINE_COLORS[seg.line] || '#6b7280';
+            seg.stations.forEach(s => m.set(s, { line: seg.line, color }));
+        });
+        return m;
+    }, [activePath, lineColorById]);
+
+    const transferByStation = useMemo(() => {
+        const m = new Map(activePath?.transfers?.map(t => [t.stationName, t]) ?? []);
+        return m;
+    }, [activePath]);
+
+    // O(1) station lookup by name (both "역명" and "역명역" variants)
+    const stationByName = useMemo(() => {
+        const m = new Map<string, Station>();
+        for (const s of stations) {
+            m.set(s.name, s);
+            if (!s.name.endsWith('역')) m.set(s.name + '역', s);
+        }
+        return m;
+    }, [stations]);
+
     const badges = useMemo(() => {
         if (!selectedStationName) return [];
         const cleanName = selectedStationName.replace(/역+$/, '');
@@ -478,7 +507,7 @@ export default function UnifiedBottomPanel({
             lineInfo = lineMatch[2].trim();
         }
         if (!lineInfo && stations) {
-            const found = stations.find(s => s.name === stationName || s.name === stationName + "역");
+            const found = stationByName.get(stationName) ?? stationByName.get(stationName + "역");
             if (found && found.lines && found.lines.length > 0) lineInfo = found.lines[0];
         }
         return (
@@ -547,23 +576,12 @@ export default function UnifiedBottomPanel({
                                     className="bg-zinc-50 dark:bg-black/10 rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden"
                                 >
                                     <div className="max-h-[240px] overflow-y-auto no-scrollbar p-4 flex flex-col">
-                                        {(() => {
-                                            // Build station→segment mapping for line colors
-                                            // seg.line is a lineId (e.g. "1-Incheon"), resolve to color via SUBWAY_LINES
-                                            const lineColorById = new Map(SUBWAY_LINES.map(l => [l.id, l.color]));
-                                            const segmentByStation = new Map<string, { line: string; color: string }>();
-                                            if (activePath.segments) {
-                                                activePath.segments.forEach(seg => {
-                                                    const color = lineColorById.get(seg.line) || LINE_COLORS[seg.line] || '#6b7280';
-                                                    seg.stations.forEach(s => segmentByStation.set(s, { line: seg.line, color }));
-                                                });
-                                            }
-                                            return activePath.path.map((stationName, idx) => {
+                                        {activePath.path.map((stationName, idx) => {
                                             const isStart = idx === 0;
                                             const isEnd = idx === activePath.path.length - 1;
                                             const weight = activePath.weights[idx] ?? 0;
                                             const arrivalTime = new Date(now + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                            const transfer = activePath.transfers.find(t => t.stationName === stationName);
+                                            const transfer = transferByStation.get(stationName);
                                             const seg = segmentByStation.get(stationName);
                                             const lineColor = seg?.color || '#3b82f6';
                                             const tc = transfer
@@ -619,7 +637,7 @@ export default function UnifiedBottomPanel({
                                                     </div>
                                                 </div>
                                             );
-                                        });})()}
+                                        })}
                                         {/* Fare Information + Share */}
                                         <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-zinc-500 dark:text-zinc-400 font-bold">
                                             <span className="text-[11px]">성인 교통카드 기준</span>
