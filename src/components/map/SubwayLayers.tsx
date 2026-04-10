@@ -22,10 +22,10 @@ const SubwayLayers = ({
   const isActive = activeTab === "subway" || activeTab === "subway+bus";
   const vis: "visible" | "none" = isActive ? "visible" : "none";
 
-  // Flat gray — opacity 없는 단색. 다크/라이트 분리
-  const GRAY_LINE    = isDarkMode ? "#34495E" : "#BDBDBD";
-  const GRAY_STATION = isDarkMode ? "#3D4D5E" : "#BBBBBB";
-  const GRAY_TEXT    = isDarkMode ? "#555555" : "#AAAAAA";
+  // ── 비경로 gray: 이전보다 훨씬 옅게 ──────────────────────────────────────
+  const GRAY_LINE    = isDarkMode ? "#2C3E50" : "#D8D8D8";
+  const GRAY_STATION = isDarkMode ? "#2C3E50" : "#DADADA";
+  const GRAY_TEXT    = isDarkMode ? "#44556A" : "#C0C0C0";
 
   // 경로에 사용된 노선 이름 목록 (중복 제거)
   const routeLineNames: string[] = pathResult?.segments
@@ -34,36 +34,24 @@ const SubwayLayers = ({
 
   const hasRoute = !!(pathResult?.path?.length);
 
-  // ── 노선 색 표현식 ──────────────────────────────────────────────────────────
-  // 경로 검색 중: 경로 노선 → native color, 나머지 → flat gray
-  // 특정 노선 포커스: 해당 노선 → native color, 나머지 → flat gray
-  // 기본: 모든 노선 native color
+  // ── 노선 선 색 ────────────────────────────────────────────────────────────
   let lineColorExpr: any;
   if (hasRoute) {
     lineColorExpr = routeLineNames.length > 0
-      ? ["case",
-          ["in", ["get", "name"], ["literal", routeLineNames]],
-          ["get", "color"],
-          GRAY_LINE
-        ]
+      ? ["case", ["in", ["get", "name"], ["literal", routeLineNames]], ["get", "color"], GRAY_LINE]
       : GRAY_LINE;
   } else if (focusedLine) {
-    lineColorExpr = ["case",
-      ["==", ["get", "name"], focusedLine],
-      ["get", "color"],
-      GRAY_LINE
-    ];
+    lineColorExpr = ["case", ["==", ["get", "name"], focusedLine], ["get", "color"], GRAY_LINE];
   } else {
     lineColorExpr = ["get", "color"];
   }
 
-  // 노선 두께: 경로 검색 중엔 1.5px 얇게 (RouteLayers가 굵은 경로 선을 위에 그림)
+  // 노선 두께: 경로 검색 중엔 1.5px (RouteLayers가 굵은 경로선을 위에 그림)
   const lineWidth: number = hasRoute ? 1.5 : 4;
 
-  // ── 역 점 색 표현식 ─────────────────────────────────────────────────────────
+  // ── 역 점 테두리 색 ───────────────────────────────────────────────────────
   let stationStrokeColor: any;
   if (hasRoute) {
-    // 경로 검색 중: 모든 역 점을 flat gray로. RouteLayers가 경로 역만 별도 표시
     stationStrokeColor = GRAY_STATION;
   } else if (focusedLine) {
     stationStrokeColor = ["case",
@@ -75,10 +63,31 @@ const SubwayLayers = ({
     stationStrokeColor = ["get", ["at", 0, ["get", "lineColors"]]];
   }
 
-  // ── 역명 라벨 색 표현식 ────────────────────────────────────────────────────
+  // ── 역명 라벨 색 ─────────────────────────────────────────────────────────
+  // 경로 검색 중: 경로 노선 역사명 → 해당 노선 첫 번째 색, 나머지 → gray
   let textColor: any;
   if (hasRoute) {
-    textColor = GRAY_TEXT;
+    if (routeLineNames.length > 0) {
+      // 역의 lines 배열과 경로 노선 이름 교집합이 있으면 → 해당 노선 native color
+      // MapLibre 표현식에서 배열 교집합이 어려우므로, 경로 노선별 조건을 중첩 case로 빌드
+      // 최대 경로 노선 수가 적으므로 (보통 2~3개) 중첩 case 사용
+      let expr: any = GRAY_TEXT;
+      for (const lineName of [...routeLineNames].reverse()) {
+        // lineColors는 역 feature에 저장된 순서대로라 라인 이름과 인덱스가 다를 수 있음.
+        // 안전하게: 해당 노선이 역의 lines 배열에 있으면 첫번째 lineColors를 쓰는 대신,
+        // 경로 노선이면 isDarkMode 기준 흰/검 텍스트 + 나중에 halo로 구분되게 함.
+        // (lineColors 인덱스 맞추기는 GeoJSON 빌드 단계에서 라인마다 반복 추가하므로
+        //  첫 번째 색이 첫 등록 노선 색 → 경로 노선이 이미 알고 있으므로 그 색을 직접 사용)
+        expr = ["case",
+          ["in", ["literal", lineName], ["get", "lines"]],
+          isDarkMode ? "#ffffff" : "#222222",
+          expr
+        ];
+      }
+      textColor = expr;
+    } else {
+      textColor = GRAY_TEXT;
+    }
   } else if (focusedLine) {
     textColor = ["case",
       ["in", ["literal", focusedLine], ["get", "lines"]],
@@ -92,74 +101,52 @@ const SubwayLayers = ({
   return (
     <>
       <Source id="subway-lines" type="geojson" data={subwayData.lines}>
-        {/* 넓은 히트 영역 (불투명도 0 = GPU compositing 없음, 단순 픽셀 무시) */}
+        {/* 넓은 히트 영역 — line-opacity:0 은 GPU compositing 없이 그냥 픽셀 무시 */}
         <Layer
           id="subway-line-interaction"
           type="line"
           layout={{ "line-join": "round", "line-cap": "round", "visibility": vis }}
-          paint={{
-            "line-width": 25,
-            "line-opacity": 0
-          }}
+          paint={{ "line-width": 25, "line-opacity": 0 }}
         />
 
-        {/* 노선 선 — opacity 표현식 완전 제거, flat color만 사용 */}
+        {/* 노선 선 */}
         <Layer
           id="subway-line-layer"
           type="line"
           layout={{ "line-join": "round", "line-cap": "round", "visibility": vis }}
-          paint={{
-            "line-color": lineColorExpr,
-            "line-width": lineWidth,
-          }}
+          paint={{ "line-color": lineColorExpr, "line-width": lineWidth }}
         />
       </Source>
 
       <Source id="subway-stations" type="geojson" data={subwayData.stations}>
-        {/* 역 점 — circle-opacity/stroke-opacity 표현식 완전 제거 */}
+        {/* 역 점 */}
         <Layer
           id="subway-station-circle"
           type="circle"
           layout={{ "visibility": vis }}
           paint={{
-            "circle-radius": [
-              "interpolate", ["linear"], ["zoom"],
-              10, 2,
-              12, 4,
-              14, 7,
-              16, 9
-            ],
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 12, 4, 14, 7, 16, 9],
             "circle-color": "white",
-            "circle-stroke-width": [
-              "interpolate", ["linear"], ["zoom"],
-              12, 1.5,
-              14, 2.5,
-              16, 3
-            ],
+            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 12, 1.5, 14, 2.5, 16, 3],
             "circle-stroke-color": stationStrokeColor,
           }}
         />
 
-        {/* 역명 라벨 — text-opacity 표현식 제거 */}
+        {/* 역명 라벨 */}
         <Layer
           id="subway-station-label"
           type="symbol"
           layout={{
             "visibility": vis,
             "text-field": ["get", "name"],
-            "text-size": [
-              "interpolate", ["linear"], ["zoom"],
-              12, 10,
-              14, 13,
-              16, 15
-            ],
+            "text-size": ["interpolate", ["linear"], ["zoom"], 12, 10, 14, 13, 16, 15],
             "text-offset": [0, 1.4],
             "text-anchor": "top",
             "symbol-sort-key": 1,
           }}
           paint={{
             "text-color": textColor,
-            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
+            "text-halo-color": isDarkMode ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.9)",
             "text-halo-width": 1.5,
           }}
         />

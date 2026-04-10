@@ -35,19 +35,30 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [selectedId, setSelectedId]   = useState<string | null>(null);
   const [selectedInfo, setSelectedInfo] = useState<{ label: string; lineName: string; lineColor: string } | null>(null);
 
-  // ─── 레이어 z-order 보장: 열차 레이어가 항상 노선/역사 레이어 위에 표시 ───
+  // ─── 레이어 z-order 보장: 열차·버블 레이어가 항상 노선/역사 레이어 위에 표시 ───
+  // moveLayer(id) = 맨 위로 이동 (beforeId 없으면 스택 최상단)
+  // 트리거: 스타일 로드 + React가 레이어를 추가한 직후(sourcedata) + 일정 주기
   useEffect(() => {
     if (!map) return;
+    const TRAIN_LAYERS = ['transit-trains', 'transit-train-label', 'transit-buses'];
     const ensureOnTop = () => {
       try {
-        ['transit-trains', 'transit-train-label', 'transit-buses'].forEach(id => {
+        TRAIN_LAYERS.forEach(id => {
           if (map.getLayer(id)) map.moveLayer(id);
         });
       } catch {}
     };
     if (map.isStyleLoaded()) ensureOnTop();
     map.on('style.load', ensureOnTop);
-    return () => { map.off('style.load', ensureOnTop); };
+    // React가 새 레이어를 추가할 때 source 로드 완료 이벤트가 발생
+    map.on('sourcedata', ensureOnTop);
+    // 안전망: 2초마다 한 번씩 체크 (style 재로드 등 엣지케이스 대비)
+    const interval = setInterval(ensureOnTop, 2000);
+    return () => {
+      map.off('style.load', ensureOnTop);
+      map.off('sourcedata', ensureOnTop);
+      clearInterval(interval);
+    };
   }, [map]);
 
   // activePath를 ref로 유지해서 매 tick마다 클로저 최신값 참조
