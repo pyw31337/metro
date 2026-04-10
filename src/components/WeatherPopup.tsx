@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { X, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Wind } from "lucide-react";
 import { motion } from "framer-motion";
 import { hapticLight } from "@/utils/haptic";
-import { useMapStore } from "@/store/useMapStore";
+import { getMapCenter } from "@/utils/mapCenter";
 
 interface WeatherData {
     address: string;
@@ -42,8 +42,8 @@ export default function WeatherPopup({ onClose }: WeatherPopupProps) {
     const [loading, setLoading] = useState(true);
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Snapshot center at mount via getState() — no subscription, no re-renders when map pans
-    const mountCenter = useRef(useMapStore.getState().center);
+    // Snapshot center at mount — module-level mutable ref, no Zustand subscription, no re-renders
+    const mountCenter = useRef(getMapCenter());
     const mountLat = useRef(mountCenter.current[0]);
     const mountLng = useRef(mountCenter.current[1]);
 

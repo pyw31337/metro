@@ -3,7 +3,6 @@ import { Station, BusStop, WCItem } from '@/types/metro';
 
 interface MapStore {
   // 지도 상태
-  center: [number, number]; // [lat, lng]
   activeLine: string | null;
   // 사용자 위치
   userLocation: [number, number] | null;
@@ -18,7 +17,6 @@ interface MapStore {
   bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number } | null;
 
   // 액션
-  setCenter: (c: [number, number]) => void;
   setActiveLine: (line: string | null) => void;
   toggleActiveLine: (line: string) => void;
   setUserLocation: (loc: [number, number] | null) => void;
@@ -32,7 +30,6 @@ interface MapStore {
 }
 
 export const useMapStore = create<MapStore>((set, get) => ({
-  center: [37.5546, 126.9706],
   activeLine: null,
   userLocation: null,
   hasInitialLocation: false,
@@ -43,7 +40,6 @@ export const useMapStore = create<MapStore>((set, get) => ({
   nearestWC: null,
   bounds: null,
 
-  setCenter: (c) => set({ center: c }),
   setActiveLine: (line) => set({ activeLine: line }),
   toggleActiveLine: (line) => set(state => ({
     activeLine: state.activeLine === line ? null : line

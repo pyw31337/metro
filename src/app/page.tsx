@@ -10,6 +10,7 @@ import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 import { useDataWorker }      from "@/hooks/useDataWorker";
 import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
 import { normalizeStationName } from "@/utils/stationUtils";
+import { setMapCenter }         from "@/utils/mapCenter";
 import { findBusPath }         from "@/utils/busRouting";
 import { getCityCodeByCoords } from "@/utils/regionUtils";
 import { hapticSuccess, hapticError } from "@/utils/haptic";
@@ -311,14 +312,14 @@ export default function Home() {
     subway.setSelectedStationName(normalizeStationName(name));
     subway.setSelectedBusStop(null);
     subway.setSelectedWC(null);
-    if (latlng) mapSt.setCenter([latlng[0], latlng[1]]);
+    if (latlng) setMapCenter(latlng[0], latlng[1]);
   }, [subway, mapSt]);
 
   const handleBusStopClick = useCallback((stop: BusStop, coords?: [number, number]) => {
     subway.setSelectedBusStop(stop);
     subway.setSelectedStationName(null);
     subway.setSelectedWC(null);
-    if (coords) mapSt.setCenter([coords[1], coords[0]]);
+    if (coords) setMapCenter(coords[1], coords[0]);
   }, [subway, mapSt]);
 
   const handleReset = useCallback(() => {
@@ -411,7 +412,7 @@ export default function Home() {
   // Stable callbacks — use getState() for Zustand actions so no subscription needed
   // (Zustand actions are always the same reference; getState() avoids re-render triggers)
   const handleCenterChange = useCallback((lat: number, lng: number) => {
-    useMapStore.getState().setCenter([lat, lng]);
+    setMapCenter(lat, lng);
   }, []);
 
   const handleActiveLineChange = useCallback((line: string | null) => {
