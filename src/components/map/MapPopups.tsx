@@ -236,8 +236,8 @@ const MapPopups = ({
 
                 {activeTab === 'subway' && badges.length > 0 && (
                     <div 
-                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-1 w-full min-w-0 scroll-smooth touch-pan-x pointer-events-auto cursor-grab active:cursor-grabbing last:pr-4"
-                        style={{ WebkitOverflowScrolling: 'touch', scrollSnapType: 'x mandatory' }}
+                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-1 w-full min-w-0 scroll-smooth pointer-events-auto"
+                        style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
                         onPointerDown={(e) => e.stopPropagation()}
                         onMouseDown={(e) => e.stopPropagation()}
                         onWheel={(e) => e.stopPropagation()}
@@ -255,8 +255,9 @@ const MapPopups = ({
                                       hapticLight();
                                       onActiveLineChange(badge.lineName);
                                     }}
-                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 scroll-snap-align-start ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
-                                    style={{ 
+                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
+                                    style={{
+                                      touchAction: 'pan-x',
                                       backgroundColor: isActive ? badge.color : 'transparent',
                                       borderColor: isActive ? 'transparent' : badge.color,
                                       color: isActive ? 'white' : badge.color

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Clock, Bell, ArrowUpDown, Share2 } from "lucide-react";
+import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Clock, Bell, ArrowUpDown, Share2, Plus } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
@@ -323,14 +323,15 @@ export default function UnifiedBottomPanel({
     onSelectBusRoute
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
-    const { waypoints, removeWaypoint } = useRouteStore();
+    const { waypoints, addWaypoint, removeWaypoint } = useRouteStore();
     const setSelectedBusStop = useSubwayStore(s => s.setSelectedBusStop);
     const { history, addToHistory, clearHistory } = useSearchHistory();
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [activeIndex, setActiveIndex] = useState<number>(-1);
-    const [activeField, setActiveField] = useState<"source" | "dest" | null>(null);
+    const [activeField, setActiveField] = useState<"source" | "dest" | "waypoint" | null>(null);
+    const [waypointInput, setWaypointInput] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [shareCopied, setShareCopied] = useState(false);
@@ -413,18 +414,21 @@ export default function UnifiedBottomPanel({
         if (externalValidationError === 'no_route') setNoRouteStale(true);
     }, [externalValidationError]);
 
-    const handleSearch = (val: string, type: "source" | "dest") => {
+    const handleSearch = (val: string, type: "source" | "dest" | "waypoint") => {
         setNoRouteStale(false);
         // Local state updates immediately for responsive input display
         if (type === "dest") setDestination(val);
+        else if (type === "waypoint") setWaypointInput(val);
         else setSource(val);
 
         // Debounce store update to avoid triggering route calculation on every keystroke
-        if (routeUpdateRef.current) clearTimeout(routeUpdateRef.current);
-        routeUpdateRef.current = setTimeout(() => {
-            if (type === "dest") onSetDestination?.(val);
-            else onSetSource?.(val);
-        }, 400);
+        if (type !== "waypoint") {
+            if (routeUpdateRef.current) clearTimeout(routeUpdateRef.current);
+            routeUpdateRef.current = setTimeout(() => {
+                if (type === "dest") onSetDestination?.(val);
+                else onSetSource?.(val);
+            }, 400);
+        }
 
         if (!val || val.trim().length === 0) {
             setSearchResults([]);
@@ -477,6 +481,9 @@ export default function UnifiedBottomPanel({
         if (activeField === "dest") {
             setDestination(fullName);
             onSetDestination?.(fullName);
+        } else if (activeField === "waypoint") {
+            addWaypoint(fullName);
+            setWaypointInput("");
         } else {
             setSource(fullName);
             onSetSource?.(fullName);
@@ -678,7 +685,7 @@ export default function UnifiedBottomPanel({
 
                     <AnimatePresence mode="wait">
                         {activeField && (() => {
-                            const query = (activeField === "source" ? source : destination).trim();
+                            const query = (activeField === "source" ? source : activeField === "dest" ? destination : waypointInput).trim();
                             if (searchResults.length > 0) return (
                                 <motion.div key="results" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
                                     <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
@@ -780,26 +787,64 @@ export default function UnifiedBottomPanel({
                                     ))}
                                 </div>
                             )}
-                            {/* Swap Button */}
-                            {(source || destination) && waypoints.length === 0 && (
-                                <div className="flex justify-end -my-0.5 pr-1 z-10 relative">
+                            {/* Waypoint Input Row */}
+                            {activeField === "waypoint" && (
+                                <div className="flex items-center px-3 h-9 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-400/50 ring-1 ring-violet-400/20">
+                                    <span className="text-[11px] font-black text-violet-500 shrink-0 mr-1">경유</span>
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        placeholder="경유역 검색"
+                                        value={waypointInput}
+                                        onChange={(e) => handleSearch(e.target.value, "waypoint")}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); }
+                                            else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); }
+                                            else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) selectLocation(searchResults[activeIndex]); }
+                                            else if (e.key === 'Escape') { setActiveField(null); setWaypointInput(""); setSearchResults([]); }
+                                        }}
+                                        onBlur={() => setTimeout(() => { if (activeField === "waypoint") { setActiveField(null); setWaypointInput(""); setSearchResults([]); } }, 250)}
+                                        className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-violet-300 text-zinc-900 dark:text-white px-2"
+                                    />
+                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => { setActiveField(null); setWaypointInput(""); setSearchResults([]); }} className="p-1 text-violet-400 hover:text-violet-600 transition-all"><X size={14} /></button>
+                                </div>
+                            )}
+                            {/* Action Row: 경유지 추가 + 출발↔도착 바꾸기 */}
+                            {(source || destination) && (
+                                <div className="flex items-center justify-between -my-0.5 px-1 z-10 relative">
                                     <button
                                         onClick={() => {
                                             hapticLight();
-                                            const prevSource = source;
-                                            const prevDest = destination;
-                                            setSource(prevDest);
-                                            setDestination(prevSource);
-                                            onSetSource?.(prevDest);
-                                            onSetDestination?.(prevSource);
+                                            setWaypointInput("");
+                                            setActiveField(activeField === "waypoint" ? null : "waypoint");
                                             setSearchResults([]);
-                                            setActiveField(null);
                                         }}
-                                        className="p-1.5 rounded-full bg-zinc-200/80 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90 shadow-sm"
-                                        title="출발/도착 바꾸기"
+                                        className={`flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-violet-100 dark:bg-violet-500/15 text-violet-600 dark:text-violet-400 hover:bg-violet-200 dark:hover:bg-violet-500/25'}`}
+                                        title="경유지 추가"
                                     >
-                                        <ArrowUpDown size={12} />
+                                        <Plus size={11} />
+                                        <span>경유지</span>
                                     </button>
+                                    {waypoints.length === 0 && (
+                                        <button
+                                            onClick={() => {
+                                                hapticLight();
+                                                const prevSource = source;
+                                                const prevDest = destination;
+                                                setSource(prevDest);
+                                                setDestination(prevSource);
+                                                onSetSource?.(prevDest);
+                                                onSetDestination?.(prevSource);
+                                                setSearchResults([]);
+                                                setActiveField(null);
+                                            }}
+                                            className="flex items-center gap-1 px-2 py-1 rounded-full bg-zinc-200/80 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 text-[10px] font-bold hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90"
+                                            title="출발/도착 바꾸기"
+                                        >
+                                            <ArrowUpDown size={11} />
+                                            <span>바꾸기</span>
+                                        </button>
+                                    )}
                                 </div>
                             )}
                             {/* Destination Second */}

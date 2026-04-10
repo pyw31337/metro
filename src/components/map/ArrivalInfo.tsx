@@ -107,7 +107,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     <button
       onClick={() => onToggleTimeDisplay?.()}
       className={`
-        w-full flex items-center justify-between px-3 py-2.5 rounded-xl
+        w-full flex items-center justify-between px-3 py-1.5 rounded-xl
         bg-black/[0.03] dark:bg-white/5
         border transition-transform active:scale-[0.98]
         ${isDivergent ? 'border-orange-400/60' : 'border-black/5 dark:border-white/5'}
@@ -126,7 +126,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
           </span>
         )}
         <span
-          className="text-[13px] font-black leading-tight"
+          className="text-[12px] font-semibold leading-tight whitespace-nowrap"
           style={isHighlight ? { color: lineColor } : {}}
         >
           {displayTime}
