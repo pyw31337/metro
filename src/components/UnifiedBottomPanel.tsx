@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Clock, Bell, ArrowUpDown, Share2, Plus } from "lucide-react";
+import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES, STATION_LINE_IDX } from "@/data/subway-lines";
@@ -64,8 +64,6 @@ const LINE_COLORS: Record<string, string> = {
     "공항철도": "#0090D2", "경춘선": "#0C8E72", "인천1호선": "#7CA8D5", "인천2호선": "#ED8B00"
 };
 
-// Module-level: SUBWAY_LINES never changes so no need for useMemo inside component
-const LINE_COLOR_BY_ID = new Map(SUBWAY_LINES.map(l => [l.id, l.color]));
 
 const getLineBadge = (lineStr: string) => {
     const cleanLine = lineStr.replace(/[()]/g, "").trim();
@@ -301,7 +299,6 @@ export default function UnifiedBottomPanel({
     selectedStrategy,
     onStrategyChange,
     pathResults,
-    activePath,
     timeDisplayMode,
     setTimeDisplayMode,
     isLocating = false,
@@ -334,7 +331,7 @@ export default function UnifiedBottomPanel({
     const [waypointInput, setWaypointInput] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
-    const [shareCopied, setShareCopied] = useState(false);
+
     const [noRouteStale, setNoRouteStale] = useState(false); // persists until input changes or route found
     const [now, setNow] = useState(() => Date.now());
     const { tasks, isIngesting } = useIngestion();
@@ -344,21 +341,6 @@ export default function UnifiedBottomPanel({
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const routeUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Per-route memos — only recompute when activePath changes
-    const segmentByStation = useMemo(() => {
-        const m = new Map<string, { line: string; color: string }>();
-        if (!activePath?.segments) return m;
-        activePath.segments.forEach(seg => {
-            const color = LINE_COLOR_BY_ID.get(seg.line) || LINE_COLORS[seg.line] || '#6b7280';
-            seg.stations.forEach(s => m.set(s, { line: seg.line, color }));
-        });
-        return m;
-    }, [activePath]);
-
-    const transferByStation = useMemo(() => {
-        const m = new Map(activePath?.transfers?.map(t => [t.stationName, t]) ?? []);
-        return m;
-    }, [activePath]);
 
     // O(1) station lookup by name (both "역명" and "역명역" variants)
     const stationByName = useMemo(() => {
@@ -574,112 +556,6 @@ export default function UnifiedBottomPanel({
                                 <IngestionProgress tasks={tasks} isVisible={isIngesting} />
                             </div>
 
-                            {/* Premium Route Timeline */}
-                            {showAllRouteBubbles && activePath && (
-                                <motion.div 
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    className="bg-zinc-50 dark:bg-black/10 rounded-2xl border border-black/5 dark:border-white/5 overflow-hidden"
-                                >
-                                    <div className="max-h-[240px] overflow-y-auto no-scrollbar p-4 flex flex-col">
-                                        {activePath.path.map((stationName, idx) => {
-                                            const isStart = idx === 0;
-                                            const isEnd = idx === activePath.path.length - 1;
-                                            const weight = activePath.weights[idx] ?? 0;
-                                            const arrivalTime = new Date(now + weight * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                            const transfer = transferByStation.get(stationName);
-                                            const seg = segmentByStation.get(stationName);
-                                            const lineColor = seg?.color || '#3b82f6';
-                                            const tc = transfer
-                                                ? (LINE_COLOR_BY_ID.get(transfer.toLine) || LINE_COLORS[transfer.toLine] || '#3b82f6')
-                                                : '#3b82f6';
-
-                                            return (
-                                                <div key={idx} className="flex gap-4">
-                                                    {/* Timeline Bar */}
-                                                    <div className="flex flex-col items-center w-4 relative">
-                                                        {!isEnd && (
-                                                            <div
-                                                                className="absolute top-2 bottom-0 w-[3px] rounded-full"
-                                                                style={{ backgroundColor: transfer ? '#d1d5db' : `${lineColor}50` }}
-                                                            />
-                                                        )}
-                                                        <div
-                                                            className={`z-10 rounded-full border-2 bg-white dark:bg-zinc-900 mt-1.5 ${isStart || isEnd ? 'h-[12px] w-[12px]' : 'w-[10px] h-[10px]'}`}
-                                                            style={{ borderColor: lineColor }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Station Info */}
-                                                    <div className={`flex-1 flex items-center justify-between pb-4 ${!isEnd ? 'border-b border-black/[0.03] dark:border-white/[0.03]' : ''}`}>
-                                                        <div className="flex flex-col">
-                                                            <div className="flex items-center gap-2">
-                                                                <span className={`text-[13px] font-bold ${isStart || isEnd ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400'}`}>
-                                                                    {stationName}
-                                                                </span>
-                                                                {transfer && (
-                                                                    <div
-                                                                        className="flex items-center gap-1.5 px-2 py-1 rounded-full border shadow-sm"
-                                                                        style={{
-                                                                            backgroundColor: `${tc}15`,
-                                                                            borderColor: `${tc}30`
-                                                                        }}
-                                                                    >
-                                                                        <span className="text-[9px] font-black" style={{ color: tc }}>환승</span>
-                                                                        <span className="text-[9px] font-black truncate max-w-[40px] uppercase tracking-tighter" style={{ color: tc }}>{getLineShortName(transfer.toLine)}</span>
-                                                                        {transfer.fastTransfer && (
-                                                                            <div className="flex items-center gap-1 ml-1 pl-1.5 border-l border-blue-500/20">
-                                                                                <Clock size={10} className="text-yellow-500 fill-yellow-500/10" />
-                                                                                <span className="text-[9px] text-zinc-900 dark:text-white font-black">{transfer.fastTransfer}</span>
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                        <span className="text-[11px] font-black text-zinc-400 font-mono tracking-tight">
-                                                            {isStart ? new Date(now).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false }) : arrivalTime}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        {/* Fare Information + Share */}
-                                        <div className="mt-2 pt-3 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-zinc-500 dark:text-zinc-400 font-bold">
-                                            <span className="text-[11px]">성인 교통카드 기준</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-[13px] text-zinc-900 dark:text-white font-black">{activePath.fare?.toLocaleString()}원</span>
-                                                <button
-                                                    onClick={() => {
-                                                        hapticLight();
-                                                        const start = activePath.path[0];
-                                                        const end = activePath.path[activePath.path.length - 1];
-                                                        const mins = Math.round(activePath.totalWeight || 0);
-                                                        const transfers = activePath.transferCount || 0;
-                                                        const fare = activePath.fare?.toLocaleString() || '1400';
-                                                        const base = `${window.location.origin}${window.location.pathname}`;
-                                                        const url = `${base}?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`;
-                                                        const text = `[Metro Live] ${start} → ${end}\n소요: ${mins}분 | 환승: ${transfers}회 | 요금: ${fare}원\n${url}`;
-                                                        if (navigator.share) {
-                                                            navigator.share({ title: 'Metro Live 경로', text, url });
-                                                        } else {
-                                                            navigator.clipboard?.writeText(text).then(() => {
-                                                                hapticSuccess();
-                                                                setShareCopied(true);
-                                                                setTimeout(() => setShareCopied(false), 2000);
-                                                            });
-                                                        }
-                                                    }}
-                                                    className={`p-1 rounded-lg transition-all active:scale-90 ${shareCopied ? 'bg-green-100 dark:bg-green-500/20 text-green-500' : 'bg-zinc-100 dark:bg-white/10 text-zinc-400 hover:text-blue-500'}`}
-                                                    title={shareCopied ? '복사됨!' : '경로 공유'}
-                                                >
-                                                    <Share2 size={12} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
                         </div>
                     )}
 

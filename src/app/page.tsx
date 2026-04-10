@@ -116,7 +116,7 @@ export default function Home() {
             clearInterval(timerInterval);
 
             // 최초 위치 → 지도 이동 (직접 호출, 배치 렌더 우회)
-            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 2000 });
+            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 13, duration: 2000 });
             mapSt.setHasInitialLocation(true);
 
 
@@ -234,7 +234,8 @@ export default function Home() {
   const calculatePath = useCallback(async (
     start: string | null,
     waypoints: string[],
-    end: string | null
+    end: string | null,
+    showError = false   // true일 때만 no_route 에러 표시 (길찾기 버튼 명시적 실행 시)
   ) => {
     const rst = useRouteStore.getState();
     if (!start || !end) { rst.setPathResults(null); return; }
@@ -245,7 +246,7 @@ export default function Home() {
     if (useUIStore.getState().activeTab === 'bus') {
       const res = findBusPath(start, end, useSubwayStore.getState().busStops);
       rst.setBusPathResult(res);
-      if (!res) rst.setValidationError('no_route');
+      if (!res && showError) rst.setValidationError('no_route');
       rst.setIsCalculating(false);
       return;
     }
@@ -263,22 +264,21 @@ export default function Home() {
         hapticSuccess();
         rst2.setPathResults({ time: res.time, transfer: res.transfer });
       } else {
-        hapticError();
+        if (showError) { hapticError(); rst2.setValidationError('no_route'); }
         rst2.setPathResults(null);
-        rst2.setValidationError('no_route');
       }
     } catch {
-      hapticError();
+      if (showError) hapticError();
       const rst2 = useRouteStore.getState();
       rst2.setPathResults(null);
-      rst2.setValidationError('no_route');
+      if (showError) rst2.setValidationError('no_route');
       rst2.setIsCalculating(false);
     }
   }, [findPath]);
 
-  // start/end/waypoints 바뀔 때마다 자동 탐색
+  // start/end/waypoints 바뀔 때마다 자동 탐색 (에러 표시 없음 — 입력 중일 수 있음)
   useEffect(() => {
-    calculatePath(route.startStation, route.waypoints, route.endStation);
+    calculatePath(route.startStation, route.waypoints, route.endStation, false);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [route.startStation, route.waypoints, route.endStation]);
 
@@ -448,7 +448,7 @@ export default function Home() {
   const handleTabChange = useCallback((tab: any) => useUIStore.getState().setActiveTab(tab), []);
 
   const handleSearch = useCallback((start: string, end: string) => {
-    calculatePath(start, useRouteStore.getState().waypoints, end);
+    calculatePath(start, useRouteStore.getState().waypoints, end, true);
   }, [calculatePath]);
 
   // ─────────────────────────────────────────────────────────────────────────
