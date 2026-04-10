@@ -14,11 +14,11 @@ export const useTransferVerification = (pathResult: PathResult | null) => {
     }, [verifiedPlats]);
 
     useEffect(() => {
-        if (!pathResult) {
-            setVerifiedPlats({});
-            fetchingRef.current.clear();
-            return;
-        }
+        setVerifiedPlats({});
+        fetchingRef.current.clear();
+        if (!pathResult) return;
+
+        let cancelled = false;
 
         const fetchAll = async () => {
             const getLine = (sName: string): string[] =>
@@ -44,16 +44,15 @@ export const useTransferVerification = (pathResult: PathResult | null) => {
 
                 const key = `${curr}-${common[0]}-${outLines[0]}`;
 
-                // Use ref for up-to-date value without stale closure
                 if (verifiedPlatsRef.current[key] || fetchingRef.current.has(key)) return;
 
                 fetchingRef.current.add(key);
                 try {
                     const plat = await fetchTransferPlatform(curr, common[0], outLines[0]);
-                    if (plat) {
+                    // pathResult가 바뀐 뒤에 도착한 결과는 버림
+                    if (!cancelled && plat) {
                         setVerifiedPlats(prev => ({ ...prev, [key]: plat }));
                     }
-                    // plat이 null이면 key를 세팅하지 않아 UI에서 숨김 처리됨
                 } catch {
                     // 조회 실패 시 key 미세팅 → UI 숨김
                 } finally {
@@ -65,7 +64,9 @@ export const useTransferVerification = (pathResult: PathResult | null) => {
         };
 
         fetchAll();
-    // pathResult identity changes when route changes; STATION_LINE_IDX is module-level (stable)
+
+        return () => { cancelled = true; };
+    // pathResult identity changes when route changes; stationLines is module-level (stable)
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pathResult]);
 
