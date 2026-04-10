@@ -1,19 +1,10 @@
 "use client";
 
-import { useEffect, useState, useRef } from 'react';
-
-export interface UserLocation {
-    lat: number;
-    lng: number;
-    accuracy: number;
-    heading: number | null;
-    timestamp: number;
-}
+import { useEffect, useRef } from 'react';
 
 export function useUserLocation(map: any | null) {
-    const [location, setLocation] = useState<UserLocation | null>(null);
-    const lastPosRef = useRef<UserLocation | null>(null);
-    const targetPosRef = useRef<UserLocation | null>(null);
+    const lastPosRef = useRef<{ lat: number; lng: number } | null>(null);
+    const targetPosRef = useRef<{ lat: number; lng: number; accuracy: number; heading: number | null } | null>(null);
     const lastUpdateRef = useRef<number>(0);
 
     const fetchLocation = () => {
@@ -31,7 +22,6 @@ export function useUserLocation(map: any | null) {
 
                 if (!lastPosRef.current) {
                     lastPosRef.current = newLoc;
-                    setLocation(newLoc);
                 }
                 
                 // Shift current target to last position for interpolation
@@ -66,29 +56,17 @@ export function useUserLocation(map: any | null) {
         };
         document.addEventListener('visibilitychange', handleVisibility);
 
-        // Animation Loop for 60fps interpolation
+        // Animation Loop for 60fps interpolation — updates map source directly (no React state)
         let rafId: number;
         const animate = () => {
             if (lastPosRef.current && targetPosRef.current && map && map.isStyleLoaded()) {
-                const now = Date.now();
-                const elapsed = now - lastUpdateRef.current;
-                const duration = 10000; // 10s polling window
-                const t = Math.min(1.1, elapsed / duration); // Allow slight overshoot for smoothness
+                const elapsed = Date.now() - lastUpdateRef.current;
+                const t = Math.min(1.1, elapsed / 10000); // 10s polling window, slight overshoot
 
-                // Smoothly interpolate between last known and target
                 const currentLat = lastPosRef.current.lat + (targetPosRef.current.lat - lastPosRef.current.lat) * Math.min(1, t);
                 const currentLng = lastPosRef.current.lng + (targetPosRef.current.lng - lastPosRef.current.lng) * Math.min(1, t);
 
-                // Update internal state
-                setLocation({
-                    lat: currentLat,
-                    lng: currentLng,
-                    accuracy: targetPosRef.current.accuracy,
-                    heading: targetPosRef.current.heading,
-                    timestamp: now
-                });
-
-                // Update Map Source directly for high performance
+                // Update map source directly — avoids triggering React re-renders at 60fps
                 const source: any = map.getSource('user-location-source');
                 if (source) {
                     source.setData({
@@ -96,7 +74,7 @@ export function useUserLocation(map: any | null) {
                         features: [{
                             type: 'Feature',
                             geometry: { type: 'Point', coordinates: [currentLng, currentLat] },
-                            properties: { 
+                            properties: {
                                 accuracy: targetPosRef.current.accuracy,
                                 heading: targetPosRef.current.heading || 0
                             }
@@ -115,6 +93,4 @@ export function useUserLocation(map: any | null) {
             document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, [map]);
-
-    return location;
 }
