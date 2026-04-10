@@ -427,8 +427,8 @@ const MapPopups = ({
                             <span className="px-1.5 py-0.5 rounded-md bg-rose-500 text-white text-[9px] font-black shrink-0">급행</span>
                         )}
                     </div>
-                    <button 
-                        onClick={(e) => { e.stopPropagation(); setSelectedTrain(null); }}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); hapticLight(); setSelectedTrain(null); }}
                         className="p-1 -mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors shrink-0"
                     >
                         <X size={14} />

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Compass, Navigation2, X } from "lucide-react";
+import { hapticLight } from "@/utils/haptic";
 
 interface DirectionCompassProps {
     userLocation: [number, number] | null;
@@ -95,7 +96,7 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                             <p className="text-[10px] font-bold text-blue-500 truncate max-w-[120px]">{targetName}</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 active:scale-90 transition-all">
+                    <button onClick={() => { hapticLight(); onClose(); }} className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 active:scale-90 transition-all">
                         <X size={14} />
                     </button>
                 </div>

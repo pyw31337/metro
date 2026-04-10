@@ -40,6 +40,8 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
   // ── 도착 시간 계산 (초 단위, 마운트 시점 기준) ──
   const initialSec = useRef<number>((() => {
+    // arvlCd "0"=진입, "1"=당역 → treat as ~20s remaining
+    if (arr.arvlCd === '0' || arr.arvlCd === '1') return 20;
     let t = parseInt(arr.barvlDt) || 0;
     if (t === 0) {
       if (stopsLeft.includes("당역")) t = 30;
