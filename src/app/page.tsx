@@ -200,12 +200,21 @@ export default function Home() {
     document.documentElement.classList.toggle('dark', ui.isDarkMode);
   }, [ui.isDarkMode]);
 
-  // PWA shortcut: ?tab= query parameter → set active tab on launch
+  // PWA shortcuts via query params: ?tab=, ?from=, ?to=
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get('tab');
     if (tab && ['subway', 'bus', 'wc'].includes(tab)) {
       ui.setActiveTab(tab as any);
+    }
+    // Deep link: ?from=강남&to=홍대입구 → pre-fill route inputs
+    const from = params.get('from');
+    const to = params.get('to');
+    if (from) route.setStartStation(from);
+    if (to) route.setEndStation(to);
+    // Clean the URL so it doesn't persist across navigations
+    if (from || to || tab) {
+      window.history.replaceState({}, '', window.location.pathname);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

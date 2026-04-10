@@ -651,9 +651,11 @@ export default function UnifiedBottomPanel({
                                                         const mins = Math.round(activePath.totalWeight || 0);
                                                         const transfers = activePath.transferCount || 0;
                                                         const fare = activePath.fare?.toLocaleString() || '1400';
-                                                        const text = `[Metro Live] ${start} → ${end}\n소요: ${mins}분 | 환승: ${transfers}회 | 요금: ${fare}원\n경로: ${activePath.path.join(' → ')}`;
+                                                        const base = `${window.location.origin}${window.location.pathname}`;
+                                                        const url = `${base}?from=${encodeURIComponent(start)}&to=${encodeURIComponent(end)}`;
+                                                        const text = `[Metro Live] ${start} → ${end}\n소요: ${mins}분 | 환승: ${transfers}회 | 요금: ${fare}원\n${url}`;
                                                         if (navigator.share) {
-                                                            navigator.share({ title: 'Metro Live 경로', text });
+                                                            navigator.share({ title: 'Metro Live 경로', text, url });
                                                         } else {
                                                             navigator.clipboard?.writeText(text).then(() => {
                                                                 hapticSuccess();
