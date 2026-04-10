@@ -89,7 +89,7 @@ function processUpdates(units: any[]) {
     const existing = state.get(unit.id);
 
     if (!existing) {
-      // 신규 등장 — initialRatio로 올바른 위치에서 시작 (페이드-인)
+      // ── 신규 등장: initialRatio가 알려주는 위치에서 시작 (페이드-인) ──
       const startPos: [number, number] =
         unit.prevPos &&
         (unit.prevPos[0] !== unit.nextPos[0] || unit.prevPos[1] !== unit.nextPos[1])
@@ -105,23 +105,39 @@ function processUpdates(units: any[]) {
 
       state.set(unit.id, {
         ...unit,
-        lastPos: startPos,
-        lastUpdateTime: now - backwardMs,
-        currentBearing: calcBearing(startPos, bearingTarget),
-        birthTime: now,
-        deathTime: null,
-        lineStationIdx: unit.lineStationIdx ?? 0,
-        lineDir:        unit.lineDir ?? 1,
+        lastPos:         startPos,
+        lastUpdateTime:  now - backwardMs,
+        currentBearing:  calcBearing(startPos, bearingTarget),
+        birthTime:       now,
+        deathTime:       null,
+        lineStationIdx:  unit.lineStationIdx ?? 0,
+        lineDir:         unit.lineDir ?? 1,
       });
 
     } else {
-      // 기존 유닛 업데이트 — 현재 시각적 위치에서 이어서 이동
+      // ── 기존 유닛 업데이트 ──
+
+      // 공통 메타데이터 항상 갱신
+      existing.lineName       = unit.lineName;
+      existing.lineColor      = unit.lineColor;
+      existing.label          = unit.label;
+      existing.status         = unit.status ?? '99';
+      existing.isSimulated    = unit.isSimulated;
+      existing.lineStationIdx = unit.lineStationIdx ?? existing.lineStationIdx;
+      existing.lineDir        = unit.lineDir        ?? existing.lineDir;
+      (existing as any).updnLine           = (unit as any).updnLine;
+      (existing as any).currentStationName = (unit as any).currentStationName;
+      if (!unit.isSimulated && existing.deathTime !== null) {
+        existing.deathTime = null;
+        existing.birthTime = now;
+      }
+
+      // 현재 애니메이션 ratio 계산
       const elapsed = now - existing.lastUpdateTime;
       let ratio = Math.min(1.5, elapsed / ANIM_DURATION);
-
-      // 정차 중인 열차(status='1')는 다음 역으로 overshoot하지 않도록 ratio 1.0으로 제한
       if (existing.status === '1') ratio = Math.min(1.0, ratio);
 
+      // 현재 시각적 위치 계산
       let visualPos: [number, number];
       if (ratio <= 1.0) {
         visualPos = lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
@@ -130,25 +146,32 @@ function processUpdates(units: any[]) {
         visualPos = lerp(existing.nextPos, existing.futurePos ?? existing.nextPos, easeInOut(overT));
       }
 
-      const newInitialRatio = unit.initialRatio ?? 0.5;
-      const correctedUpdateTime = (newInitialRatio >= 1.0 && ratio < 1.0)
-        ? now - newInitialRatio * ANIM_DURATION
-        : now;
+      const newNextPos = unit.nextPos;
+      const sameTarget = coordsClose(existing.nextPos, newNextPos);
 
-      existing.lastPos         = visualPos;
-      existing.nextPos         = unit.nextPos;
-      existing.futurePos       = unit.futurePos ?? unit.nextPos;
-      existing.lastUpdateTime  = correctedUpdateTime;
-      existing.lineName        = unit.lineName;
-      existing.lineColor       = unit.lineColor;
-      existing.label           = unit.label;
-      existing.status          = unit.status ?? '99';
-      existing.isSimulated     = unit.isSimulated;
-      existing.lineStationIdx  = unit.lineStationIdx ?? existing.lineStationIdx;
-      existing.lineDir         = unit.lineDir ?? existing.lineDir;
-      if (!unit.isSimulated && existing.deathTime !== null) {
-        existing.deathTime = null;
-        existing.birthTime = now;
+      if (sameTarget && ratio > 1.0) {
+        // ── 핵심 버그 수정 ──
+        // 이미 역을 통과한 overshoot 구간인데 API가 같은 역을 보고 →
+        // 기존에는 lastPos=visualPos, nextPos=역 좌표로 재설정해서 역방향 lerp 발생 (순간이동).
+        // 수정: nextPos/lastPos/lastUpdateTime 건드리지 않고 futurePos만 갱신.
+        // 애니메이션이 자연스럽게 계속됨.
+        existing.futurePos = unit.futurePos ?? unit.nextPos;
+
+      } else if (!sameTarget && ratio > 1.0) {
+        // 다음 역으로 이동 (overshoot 구간에서 새 target 도착)
+        // lastPos = 구 역 좌표, nextPos = 새 역 좌표, 시간은 백데이트 →
+        // 현재 시각적 위치가 수학적으로 동일하게 유지되어 점프 없음.
+        const overRatio = Math.min(ratio - 1.0, 1.0);
+        existing.lastPos        = existing.nextPos;            // 구 역 = 새 출발점
+        existing.nextPos        = newNextPos;
+        existing.futurePos      = unit.futurePos ?? newNextPos;
+        existing.lastUpdateTime = now - overRatio * ANIM_DURATION; // 연속성 보장
+      } else {
+        // ratio <= 1.0 (일반 구간): 시각적 위치에서 새 target으로 재시작
+        existing.lastPos        = visualPos;
+        existing.nextPos        = newNextPos;
+        existing.futurePos      = unit.futurePos ?? newNextPos;
+        existing.lastUpdateTime = now;
       }
     }
   }
@@ -159,6 +182,13 @@ function processUpdates(units: any[]) {
       unit.deathTime = Date.now();
     }
   }
+}
+
+// 두 좌표가 ~50m 이내인지 (동일 역 판별)
+function coordsClose(a: [number, number], b: [number, number]): boolean {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  return (dx * dx + dy * dy) < 0.000001; // ~100m² 이내
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
