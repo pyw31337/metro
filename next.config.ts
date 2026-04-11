@@ -3,6 +3,9 @@ import type { NextConfig } from "next";
 const isDev = process.env.NODE_ENV === 'development';
 
 const nextConfig: NextConfig = {
+  compiler: {
+    removeConsole: isDev ? false : { exclude: ['error', 'warn'] },
+  },
   output: 'export',
   distDir: 'out',
   // Use '/metro' for GitHub Pages, but empty for Firebase root-level hosting

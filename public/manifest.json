@@ -1,10 +1,12 @@
 {
+  "id": "/metro/",
   "name": "Metro Live",
   "short_name": "Metro Live",
   "description": "수도권 실시간 지하철·버스·화장실 네비게이션",
   "start_url": "/metro/",
   "scope": "/metro/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
   "background_color": "#ffffff",
   "theme_color": "#0052A4",
@@ -12,7 +14,8 @@
     {
       "src": "/metro/train-icon.png",
       "sizes": "150x150",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/metro/icon-192.png",
@@ -24,7 +27,13 @@
       "src": "/metro/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/metro/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ],
   "categories": ["navigation", "travel", "utilities"],

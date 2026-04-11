@@ -1,9 +1,10 @@
 // Metro Live Service Worker
 // Caches the app shell and static assets for offline use
 
-const CACHE_NAME = 'metro-live-v5';
-const STATIC_CACHE = 'metro-static-v3';
+const CACHE_NAME = 'metro-live-v6';
+const STATIC_CACHE = 'metro-static-v4';
 const TILE_CACHE = 'metro-tiles-v1';
+const FONT_CACHE = 'metro-fonts-v1';
 
 // App shell files to cache on install
 const APP_SHELL = [
@@ -40,7 +41,7 @@ self.addEventListener('activate', (event) => {
         caches.keys().then(keys =>
             Promise.all(
                 keys
-                    .filter(key => key !== CACHE_NAME && key !== STATIC_CACHE && key !== TILE_CACHE)
+                    .filter(key => key !== CACHE_NAME && key !== STATIC_CACHE && key !== TILE_CACHE && key !== FONT_CACHE)
                     .map(key => caches.delete(key))
             )
         )
@@ -63,6 +64,24 @@ self.addEventListener('fetch', (event) => {
         url.hostname.includes('allorigins.win')
     ) {
         return; // Let browser handle external requests normally
+    }
+
+    // Fonts (CDN): cache-first, long-lived (immutable per version pin)
+    if (url.hostname.includes('cdn.jsdelivr.net')) {
+        event.respondWith(
+            caches.open(FONT_CACHE).then(async cache => {
+                const cached = await cache.match(event.request);
+                if (cached) return cached;
+                try {
+                    const response = await fetch(event.request);
+                    if (response.ok) cache.put(event.request, response.clone());
+                    return response;
+                } catch {
+                    return new Response('', { status: 503 });
+                }
+            })
+        );
+        return;
     }
 
     // Map tiles: cache-first with long TTL (tiles are immutable per URL)

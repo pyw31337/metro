@@ -2,6 +2,8 @@ import { StationArrival, TimetableEntry } from '@/types/metro';
 import { db } from './db';
 import { getStaticTimetable, getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { API_ENDPOINTS } from '@/utils/api-client';
+import { normalizeLineName } from '@/utils/stationUtils';
+import { normStation } from '@/data/stationRegistry';
 
 // transfer-info: 번들 제외, 첫 사용 시 fetch 후 모듈 캐시
 let _transferDataCache: any[] | null = null;
@@ -15,8 +17,6 @@ async function getTransferData(): Promise<any[]> {
   }
   return _transferDataCache!;
 }
-import { normalizeLineName } from '@/utils/stationUtils';
-import { normStation } from '@/data/stationRegistry';
 
 const LINE_ID_MAP: { [key: string]: string } = {
     "1": "1001", "2": "1002", "3": "1003", "4": "1004", "5": "1005",
