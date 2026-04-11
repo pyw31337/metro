@@ -250,6 +250,64 @@ export class MetropolitanBusService {
   }
 
   /**
+   * Fetch all routes serving a Seoul bus stop (ws.bus.go.kr getRouteByStation)
+   * @param arsId Seoul bus stop ID (arsId)
+   */
+  static async fetchSeoulRoutesByStation(arsId: string): Promise<{ no: string; id: string; cityCode: string }[]> {
+    const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
+    if (!apiKey || apiKey === "sample") return [];
+    try {
+      const url = `${this.SEOUL_URL}stationinfo/getRouteByStation?arsId=${arsId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) return [];
+      const json = await res.json();
+      const headerCd = json?.ServiceResult?.msgHeader?.headerCd;
+      if (headerCd !== "0") return [];
+      const items: any[] = json?.ServiceResult?.msgBody?.itemList || [];
+      return items
+        .map((it: any) => ({ no: String(it.busRouteNm || it.rtNm || ""), id: String(it.busRouteId || ""), cityCode: "11" }))
+        .filter(r => r.id && r.no);
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Fetch first/last bus times for a route at a Seoul stop (ws.bus.go.kr getBustimeByStation)
+   * @param arsId Seoul bus stop ID
+   * @param busRouteId Seoul bus route ID
+   */
+  static async fetchSeoulBustimeByStation(arsId: string, busRouteId: string): Promise<{ firstBus: string; lastBus: string; headway: number } | null> {
+    const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
+    if (!apiKey || apiKey === "sample") return null;
+    try {
+      const url = `${this.SEOUL_URL}stationinfo/getBustimeByStation?arsId=${arsId}&busRouteId=${busRouteId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
+      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      if (!res.ok) return null;
+      const json = await res.json();
+      const headerCd = json?.ServiceResult?.msgHeader?.headerCd;
+      if (headerCd !== "0") return null;
+      const items: any[] = json?.ServiceResult?.msgBody?.itemList || [];
+      if (!items.length) return null;
+      const it = items[0];
+      // Seoul returns datetime string like "20230601053000" → extract HH:mm
+      const fmt = (s: string) => {
+        const str = String(s || "");
+        if (str.length >= 12) return `${str.slice(8, 10)}:${str.slice(10, 12)}`;
+        if (str.length >= 4)  return `${str.slice(0, 2)}:${str.slice(2, 4)}`; // fallback "0530"
+        return "";
+      };
+      return {
+        firstBus: fmt(it.firstBusTm || it.firstTm || ""),
+        lastBus:  fmt(it.lastBusTm  || it.lastTm  || ""),
+        headway:  parseInt(it.term || "0") || 0,
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * [NEW] Fetch real-time bus positions by routeId (Seoul & TAGO)
    */
   static async fetchBusPositions(cityCode: string, routeId: string): Promise<any[]> {

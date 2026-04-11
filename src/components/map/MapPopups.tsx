@@ -83,8 +83,8 @@ const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, addr
 };
 
 // ── 선택된 노선의 운행 정보 카드 ───────────────────────────────────
-const RouteScheduleCard = ({ routeId, cityCode }: { routeId: string; cityCode: string }) => {
-  const { info, loading } = useBusRouteInfo(routeId, cityCode);
+const RouteScheduleCard = ({ routeId, cityCode, arsId }: { routeId: string; cityCode: string; arsId?: string }) => {
+  const { info, loading } = useBusRouteInfo(routeId, cityCode, arsId);
   if (loading) return <div className="text-[10px] text-zinc-400 animate-pulse py-1">시간표 로딩중...</div>;
   if (!info) return null;
   return (
@@ -124,7 +124,7 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
   onSelectBusRoute?: (no: string, city?: string, id?: string) => void;
 }) => {
   const { arrivals, loading: arrLoading } = useBusArrivals(stopId, cityCode);
-  const { routes, loading: routeLoading } = useStopRoutes(stopId);
+  const { routes, loading: routeLoading } = useStopRoutes(stopId, cityCode);
   const [selectedRoute, setSelectedRoute] = useState<{ no: string; id: string; cityCode: string } | null>(null);
 
   const handleRouteClick = useCallback((no: string, city: string, id: string, e: React.MouseEvent) => {
@@ -159,7 +159,7 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
                     {bus.arrivalTime < 60 ? "곧 도착" : `${Math.floor(bus.arrivalTime / 60)}분 후`}
                   </span>
                 </button>
-                {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} />}
+                {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} arsId={stopId} />}
               </div>
             );
           })}
@@ -192,7 +192,7 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
                     style={{ backgroundColor: style.bg, color: style.text }}>{r.no}</span>
                   <span className="text-[10px] text-zinc-400">노선 보기 →</span>
                 </button>
-                {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} />}
+                {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} arsId={stopId} />}
               </div>
             );
           })}

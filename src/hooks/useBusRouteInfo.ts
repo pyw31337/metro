@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { MetropolitanBusService } from "@/services/busApi";
 
 export interface BusRouteInfo {
   no: string;
@@ -14,18 +15,50 @@ export interface BusRouteInfo {
 
 let cache: Record<string, BusRouteInfo | null> = {};
 
-export function useBusRouteInfo(routeId: string | null, cityCode: string | null) {
+/**
+ * @param routeId  Bus route ID
+ * @param cityCode City code (e.g. "11" for Seoul, "41" for Gyeonggi)
+ * @param arsId    Seoul bus stop arsId — required for Seoul schedule (getBustimeByStation)
+ */
+export function useBusRouteInfo(routeId: string | null, cityCode: string | null, arsId?: string | null) {
   const [info, setInfo] = useState<BusRouteInfo | null>(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!routeId || !cityCode) { setInfo(null); return; }
 
+    // Seoul: use getBustimeByStation (needs arsId)
+    if (cityCode === "11") {
+      if (!arsId) { setInfo(null); return; }
+      const key = `11:${routeId}:${arsId}`;
+      if (cache[key] !== undefined) { setInfo(cache[key]); return; }
+
+      setLoading(true);
+      MetropolitanBusService.fetchSeoulBustimeByStation(arsId, routeId)
+        .then(data => {
+          if (data) {
+            const result: BusRouteInfo = {
+              no: "", startName: "", endName: "",
+              firstBus: data.firstBus,
+              lastBus: data.lastBus,
+              headwayPeak: data.headway,
+              headwayOffPeak: 0,
+            };
+            cache[key] = result;
+            setInfo(result);
+          } else {
+            cache[key] = null;
+            setInfo(null);
+          }
+        })
+        .catch(() => { cache[key] = null; setInfo(null); })
+        .finally(() => setLoading(false));
+      return;
+    }
+
+    // Non-Seoul: use data.go.kr APIs
     const key = `${cityCode}:${routeId}`;
     if (cache[key] !== undefined) { setInfo(cache[key]); return; }
-
-    // Seoul (ws.bus.go.kr) — currently blocked, skip gracefully
-    if (cityCode === "11") { setInfo(null); return; }
 
     const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
     if (!apiKey || apiKey === "sample") { setInfo(null); return; }
@@ -67,7 +100,7 @@ export function useBusRouteInfo(routeId: string | null, cityCode: string | null)
       })
       .catch(() => { cache[key] = null; setInfo(null); })
       .finally(() => setLoading(false));
-  }, [routeId, cityCode]);
+  }, [routeId, cityCode, arsId]);
 
   return { info, loading };
 }
