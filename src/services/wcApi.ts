@@ -13,7 +13,9 @@
  */
 
 import type { WCItem } from "@/types/metro";
-import mockData from "@/data/wc.json";
+
+// 모듈 수준 캐시 — 첫 fetch 이후 재사용
+let _mockCache: WCItem[] | null = null;
 
 // ─── data.go.kr 응답 타입 ────────────────────────────────────────────────────
 interface DataGoKrWCItem {
@@ -159,9 +161,17 @@ async function fetchNationalWC(apiKey: string): Promise<WCItem[]> {
     .filter((item: WCItem) => item.lat !== 0 && item.lng !== 0);
 }
 
-// ─── Mock fallback ────────────────────────────────────────────────────────────
-function getMockData(): WCItem[] {
-  return mockData as WCItem[];
+// ─── Mock fallback — public/data/master-toilets.json에서 fetch ───────────────
+async function getMockData(): Promise<WCItem[]> {
+  if (_mockCache) return _mockCache;
+  try {
+    const res = await fetch('/metro/data/master-toilets.json');
+    if (!res.ok) throw new Error(`status ${res.status}`);
+    _mockCache = await res.json() as WCItem[];
+    return _mockCache;
+  } catch {
+    return [];
+  }
 }
 
 /**

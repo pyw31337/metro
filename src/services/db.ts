@@ -5,7 +5,6 @@ import {
     TimetableEntry, StationMetric,
     TransferInfo, StationExit, ParkingLot, StationCode
 } from '@/types/metro';
-import { DataIngestionService } from './dataIngestion';
 
 export class MetroDatabase extends Dexie {
   stations!: Table<Station>;
@@ -111,38 +110,9 @@ export class MetroDatabase extends Dexie {
           }
         });
         console.log('✅ Basic station data loaded.');
-        
-        // Fetch official metadata (Codes, FR Codes) after loading names
-        await Promise.all([
-            DataIngestionService.ingestStationMetadata(),
-            DataIngestionService.ingestStaticTransferData()
-        ]);
       } catch (err) {
         console.error('❌ Failed to initialize database:', err);
       }
-    } else {
-        // Check if metadata is missing from the first station
-        const first = await this.stations.offset(0).first();
-        if (first && !first.stationCd) {
-            console.log('🆔 Missing station metadata. Refreshing in background...');
-            DataIngestionService.ingestStationMetadata();
-        }
-        // Always ensure transfer data and additional public data are synced
-        DataIngestionService.ingestStaticTransferData();
-        
-        // Orchestrate full public data refresh if facilities or parking are empty
-        const facilityCount = await this.facilities.count();
-        if (facilityCount === 0) {
-            console.log('📡 Triggering first-run public data ingestion (staggered)...');
-            setTimeout(() => {
-                DataIngestionService.refreshStaticData().catch(err => {
-                    console.warn('Background ingestion failed:', err);
-                });
-            }, 2000);
-        }
-
-        // 🔄 NEW: Trigger Stale-While-Revalidate background sync
-        DataIngestionService.checkAndSyncStaleData().catch(() => {});
     }
   }
 

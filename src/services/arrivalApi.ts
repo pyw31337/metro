@@ -1,9 +1,20 @@
 import { StationArrival, TimetableEntry } from '@/types/metro';
 import { db } from './db';
-import { DataIngestionService } from './dataIngestion';
 import { getStaticTimetable, getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
-import transferData from '../data/transfer-info.json';
 import { API_ENDPOINTS } from '@/utils/api-client';
+
+// transfer-info: 번들 제외, 첫 사용 시 fetch 후 모듈 캐시
+let _transferDataCache: any[] | null = null;
+async function getTransferData(): Promise<any[]> {
+  if (_transferDataCache) return _transferDataCache;
+  try {
+    const res = await fetch('/metro/data/transfer-info.json');
+    _transferDataCache = res.ok ? await res.json() : [];
+  } catch {
+    _transferDataCache = [];
+  }
+  return _transferDataCache!;
+}
 import { normalizeLineName } from '@/utils/stationUtils';
 import { normStation } from '@/data/stationRegistry';
 
@@ -368,7 +379,8 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         }
     } catch (e) {}
 
-    const staticStation = (transferData as any[]).find(s => 
+    const transferData = await getTransferData();
+    const staticStation = transferData.find((s: any) =>
         s.stationName === cleanStation || s.stationName === normStation(stationName)
     );
     if (staticStation) {
