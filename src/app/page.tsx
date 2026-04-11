@@ -196,7 +196,7 @@ export default function Home() {
             mapSt.setIsLocating(false);
             clearInterval(timerInterval);
 
-            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 13, duration: 2000 });
+            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
             mapSt.setHasInitialLocation(true);
 
             if (stations.length > 0) {
@@ -246,26 +246,19 @@ export default function Home() {
       findNearestStation(lat, lng, stations).then(n => { if (n) mapSt.setNearestStation(n as Station); });
     }
 
-    // Fetch tiles around the user's location (0.25° radius ≈ 28km)
-    // then find nearest bus stop + WC from the freshly loaded data
-    const bbox = bboxAround(lat, lng, 0.25);
-    Promise.all([fetchBusTiles(bbox), fetchWCTiles(bbox)]).then(([busStops, wcItems]) => {
-      const st = useSubwayStore.getState();
-      // Merge with whatever the viewport already loaded (union by id)
-      const mergedBus = busStops.length > st.busStops.length ? busStops : st.busStops;
-      const mergedWC  = wcItems.length  > st.wcItems.length  ? wcItems  : st.wcItems;
-      st.setBusStops(mergedBus);
-      st.setWcItems(mergedWC);
-
+    // Fetch a small bbox (0.15°≈16km) around the user just for nearest-stop calc.
+    // Do NOT push this into the display store — display is controlled by handleBoundsChange.
+    const nearBbox = bboxAround(lat, lng, 0.15);
+    Promise.all([fetchBusTiles(nearBbox), fetchWCTiles(nearBbox)]).then(([nearBus, nearWC]) => {
       let minB = Infinity, foundB: BusStop | null = null;
-      for (const s of mergedBus) {
+      for (const s of nearBus) {
         const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
         if (d < minB) { minB = d; foundB = s; }
       }
       mapSt.setNearestBusStop(foundB);
 
       let minW = Infinity, foundW: WCItem | null = null;
-      for (const s of mergedWC) {
+      for (const s of nearWC) {
         const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
         if (d < minW) { minW = d; foundW = s; }
       }
@@ -274,32 +267,36 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapSt.userLocation, stations]);
 
-  // 화장실 탭 전환 시 거리 정렬 + 내 위치로 지도 이동
+  // 버스·화장실 탭 전환 시 내 위치로 줌인 (100m 수준)
   useEffect(() => {
-    if (ui.activeTab === 'wc' && mapSt.userLocation) {
-      // 내 위치 중심으로 지도 이동 (zoom 15)
-      mapRef.current?.flyTo({
-        center: [mapSt.userLocation[1], mapSt.userLocation[0]],
-        zoom: 15,
-        duration: 800,
-      });
-      const [lat, lng] = mapSt.userLocation;
-      const wcItems = useSubwayStore.getState().wcItems;
+    const { activeTab } = ui;
+    const loc = mapSt.userLocation;
+    if (!loc) return;
+    const [lat, lng] = loc;
+    const center: [number, number] = [lng, lat];
+
+    if (activeTab === 'bus') {
+      mapRef.current?.flyTo({ center, zoom: 17, duration: 700 });
+    }
+
+    if (activeTab === 'wc') {
+      mapRef.current?.flyTo({ center, zoom: 17, duration: 700 });
+
       const doSort = (items: WCItem[]) =>
         sortWCs(items, lat, lng).then(sorted => subway.setNearestWCs(sorted as WCItem[]));
 
-      if (wcItems.length > 0) {
-        doSort(wcItems);
+      const current = useSubwayStore.getState().wcItems;
+      if (current.length > 0) {
+        doSort(current);
       } else {
-        // Tiles not yet loaded for this area — fetch now
-        fetchWCTiles(bboxAround(lat, lng, 0.25)).then(items => {
+        fetchWCTiles(bboxAround(lat, lng, 0.15)).then(items => {
           useSubwayStore.getState().setWcItems(items);
           doSort(items);
         });
       }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ui.activeTab, mapSt.userLocation, subway.wcItems]);
+  }, [ui.activeTab, mapSt.userLocation]);
 
   // isDarkMode → <html class="dark"> 동기화
   useEffect(() => {
@@ -525,13 +522,14 @@ export default function Home() {
   }, []);
 
   const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
-    // Fetch only the tiles that overlap the current viewport
+    // Always fetch tiles for the current viewport — display only what's on screen
     const [busStops, wcItems] = await Promise.all([
       fetchBusTiles(bounds),
       fetchWCTiles(bounds),
     ]);
-    useSubwayStore.getState().setBusStops(busStops);
-    useSubwayStore.getState().setWcItems(wcItems);
+    const st = useSubwayStore.getState();
+    st.setBusStops(busStops);
+    st.setWcItems(wcItems);
   }, []);
 
   // Stable callbacks — use getState() for Zustand actions so no subscription needed
