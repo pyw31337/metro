@@ -174,7 +174,8 @@ export const getArrivalsFromFullTimetable = async (
   const dow    = now.getDay();
   // holiday data covers both Sat and Sun for Korail/Incheon
   const dayKey = (dow === 0 || dow === 6) ? 'sun' : 'week';
-  const nowMin = h * 60 + now.getMinutes();
+  // After midnight (h === 0), treat current time as 24h+ so "24:30"-style times compare correctly
+  const nowMin = h === 0 ? 24 * 60 + now.getMinutes() : h * 60 + now.getMinutes();
 
   const results: StationArrival[] = [];
 
