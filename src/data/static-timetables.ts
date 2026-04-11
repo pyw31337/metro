@@ -25,6 +25,7 @@ function generateFromSubwayLines(stationName: string): StationArrival[] {
     // 이 역이 해당 노선에 있는지 확인
     const idx = line.stations.findIndex(
       s => s.name === clean || s.name === clean + '역' || s.name === stationName
+        || normStation(s.name) === clean
     );
     if (idx === -1) continue;
 
@@ -217,7 +218,8 @@ export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?:
     if (mapped.length > 0) return mapped.slice(0, 8);
 
     // 없으면 SUBWAY_LINES 배차 주기 기반 추정치 생성 (항상 최소한의 정보 제공)
-    return generateFromSubwayLines(clean);
+    // 원본 stationName 우선 전달 (괄호 포함 역명 "신촌(경의선)" 등 매칭을 위해)
+    return generateFromSubwayLines(stationName);
 };
 
 export const getStaticTimetable = (stationName: string, line: string, dayType: string): TimetableEntry[] => {
