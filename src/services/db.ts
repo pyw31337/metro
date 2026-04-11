@@ -41,15 +41,11 @@ export class MetroDatabase extends Dexie {
   /**
    * Initialize data from static sources and external API metadata.
    */
-  // Bump this string whenever master-subway.json, master-bus-stops.json, or master-toilets.json change
-  private static readonly DATA_VERSION = 3;
-
   async initializeData() {
-    const vlog = await this.syncLogs.get('dataVersion');
-    if (vlog && vlog.lastSync === MetroDatabase.DATA_VERSION) return; // already up-to-date
-
     const stationCount = await this.stations.count();
-    if (stationCount === 0 || vlog === undefined || vlog.lastSync < MetroDatabase.DATA_VERSION) {
+    if (stationCount > 0) return; // already initialized — don't clear live data
+
+    if (stationCount === 0) {
       try {
         const [stationsRes, busStopsRes, wcRes] = await Promise.all([
           fetch('./data/master-subway.json'),
@@ -113,7 +109,6 @@ export class MetroDatabase extends Dexie {
             console.warn('Could not load initial master timetables:', e);
           }
         });
-        await this.syncLogs.put({ key: 'dataVersion', lastSync: MetroDatabase.DATA_VERSION });
         console.log('✅ Basic station data loaded.');
       } catch (err) {
         console.error('❌ Failed to initialize database:', err);
