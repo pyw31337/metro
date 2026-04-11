@@ -13,7 +13,22 @@ export interface BusRouteInfo {
   headwayOffPeak: number;
 }
 
-let cache: Record<string, BusRouteInfo | null> = {};
+// Per-request API cache (keyed by cityCode:routeId or 11:routeId:arsId)
+let apiCache: Record<string, BusRouteInfo | null> = {};
+
+// Static route-schedules.json — loaded once, used for all non-Seoul routes
+let staticCache: Record<string, Omit<BusRouteInfo, 'no' | 'headwayOffPeak'>> | null = null;
+let staticLoading: Promise<typeof staticCache> | null = null;
+
+async function loadStaticSchedules() {
+  if (staticCache) return staticCache;
+  if (staticLoading) return staticLoading;
+  staticLoading = fetch('./data/route-schedules.json')
+    .then(r => r.json())
+    .then(d => { staticCache = d; return d; })
+    .catch(() => { staticLoading = null; staticCache = {}; return {}; });
+  return staticLoading;
+}
 
 /**
  * @param routeId  Bus route ID
@@ -31,7 +46,7 @@ export function useBusRouteInfo(routeId: string | null, cityCode: string | null,
     if (cityCode === "11") {
       if (!arsId) { setInfo(null); return; }
       const key = `11:${routeId}:${arsId}`;
-      if (cache[key] !== undefined) { setInfo(cache[key]); return; }
+      if (apiCache[key] !== undefined) { setInfo(apiCache[key]); return; }
 
       setLoading(true);
       MetropolitanBusService.fetchSeoulBustimeByStation(arsId, routeId)
@@ -44,62 +59,78 @@ export function useBusRouteInfo(routeId: string | null, cityCode: string | null,
               headwayPeak: data.headway,
               headwayOffPeak: 0,
             };
-            cache[key] = result;
+            apiCache[key] = result;
             setInfo(result);
           } else {
-            cache[key] = null;
+            apiCache[key] = null;
             setInfo(null);
           }
         })
-        .catch(() => { cache[key] = null; setInfo(null); })
+        .catch(() => { apiCache[key] = null; setInfo(null); })
         .finally(() => setLoading(false));
       return;
     }
 
-    // Non-Seoul: use data.go.kr APIs
+    // Non-Seoul: check static route-schedules.json first, then fall back to API
     const key = `${cityCode}:${routeId}`;
-    if (cache[key] !== undefined) { setInfo(cache[key]); return; }
+    if (apiCache[key] !== undefined) { setInfo(apiCache[key]); return; }
 
-    const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
-    if (!apiKey || apiKey === "sample") { setInfo(null); return; }
-
+    let cancelled = false;
     setLoading(true);
 
-    const isGBIS = cityCode === "41";
-    const url = isGBIS
-      ? `https://apis.data.go.kr/6410000/busrouteservice/getBusRouteInfoItem?serviceKey=${encodeURIComponent(apiKey)}&_type=json&routeId=${routeId}`
-      : `https://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteInfoIem?serviceKey=${encodeURIComponent(apiKey)}&_type=json&cityCode=${cityCode}&routeId=${routeId}`;
-
-    fetch(url, { signal: AbortSignal.timeout(8000) })
-      .then(r => r.json())
-      .then(json => {
-        const item = isGBIS
-          ? json?.response?.body?.busRouteInfoItem
-          : json?.response?.body?.items?.item;
-
-        if (!item) { cache[key] = null; setInfo(null); return; }
-
-        // 시간 포맷: "050000" → "05:00"
-        const fmt = (s: string) => {
-          if (!s || s.length < 4) return "";
-          return `${s.slice(0, 2)}:${s.slice(2, 4)}`;
-        };
-
-        const result: BusRouteInfo = {
-          no:           String(item.routeNo || item.ROUTE_NM || ""),
-          startName:    String(item.startNodeNm || item.ORIGIN_STN_NM || item.startVehicleNodeName || ""),
-          endName:      String(item.endNodeNm   || item.DEST_STN_NM   || item.endVehicleNodeName   || ""),
-          firstBus:     fmt(String(item.firstBusTm  || item.START_TM || "")),
-          lastBus:      fmt(String(item.lastBusTm   || item.END_TM   || "")),
-          headwayPeak:    parseInt(item.peekAlloc   || item.WEEKDAY_HH_TM || "0") || 0,
-          headwayOffPeak: parseInt(item.offPeekAlloc || "0") || 0,
-        };
-
-        cache[key] = result;
+    loadStaticSchedules().then(schedules => {
+      if (cancelled) return;
+      const s = schedules?.[routeId];
+      if (s) {
+        const result: BusRouteInfo = { no: "", headwayOffPeak: 0, ...s };
+        apiCache[key] = result;
         setInfo(result);
-      })
-      .catch(() => { cache[key] = null; setInfo(null); })
-      .finally(() => setLoading(false));
+        setLoading(false);
+        return;
+      }
+
+      // Static miss → fall back to live API
+      const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
+      if (!apiKey || apiKey === "sample") { setLoading(false); setInfo(null); return; }
+
+      const isGBIS = cityCode === "41";
+      const url = isGBIS
+        ? `https://apis.data.go.kr/6410000/busrouteservice/getBusRouteInfoItem?serviceKey=${encodeURIComponent(apiKey)}&_type=json&routeId=${routeId}`
+        : `https://apis.data.go.kr/1613000/BusRouteInfoInqireService/getRouteInfoIem?serviceKey=${encodeURIComponent(apiKey)}&_type=json&cityCode=${cityCode}&routeId=${routeId}`;
+
+      fetch(url, { signal: AbortSignal.timeout(8000) })
+        .then(r => r.json())
+        .then(json => {
+          if (cancelled) return;
+          const item = isGBIS
+            ? json?.response?.body?.busRouteInfoItem
+            : json?.response?.body?.items?.item;
+
+          if (!item) { apiCache[key] = null; setInfo(null); return; }
+
+          const fmt = (s: string) => {
+            if (!s || s.length < 4) return "";
+            return `${s.slice(0, 2)}:${s.slice(2, 4)}`;
+          };
+
+          const result: BusRouteInfo = {
+            no:           String(item.routeNo || item.ROUTE_NM || ""),
+            startName:    String(item.startnodenm || item.startNodeNm || item.ORIGIN_STN_NM || item.startVehicleNodeName || ""),
+            endName:      String(item.endnodenm   || item.endNodeNm   || item.DEST_STN_NM   || item.endVehicleNodeName   || ""),
+            firstBus:     fmt(String(item.startvehicletime || item.firstBusTm || item.START_TM || "")),
+            lastBus:      fmt(String(item.endvehicletime   || item.lastBusTm  || item.END_TM  || "")),
+            headwayPeak:    parseInt(item.intervaltime || item.peekAlloc || item.WEEKDAY_HH_TM || "0") || 0,
+            headwayOffPeak: parseInt(item.offPeekAlloc || "0") || 0,
+          };
+
+          apiCache[key] = result;
+          setInfo(result);
+        })
+        .catch(() => { if (!cancelled) { apiCache[key] = null; setInfo(null); } })
+        .finally(() => { if (!cancelled) setLoading(false); });
+    });
+
+    return () => { cancelled = true; };
   }, [routeId, cityCode, arsId]);
 
   return { info, loading };
