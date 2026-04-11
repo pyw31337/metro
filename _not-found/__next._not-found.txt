@@ -1,4 +1,4 @@
 1:"$Sreact.fragment"
 2:I[49115,["/metro/_next/static/chunks/3aab718cab71e4f1.js","/metro/_next/static/chunks/ed8a07ddf4e7ad37.js"],"default"]
 3:I[97086,["/metro/_next/static/chunks/3aab718cab71e4f1.js","/metro/_next/static/chunks/ed8a07ddf4e7ad37.js"],"default"]
-0:{"buildId":"doABvOkQVsHSat5mrZcsQ","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}
+0:{"buildId":"GpsB-b3gFnJObAT9V2XN9","rsc":["$","$1","c",{"children":[null,["$","$L2",null,{"parallelRouterKey":"children","template":["$","$L3",null,{}]}]]}],"loading":null,"isPartial":false}
