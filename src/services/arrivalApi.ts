@@ -172,7 +172,9 @@ export const getArrivalsFromFullTimetable = async (
   if (h >= 1 && h < 5) return []; // 운행 종료 시간대
 
   const dow    = now.getDay();
-  // After midnight (h === 0), treat current time as 24h+ so "24:30"-style times compare correctly
+  // Normalize current time: midnight (h=0) → 1440+m so it compares correctly against both
+  // "00:30"-style (→ trainMin = 1470) and "24:30"-style (→ trainMin = 1470) midnight trains.
+  // Times with h<4 are treated as after-midnight service (service starts ~05:00).
   const nowMin = h === 0 ? 24 * 60 + now.getMinutes() : h * 60 + now.getMinutes();
 
   const results: StationArrival[] = [];
@@ -211,10 +213,11 @@ export const getArrivalsFromFullTimetable = async (
       let found = 0;
       for (const t of trainTimes) {
         const [th, tm] = t.split(':').map(Number);
-        const trainMin = th * 60 + tm;
+        // Normalize train time: h<4 treated as post-midnight (e.g. "00:30" → 1470, "24:30" → 1470)
+        const trainMin = th < 4 ? (th + 24) * 60 + tm : th * 60 + tm;
         const waitMin = trainMin - nowMin;
 
-        // Skip past trains, but include trains up to 60 min from now
+        // Skip past trains; show trains within 90 min
         if (waitMin < 0 || waitMin > 90) continue;
         const waitSec = waitMin * 60;
 
