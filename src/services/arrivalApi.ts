@@ -120,7 +120,9 @@ export const getArrivalsFromScheduleIndex = async (
       );
       if (!isRunning) continue;
 
-      const isEstimated = (sched as any).count === -1; // 코레일·경전철 추정치
+      const cnt = (sched as any).count;
+      const isEstimated = cnt === -1; // 코레일·경전철 일괄추정치
+      const isPreciseEst = cnt === -2; // 역별 정밀추정치 (신분당선·공항철도 등)
 
       // 현재 시간 이후 다음 2편 생성
       for (let i = 1; i <= 2; i++) {
@@ -136,7 +138,7 @@ export const getArrivalsFromScheduleIndex = async (
           trainLineNm: `${sched.dest}행`,
           statnNm:     entry.name,
           arvlMsg2:    waitSec < 60 ? '곧 도착' : `${Math.floor(waitSec / 60)}분 후`,
-          arvlMsg3:    isEstimated ? '(배차간격 추정)' : '',
+          arvlMsg3:    isEstimated ? '(배차간격 추정)' : isPreciseEst ? '(시각 추정)' : '',
           arvlCd:      '99',
           bstatnNm:    sched.dest,
           barvlDt:     String(waitSec),
