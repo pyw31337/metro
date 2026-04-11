@@ -1,7 +1,7 @@
 // Metro Live Service Worker
 // Caches the app shell and static assets for offline use
 
-const CACHE_NAME = 'metro-live-v3';
+const CACHE_NAME = 'metro-live-v4';
 const STATIC_CACHE = 'metro-static-v2';
 const TILE_CACHE = 'metro-tiles-v1';
 
