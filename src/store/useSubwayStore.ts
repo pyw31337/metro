@@ -62,7 +62,11 @@ export const useSubwayStore = create<SubwayStore>((set) => ({
   setNearestWCs: (items) => set({ nearestWCs: items }),
 
   setBusStops: (stops) => set({ busStops: stops }),
-  setSelectedBusStop: (stop) => set({ selectedBusStop: stop }),
+  setSelectedBusStop: (stop) => set(
+    stop === null
+      ? { selectedBusStop: null, selectedBusRoute: null, routePathData: null }
+      : { selectedBusStop: stop }
+  ),
   setSelectedBusRoute: (route) => set({ selectedBusRoute: route }),
   setRoutePathData: (data) => set({ routePathData: data }),
 
