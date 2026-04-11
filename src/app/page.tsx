@@ -171,68 +171,67 @@ export default function Home() {
   }, []);
 
   // ─────────────────────────────────────────────────────────────────────────
-  // GPS 위치 추적 (최초 1회 → 이후 30초 주기)
+  // GPS 위치 추적 — watchPosition: 권한 허용 후 위치를 잡을 때까지 계속 시도
   // ─────────────────────────────────────────────────────────────────────────
+  // stations ref: watchPosition 콜백 안에서 최신 stations를 참조하되
+  // stations가 바뀔 때마다 watchPosition을 재생성하지 않기 위해 ref 사용
+  const stationsRef = useRef(stations);
+  useEffect(() => { stationsRef.current = stations; }, [stations]);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
-    let timerInterval: NodeJS.Timeout;
 
-    const updateLocation = () => {
-      if (!initLocRef.current) {
-        mapSt.setIsLocating(true);
-        mapSt.setLocatingTimer(10);
-        timerInterval = setInterval(() => {
-          mapSt.setLocatingTimer(Math.max(0, useMapStore.getState().locatingTimer - 1));
-        }, 1000);
-      }
+    // 최초 조회 중 UI
+    mapSt.setIsLocating(true);
+    mapSt.setLocatingTimer(10);
+    const timerInterval = setInterval(() => {
+      mapSt.setLocatingTimer(Math.max(0, useMapStore.getState().locatingTimer - 1));
+    }, 1000);
 
-      navigator.geolocation.getCurrentPosition(
-        async (pos) => {
-          const { latitude, longitude } = pos.coords;
-          mapSt.setUserLocation([latitude, longitude]);
+    const watchId = navigator.geolocation.watchPosition(
+      async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        mapSt.setUserLocation([latitude, longitude]);
 
-          if (!initLocRef.current) {
-            initLocRef.current = true;
-            mapSt.setIsLocating(false);
-            clearInterval(timerInterval);
+        if (!initLocRef.current) {
+          initLocRef.current = true;
+          mapSt.setIsLocating(false);
+          clearInterval(timerInterval);
 
-            mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
-            mapSt.setHasInitialLocation(true);
+          mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
+          mapSt.setHasInitialLocation(true);
 
-            if (stations.length > 0) {
-              const nearest: any = await findNearestStation(latitude, longitude, stations);
-              if (nearest?.name && !route.startStation) {
-                route.setStartStation(`내 위치 : ${nearest.name} (내 위치)`);
-              }
+          const stns = stationsRef.current;
+          if (stns.length > 0) {
+            const nearest: any = await findNearestStation(latitude, longitude, stns);
+            if (nearest?.name && !route.startStation) {
+              route.setStartStation(`내 위치 : ${nearest.name} (내 위치)`);
             }
           }
-        },
-        (_err) => {
-          // 최초 시도 실패 시에도 initLocRef를 true로 — "위치 찾는 중" UI가 반복되지 않도록
-          if (!initLocRef.current) {
-            initLocRef.current = true;
-            mapSt.setIsLocating(false);
-            clearInterval(timerInterval);
-          }
-        },
-        // PC는 GPS 없음 → enableHighAccuracy:false(네트워크 위치)로 빠르게, 캐시 허용
-        { enableHighAccuracy: false, timeout: 15_000, maximumAge: 60_000 }
-      );
-    };
-
-    updateLocation();
-    // 배터리 절약: 탭 숨겨지면 폴링 안 함
-    const LOCATION_INTERVAL_MS = 30_000;
-    const mainInterval = setInterval(() => {
-      if (!document.hidden) updateLocation();
-    }, LOCATION_INTERVAL_MS);
+        }
+      },
+      (err) => {
+        // PERMISSION_DENIED(1): 사용자가 명시적으로 거부 — 더 이상 시도 안 함
+        if (err.code === 1) {
+          initLocRef.current = true;
+          mapSt.setIsLocating(false);
+          clearInterval(timerInterval);
+          return;
+        }
+        // POSITION_UNAVAILABLE(2) / TIMEOUT(3): watchPosition이 자동으로 계속 재시도
+        // — 별도 처리 불필요
+      },
+      // PC: enableHighAccuracy:false → 네트워크/IP 위치 사용 (GPS 없음)
+      // 모바일: 같은 설정으로도 GPS 사용됨
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 30_000 }
+    );
 
     return () => {
-      clearInterval(mainInterval);
+      navigator.geolocation.clearWatch(watchId);
       clearInterval(timerInterval);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stations]);
+  }, []); // watchPosition은 마운트 시 1회만 등록
 
   // ─────────────────────────────────────────────────────────────────────────
   // 가장 가까운 시설 계산 (userLocation 변경 시)
@@ -443,13 +442,11 @@ export default function Home() {
     const mapSt = useMapStore.getState();
     const loc = mapSt.userLocation;
     if (loc && mapRef.current) {
+      // 위치가 이미 있으면 해당 위치로 이동
       mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 15, duration: 1500 });
-    } else if (navigator.geolocation && mapRef.current) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        mapSt.setUserLocation([pos.coords.latitude, pos.coords.longitude]);
-        mapRef.current.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 15, duration: 1500 });
-      });
     }
+    // 위치가 없으면 watchPosition이 이미 백그라운드에서 조회 중 — 별도 호출 불필요
+    // (중복 getCurrentPosition 호출 시 브라우저가 권한 팝업을 다시 보여줄 수 있음)
   }, []);
 
   const handleLocateStation = useCallback(async (type: 'source' | 'dest') => {
