@@ -479,19 +479,26 @@ export default function Home() {
     }
   }, [findNearestStation, stations]);
 
-  const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string) => {
+  const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string, routeId?: string) => {
     if (!cityCode) return;
     try {
-      const routes = await getBusRoutes();
-      const route_ = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
-      if (route_) {
-        const { MetropolitanBusService } = await import('@/services/busApi');
-        const path = await MetropolitanBusService.fetchRoutePath(cityCode, route_.id);
-        if (path) {
-          useSubwayStore.getState().setRoutePathData(path);
-          const coord = path.features[0]?.geometry?.coordinates[0];
-          if (coord) mapRef.current?.flyTo({ center: coord, zoom: 13, duration: 2000 });
-        }
+      const { MetropolitanBusService } = await import('@/services/busApi');
+
+      // Fast path: routeId provided directly from arrivals API (no master-routes lookup needed)
+      let resolvedId = routeId;
+      if (!resolvedId) {
+        const routes = await getBusRoutes();
+        const found = routes.find((r: any) => r.no === routeNo && r.cityCode === cityCode);
+        resolvedId = found?.id;
+      }
+
+      if (!resolvedId) return;
+
+      const path = await MetropolitanBusService.fetchRoutePath(cityCode, resolvedId);
+      if (path) {
+        useSubwayStore.getState().setRoutePathData(path);
+        const coord = path.features[0]?.geometry?.coordinates[0];
+        if (coord) mapRef.current?.flyTo({ center: coord, zoom: 13, duration: 2000 });
       }
     } catch {}
   }, []);

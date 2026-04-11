@@ -36,7 +36,7 @@ interface MapPopupsProps {
   trainArrivalDetail?: StationArrival | null;
   activeLine: string | null;
   onActiveLineChange: (line: string | null) => void;
-  onSelectBusRoute?: (routeNo: string, cityCode?: string) => void;
+  onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void;
   selectedWC?: WCItem | null;
   onWCClick?: (item: WCItem | null) => void;
   isDarkMode?: boolean;
@@ -58,35 +58,29 @@ const getLineInfo = (lineName: string) => {
 };
 
 const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, address?: string }) => {
-  // Naver Map: 좌표 기반 지도 열기 (거리뷰 버튼은 지도 내에서 클릭)
-  // 모바일: nmap 딥링크, 웹 fallback: 좌표 + zoom17
-  const naverWeb = address
-    ? `https://map.naver.com/v5/search/${encodeURIComponent(address)}?c=${lng},${lat},17,0,0,0,dh`
-    : `https://map.naver.com/v5/entry/coordinates/${lng},${lat}?c=${lng},${lat},17,0,0,0,dh`;
-  const naverApp = `nmap://map?lat=${lat}&lng=${lng}&zoom=17${address ? `&query=${encodeURIComponent(address)}` : ''}&appname=metro.live`;
-  const kakao    = `https://map.kakao.com/link/roadview/${lat},${lng}`;
+  const naverPanoApp = `nmap://panorama?lat=${lat}&lng=${lng}&appname=metro.live`;
+  const naverPanoWeb = `https://map.naver.com/v5/street?c=${lng},${lat},15,0,0,0,dh`;
+  const kakao = `https://map.kakao.com/link/roadview/${lat},${lng}`;
+  const openNaver = (e: React.MouseEvent) => {
+    e.preventDefault();
+    window.location.href = naverPanoApp;
+    setTimeout(() => { window.open(naverPanoWeb, '_blank'); }, 300);
+  };
   return (
     <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
-      <a
-        href={naverApp}
-        onClick={e => { e.preventDefault(); window.location.href = naverApp; setTimeout(() => { window.open(naverWeb, '_blank'); }, 300); }}
-        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
-      >
-        네이버지도
+      <a href={naverPanoApp} onClick={openNaver}
+        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95">
+        네이버 거리뷰
       </a>
-      <a
-        href={kakao}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
-      >
+      <a href={kakao} target="_blank" rel="noopener noreferrer"
+        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95">
         카카오 로드뷰
       </a>
     </div>
   );
 };
 
-const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
+const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void }) => {
   const { arrivals, loading } = useBusArrivals(stopId, cityCode);
 
   if (loading) return <div className="py-4 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
@@ -101,7 +95,7 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string
                 const style = getBusRouteStyle(bus.routeNo);
                 return (
                     <button
-                        onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(bus.routeNo, cityCode); }}
+                        onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(bus.routeNo, cityCode, bus.routeId); }}
                         className="px-2 py-0.5 rounded-md text-[11px] font-black transition-all shadow-sm active:scale-95"
                         style={{ backgroundColor: style.bg, color: style.text }}
                     >
@@ -120,7 +114,7 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string
   );
 };
 
-const BusRouteStaticList = ({ routes, cityCode, onSelectBusRoute }: { routes: string[], cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string) => void }) => {
+const BusRouteStaticList = ({ routes, cityCode, onSelectBusRoute }: { routes: string[], cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void }) => {
     if (!routes || routes.length === 0) return null;
     return (
         <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
@@ -609,13 +603,22 @@ const MapPopups = ({
                 onPointerDown={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-2">
-                    <div className="flex flex-col">
-                        <div className="flex items-center gap-1.5 mb-1">
+                    <div className="flex flex-col min-w-0 flex-1 mr-2">
+                        <div className="flex items-center gap-1 mb-1 flex-wrap">
                             <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-500 text-white uppercase tracking-tighter">화장실</span>
+                            {selectedWC.isInsideGate && (
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-500">개찰구 내</span>
+                            )}
+                            {selectedWC.station && (
+                                <span className="text-[10px] font-bold text-zinc-400 truncate">{selectedWC.station}</span>
+                            )}
                         </div>
                         <h3 className="text-[14px] font-black truncate">{selectedWC.name?.replace(' 화장실', '')}</h3>
+                        {selectedWC.location && (
+                            <p className="text-[10px] text-zinc-400 font-medium truncate mt-0.5">{selectedWC.location}</p>
+                        )}
                     </div>
-                    <button 
+                    <button
                         onClick={(e) => { e.stopPropagation(); onWCClick?.(null); }}
                         className="p-1 -mr-1 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors shrink-0"
                     >
@@ -667,26 +670,31 @@ const MapPopups = ({
                     {(() => {
                         const { lat, lng } = selectedWC;
                         const addr = selectedWC.address || selectedWC.name;
-                        const naverWeb = `https://map.naver.com/v5/entry/coordinates/${lng},${lat}?c=${lng},${lat},17,0,0,0,dh`;
-                        const naverApp = `nmap://map?lat=${lat}&lng=${lng}&zoom=17&query=${encodeURIComponent(addr)}&appname=metro.live`;
-                        return (
-                            <a
-                                href={naverApp}
-                                onClick={e => { e.preventDefault(); hapticLight(); window.location.href = naverApp; setTimeout(() => { window.open(naverWeb, '_blank'); }, 300); }}
-                                className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95"
-                            >
+                        const navApp = `nmap://navigation?dlat=${lat}&dlng=${lng}&dname=${encodeURIComponent(addr)}&appname=metro.live`;
+                        const navWeb = `https://map.naver.com/v5/entry/coordinates/${lng},${lat}?c=${lng},${lat},17,0,0,0,dh`;
+                        const panoApp = `nmap://panorama?lat=${lat}&lng=${lng}&appname=metro.live`;
+                        const panoWeb = `https://map.naver.com/v5/street?c=${lng},${lat},15,0,0,0,dh`;
+                        return (<>
+                            <a href={navApp}
+                                onClick={e => { e.preventDefault(); hapticLight(); window.location.href = navApp; setTimeout(() => { window.open(navWeb, '_blank'); }, 300); }}
+                                className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95">
                                 네이버 길안내
                             </a>
-                        );
+                            <a href={panoApp}
+                                onClick={e => { e.preventDefault(); hapticLight(); window.location.href = panoApp; setTimeout(() => { window.open(panoWeb, '_blank'); }, 300); }}
+                                className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#1ec75a]/80 text-white text-[10px] font-bold transition-transform active:scale-95">
+                                거리뷰
+                            </a>
+                        </>);
                     })()}
                     <a
                         href={`https://map.kakao.com/link/to/${encodeURIComponent(selectedWC.name || '화장실')},${selectedWC.lat},${selectedWC.lng}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => hapticLight()}
-                        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
+                        className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
                     >
-                        카카오 길안내
+                        카카오
                     </a>
                 </div>
                 {selectedWC.address && (

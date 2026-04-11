@@ -13,7 +13,8 @@ export const metadata: Metadata = {
     },
     formatDetection: { telephone: false },
     icons: {
-        apple: '/metro/train-icon.png',
+        apple: '/metro/icon-192.png',
+        icon: '/metro/icon-192.png',
     },
 };
 

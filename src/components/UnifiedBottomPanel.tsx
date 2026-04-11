@@ -54,7 +54,7 @@ interface UnifiedBottomPanelProps {
     activeLine: string | null;
     onActiveLineChange: (line: string | null) => void;
     selectedBusStop?: any | null;
-    onSelectBusRoute?: (routeNum: string, cityCode?: string) => void;
+    onSelectBusRoute?: (routeNum: string, cityCode?: string, routeId?: string) => void;
     userLocation?: [number, number] | null;
     userHeading?: number | null;
 }
@@ -810,54 +810,53 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 </span>
                                 <span className="text-[12px] font-bold text-zinc-400">약 {Math.round(busPathResult.distanceWeight)}분</span>
                             </div>
-                            {busPathResult.type === 'direct' ? (
-                                <>
-                                    <div className="flex flex-wrap gap-1.5 mb-3">
-                                        {busPathResult.commonRoutes.map((r, i) => {
-                                            const s = getBusRouteStyle(r);
-                                            return <span key={i} className="px-3 py-1.5 rounded-xl text-[13px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
-                                        })}
+                            {/* Timeline visualization */}
+                            <div className="flex flex-col">
+                                {/* Start stop */}
+                                <div className="flex items-start gap-2.5">
+                                    <div className="flex flex-col items-center mt-0.5 shrink-0">
+                                        <div className="w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-blue-200 dark:ring-blue-900" />
+                                        <div className="w-px bg-zinc-200 dark:bg-zinc-700 mt-1" style={{ minHeight: 28 }} />
                                     </div>
-                                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-bold">
-                                        <MapPin size={10} className="text-blue-500 shrink-0" />
-                                        <span>{busPathResult.startStop.name}</span>
-                                        <span className="text-zinc-300 dark:text-zinc-600">→</span>
-                                        <MapPin size={10} className="text-rose-500 shrink-0" />
-                                        <span>{busPathResult.endStop.name}</span>
-                                    </div>
-                                </>
-                            ) : (
-                                <>
-                                    <div className="flex flex-col gap-2">
-                                        <div className="flex items-center gap-2">
+                                    <div className="pb-2 min-w-0 flex-1">
+                                        <div className="text-[12px] font-black text-zinc-700 dark:text-zinc-200 truncate">{busPathResult.startStop.name}</div>
+                                        <div className="flex flex-wrap gap-1 mt-1.5">
                                             {busPathResult.commonRoutes.map((r, i) => {
                                                 const s = getBusRouteStyle(r);
-                                                return <span key={i} className="px-3 py-1.5 rounded-xl text-[13px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
+                                                return <span key={i} className="px-2.5 py-0.5 rounded-lg text-[12px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
                                             })}
-                                            <span className="text-[11px] text-zinc-400 font-bold">타고 →</span>
-                                            {busPathResult.transferStop && (
-                                                <span className="text-[11px] font-black text-zinc-700 dark:text-zinc-300">{busPathResult.transferStop.name}</span>
+                                            <span className="text-[11px] text-zinc-400 font-bold self-center">탑승</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                {/* Transfer stop (only for transfer type) */}
+                                {busPathResult.type === 'transfer' && busPathResult.transferStop && (
+                                    <div className="flex items-start gap-2.5">
+                                        <div className="flex flex-col items-center mt-0.5 shrink-0">
+                                            <div className="w-2.5 h-2.5 rounded-full bg-amber-400 ring-2 ring-amber-100 dark:ring-amber-900" />
+                                            <div className="w-px bg-zinc-200 dark:bg-zinc-700 mt-1" style={{ minHeight: 28 }} />
+                                        </div>
+                                        <div className="pb-2 min-w-0 flex-1">
+                                            <div className="text-[10px] font-bold text-amber-500 mb-0.5 uppercase tracking-wide">환승</div>
+                                            <div className="text-[12px] font-black text-zinc-700 dark:text-zinc-200 truncate">{busPathResult.transferStop.name}</div>
+                                            {busPathResult.transferRoutes && (
+                                                <div className="flex flex-wrap gap-1 mt-1.5">
+                                                    {busPathResult.transferRoutes.map((r, i) => {
+                                                        const s = getBusRouteStyle(r);
+                                                        return <span key={i} className="px-2.5 py-0.5 rounded-lg text-[12px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
+                                                    })}
+                                                    <span className="text-[11px] text-zinc-400 font-bold self-center">탑승</span>
+                                                </div>
                                             )}
                                         </div>
-                                        {busPathResult.transferRoutes && (
-                                            <div className="flex items-center gap-2">
-                                                {busPathResult.transferRoutes.map((r, i) => {
-                                                    const s = getBusRouteStyle(r);
-                                                    return <span key={i} className="px-3 py-1.5 rounded-xl text-[13px] font-black shadow-sm" style={{ background: s.bg, color: s.text }}>{r}</span>;
-                                                })}
-                                                <span className="text-[11px] text-zinc-400 font-bold">환승</span>
-                                            </div>
-                                        )}
                                     </div>
-                                    <div className="flex items-center gap-2 text-[11px] text-zinc-500 dark:text-zinc-400 font-bold mt-2">
-                                        <MapPin size={10} className="text-blue-500 shrink-0" />
-                                        <span>{busPathResult.startStop.name}</span>
-                                        <span className="text-zinc-300 dark:text-zinc-600">→</span>
-                                        <MapPin size={10} className="text-rose-500 shrink-0" />
-                                        <span>{busPathResult.endStop.name}</span>
-                                    </div>
-                                </>
-                            )}
+                                )}
+                                {/* End stop */}
+                                <div className="flex items-center gap-2.5">
+                                    <div className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-2 ring-rose-200 dark:ring-rose-900 shrink-0 mt-0.5" />
+                                    <div className="text-[12px] font-black text-zinc-700 dark:text-zinc-200 truncate">{busPathResult.endStop.name}</div>
+                                </div>
+                            </div>
                         </motion.div>
                     )}
                 </div>
