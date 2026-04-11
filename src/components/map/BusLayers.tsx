@@ -11,7 +11,8 @@ interface BusLayersProps {
 }
 
 const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersProps) => {
-  const vis: "visible" | "none" = (activeTab === "bus" || activeTab === "subway+bus") ? "visible" : "none";
+  // Hide all stop/cluster layers while a route is being displayed
+  const vis: "visible" | "none" = routePathData ? "none" : (activeTab === "bus" || activeTab === "subway+bus") ? "visible" : "none";
 
   return (
     <>

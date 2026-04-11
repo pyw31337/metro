@@ -764,53 +764,6 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                         )}
                     </div>
 
-                    {activeTab === 'bus' && selectedBusStop && (
-                        <div className="animate-fade-in-up mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative">
-                            <div className="absolute top-2 right-2">
-                                <button onClick={() => { hapticLight(); setSelectedBusStop(null); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400 active:scale-90 transition-all">
-                                    <X size={14} />
-                                </button>
-                            </div>
-                            <div className="flex flex-col gap-3">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                                        <Bus size={18} />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <h3 className="text-[16px] font-black">{selectedBusStop.name}</h3>
-                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">{selectedBusStop.region || '경기'} · {selectedBusStop.id}</span>
-                                    </div>
-                                </div>
-
-                                <div className="flex flex-wrap gap-1.5">
-                                    {(typeof selectedBusStop.routes === 'string' ? JSON.parse(selectedBusStop.routes) : (selectedBusStop.routes || [])).map((r: string, i: number) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => { hapticLight(); onSelectBusRoute?.(r, selectedBusStop.cityCode); }}
-                                            className="px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 text-emerald-600 dark:text-emerald-400 hover:text-white text-[12px] font-black border border-emerald-500/20 transition-all active:scale-95"
-                                        >
-                                            {r}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-2 mt-1">
-                                    <button
-                                        onClick={() => { hapticLight(); onSetSource?.(selectedBusStop.name); onSetDestination?.(""); }}
-                                        className="h-9 rounded-xl bg-blue-500 text-white text-[12px] font-black shadow-sm active:scale-95 transition-all"
-                                    >
-                                        출발지로 설정
-                                    </button>
-                                    <button
-                                        onClick={() => { hapticLight(); onSetDestination?.(selectedBusStop.name); }}
-                                        className="h-9 rounded-xl bg-rose-500 text-white text-[12px] font-black shadow-sm active:scale-95 transition-all"
-                                    >
-                                        도착지로 설정
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
 
                     {activeTab === 'bus' && busPathResult && !selectedBusStop && (
                         <div className="animate-fade-in-up mt-2 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 dark:border-white/5 backdrop-blur-md">

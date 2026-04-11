@@ -64,6 +64,7 @@ interface MapLibreProps {
     selectedBusRoute?: string | null;
     routePathData?: any;
     onSelectBusRoute?: (routeNo: string, cityCode?: string) => void;
+    onClearRoute?: () => void;
 }
 
 const NOOP = () => {};
@@ -204,7 +205,7 @@ function MapLibreBackground(props: MapLibreProps) {
         onCenterChange, onBoundsChange, timeDisplayMode, onToggleTimeDisplay,
         showAllRouteBubbles, selectedBusStop, stations, activeLine, onActiveLineChange,
         nearestStation, nearestBusStop, nearestWC, selectedBusRoute, routePathData,
-        onWCClick, onSelectBusRoute
+        onWCClick, onSelectBusRoute, onClearRoute
     } = props;
 
     const [mapInstance, setMapInstance] = useState<any | null>(null);
@@ -264,6 +265,10 @@ function MapLibreBackground(props: MapLibreProps) {
     activeLineRef.current = activeLine;
     const mapInstanceRef = useRef(mapInstance);
     mapInstanceRef.current = mapInstance;
+    const onClearRouteRef = useRef(onClearRoute);
+    onClearRouteRef.current = onClearRoute;
+    const routePathDataRef = useRef(routePathData);
+    routePathDataRef.current = routePathData;
 
     const handleTrainClick = async (train: any) => {
         setSelectedTrain(train);
@@ -303,6 +308,11 @@ function MapLibreBackground(props: MapLibreProps) {
     const handleMapClick = useCallback((e: any) => {
         const feature = e.features?.[0];
         if (!feature) {
+            // If a bus route is active, clear it and stop — don't dismiss other UI
+            if (routePathDataRef.current) {
+                onClearRouteRef.current?.();
+                return;
+            }
             setFocusedBubble(null);
             setSelectedTrain(null);
             setTrainArrivalDetail(null);

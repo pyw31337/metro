@@ -602,6 +602,10 @@ export default function Home() {
           showAllRouteBubbles={route.showAllRouteBubbles}
           onToggleShowAll={handleToggleShowAll}
           onSelectBusRoute={handleSelectBusRoute}
+          onClearRoute={() => {
+            useSubwayStore.getState().setRoutePathData(null);
+            useSubwayStore.getState().setSelectedBusRoute(null);
+          }}
         />
       </div>
 
