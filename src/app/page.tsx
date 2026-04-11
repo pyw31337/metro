@@ -548,6 +548,12 @@ export default function Home() {
     s.setShowAllRouteBubbles(!s.showAllRouteBubbles);
   }, []);
 
+  const handleClearBusRoute = useCallback(() => {
+    const st = useSubwayStore.getState();
+    st.setRoutePathData(null);
+    st.setSelectedBusRoute(null);
+  }, []);
+
   const handleTabChange = useCallback((tab: any) => useUIStore.getState().setActiveTab(tab), []);
 
   const handleSearch = useCallback((start: string, end: string) => {
@@ -602,10 +608,7 @@ export default function Home() {
           showAllRouteBubbles={route.showAllRouteBubbles}
           onToggleShowAll={handleToggleShowAll}
           onSelectBusRoute={handleSelectBusRoute}
-          onClearRoute={() => {
-            useSubwayStore.getState().setRoutePathData(null);
-            useSubwayStore.getState().setSelectedBusRoute(null);
-          }}
+          onClearRoute={handleClearBusRoute}
         />
       </div>
 
