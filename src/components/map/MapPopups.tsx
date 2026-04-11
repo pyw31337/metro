@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, memo } from "react";
+import { useEffect, useMemo, memo, useState, useCallback } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import { X, Accessibility, Bell, Baby, RefreshCw } from "lucide-react";
+import { X, Accessibility, Bell, Baby, RefreshCw, ChevronRight, MapPin, Clock, ArrowRight } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
@@ -14,6 +14,7 @@ import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
 import { useStopRoutes } from "@/hooks/useStopRoutes";
+import { useBusRouteInfo } from "@/hooks/useBusRouteInfo";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 
@@ -81,66 +82,138 @@ const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, addr
   );
 };
 
-const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void }) => {
-  const { arrivals, loading } = useBusArrivals(stopId, cityCode);
-
-  if (loading) return <div className="py-4 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
-  if (arrivals.length === 0) return <div className="py-4 text-center text-[11px] text-zinc-400">도착 정보가 없습니다.</div>;
-
+// ── 선택된 노선의 운행 정보 카드 ───────────────────────────────────
+const RouteScheduleCard = ({ routeId, cityCode }: { routeId: string; cityCode: string }) => {
+  const { info, loading } = useBusRouteInfo(routeId, cityCode);
+  if (loading) return <div className="text-[10px] text-zinc-400 animate-pulse py-1">시간표 로딩중...</div>;
+  if (!info) return null;
   return (
-    <div className="space-y-2 mt-2 max-h-[180px] overflow-y-auto no-scrollbar">
-      {arrivals.map((bus: any, idx: number) => (
-        <div key={idx} className="flex items-center justify-between p-2 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 transition-all hover:bg-emerald-50 dark:hover:bg-emerald-500/10">
-          <div className="flex items-center gap-2">
-             {(() => {
-                const style = getBusRouteStyle(bus.routeNo);
-                return (
-                    <button
-                        onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(bus.routeNo, cityCode, bus.routeId); }}
-                        className="px-2 py-0.5 rounded-md text-[11px] font-black transition-all shadow-sm active:scale-95"
-                        style={{ backgroundColor: style.bg, color: style.text }}
-                    >
-                        {bus.routeNo}
-                    </button>
-                );
-             })()}
-             <span className="text-[10px] text-zinc-400 font-medium">{bus.remainStops}정류장 남음</span>
-          </div>
-          <span className="text-[11px] font-black text-rose-500">
-            {bus.arrivalTime < 60 ? "곧 도착" : `${Math.floor(bus.arrivalTime / 60)}분 후`}
-          </span>
+    <div className="mt-1.5 p-2 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 space-y-1">
+      {(info.startName || info.endName) && (
+        <div className="flex items-center gap-1 text-[10px] text-zinc-500 dark:text-zinc-400">
+          <MapPin size={9} className="shrink-0" />
+          <span className="truncate">{info.startName}</span>
+          <ArrowRight size={9} className="shrink-0" />
+          <span className="truncate">{info.endName}</span>
         </div>
-      ))}
+      )}
+      <div className="flex items-center gap-3">
+        {info.firstBus && (
+          <div className="flex items-center gap-1">
+            <Clock size={9} className="text-emerald-500 shrink-0" />
+            <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300">첫차 {info.firstBus}</span>
+          </div>
+        )}
+        {info.lastBus && (
+          <div className="flex items-center gap-1">
+            <Clock size={9} className="text-rose-400 shrink-0" />
+            <span className="text-[10px] font-black text-zinc-700 dark:text-zinc-300">막차 {info.lastBus}</span>
+          </div>
+        )}
+        {info.headwayPeak > 0 && (
+          <span className="text-[10px] text-zinc-400">배차 {info.headwayPeak}분</span>
+        )}
+      </div>
     </div>
   );
 };
 
-const BusRouteStaticList = ({ stopId, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void }) => {
-    const { routes, loading } = useStopRoutes(stopId);
+// ── 버스 정류장 통합 패널 (도착 정보 + 전체 노선 + 스케줄) ──────────
+const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
+  stopId: string; cityCode: string;
+  onSelectBusRoute?: (no: string, city?: string, id?: string) => void;
+}) => {
+  const { arrivals, loading: arrLoading } = useBusArrivals(stopId, cityCode);
+  const { routes, loading: routeLoading } = useStopRoutes(stopId);
+  const [selectedRoute, setSelectedRoute] = useState<{ no: string; id: string; cityCode: string } | null>(null);
 
-    if (loading) return <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5 text-[10px] text-zinc-400 text-center py-1 animate-pulse">노선 목록 로딩중...</div>;
-    if (routes.length === 0) return null;
+  const handleRouteClick = useCallback((no: string, city: string, id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedRoute(prev => (prev?.id === id ? null : { no, id, cityCode: city }));
+    onSelectBusRoute?.(no, city, id);
+  }, [onSelectBusRoute]);
 
+  // ── 도착 정보 ────────────────────────────────────────────────────
+  const arrivalSection = (() => {
+    if (arrLoading) return <div className="py-3 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
+    if (arrivals.length === 0) return null;
     return (
-        <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
-            <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 mb-2 uppercase tracking-tight">전체 노선 ({routes.length})</h4>
-            <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto no-scrollbar">
-                {routes.map((r, i) => {
-                    const style = getBusRouteStyle(r.no);
-                    return (
-                        <button
-                            key={i}
-                            onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(r.no, r.cityCode, r.id); }}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-black transition-all active:scale-95 shadow-sm opacity-90 hover:opacity-100 hover:scale-105"
-                            style={{ backgroundColor: style.bg, color: style.text }}
-                        >
-                            {r.no}
-                        </button>
-                    );
-                })}
-            </div>
+      <div className="space-y-1.5">
+        <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">실시간 도착</h4>
+        <div className="space-y-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
+          {arrivals.map((bus: any, idx: number) => {
+            const style = getBusRouteStyle(bus.routeNo);
+            const isSelected = selectedRoute?.id === bus.routeId;
+            return (
+              <div key={idx}>
+                <button
+                  onClick={(e) => handleRouteClick(bus.routeNo, cityCode, bus.routeId, e)}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all active:scale-[0.98] ${isSelected ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' : 'bg-zinc-50 dark:bg-white/5 border-zinc-100 dark:border-white/5'}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="px-2 py-0.5 rounded-md text-[11px] font-black shadow-sm"
+                      style={{ backgroundColor: style.bg, color: style.text }}>{bus.routeNo}</span>
+                    <span className="text-[10px] text-zinc-400">{bus.remainStops}정류장 남음</span>
+                  </div>
+                  <span className="text-[11px] font-black text-rose-500">
+                    {bus.arrivalTime < 60 ? "곧 도착" : `${Math.floor(bus.arrivalTime / 60)}분 후`}
+                  </span>
+                </button>
+                {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} />}
+              </div>
+            );
+          })}
         </div>
+      </div>
     );
+  })();
+
+  // ── 전체 노선 목록 ────────────────────────────────────────────────
+  const staticSection = (() => {
+    if (routeLoading) return <div className="text-[10px] text-zinc-400 animate-pulse py-1">노선 목록 로딩중...</div>;
+    // 도착 정보에 이미 있는 routeId 제외
+    const arrivalIds = new Set(arrivals.map((a: any) => a.routeId));
+    const extra = routes.filter(r => !arrivalIds.has(r.id));
+    if (extra.length === 0) return null;
+    return (
+      <div>
+        <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight mb-1.5">전체 노선 ({routes.length})</h4>
+        <div className="space-y-1 max-h-[160px] overflow-y-auto no-scrollbar">
+          {extra.map((r, i) => {
+            const style = getBusRouteStyle(r.no);
+            const isSelected = selectedRoute?.id === r.id;
+            return (
+              <div key={i}>
+                <button
+                  onClick={(e) => handleRouteClick(r.no, r.cityCode, r.id, e)}
+                  className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all active:scale-[0.98] ${isSelected ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' : 'bg-zinc-50 dark:bg-white/5 border-zinc-100 dark:border-white/5'}`}
+                >
+                  <span className="px-2 py-0.5 rounded-md text-[11px] font-black shadow-sm"
+                    style={{ backgroundColor: style.bg, color: style.text }}>{r.no}</span>
+                  <span className="text-[10px] text-zinc-400">노선 보기 →</span>
+                </button>
+                {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} />}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  })();
+
+  if (!arrLoading && arrivals.length === 0 && !routeLoading && routes.length === 0) {
+    return <div className="py-3 text-center text-[11px] text-zinc-400">도착/노선 정보가 없습니다.</div>;
+  }
+
+  return (
+    <div className="space-y-3 mt-1">
+      {arrivalSection}
+      {(arrivalSection || routeLoading || routes.length > 0) && (arrivalSection && routes.length > 0) && (
+        <div className="border-t border-zinc-100 dark:border-white/5" />
+      )}
+      {staticSection}
+    </div>
+  );
 };
 
 const MapPopups = ({
@@ -210,7 +283,7 @@ const MapPopups = ({
   return (
     <>
       {/* 1. Station/Bus Detail Popup */}
-      {popupCoords && ((activeTab === 'subway' && selectedStationName) || (activeTab === 'bus' && selectedBusStop)) && (
+      {popupCoords && ((activeTab === 'subway' && selectedStationName) || ((activeTab === 'bus' || activeTab === 'subway+bus') && selectedBusStop)) && (
         <Popup
             key={selectedStationName || selectedBusStop?.id}
             longitude={popupCoords[0]}
@@ -424,8 +497,7 @@ const MapPopups = ({
                         )
                     ) : (selectedBusStop) ? (
                         <>
-                            <BusArrivalList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
-                            <BusRouteStaticList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
+                            <BusStopPanel stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
                         </>
                     ) : null}
                 </div>
