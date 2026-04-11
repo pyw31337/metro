@@ -13,6 +13,7 @@ import { setMapCenter }         from "@/utils/mapCenter";
 import { findBusPath }         from "@/utils/busRouting";
 import { hapticSuccess, hapticError } from "@/utils/haptic";
 import { db }                  from "@/services/db";
+import { fetchBusTiles, fetchWCTiles, bboxAround } from "@/utils/tileLoader";
 
 import { useRouteStore }  from "@/store/useRouteStore";
 import { useMapStore }    from "@/store/useMapStore";
@@ -164,13 +165,7 @@ export default function Home() {
     routeActions.setEndStation(null);
 
     (async () => {
-      await db.initializeData();
-      const [allBusStops, allWCs] = await Promise.all([
-        db.busStops.toArray() as Promise<BusStop[]>,
-        db.wc.toArray()       as Promise<WCItem[]>,
-      ]);
-      subway.setBusStops(allBusStops);
-      subway.setWcItems(allWCs);
+      await db.initializeData(); // loads stations (92KB) only
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -251,24 +246,31 @@ export default function Home() {
       findNearestStation(lat, lng, stations).then(n => { if (n) mapSt.setNearestStation(n as Station); });
     }
 
-    // 버스정류장 선형 탐색 (최적화: squared Euclidean)
-    if (subway.busStops.length > 0) {
-      let min = Infinity, found: BusStop | null = null;
-      for (const s of subway.busStops) {
-        const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
-        if (d < min) { min = d; found = s; }
-      }
-      mapSt.setNearestBusStop(found);
-    }
+    // Fetch tiles around the user's location (0.25° radius ≈ 28km)
+    // then find nearest bus stop + WC from the freshly loaded data
+    const bbox = bboxAround(lat, lng, 0.25);
+    Promise.all([fetchBusTiles(bbox), fetchWCTiles(bbox)]).then(([busStops, wcItems]) => {
+      const st = useSubwayStore.getState();
+      // Merge with whatever the viewport already loaded (union by id)
+      const mergedBus = busStops.length > st.busStops.length ? busStops : st.busStops;
+      const mergedWC  = wcItems.length  > st.wcItems.length  ? wcItems  : st.wcItems;
+      st.setBusStops(mergedBus);
+      st.setWcItems(mergedWC);
 
-    if (subway.wcItems.length > 0) {
-      let min = Infinity, found: WCItem | null = null;
-      for (const s of subway.wcItems) {
+      let minB = Infinity, foundB: BusStop | null = null;
+      for (const s of mergedBus) {
         const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
-        if (d < min) { min = d; found = s; }
+        if (d < minB) { minB = d; foundB = s; }
       }
-      mapSt.setNearestWC(found);
-    }
+      mapSt.setNearestBusStop(foundB);
+
+      let minW = Infinity, foundW: WCItem | null = null;
+      for (const s of mergedWC) {
+        const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
+        if (d < minW) { minW = d; foundW = s; }
+      }
+      mapSt.setNearestWC(foundW);
+    });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mapSt.userLocation, stations]);
 
@@ -281,9 +283,18 @@ export default function Home() {
         zoom: 15,
         duration: 800,
       });
-      if (subway.wcItems.length > 0) {
-        sortWCs(subway.wcItems, mapSt.userLocation[0], mapSt.userLocation[1]).then(sorted => {
-          subway.setNearestWCs(sorted as WCItem[]);
+      const [lat, lng] = mapSt.userLocation;
+      const wcItems = useSubwayStore.getState().wcItems;
+      const doSort = (items: WCItem[]) =>
+        sortWCs(items, lat, lng).then(sorted => subway.setNearestWCs(sorted as WCItem[]));
+
+      if (wcItems.length > 0) {
+        doSort(wcItems);
+      } else {
+        // Tiles not yet loaded for this area — fetch now
+        fetchWCTiles(bboxAround(lat, lng, 0.25)).then(items => {
+          useSubwayStore.getState().setWcItems(items);
+          doSort(items);
         });
       }
     }
@@ -514,14 +525,13 @@ export default function Home() {
   }, []);
 
   const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
-    const activeTab = useUIStore.getState().activeTab;
-    if (activeTab !== 'bus' && activeTab !== 'subway+bus') return;
-    const count = await db.busStops
-      .where('lat').between(bounds.minLat, bounds.maxLat)
-      .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
-      .limit(1).count();
-    // 정적 데이터(master-bus-stops.json)로 이미 전체 정류장 로드됨 — 동적 fetch 불필요
-    void count;
+    // Fetch only the tiles that overlap the current viewport
+    const [busStops, wcItems] = await Promise.all([
+      fetchBusTiles(bounds),
+      fetchWCTiles(bounds),
+    ]);
+    useSubwayStore.getState().setBusStops(busStops);
+    useSubwayStore.getState().setWcItems(wcItems);
   }, []);
 
   // Stable callbacks — use getState() for Zustand actions so no subscription needed

@@ -43,76 +43,48 @@ export class MetroDatabase extends Dexie {
    */
   async initializeData() {
     const stationCount = await this.stations.count();
-    if (stationCount > 0) return; // already initialized — don't clear live data
+    if (stationCount > 0) return;
 
-    if (stationCount === 0) {
-      try {
-        const [stationsRes, busStopsRes, wcRes] = await Promise.all([
-          fetch('./data/master-subway.json'),
-          fetch('./data/master-bus-stops.json'),
-          fetch('./data/master-toilets.json')
-        ]);
+    // Only load stations (92KB) + timetables — bus/WC are now tile-fetched on demand
+    try {
+      const stationsRes = await fetch('./data/master-subway.json');
+      const stations = stationsRes.ok
+        ? await stationsRes.json()
+        : await fetch('./data/capitalStations.json').then(r => r.json());
 
-        const [stations, busStops, wc] = await Promise.all([
-            stationsRes.ok ? stationsRes.json() : fetch('./data/capitalStations.json').then(res => res.json()),
-            busStopsRes.ok ? busStopsRes.json() : [],
-            wcRes.ok ? wcRes.json() : []
-        ]);
+      await this.transaction('rw', [this.stations, this.timetables], async () => {
+        const mapped = stations.map((s: any) => ({
+          ...s,
+          lat: s.lat || s.latitude,
+          lng: s.lng || s.longitude,
+        }));
+        await this.stations.clear();
+        await this.stations.bulkAdd(mapped);
 
-        await this.transaction('rw', [this.stations, this.busStops, this.wc, this.timetables], async () => {
-          const mappedStations = stations.map((s: any) => ({
-             ...s,
-             lat: s.lat || s.latitude,
-             lng: s.lng || s.longitude
-          }));
-          await this.stations.clear();
-          await this.stations.bulkAdd(mappedStations);
-          await this.busStops.clear();
-          await this.busStops.bulkAdd(busStops);
-          
-          const mappedWC = wc.map((item: any) => ({
-            id: item.id || `wc-${Math.random().toString(36).substr(2, 9)}`,
-            name: item.name,
-            lat: item.lat || item.latitude,
-            lng: item.lng || item.longitude,
-            accessible: !!item.accessible,
-            diapers: !!item.diapers,
-            emergencyBell: !!item.emergencyBell,
-            address: item.address,
-            station: item.station || item.name.split(' ')[0],
-            isInsideGate: !!item.isInsideGate,
-            location: item.location
-          }));
-          await this.wc.bulkAdd(mappedWC);
-
-          // 📅 NEW: Initial offline timetable load
-          try {
-            const ttRes = await fetch('./data/master-timetables.json');
-            if (ttRes.ok) {
-              const ttItems = await ttRes.json();
-              if (Array.isArray(ttItems) && ttItems.length > 0) {
-                const ttMapped: TimetableEntry[] = ttItems.map((item: any) => ({
-                  stationName: item.s,
-                  line: item.l,
-                  dayType: (item.dt === 'w' ? 'week' : item.dt === 's' ? 'sat' : 'sun') as 'week' | 'sat' | 'sun',
-                  direction: (item.di === 'u' ? 'up' : 'down') as 'up' | 'down',
-                  arrivalTime: item.at,
-                  departureTime: item.dtm,
-                  trainNo: '',
-                  destination: item.dest
-                }));
-                await this.timetables.bulkAdd(ttMapped);
-                console.log(`📅 Loaded ${ttMapped.length} master timetable entries.`);
-              }
+        try {
+          const ttRes = await fetch('./data/master-timetables.json');
+          if (ttRes.ok) {
+            const ttItems = await ttRes.json();
+            if (Array.isArray(ttItems) && ttItems.length > 0) {
+              const ttMapped: TimetableEntry[] = ttItems.map((item: any) => ({
+                stationName: item.s,
+                line: item.l,
+                dayType: (item.dt === 'w' ? 'week' : item.dt === 's' ? 'sat' : 'sun') as 'week' | 'sat' | 'sun',
+                direction: (item.di === 'u' ? 'up' : 'down') as 'up' | 'down',
+                arrivalTime: item.at,
+                departureTime: item.dtm,
+                trainNo: '',
+                destination: item.dest,
+              }));
+              await this.timetables.bulkAdd(ttMapped);
             }
-          } catch (e) {
-            console.warn('Could not load initial master timetables:', e);
           }
-        });
-        console.log('✅ Basic station data loaded.');
-      } catch (err) {
-        console.error('❌ Failed to initialize database:', err);
-      }
+        } catch (e) {
+          console.warn('Could not load master timetables:', e);
+        }
+      });
+    } catch (err) {
+      console.error('❌ Failed to initialize database:', err);
     }
   }
 
