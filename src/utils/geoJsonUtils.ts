@@ -41,7 +41,7 @@ export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, sta
           geometry: { type: "Point" as const, coordinates: [s.lng, s.lat] },
           properties: {
             name: s.name,
-            lines: [...(s.lines || [])],
+            lines: [line.name],  // 첫 등록 시 현재 노선명 포함 (transfer detection을 위해)
             lineColors: [line.color],
             color: line.color,   // direct color property for reliable ["get","color"] access
             type: "subway"

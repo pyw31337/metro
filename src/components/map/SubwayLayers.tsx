@@ -66,39 +66,34 @@ const SubwayLayers = ({
   const stationLineColor: any = ["get", "color"];
 
   // 역 점 반지름: 환승역은 조금 크게, zoom 기반
+  // 노선색 채움 방식이므로 일반역도 충분히 크게
   const baseRadius: any = [
     "interpolate", ["linear"], ["zoom"],
-    8,  ["case", isTransfer, 3,   2],
-    10, ["case", isTransfer, 5,   3.5],
-    12, ["case", isTransfer, 7,   5],
-    14, ["case", isTransfer, 9,   7],
-    16, ["case", isTransfer, 12,  9],
+    8,  ["case", isTransfer, 4,   2.5],
+    10, ["case", isTransfer, 6,   4],
+    12, ["case", isTransfer, 8,   5.5],
+    14, ["case", isTransfer, 10,  7.5],
+    16, ["case", isTransfer, 13,  10],
   ];
 
-  // 역 점 채움색: 흰색 고정 (stroke가 노선 색)
-  // 회색 처리: 경로 검색 중엔 비경로 역은 더 옅게
-  let stationFillColor: any = "#ffffff";
-  let stationStrokeColor: any;
+  // 역 점: 노선색 채움 + 흰 stroke → 밝은/어두운 배경 모두에서 명확히 보임
+  // 회색 처리: 경로/포커스 모드에서 비활성 역은 회색
+  let stationFillColor: any = stationLineColor;  // 기본: 노선색 채움
+  let stationStrokeColor: any = "#ffffff";       // 기본: 흰 테두리
   if (hasRoute) {
-    // 경로 노선의 역: 흰 채움 + 노선색 stroke
-    // 비경로 역: 회색 채움 + 회색 stroke
     if (routeLineNames.length > 0) {
-      // 역의 lines 중 경로 노선이 있으면 활성, 없으면 비활성
       const onRoute: any = routeLineNames.reduce((acc: any, ln: string) =>
         ["case", ["in", ["literal", ln], ["get", "lines"]], true, acc], false);
-      stationFillColor = ["case", onRoute, "#ffffff", GRAY_STATION];
-      stationStrokeColor = ["case", onRoute, stationLineColor, GRAY_STATION];
+      stationFillColor  = ["case", onRoute, stationLineColor, GRAY_STATION];
+      stationStrokeColor = ["case", onRoute, "#ffffff",        GRAY_STATION];
     } else {
-      stationFillColor = GRAY_STATION;
+      stationFillColor  = GRAY_STATION;
       stationStrokeColor = GRAY_STATION;
     }
   } else if (focusedLine) {
     const onFocus: any = ["in", ["literal", focusedLine], ["get", "lines"]];
-    stationFillColor = "#ffffff";
-    stationStrokeColor = ["case", onFocus, stationLineColor, GRAY_STATION];
-  } else {
-    stationFillColor = "#ffffff";
-    stationStrokeColor = stationLineColor;
+    stationFillColor  = ["case", onFocus, stationLineColor, GRAY_STATION];
+    stationStrokeColor = ["case", onFocus, "#ffffff",        GRAY_STATION];
   }
 
   // ── 역명 라벨 색 ─────────────────────────────────────────────────────────
@@ -185,7 +180,7 @@ const SubwayLayers = ({
           }}
         />
 
-        {/* 역 점 — 흰 채움 + 노선색 테두리 (환승역은 조금 크게) */}
+        {/* 역 점 — 노선색 채움 + 흰 테두리 (환승역은 조금 크게) */}
         <Layer
           id="subway-station-circle"
           type="circle"
@@ -195,23 +190,18 @@ const SubwayLayers = ({
               "case",
               ["==", ["get", "name"], selectedStationName ?? ''],
               ["interpolate", ["linear"], ["zoom"],
-                8,  ["case", isTransfer, 4,   3],
-                10, ["case", isTransfer, 6.5, 5],
-                12, ["case", isTransfer, 9,   7],
-                14, ["case", isTransfer, 11,  9],
-                16, ["case", isTransfer, 14,  11],
+                8,  ["case", isTransfer, 5,   3.5],
+                10, ["case", isTransfer, 7.5, 5.5],
+                12, ["case", isTransfer, 10,  8],
+                14, ["case", isTransfer, 13,  10],
+                16, ["case", isTransfer, 16,  13],
               ],
               baseRadius,
             ],
             "circle-color": stationFillColor,
             "circle-stroke-width": ["interpolate", ["linear"], ["zoom"],
-              8, 1.5, 10, 2, 12, 2.5, 14, 3, 16, 4],
-            "circle-stroke-color": [
-              "case",
-              ["==", ["get", "name"], selectedStationName ?? ''],
-              stationLineColor,
-              stationStrokeColor,
-            ],
+              8, 1.5, 10, 2, 12, 2.5, 14, 3, 16, 3.5],
+            "circle-stroke-color": stationStrokeColor,
           }}
         />
 
