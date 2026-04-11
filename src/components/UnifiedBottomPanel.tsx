@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
 import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown } from "lucide-react";
-import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
 import { normStation, stationLines } from "@/data/stationRegistry";
 import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
@@ -81,17 +80,35 @@ const TABS = [
     { id: "wc", label: "화장실", icon: <Bath size={14} /> },
 ];
 
+// Inline Korean jamo decomposition (no external dependency)
+const _CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+const _JUNG = ['ㅏ','ㅐ','ㅑ','ㅒ','ㅓ','ㅔ','ㅕ','ㅖ','ㅗ','ㅘ','ㅙ','ㅚ','ㅛ','ㅜ','ㅝ','ㅞ','ㅟ','ㅠ','ㅡ','ㅢ','ㅣ'];
+const _JONG = ['','ㄱ','ㄲ','ㄳ','ㄴ','ㄵ','ㄶ','ㄷ','ㄹ','ㄺ','ㄻ','ㄼ','ㄽ','ㄾ','ㄿ','ㅀ','ㅁ','ㅂ','ㅄ','ㅅ','ㅆ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function _disassemble(str: string): string {
+    return str.split('').map(ch => {
+        const c = ch.charCodeAt(0);
+        if (c < 0xAC00 || c > 0xD7A3) return ch;
+        const o = c - 0xAC00;
+        return _CHO[Math.floor(o / 28 / 21)] + _JUNG[Math.floor(o / 28) % 21] + _JONG[o % 28];
+    }).join('');
+}
+function _chosung(str: string): string {
+    return str.split('').map(ch => {
+        const c = ch.charCodeAt(0);
+        return (c >= 0xAC00 && c <= 0xD7A3) ? _CHO[Math.floor((c - 0xAC00) / 28 / 21)] : ch;
+    }).join('');
+}
+
 const matchChosung = (query: string, target: string) => {
     if (!query) return false;
-    const disassembledQuery = Hangul.disassemble(query).join("");
-    const disassembledTarget = Hangul.disassemble(target).join("");
+    const disassembledQuery = _disassemble(query);
+    const disassembledTarget = _disassemble(target);
     const isAllChosung = query.split("").every(char => {
         const code = char.charCodeAt(0);
         return code >= 0x3131 && code <= 0x314E;
     });
     if (isAllChosung) {
-        const targetChosung = Hangul.disassemble(target, true).map(j => j[0]).join("");
-        return targetChosung.includes(query);
+        return _chosung(target).includes(query);
     }
     return disassembledTarget.includes(disassembledQuery);
 };

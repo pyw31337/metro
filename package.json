@@ -18,8 +18,6 @@
   "dependencies": {
     "clsx": "^2.1.1",
     "dexie": "^4.4.1",
-    "framer-motion": "^12.23.26",
-    "hangul-js": "^0.2.6",
     "lucide-react": "^0.562.0",
     "maplibre-gl": "^5.21.1",
     "next": "16.1.1",
