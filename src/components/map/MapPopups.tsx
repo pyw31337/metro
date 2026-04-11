@@ -536,7 +536,7 @@ const MapPopups = ({
         </Popup>
       )}
 
-      {/* 2. Train Detail Popup */}
+      {/* 2. Train Detail Popup — anchor="top" so it appears BELOW the train icon, not overlapping the station popup above */}
       {selectedTrain && (
         <Popup
             longitude={selectedTrain.lng}
@@ -544,8 +544,8 @@ const MapPopups = ({
             closeButton={false}
             closeOnClick={false}
             onClose={() => setSelectedTrain(null)}
-            anchor="bottom"
-            offset={20}
+            anchor="top"
+            offset={[0, 24]}
             className="custom-train-popup"
         >
             <div 

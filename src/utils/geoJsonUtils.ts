@@ -43,6 +43,7 @@ export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, sta
             name: s.name,
             lines: [...(s.lines || [])],
             lineColors: [line.color],
+            color: line.color,   // direct color property for reliable ["get","color"] access
             type: "subway"
           }
         };
