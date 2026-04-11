@@ -15,6 +15,7 @@ import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
 import { useStopRoutes } from "@/hooks/useStopRoutes";
 import { useBusRouteInfo } from "@/hooks/useBusRouteInfo";
+import { useStationFacilities } from "@/hooks/useStationFacilities";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 
@@ -254,6 +255,7 @@ const MapPopups = ({
     return null;
   }, [routeSegments, selectedStationName]);
   const { data: realTimeCongestion } = useCongestion(selectedStationName);
+  const stationFacilities = useStationFacilities(activeTab === 'subway' ? selectedStationName : null);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -379,7 +381,32 @@ const MapPopups = ({
                 {activeTab === 'subway' && realTimeCongestion && (
                     <CongestionInfo data={realTimeCongestion} />
                 )}
-                
+
+                {/* Station Facilities */}
+                {activeTab === 'subway' && stationFacilities && (() => {
+                    const fc = stationFacilities;
+                    const chips: { label: string; count: number; icon: string }[] = [
+                        { label: '엘리베이터', count: fc.elevator.length, icon: '🛗' },
+                        { label: '에스컬레이터', count: fc.escalator.length, icon: '🚶' },
+                        { label: '화장실', count: fc.restroom.length, icon: '🚻' },
+                        { label: 'ATM', count: fc.atm.length, icon: '💳' },
+                        { label: '수유실', count: fc.nursery.length, icon: '🍼' },
+                        { label: '물품보관', count: fc.locker.length, icon: '🔒' },
+                    ].filter(c => c.count > 0);
+                    if (!chips.length) return null;
+                    return (
+                        <div className="flex flex-wrap gap-1.5 mb-3">
+                            {chips.map(c => (
+                                <span key={c.label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/8 text-[10px] text-zinc-500 dark:text-white/50 font-medium">
+                                    <span>{c.icon}</span>
+                                    <span>{c.label}</span>
+                                    <span className="text-zinc-400 dark:text-white/30">{c.count}</span>
+                                </span>
+                            ))}
+                        </div>
+                    );
+                })()}
+
                 {/* Navigation Actions */}
                 <div className="grid grid-cols-3 gap-1.5 mb-4">
                     {(() => {

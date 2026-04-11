@@ -1,0 +1,1948 @@
+[
+  {
+    "line": "01호선",
+    "station": "서울역",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "01호선",
+    "station": "시청",
+    "travelTimeSec": 120,
+    "distKm": 1.1,
+    "acmlDist": 1.1
+  },
+  {
+    "line": "01호선",
+    "station": "종각",
+    "travelTimeSec": 120,
+    "distKm": 1,
+    "acmlDist": 2.1
+  },
+  {
+    "line": "01호선",
+    "station": "종로3가",
+    "travelTimeSec": 90,
+    "distKm": 0.8,
+    "acmlDist": 2.9
+  },
+  {
+    "line": "01호선",
+    "station": "종로5가",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 3.8
+  },
+  {
+    "line": "01호선",
+    "station": "동대문",
+    "travelTimeSec": 90,
+    "distKm": 0.8,
+    "acmlDist": 4.6
+  },
+  {
+    "line": "01호선",
+    "station": "동묘앞",
+    "travelTimeSec": 60,
+    "distKm": 0.6,
+    "acmlDist": 5.2
+  },
+  {
+    "line": "01호선",
+    "station": "신설동",
+    "travelTimeSec": 90,
+    "distKm": 0.7,
+    "acmlDist": 5.9
+  },
+  {
+    "line": "01호선",
+    "station": "제기동",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 6.8
+  },
+  {
+    "line": "01호선",
+    "station": "청량리",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 7.8
+  },
+  {
+    "line": "02호선",
+    "station": "시청",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "02호선",
+    "station": "을지로입구",
+    "travelTimeSec": 90,
+    "distKm": 0.7,
+    "acmlDist": 0.7
+  },
+  {
+    "line": "02호선",
+    "station": "을지로3가",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 1.5
+  },
+  {
+    "line": "02호선",
+    "station": "을지로4가",
+    "travelTimeSec": 60,
+    "distKm": 0.6,
+    "acmlDist": 2.1
+  },
+  {
+    "line": "02호선",
+    "station": "동대문역사문화공원",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 3.1
+  },
+  {
+    "line": "02호선",
+    "station": "신당",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 4
+  },
+  {
+    "line": "02호선",
+    "station": "상왕십리",
+    "travelTimeSec": 60,
+    "distKm": 0.9,
+    "acmlDist": 4.9
+  },
+  {
+    "line": "02호선",
+    "station": "왕십리",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 5.7
+  },
+  {
+    "line": "02호선",
+    "station": "한양대",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 6.7
+  },
+  {
+    "line": "02호선",
+    "station": "뚝섬",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 7.8
+  },
+  {
+    "line": "02호선",
+    "station": "성수",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 8.6
+  },
+  {
+    "line": "02호선",
+    "station": "건대입구",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 9.8
+  },
+  {
+    "line": "02호선",
+    "station": "구의",
+    "travelTimeSec": 120,
+    "distKm": 1.6,
+    "acmlDist": 11.4
+  },
+  {
+    "line": "02호선",
+    "station": "강변",
+    "travelTimeSec": 60,
+    "distKm": 0.9,
+    "acmlDist": 12.3
+  },
+  {
+    "line": "02호선",
+    "station": "잠실나루",
+    "travelTimeSec": 120,
+    "distKm": 1.8,
+    "acmlDist": 14.1
+  },
+  {
+    "line": "02호선",
+    "station": "잠실",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 15.1
+  },
+  {
+    "line": "02호선",
+    "station": "잠실새내",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 16.3
+  },
+  {
+    "line": "02호선",
+    "station": "종합운동장",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 17.5
+  },
+  {
+    "line": "02호선",
+    "station": "삼성",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 18.5
+  },
+  {
+    "line": "02호선",
+    "station": "선릉",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 19.8
+  },
+  {
+    "line": "02호선",
+    "station": "역삼",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 21
+  },
+  {
+    "line": "02호선",
+    "station": "강남",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 21.8
+  },
+  {
+    "line": "02호선",
+    "station": "교대",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 23
+  },
+  {
+    "line": "02호선",
+    "station": "서초",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 23.7
+  },
+  {
+    "line": "02호선",
+    "station": "방배",
+    "travelTimeSec": 120,
+    "distKm": 1.7,
+    "acmlDist": 25.4
+  },
+  {
+    "line": "02호선",
+    "station": "사당",
+    "travelTimeSec": 150,
+    "distKm": 1.6,
+    "acmlDist": 27
+  },
+  {
+    "line": "02호선",
+    "station": "낙성대",
+    "travelTimeSec": 120,
+    "distKm": 1.7,
+    "acmlDist": 28.7
+  },
+  {
+    "line": "02호선",
+    "station": "서울대입구",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 29.7
+  },
+  {
+    "line": "02호선",
+    "station": "봉천",
+    "travelTimeSec": 60,
+    "distKm": 1,
+    "acmlDist": 30.7
+  },
+  {
+    "line": "02호선",
+    "station": "신림",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 31.8
+  },
+  {
+    "line": "02호선",
+    "station": "신대방",
+    "travelTimeSec": 120,
+    "distKm": 1.8,
+    "acmlDist": 33.6
+  },
+  {
+    "line": "02호선",
+    "station": "구로디지털단지",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 34.7
+  },
+  {
+    "line": "02호선",
+    "station": "대림",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 35.8
+  },
+  {
+    "line": "02호선",
+    "station": "신도림",
+    "travelTimeSec": 150,
+    "distKm": 1.8,
+    "acmlDist": 37.6
+  },
+  {
+    "line": "02호선",
+    "station": "문래",
+    "travelTimeSec": 120,
+    "distKm": 1.2,
+    "acmlDist": 38.8
+  },
+  {
+    "line": "02호선",
+    "station": "영등포구청",
+    "travelTimeSec": 60,
+    "distKm": 0.9,
+    "acmlDist": 39.7
+  },
+  {
+    "line": "02호선",
+    "station": "당산",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 40.8
+  },
+  {
+    "line": "02호선",
+    "station": "합정",
+    "travelTimeSec": 150,
+    "distKm": 2,
+    "acmlDist": 42.8
+  },
+  {
+    "line": "02호선",
+    "station": "홍대입구",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 43.9
+  },
+  {
+    "line": "02호선",
+    "station": "신촌",
+    "travelTimeSec": 120,
+    "distKm": 1.3,
+    "acmlDist": 45.2
+  },
+  {
+    "line": "02호선",
+    "station": "이대",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 46
+  },
+  {
+    "line": "02호선",
+    "station": "아현",
+    "travelTimeSec": 60,
+    "distKm": 0.9,
+    "acmlDist": 46.9
+  },
+  {
+    "line": "02호선",
+    "station": "충정로",
+    "travelTimeSec": 90,
+    "distKm": 0.8,
+    "acmlDist": 47.7
+  },
+  {
+    "line": "02호선",
+    "station": "시청",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 48.8
+  },
+  {
+    "line": "02호선",
+    "station": "용답",
+    "travelTimeSec": 180,
+    "distKm": 2.3,
+    "acmlDist": 51.1
+  },
+  {
+    "line": "02호선",
+    "station": "신답",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 52.1
+  },
+  {
+    "line": "02호선",
+    "station": "용두",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 53
+  },
+  {
+    "line": "02호선",
+    "station": "신설동",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 54.2
+  },
+  {
+    "line": "02호선",
+    "station": "도림천",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 55.2
+  },
+  {
+    "line": "02호선",
+    "station": "양천구청",
+    "travelTimeSec": 150,
+    "distKm": 1.7,
+    "acmlDist": 56.9
+  },
+  {
+    "line": "02호선",
+    "station": "신정네거리",
+    "travelTimeSec": 180,
+    "distKm": 1.9,
+    "acmlDist": 58.8
+  },
+  {
+    "line": "02호선",
+    "station": "까치산",
+    "travelTimeSec": 150,
+    "distKm": 1.4,
+    "acmlDist": 60.2
+  },
+  {
+    "line": "03호선",
+    "station": "지축",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "03호선",
+    "station": "구파발",
+    "travelTimeSec": 180,
+    "distKm": 1.5,
+    "acmlDist": 1.5
+  },
+  {
+    "line": "03호선",
+    "station": "연신내",
+    "travelTimeSec": 120,
+    "distKm": 2,
+    "acmlDist": 3.5
+  },
+  {
+    "line": "03호선",
+    "station": "불광",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 4.8
+  },
+  {
+    "line": "03호선",
+    "station": "녹번",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 5.9
+  },
+  {
+    "line": "03호선",
+    "station": "홍제",
+    "travelTimeSec": 120,
+    "distKm": 1.6,
+    "acmlDist": 7.5
+  },
+  {
+    "line": "03호선",
+    "station": "무악재",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 8.4
+  },
+  {
+    "line": "03호선",
+    "station": "독립문",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 9.5
+  },
+  {
+    "line": "03호선",
+    "station": "경복궁",
+    "travelTimeSec": 120,
+    "distKm": 1.6,
+    "acmlDist": 11.1
+  },
+  {
+    "line": "03호선",
+    "station": "안국",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 12.2
+  },
+  {
+    "line": "03호선",
+    "station": "종로3가",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 13.2
+  },
+  {
+    "line": "03호선",
+    "station": "을지로3가",
+    "travelTimeSec": 60,
+    "distKm": 0.6,
+    "acmlDist": 13.8
+  },
+  {
+    "line": "03호선",
+    "station": "충무로",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 14.5
+  },
+  {
+    "line": "03호선",
+    "station": "동대입구",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 15.4
+  },
+  {
+    "line": "03호선",
+    "station": "약수",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 16.1
+  },
+  {
+    "line": "03호선",
+    "station": "금호",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 16.9
+  },
+  {
+    "line": "03호선",
+    "station": "옥수",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 17.7
+  },
+  {
+    "line": "03호선",
+    "station": "압구정",
+    "travelTimeSec": 120,
+    "distKm": 2.1,
+    "acmlDist": 19.8
+  },
+  {
+    "line": "03호선",
+    "station": "신사",
+    "travelTimeSec": 120,
+    "distKm": 1.5,
+    "acmlDist": 21.3
+  },
+  {
+    "line": "03호선",
+    "station": "잠원",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 22.2
+  },
+  {
+    "line": "03호선",
+    "station": "고속터미널",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 23.4
+  },
+  {
+    "line": "03호선",
+    "station": "교대",
+    "travelTimeSec": 120,
+    "distKm": 1.6,
+    "acmlDist": 25
+  },
+  {
+    "line": "03호선",
+    "station": "남부터미널",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 25.9
+  },
+  {
+    "line": "03호선",
+    "station": "양재",
+    "travelTimeSec": 120,
+    "distKm": 1.8,
+    "acmlDist": 27.7
+  },
+  {
+    "line": "03호선",
+    "station": "매봉",
+    "travelTimeSec": 120,
+    "distKm": 1.2,
+    "acmlDist": 28.9
+  },
+  {
+    "line": "03호선",
+    "station": "도곡",
+    "travelTimeSec": 90,
+    "distKm": 0.8,
+    "acmlDist": 29.7
+  },
+  {
+    "line": "03호선",
+    "station": "대치",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 30.5
+  },
+  {
+    "line": "03호선",
+    "station": "학여울",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 31.3
+  },
+  {
+    "line": "03호선",
+    "station": "대청",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 32.2
+  },
+  {
+    "line": "03호선",
+    "station": "일원",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 33.4
+  },
+  {
+    "line": "03호선",
+    "station": "수서",
+    "travelTimeSec": 120,
+    "distKm": 1.8,
+    "acmlDist": 35.2
+  },
+  {
+    "line": "03호선",
+    "station": "가락시장",
+    "travelTimeSec": 120,
+    "distKm": 1.4,
+    "acmlDist": 36.6
+  },
+  {
+    "line": "03호선",
+    "station": "경찰병원",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 37.4
+  },
+  {
+    "line": "03호선",
+    "station": "오금",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 38.2
+  },
+  {
+    "line": "04호선",
+    "station": "당고개",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "04호선",
+    "station": "상계",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 1.2
+  },
+  {
+    "line": "04호선",
+    "station": "노원",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 2.2
+  },
+  {
+    "line": "04호선",
+    "station": "창동",
+    "travelTimeSec": 120,
+    "distKm": 1.4,
+    "acmlDist": 3.6
+  },
+  {
+    "line": "04호선",
+    "station": "쌍문",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 4.9
+  },
+  {
+    "line": "04호선",
+    "station": "수유",
+    "travelTimeSec": 120,
+    "distKm": 1.5,
+    "acmlDist": 6.4
+  },
+  {
+    "line": "04호선",
+    "station": "미아",
+    "travelTimeSec": 90,
+    "distKm": 1.4,
+    "acmlDist": 7.8
+  },
+  {
+    "line": "04호선",
+    "station": "미아사거리 ",
+    "travelTimeSec": 120,
+    "distKm": 1.5,
+    "acmlDist": 9.3
+  },
+  {
+    "line": "04호선",
+    "station": "길음",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 10.6
+  },
+  {
+    "line": "04호선",
+    "station": "성신여대입구",
+    "travelTimeSec": 120,
+    "distKm": 1.4,
+    "acmlDist": 12
+  },
+  {
+    "line": "04호선",
+    "station": "한성대입구",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 13
+  },
+  {
+    "line": "04호선",
+    "station": "혜화",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 13.9
+  },
+  {
+    "line": "04호선",
+    "station": "동대문",
+    "travelTimeSec": 120,
+    "distKm": 1.5,
+    "acmlDist": 15.4
+  },
+  {
+    "line": "04호선",
+    "station": "동대문역사문화공원",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 16.1
+  },
+  {
+    "line": "04호선",
+    "station": "충무로",
+    "travelTimeSec": 120,
+    "distKm": 1.3,
+    "acmlDist": 17.4
+  },
+  {
+    "line": "04호선",
+    "station": "명동",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 18.1
+  },
+  {
+    "line": "04호선",
+    "station": "회현",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 18.8
+  },
+  {
+    "line": "04호선",
+    "station": "서울역",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 19.7
+  },
+  {
+    "line": "04호선",
+    "station": "숙대입구",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 20.7
+  },
+  {
+    "line": "04호선",
+    "station": "삼각지",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 21.9
+  },
+  {
+    "line": "04호선",
+    "station": "신용산",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 22.6
+  },
+  {
+    "line": "04호선",
+    "station": "이촌",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 23.9
+  },
+  {
+    "line": "04호선",
+    "station": "동작",
+    "travelTimeSec": 180,
+    "distKm": 2.7,
+    "acmlDist": 26.6
+  },
+  {
+    "line": "04호선",
+    "station": "총신대입구",
+    "travelTimeSec": 150,
+    "distKm": 1.8,
+    "acmlDist": 28.4
+  },
+  {
+    "line": "04호선",
+    "station": "사당",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 29.5
+  },
+  {
+    "line": "04호선",
+    "station": "남태령",
+    "travelTimeSec": 90,
+    "distKm": 2.2,
+    "acmlDist": 31.7
+  },
+  {
+    "line": "05호선",
+    "station": "방화",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "05호선",
+    "station": "개화산",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 0.9
+  },
+  {
+    "line": "05호선",
+    "station": "김포공항",
+    "travelTimeSec": 100,
+    "distKm": 1.2,
+    "acmlDist": 2.1
+  },
+  {
+    "line": "05호선",
+    "station": "송정",
+    "travelTimeSec": 130,
+    "distKm": 1.2,
+    "acmlDist": 3.3
+  },
+  {
+    "line": "05호선",
+    "station": "마곡",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 4.4
+  },
+  {
+    "line": "05호선",
+    "station": "발산",
+    "travelTimeSec": 100,
+    "distKm": 1.2,
+    "acmlDist": 5.6
+  },
+  {
+    "line": "05호선",
+    "station": "우장산",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 6.7
+  },
+  {
+    "line": "05호선",
+    "station": "화곡",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 7.7
+  },
+  {
+    "line": "05호선",
+    "station": "까치산",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 8.9
+  },
+  {
+    "line": "05호선",
+    "station": "신정",
+    "travelTimeSec": 110,
+    "distKm": 1.3,
+    "acmlDist": 10.2
+  },
+  {
+    "line": "05호선",
+    "station": "목동",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 11
+  },
+  {
+    "line": "05호선",
+    "station": "오목교",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 11.9
+  },
+  {
+    "line": "05호선",
+    "station": "양평",
+    "travelTimeSec": 80,
+    "distKm": 1,
+    "acmlDist": 12.9
+  },
+  {
+    "line": "05호선",
+    "station": "영등포구청",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 13.7
+  },
+  {
+    "line": "05호선",
+    "station": "영등포시장",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 14.6
+  },
+  {
+    "line": "05호선",
+    "station": "신길",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 15.7
+  },
+  {
+    "line": "05호선",
+    "station": "여의도",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 16.7
+  },
+  {
+    "line": "05호선",
+    "station": "여의나루",
+    "travelTimeSec": 80,
+    "distKm": 1,
+    "acmlDist": 17.7
+  },
+  {
+    "line": "05호선",
+    "station": "마포",
+    "travelTimeSec": 120,
+    "distKm": 1.8,
+    "acmlDist": 19.5
+  },
+  {
+    "line": "05호선",
+    "station": "공덕",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 20.3
+  },
+  {
+    "line": "05호선",
+    "station": "애오개",
+    "travelTimeSec": 80,
+    "distKm": 1.1,
+    "acmlDist": 21.4
+  },
+  {
+    "line": "05호선",
+    "station": "충정로",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 22.3
+  },
+  {
+    "line": "05호선",
+    "station": "서대문",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 23
+  },
+  {
+    "line": "05호선",
+    "station": "광화문",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 24.1
+  },
+  {
+    "line": "05호선",
+    "station": "종로3가",
+    "travelTimeSec": 100,
+    "distKm": 1.2,
+    "acmlDist": 25.3
+  },
+  {
+    "line": "05호선",
+    "station": "을지로4가",
+    "travelTimeSec": 100,
+    "distKm": 1,
+    "acmlDist": 26.3
+  },
+  {
+    "line": "05호선",
+    "station": "동대문역사문화공원",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 27.2
+  },
+  {
+    "line": "05호선",
+    "station": "청구",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 28.1
+  },
+  {
+    "line": "05호선",
+    "station": "신금호",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 29
+  },
+  {
+    "line": "05호선",
+    "station": "행당",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 29.9
+  },
+  {
+    "line": "05호선",
+    "station": "왕십리",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 30.8
+  },
+  {
+    "line": "05호선",
+    "station": "마장",
+    "travelTimeSec": 60,
+    "distKm": 0.7,
+    "acmlDist": 31.5
+  },
+  {
+    "line": "05호선",
+    "station": "답십리",
+    "travelTimeSec": 100,
+    "distKm": 1,
+    "acmlDist": 32.5
+  },
+  {
+    "line": "05호선",
+    "station": "장한평",
+    "travelTimeSec": 100,
+    "distKm": 1.2,
+    "acmlDist": 33.7
+  },
+  {
+    "line": "05호선",
+    "station": "군자",
+    "travelTimeSec": 100,
+    "distKm": 1.5,
+    "acmlDist": 35.2
+  },
+  {
+    "line": "05호선",
+    "station": "아차산",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 36.2
+  },
+  {
+    "line": "05호선",
+    "station": "광나루",
+    "travelTimeSec": 110,
+    "distKm": 1.5,
+    "acmlDist": 37.7
+  },
+  {
+    "line": "05호선",
+    "station": "천호",
+    "travelTimeSec": 130,
+    "distKm": 2,
+    "acmlDist": 39.7
+  },
+  {
+    "line": "05호선",
+    "station": "강동",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 40.5
+  },
+  {
+    "line": "05호선",
+    "station": "길동",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 41.4
+  },
+  {
+    "line": "05호선",
+    "station": "굽은다리",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 42.2
+  },
+  {
+    "line": "05호선",
+    "station": "명일",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 43
+  },
+  {
+    "line": "05호선",
+    "station": "고덕",
+    "travelTimeSec": 100,
+    "distKm": 1.2,
+    "acmlDist": 44.2
+  },
+  {
+    "line": "05호선",
+    "station": "상일동",
+    "travelTimeSec": 100,
+    "distKm": 1.1,
+    "acmlDist": 45.3
+  },
+  {
+    "line": "05호선",
+    "station": "강일",
+    "travelTimeSec": 110,
+    "distKm": 0.8,
+    "acmlDist": 46.1
+  },
+  {
+    "line": "05호선",
+    "station": "미사",
+    "travelTimeSec": 110,
+    "distKm": 1.7,
+    "acmlDist": 47.8
+  },
+  {
+    "line": "05호선",
+    "station": "하남풍산",
+    "travelTimeSec": 150,
+    "distKm": 2.1,
+    "acmlDist": 49.9
+  },
+  {
+    "line": "05호선",
+    "station": "하남시청",
+    "travelTimeSec": 110,
+    "distKm": 1.3,
+    "acmlDist": 51.2
+  },
+  {
+    "line": "05호선",
+    "station": "하남검단산",
+    "travelTimeSec": 150,
+    "distKm": 1.6,
+    "acmlDist": 52.8
+  },
+  {
+    "line": "05호선",
+    "station": "둔촌동",
+    "travelTimeSec": 110,
+    "distKm": 1.2,
+    "acmlDist": 54
+  },
+  {
+    "line": "05호선",
+    "station": "올림픽공원",
+    "travelTimeSec": 100,
+    "distKm": 1.4,
+    "acmlDist": 55.4
+  },
+  {
+    "line": "05호선",
+    "station": "방이",
+    "travelTimeSec": 80,
+    "distKm": 0.8,
+    "acmlDist": 56.2
+  },
+  {
+    "line": "05호선",
+    "station": "오금",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 57.1
+  },
+  {
+    "line": "05호선",
+    "station": "개롱",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 58
+  },
+  {
+    "line": "05호선",
+    "station": "거여",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 58.9
+  },
+  {
+    "line": "05호선",
+    "station": "마천",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 59.8
+  },
+  {
+    "line": "06호선",
+    "station": "응암",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "06호선",
+    "station": "역촌",
+    "travelTimeSec": 100,
+    "distKm": 1.1,
+    "acmlDist": 1.1
+  },
+  {
+    "line": "06호선",
+    "station": "불광",
+    "travelTimeSec": 80,
+    "distKm": 0.8,
+    "acmlDist": 1.9
+  },
+  {
+    "line": "06호선",
+    "station": "독바위",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 2.8
+  },
+  {
+    "line": "06호선",
+    "station": "연신내",
+    "travelTimeSec": 130,
+    "distKm": 1.4,
+    "acmlDist": 4.2
+  },
+  {
+    "line": "06호선",
+    "station": "구산",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 5.1
+  },
+  {
+    "line": "06호선",
+    "station": "응암",
+    "travelTimeSec": 120,
+    "distKm": 1.5,
+    "acmlDist": 6.6
+  },
+  {
+    "line": "06호선",
+    "station": "새절",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 7.5
+  },
+  {
+    "line": "06호선",
+    "station": "증산",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 8.4
+  },
+  {
+    "line": "06호선",
+    "station": "디지털미디어시티",
+    "travelTimeSec": 80,
+    "distKm": 1.1,
+    "acmlDist": 9.5
+  },
+  {
+    "line": "06호선",
+    "station": "월드컵경기장",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 10.3
+  },
+  {
+    "line": "06호선",
+    "station": "마포구청",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 11.1
+  },
+  {
+    "line": "06호선",
+    "station": "망원",
+    "travelTimeSec": 80,
+    "distKm": 1,
+    "acmlDist": 12.1
+  },
+  {
+    "line": "06호선",
+    "station": "합정",
+    "travelTimeSec": 80,
+    "distKm": 0.8,
+    "acmlDist": 12.9
+  },
+  {
+    "line": "06호선",
+    "station": "상수",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 13.7
+  },
+  {
+    "line": "06호선",
+    "station": "광흥창",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 14.6
+  },
+  {
+    "line": "06호선",
+    "station": "대흥",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 15.6
+  },
+  {
+    "line": "06호선",
+    "station": "공덕",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 16.5
+  },
+  {
+    "line": "06호선",
+    "station": "효창공원앞",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 17.4
+  },
+  {
+    "line": "06호선",
+    "station": "삼각지",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 18.6
+  },
+  {
+    "line": "06호선",
+    "station": "녹사평",
+    "travelTimeSec": 100,
+    "distKm": 1.1,
+    "acmlDist": 19.7
+  },
+  {
+    "line": "06호선",
+    "station": "이태원",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 20.5
+  },
+  {
+    "line": "06호선",
+    "station": "한강진",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 21.5
+  },
+  {
+    "line": "06호선",
+    "station": "버티고개",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 22.5
+  },
+  {
+    "line": "06호선",
+    "station": "약수",
+    "travelTimeSec": 70,
+    "distKm": 0.7,
+    "acmlDist": 23.2
+  },
+  {
+    "line": "06호선",
+    "station": "청구",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 24
+  },
+  {
+    "line": "06호선",
+    "station": "신당",
+    "travelTimeSec": 70,
+    "distKm": 0.7,
+    "acmlDist": 24.7
+  },
+  {
+    "line": "06호선",
+    "station": "동묘앞",
+    "travelTimeSec": 60,
+    "distKm": 0.6,
+    "acmlDist": 25.3
+  },
+  {
+    "line": "06호선",
+    "station": "창신",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 26.2
+  },
+  {
+    "line": "06호선",
+    "station": "보문",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 27
+  },
+  {
+    "line": "06호선",
+    "station": "안암",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 27.9
+  },
+  {
+    "line": "06호선",
+    "station": "고려대",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 28.7
+  },
+  {
+    "line": "06호선",
+    "station": "월곡",
+    "travelTimeSec": 100,
+    "distKm": 1.4,
+    "acmlDist": 30.1
+  },
+  {
+    "line": "06호선",
+    "station": "상월곡",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 30.9
+  },
+  {
+    "line": "06호선",
+    "station": "돌곶이",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 31.7
+  },
+  {
+    "line": "06호선",
+    "station": "석계",
+    "travelTimeSec": 80,
+    "distKm": 1,
+    "acmlDist": 32.7
+  },
+  {
+    "line": "06호선",
+    "station": "태릉입구",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 33.5
+  },
+  {
+    "line": "06호선",
+    "station": "화랑대",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 34.4
+  },
+  {
+    "line": "06호선",
+    "station": "봉화산",
+    "travelTimeSec": 80,
+    "distKm": 0.7,
+    "acmlDist": 35.1
+  },
+  {
+    "line": "06호선",
+    "station": "신내역",
+    "travelTimeSec": 270,
+    "distKm": 1.3,
+    "acmlDist": 36.4
+  },
+  {
+    "line": "07호선",
+    "station": "장암",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "07호선",
+    "station": "도봉산",
+    "travelTimeSec": 270,
+    "distKm": 1.4,
+    "acmlDist": 1.4
+  },
+  {
+    "line": "07호선",
+    "station": "수락산",
+    "travelTimeSec": 140,
+    "distKm": 1.6,
+    "acmlDist": 3
+  },
+  {
+    "line": "07호선",
+    "station": "마들",
+    "travelTimeSec": 120,
+    "distKm": 1.4,
+    "acmlDist": 4.4
+  },
+  {
+    "line": "07호선",
+    "station": "노원",
+    "travelTimeSec": 90,
+    "distKm": 1.2,
+    "acmlDist": 5.6
+  },
+  {
+    "line": "07호선",
+    "station": "중계",
+    "travelTimeSec": 80,
+    "distKm": 1.1,
+    "acmlDist": 6.7
+  },
+  {
+    "line": "07호선",
+    "station": "하계",
+    "travelTimeSec": 70,
+    "distKm": 1,
+    "acmlDist": 7.7
+  },
+  {
+    "line": "07호선",
+    "station": "공릉",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 9
+  },
+  {
+    "line": "07호선",
+    "station": "태릉입구",
+    "travelTimeSec": 60,
+    "distKm": 0.8,
+    "acmlDist": 9.8
+  },
+  {
+    "line": "07호선",
+    "station": "먹골",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 10.7
+  },
+  {
+    "line": "07호선",
+    "station": "중화",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 11.6
+  },
+  {
+    "line": "07호선",
+    "station": "상봉",
+    "travelTimeSec": 110,
+    "distKm": 1,
+    "acmlDist": 12.6
+  },
+  {
+    "line": "07호선",
+    "station": "면목",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 13.4
+  },
+  {
+    "line": "07호선",
+    "station": "사가정",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 14.3
+  },
+  {
+    "line": "07호선",
+    "station": "용마산",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 15.1
+  },
+  {
+    "line": "07호선",
+    "station": "중곡",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 16
+  },
+  {
+    "line": "07호선",
+    "station": "군자",
+    "travelTimeSec": 80,
+    "distKm": 1.1,
+    "acmlDist": 17.1
+  },
+  {
+    "line": "07호선",
+    "station": "어린이대공원",
+    "travelTimeSec": 80,
+    "distKm": 1.1,
+    "acmlDist": 18.2
+  },
+  {
+    "line": "07호선",
+    "station": "건대입구",
+    "travelTimeSec": 80,
+    "distKm": 0.8,
+    "acmlDist": 19
+  },
+  {
+    "line": "07호선",
+    "station": "뚝섬유원지",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 20
+  },
+  {
+    "line": "07호선",
+    "station": "청담",
+    "travelTimeSec": 150,
+    "distKm": 2,
+    "acmlDist": 22
+  },
+  {
+    "line": "07호선",
+    "station": "강남구청",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 23.1
+  },
+  {
+    "line": "07호선",
+    "station": "학동",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 24
+  },
+  {
+    "line": "07호선",
+    "station": "논현",
+    "travelTimeSec": 80,
+    "distKm": 1,
+    "acmlDist": 25
+  },
+  {
+    "line": "07호선",
+    "station": "반포",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 25.9
+  },
+  {
+    "line": "07호선",
+    "station": "고속터미널",
+    "travelTimeSec": 90,
+    "distKm": 0.9,
+    "acmlDist": 26.8
+  },
+  {
+    "line": "07호선",
+    "station": "내방",
+    "travelTimeSec": 150,
+    "distKm": 2.2,
+    "acmlDist": 29
+  },
+  {
+    "line": "07호선",
+    "station": "이수",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 30
+  },
+  {
+    "line": "07호선",
+    "station": "남성",
+    "travelTimeSec": 80,
+    "distKm": 1,
+    "acmlDist": 31
+  },
+  {
+    "line": "07호선",
+    "station": "숭실대입구",
+    "travelTimeSec": 150,
+    "distKm": 2,
+    "acmlDist": 33
+  },
+  {
+    "line": "07호선",
+    "station": "상도",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 33.9
+  },
+  {
+    "line": "07호선",
+    "station": "장승배기",
+    "travelTimeSec": 150,
+    "distKm": 0.9,
+    "acmlDist": 34.8
+  },
+  {
+    "line": "07호선",
+    "station": "신대방삼거리",
+    "travelTimeSec": 110,
+    "distKm": 1.2,
+    "acmlDist": 36
+  },
+  {
+    "line": "07호선",
+    "station": "보라매",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 36.8
+  },
+  {
+    "line": "07호선",
+    "station": "신풍",
+    "travelTimeSec": 140,
+    "distKm": 0.9,
+    "acmlDist": 37.7
+  },
+  {
+    "line": "07호선",
+    "station": "대림",
+    "travelTimeSec": 120,
+    "distKm": 1.4,
+    "acmlDist": 39.1
+  },
+  {
+    "line": "07호선",
+    "station": "남구로",
+    "travelTimeSec": 90,
+    "distKm": 1.1,
+    "acmlDist": 40.2
+  },
+  {
+    "line": "07호선",
+    "station": "가산디지털단지",
+    "travelTimeSec": 80,
+    "distKm": 0.8,
+    "acmlDist": 41
+  },
+  {
+    "line": "07호선",
+    "station": "철산",
+    "travelTimeSec": 120,
+    "distKm": 1.4,
+    "acmlDist": 42.4
+  },
+  {
+    "line": "07호선",
+    "station": "광명사거리",
+    "travelTimeSec": 110,
+    "distKm": 1.3,
+    "acmlDist": 43.7
+  },
+  {
+    "line": "07호선",
+    "station": "천왕",
+    "travelTimeSec": 120,
+    "distKm": 1.7,
+    "acmlDist": 45.4
+  },
+  {
+    "line": "07호선",
+    "station": "온수",
+    "travelTimeSec": 140,
+    "distKm": 1.5,
+    "acmlDist": 46.9
+  },
+  {
+    "line": "08호선",
+    "station": "암사",
+    "travelTimeSec": 0,
+    "distKm": 0,
+    "acmlDist": 0
+  },
+  {
+    "line": "08호선",
+    "station": "천호",
+    "travelTimeSec": 90,
+    "distKm": 1.3,
+    "acmlDist": 1.3
+  },
+  {
+    "line": "08호선",
+    "station": "강동구청",
+    "travelTimeSec": 80,
+    "distKm": 0.9,
+    "acmlDist": 2.2
+  },
+  {
+    "line": "08호선",
+    "station": "몽촌토성",
+    "travelTimeSec": 120,
+    "distKm": 1.6,
+    "acmlDist": 3.8
+  },
+  {
+    "line": "08호선",
+    "station": "잠실",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 4.6
+  },
+  {
+    "line": "08호선",
+    "station": "석촌",
+    "travelTimeSec": 110,
+    "distKm": 1.2,
+    "acmlDist": 5.8
+  },
+  {
+    "line": "08호선",
+    "station": "송파",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 6.7
+  },
+  {
+    "line": "08호선",
+    "station": "가락시장",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 7.5
+  },
+  {
+    "line": "08호선",
+    "station": "문정",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 8.4
+  },
+  {
+    "line": "08호선",
+    "station": "장지",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 9.3
+  },
+  {
+    "line": "08호선",
+    "station": "복정",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 10.2
+  },
+  {
+    "line": "08호선",
+    "station": "남위례",
+    "travelTimeSec": 110,
+    "distKm": 1.5,
+    "acmlDist": 11.7
+  },
+  {
+    "line": "08호선",
+    "station": "산성",
+    "travelTimeSec": 100,
+    "distKm": 1.2,
+    "acmlDist": 12.9
+  },
+  {
+    "line": "08호선",
+    "station": "남한산성입구",
+    "travelTimeSec": 130,
+    "distKm": 1.3,
+    "acmlDist": 14.2
+  },
+  {
+    "line": "08호선",
+    "station": "단대오거리",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 15
+  },
+  {
+    "line": "08호선",
+    "station": "신흥",
+    "travelTimeSec": 70,
+    "distKm": 0.8,
+    "acmlDist": 15.8
+  },
+  {
+    "line": "08호선",
+    "station": "수진",
+    "travelTimeSec": 70,
+    "distKm": 0.9,
+    "acmlDist": 16.7
+  },
+  {
+    "line": "08호선",
+    "station": "모란",
+    "travelTimeSec": 90,
+    "distKm": 1,
+    "acmlDist": 17.7
+  }
+]
