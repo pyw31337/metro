@@ -83,7 +83,10 @@ export const getArrivalsFromScheduleIndex = async (
 
   const dow    = now.getDay();
   const dayKey = dow === 0 ? 'sun' : dow === 6 ? 'sat' : 'week';
-  const nowSec = h * 3600 + now.getMinutes() * 60 + now.getSeconds();
+  // At midnight (h=0), treat as 24h+ so after-midnight trains compare correctly
+  const nowSec = h === 0
+    ? 24 * 3600 + now.getMinutes() * 60 + now.getSeconds()
+    : h * 3600 + now.getMinutes() * 60 + now.getSeconds();
 
   const results: StationArrival[] = [];
 
