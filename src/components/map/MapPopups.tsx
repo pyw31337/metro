@@ -13,6 +13,7 @@ import { stationLines } from "@/data/stationRegistry";
 import { useCongestion } from "@/hooks/useCongestion";
 import CongestionInfo from "./CongestionInfo";
 import { useBusArrivals } from "@/hooks/useBusArrivals";
+import { useStopRoutes } from "@/hooks/useStopRoutes";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 
@@ -114,22 +115,26 @@ const BusArrivalList = ({ stopId, cityCode, onSelectBusRoute }: { stopId: string
   );
 };
 
-const BusRouteStaticList = ({ routes, cityCode, onSelectBusRoute }: { routes: string[], cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void }) => {
-    if (!routes || routes.length === 0) return null;
+const BusRouteStaticList = ({ stopId, onSelectBusRoute }: { stopId: string, cityCode: string, onSelectBusRoute?: (routeNo: string, cityCode?: string, routeId?: string) => void }) => {
+    const { routes, loading } = useStopRoutes(stopId);
+
+    if (loading) return <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5 text-[10px] text-zinc-400 text-center py-1 animate-pulse">노선 목록 로딩중...</div>;
+    if (routes.length === 0) return null;
+
     return (
         <div className="mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
             <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 mb-2 uppercase tracking-tight">전체 노선 ({routes.length})</h4>
             <div className="flex flex-wrap gap-1.5 max-h-[80px] overflow-y-auto no-scrollbar">
                 {routes.map((r, i) => {
-                    const style = getBusRouteStyle(r);
+                    const style = getBusRouteStyle(r.no);
                     return (
                         <button
                             key={i}
-                            onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(r, cityCode); }}
+                            onClick={(e) => { e.stopPropagation(); onSelectBusRoute?.(r.no, r.cityCode, r.id); }}
                             className="px-2 py-0.5 rounded-md text-[10px] font-black transition-all active:scale-95 shadow-sm opacity-90 hover:opacity-100 hover:scale-105"
                             style={{ backgroundColor: style.bg, color: style.text }}
                         >
-                            {r}
+                            {r.no}
                         </button>
                     );
                 })}
@@ -420,7 +425,7 @@ const MapPopups = ({
                     ) : (selectedBusStop) ? (
                         <>
                             <BusArrivalList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
-                            <BusRouteStaticList routes={selectedBusStop.routes} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
+                            <BusRouteStaticList stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
                         </>
                     ) : null}
                 </div>
