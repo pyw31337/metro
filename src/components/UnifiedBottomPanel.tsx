@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus } from "lucide-react";
+import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
@@ -322,7 +322,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     onSelectBusRoute
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
-    const { waypoints, addWaypoint, removeWaypoint } = useRouteStore();
+    const { waypoints, addWaypoint, removeWaypoint, moveWaypoint } = useRouteStore();
     const setSelectedBusStop = useSubwayStore(s => s.setSelectedBusStop);
     const { history, addToHistory, clearHistory } = useSearchHistory();
     const [destination, setDestination] = useState("");
@@ -681,11 +681,24 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                             {waypoints.length > 0 && (
                                 <div className="flex flex-col gap-1">
                                     {waypoints.map((wp, idx) => (
-                                        <div key={idx} className="flex items-center px-3 h-9 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-200/50 dark:border-violet-700/30">
+                                        <div key={idx} className="flex items-center px-2 h-9 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-200/50 dark:border-violet-700/30">
                                             <span className="text-[11px] font-black text-violet-500 shrink-0 mr-1">경유</span>
-                                            <span className="flex-1 text-[13px] font-bold text-zinc-900 dark:text-white truncate px-2">
+                                            <span className="flex-1 text-[13px] font-bold text-zinc-900 dark:text-white truncate px-1">
                                                 {wp.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, '')}
                                             </span>
+                                            {/* 순서 이동 버튼 */}
+                                            <div className="flex shrink-0">
+                                                <button
+                                                    disabled={idx === 0}
+                                                    onClick={() => { hapticLight(); moveWaypoint(idx, idx - 1); }}
+                                                    className="p-1 text-violet-400 disabled:opacity-20 active:scale-90 transition-all"
+                                                ><ChevronUp size={13} /></button>
+                                                <button
+                                                    disabled={idx === waypoints.length - 1}
+                                                    onClick={() => { hapticLight(); moveWaypoint(idx, idx + 1); }}
+                                                    className="p-1 text-violet-400 disabled:opacity-20 active:scale-90 transition-all"
+                                                ><ChevronDown size={13} /></button>
+                                            </div>
                                             <button onClick={() => { hapticLight(); removeWaypoint(idx); }} className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"><X size={14} /></button>
                                         </div>
                                     ))}
