@@ -382,7 +382,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
         <Popup
           longitude={selectedPos![0]}
           latitude={selectedPos![1]}
-          anchor="bottom"
+          anchor="top"
           offset={28}
           closeButton={false}
           closeOnClick={false}
@@ -433,7 +433,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
         <Popup
           longitude={boardedPos![0]}
           latitude={boardedPos![1]}
-          anchor="bottom"
+          anchor="top"
           offset={28}
           closeButton={false}
           closeOnClick={false}
