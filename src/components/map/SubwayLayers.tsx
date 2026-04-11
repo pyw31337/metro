@@ -66,14 +66,13 @@ const SubwayLayers = ({
   const stationLineColor: any = ["get", "color"];
 
   // 역 점 반지름: 환승역은 조금 크게, zoom 기반
-  // 노선색 채움 방식이므로 일반역도 충분히 크게
   const baseRadius: any = [
     "interpolate", ["linear"], ["zoom"],
-    8,  ["case", isTransfer, 4,   2.5],
-    10, ["case", isTransfer, 6,   4],
-    12, ["case", isTransfer, 8,   5.5],
-    14, ["case", isTransfer, 10,  7.5],
-    16, ["case", isTransfer, 13,  10],
+    7,  ["case", isTransfer, 5,   4],
+    9,  ["case", isTransfer, 7,   5],
+    11, ["case", isTransfer, 9,   7],
+    13, ["case", isTransfer, 11,  9],
+    15, ["case", isTransfer, 14,  11],
   ];
 
   // 역 점: 노선색 채움 + 흰 stroke → 밝은/어두운 배경 모두에서 명확히 보임
@@ -190,18 +189,20 @@ const SubwayLayers = ({
               "case",
               ["==", ["get", "name"], selectedStationName ?? ''],
               ["interpolate", ["linear"], ["zoom"],
-                8,  ["case", isTransfer, 5,   3.5],
-                10, ["case", isTransfer, 7.5, 5.5],
-                12, ["case", isTransfer, 10,  8],
-                14, ["case", isTransfer, 13,  10],
-                16, ["case", isTransfer, 16,  13],
+                7,  ["case", isTransfer, 7,   5],
+                9,  ["case", isTransfer, 9,   7],
+                11, ["case", isTransfer, 12,  9],
+                13, ["case", isTransfer, 15,  12],
+                15, ["case", isTransfer, 18,  14],
               ],
               baseRadius,
             ],
-            "circle-color": stationFillColor,
+            "circle-color": ["coalesce", stationFillColor, "#888888"],
+            "circle-opacity": 1,
             "circle-stroke-width": ["interpolate", ["linear"], ["zoom"],
-              8, 1.5, 10, 2, 12, 2.5, 14, 3, 16, 3.5],
+              7, 1.5, 9, 2, 11, 2.5, 13, 3, 15, 3.5],
             "circle-stroke-color": stationStrokeColor,
+            "circle-stroke-opacity": 1,
           }}
         />
 
