@@ -158,6 +158,9 @@ export default function Home() {
   // 초기 데이터 로드
   // ─────────────────────────────────────────────────────────────────────────
   useEffect(() => {
+    // 도착지는 매 세션마다 비워 — 사용자가 직접 지정하도록
+    routeActions.setEndStation(null);
+
     (async () => {
       await db.initializeData();
       const [allBusStops, allWCs] = await Promise.all([
