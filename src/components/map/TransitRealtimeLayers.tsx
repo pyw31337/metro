@@ -232,17 +232,21 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     };
 
     const onMapClick = (e: any) => {
-      const hits = map.queryRenderedFeatures(e.point, { layers: ['transit-trains'] });
+      const hits = map.queryRenderedFeatures(e.point, { layers: ['transit-trains', 'transit-buses'] });
       if (!hits.length) { setSelectedId(null); setSelectedInfo(null); setSelectedPos(null); }
     };
 
     map.on('click', 'transit-trains', onTrainClick);
+    map.on('click', 'transit-buses',  onTrainClick);
     map.on('click', onMapClick);
     map.on('mouseenter', 'transit-trains', () => { map.getCanvas().style.cursor = 'pointer'; });
     map.on('mouseleave', 'transit-trains', () => { map.getCanvas().style.cursor = ''; });
+    map.on('mouseenter', 'transit-buses',  () => { map.getCanvas().style.cursor = 'pointer'; });
+    map.on('mouseleave', 'transit-buses',  () => { map.getCanvas().style.cursor = ''; });
 
     return () => {
       map.off('click', 'transit-trains', onTrainClick);
+      map.off('click', 'transit-buses',  onTrainClick);
       map.off('click', onMapClick);
     };
   }, [map, selectedId]);
@@ -272,7 +276,8 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const trainVis: "visible" | "none" = isTrainVisible ? "visible" : "none";
   const busVis:   "visible" | "none" = isBusVisible   ? "visible" : "none";
 
-  const showSelectedPopup = !!(selectedId && selectedInfo && selectedPos && isTrainVisible && !boardedId);
+  const selectedIsBus     = !!(selectedId?.startsWith('bus-'));
+  const showSelectedPopup = !!(selectedId && selectedInfo && selectedPos && (selectedIsBus ? isBusVisible : isTrainVisible) && !boardedId);
   const showBoardedPopup  = !!(boardedId && boardedInfo && boardedPos && isTrainVisible);
 
   return (
@@ -334,21 +339,41 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           }}
         />
 
-        {/* 버스 */}
+        {/* 버스 — 원형 배경 */}
         <Layer
           id="transit-buses"
+          type="circle"
+          filter={['==', ['get', 'type'], 'bus']}
+          layout={{ 'visibility': busVis }}
+          paint={{
+            'circle-radius':         ['interpolate', ['linear'], ['zoom'], 10, 7, 14, 11, 18, 16],
+            'circle-color':          ['concat', '#', ['get', 'lineColor']],
+            'circle-opacity':        ['get', 'opacity'],
+            'circle-stroke-width':   1.5,
+            'circle-stroke-color':   '#ffffff',
+            'circle-stroke-opacity': ['get', 'opacity'],
+          }}
+        />
+
+        {/* 버스 — 노선번호 텍스트 */}
+        <Layer
+          id="transit-bus-label"
           type="symbol"
           filter={['==', ['get', 'type'], 'bus']}
           layout={{
             'visibility':              busVis,
-            'icon-image':              'rocket',
-            'icon-rotate':             ['get', 'bearing'],
-            'icon-rotation-alignment': 'map',
-            'icon-size':               ['interpolate', ['linear'], ['zoom'], 10, 0.1, 14, 0.2, 18, 0.4],
-            'icon-allow-overlap':      true,
-            'icon-ignore-placement':   true,
+            'text-field':              ['get', 'lineName'],
+            'text-font':               ['Open Sans Bold'],
+            'text-size':               ['interpolate', ['linear'], ['zoom'], 10, 7, 14, 10, 18, 13],
+            'text-anchor':             'center',
+            'text-allow-overlap':      true,
+            'text-ignore-placement':   true,
+            'text-max-width':          5,
           }}
-          paint={{}}
+          paint={{
+            'text-color':   '#ffffff',
+            'text-opacity': ['get', 'opacity'],
+          }}
         />
       </Source>
 
@@ -378,25 +403,27 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
                 className="ml-auto text-zinc-500 hover:text-white text-[14px] leading-none"
               >×</button>
             </div>
-            {/* 행선지 */}
+            {/* 행선지 / 노선번호 */}
             <div className="px-3 pb-2.5 text-[14px] font-black text-white leading-snug">
               {selectedInfo!.label}
             </div>
-            {/* 열차 탑승 버튼 */}
-            <button
-              onClick={() => {
-                setBoardedId(selectedId);
-                setBoardedInfo(selectedInfo);
-                setBoardedPos(selectedPos);
-                boardedIdRef.current = selectedId;
-                alertedStationRef.current = null;
-                setSelectedId(null); setSelectedInfo(null); setSelectedPos(null);
-              }}
-              className="w-full py-2.5 text-[12px] font-black text-white transition-opacity hover:opacity-90 active:opacity-70"
-              style={{ background: `#${selectedInfo!.lineColor}` }}
-            >
-              열차 탑승
-            </button>
+            {/* 탑승 버튼 — 지하철만 */}
+            {!selectedIsBus && (
+              <button
+                onClick={() => {
+                  setBoardedId(selectedId);
+                  setBoardedInfo(selectedInfo);
+                  setBoardedPos(selectedPos);
+                  boardedIdRef.current = selectedId;
+                  alertedStationRef.current = null;
+                  setSelectedId(null); setSelectedInfo(null); setSelectedPos(null);
+                }}
+                className="w-full py-2.5 text-[12px] font-black text-white transition-opacity hover:opacity-90 active:opacity-70"
+                style={{ background: `#${selectedInfo!.lineColor}` }}
+              >
+                열차 탑승
+              </button>
+            )}
           </div>
         </Popup>
       )}

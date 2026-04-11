@@ -494,6 +494,9 @@ export default function Home() {
 
       if (!resolvedId) return;
 
+      // Track for real-time bus position overlay
+      useSubwayStore.getState().setSelectedBusRoute(resolvedId);
+
       const path = await MetropolitanBusService.fetchRoutePath(cityCode, resolvedId);
       if (path) {
         useSubwayStore.getState().setRoutePathData(path);

@@ -3,6 +3,7 @@ import { fetchTrainPositions } from './arrivalApi';
 import { MetropolitanBusService } from './busApi';
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { normStation } from '@/data/stationRegistry';
+import { getBusRouteStyle } from '@/utils/busRouting';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공개 인터페이스
@@ -356,15 +357,17 @@ class TransitRealtimeService extends EventEmitter {
             MetropolitanBusService.fetchBusPositions(cityCode, routeId),
             MetropolitanBusService.fetchLocalRouteInfo(routeId),
           ]).then(([positions, routeInfo]) => {
+            const routeNo = routeInfo?.no ?? routeId;
+            const busColor = getBusRouteStyle(routeNo).bg.replace('#', '').toUpperCase();
             const busUnits = positions.map(pos => ({
               id: `bus-${routeId}-${pos.id}`,
               type: 'bus' as const,
               prevPos:   [pos.lng, pos.lat] as [number, number],
               nextPos:   [pos.lng, pos.lat] as [number, number],
               futurePos: [pos.lng, pos.lat] as [number, number],
-              lineName:  routeInfo?.no ?? routeId,
-              lineColor: '3b82f6',
-              label:     pos.no ?? routeInfo?.no ?? 'BUS',
+              lineName:  routeNo,
+              lineColor: busColor,
+              label:     routeNo,
               isSimulated: false,
             }));
             if (busUnits.length > 0) {
