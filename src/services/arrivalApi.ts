@@ -21,10 +21,14 @@ interface ScheduleIndexEntry {
   sun?:  Record<string, ScheduleEntry>;
 }
 type ScheduleIndex = Record<string, ScheduleIndexEntry>;
+// Station arrivals index: { "역명__노선": { "week": {"1": ["05:16",...], "2": [...]}, "sun": {...} } }
+type StationArrivalsIndex = Record<string, Record<string, Record<string, string[]>>>;
 
 const _schedBase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
 let _schedIndex: ScheduleIndex | null = null;
 let _schedLoading: Promise<ScheduleIndex> | null = null;
+let _arrIndex: StationArrivalsIndex | null = null;
+let _arrIndexLoading: Promise<StationArrivalsIndex> | null = null;
 
 async function getScheduleIndex(): Promise<ScheduleIndex> {
   if (_schedIndex) return _schedIndex;
@@ -38,6 +42,20 @@ async function getScheduleIndex(): Promise<ScheduleIndex> {
     return _schedIndex!;
   })();
   return _schedLoading;
+}
+
+async function getStationArrivalsIndex(): Promise<StationArrivalsIndex> {
+  if (_arrIndex) return _arrIndex;
+  if (_arrIndexLoading) return _arrIndexLoading;
+  _arrIndexLoading = (async () => {
+    try {
+      const res = await fetch(`${_schedBase}/data/station-arrivals-index.json`,
+        { signal: AbortSignal.timeout(8000) });
+      _arrIndex = res.ok ? await res.json() : {};
+    } catch { _arrIndex = {}; }
+    return _arrIndex!;
+  })();
+  return _arrIndexLoading;
 }
 
 const LINE_HEADWAY_MAP: Record<string, number> = {
@@ -125,6 +143,88 @@ export const getArrivalsFromScheduleIndex = async (
           btrainNo:    '',
           isScheduled: true,
         });
+      }
+    }
+  }
+
+  return results
+    .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
+    .slice(0, 8);
+};
+
+/**
+ * station-arrivals-index.json을 이용해 정확한 열차 시각으로 도착 정보를 반환합니다.
+ * 코레일(경의중앙선·수인분당선·경춘선·서해선·경강선·1/3/4호선) 및 인천1/2호선 436개 역 커버.
+ * 실시간 API 대체 목적이므로 getArrivalsFromScheduleIndex보다 정밀합니다.
+ */
+export const getArrivalsFromFullTimetable = async (
+  stationName: string
+): Promise<StationArrival[]> => {
+  const arrIndex = await getStationArrivalsIndex();
+  if (!Object.keys(arrIndex).length) return [];
+
+  const schedIdx = await getScheduleIndex();
+  const clean = normStation(stationName);
+  const now   = new Date();
+  const h     = now.getHours();
+  if (h >= 1 && h < 5) return []; // 운행 종료 시간대
+
+  const dow    = now.getDay();
+  // holiday data covers both Sat and Sun for Korail/Incheon
+  const dayKey = (dow === 0 || dow === 6) ? 'sun' : 'week';
+  const nowMin = h * 60 + now.getMinutes();
+
+  const results: StationArrival[] = [];
+
+  // Find matching entries in the arrival index
+  for (const [key, dayData] of Object.entries(arrIndex)) {
+    const parts = key.split('__');
+    if (parts.length < 2) continue;
+    const stnName = parts[0];
+    const line = parts.slice(1).join('__');
+
+    if (normStation(stnName) !== clean && stnName !== stationName) continue;
+
+    const times = dayData[dayKey] ?? dayData['week'];
+    if (!times) continue;
+
+    // Find dest from schedule index
+    const idxEntry = schedIdx[key];
+    const weekData = idxEntry?.[dayKey === 'week' ? 'week' : 'sun'] ?? idxEntry?.['week'];
+
+    for (const [dirTag, trainTimes] of Object.entries(times)) {
+      if (!trainTimes || trainTimes.length === 0) continue;
+
+      const dest = weekData?.[dirTag]?.dest ?? '';
+      const updnLine = dirTag === '1' ? '상행' : '하행';
+
+      // Find next 3 trains from current time
+      let found = 0;
+      for (const t of trainTimes) {
+        const [th, tm] = t.split(':').map(Number);
+        const trainMin = th * 60 + tm;
+        const waitMin = trainMin - nowMin;
+
+        // Skip past trains, but include trains up to 60 min from now
+        if (waitMin < 0 || waitMin > 90) continue;
+        const waitSec = waitMin * 60;
+
+        results.push({
+          lineName:    line,
+          subwayId:    '',
+          updnLine,
+          trainLineNm: dest ? `${dest}행` : updnLine,
+          statnNm:     stnName,
+          arvlMsg2:    waitMin === 0 ? '곧 도착' : `${waitMin}분 후`,
+          arvlMsg3:    '',
+          arvlCd:      '99',
+          bstatnNm:    dest,
+          barvlDt:     String(waitSec),
+          btrainNo:    '',
+          isScheduled: true,
+        });
+        found++;
+        if (found >= 3) break;
       }
     }
   }

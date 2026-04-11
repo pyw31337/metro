@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { StationArrival } from '@/types/metro';
-import { fetchStationArrivals, getScheduledArrivalsFromDB, getArrivalsFromScheduleIndex } from '@/services/arrivalApi';
+import { fetchStationArrivals, getScheduledArrivalsFromDB, getArrivalsFromScheduleIndex, getArrivalsFromFullTimetable } from '@/services/arrivalApi';
 import { getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { normalizeStationName } from '@/utils/stationUtils';
 
@@ -51,6 +51,13 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
       const indexed = await getArrivalsFromScheduleIndex(cleanName);
       if (indexed.length > 0 && mountedRef.current) {
         setArrivals(indexed);
+        setIsLive(false);
+      }
+
+      // 1.5 전체 열차 시각표 (station-arrivals-index.json, 코레일·인천 436개 역 — 정확한 열차별 시각)
+      const fullTt = await getArrivalsFromFullTimetable(cleanName);
+      if (fullTt.length > 0 && mountedRef.current) {
+        setArrivals(fullTt);
         setIsLive(false);
       }
 
