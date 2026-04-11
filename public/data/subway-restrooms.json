@@ -1,0 +1,7368 @@
+{
+  "방화": {
+    "stationName": "방화",
+    "line": "5호선",
+    "lat": 37.577446,
+    "lng": 126.812741,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-방화_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 1층 3,4번 출입구방향 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-방화_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 1층 3,4번 출입구방향 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "개화산": {
+    "stationName": "개화산",
+    "line": "5호선",
+    "lat": 37.572399,
+    "lng": 126.806171,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-개화산_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 하선E/L 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-개화산_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 하선E/L 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "김포공항": {
+    "stationName": "김포공항",
+    "line": "5호선",
+    "lat": 37.562434,
+    "lng": 126.801058,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-김포공항(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하 1층, 1번 출입구 옆(지하철경찰센터 옆)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-김포공항(5)_지하2층",
+        "floor": "B2",
+        "entrance": "1",
+        "detail": "B2 대합실 1번 출입구 아래(국내선 연결통로 방면)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-김포공항(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하 1층, 1번 출입구 옆(지하철경찰센터 옆)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-김포공항(5)_지하2층",
+        "floor": "B2",
+        "entrance": "1",
+        "detail": "B2 대합실 1번 출입구 아래(국내선 연결통로 방면)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "송정": {
+    "stationName": "송정",
+    "line": "5호선",
+    "lat": 37.561184,
+    "lng": 126.811973,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-송정_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "대합실 2층 ES 1호기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-송정_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "대합실 2층 ES 1호기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "마곡": {
+    "stationName": "마곡",
+    "line": "5호선",
+    "lat": 37.560183,
+    "lng": 126.825448,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-마곡_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실 2번 출입구 하단",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마곡_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실 2번 출입구 하단",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "발산": {
+    "stationName": "발산",
+    "line": "5호선",
+    "lat": 37.558598,
+    "lng": 126.837668,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-발산_지하1층",
+        "floor": "B1",
+        "entrance": "1,9",
+        "detail": "대합실 1층 1, 9번 출입구 사이",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-발산_지하1층",
+        "floor": "B1",
+        "entrance": "1,9",
+        "detail": "대합실 1층 1, 9번 출입구 사이",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "우장산": {
+    "stationName": "우장산",
+    "line": "5호선",
+    "lat": 37.548768,
+    "lng": 126.836318,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-우장산_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-우장산_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "화곡": {
+    "stationName": "화곡",
+    "line": "5호선",
+    "lat": 37.541513,
+    "lng": 126.840461,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-화곡_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 1층 7,8번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-화곡_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 1층 7,8번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "까치산": {
+    "stationName": "까치산",
+    "line": "5호선",
+    "lat": 37.531768,
+    "lng": 126.846683,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-까치산(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1~4",
+        "detail": "대합실(지하1층) 1~4번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-까치산(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1~4",
+        "detail": "대합실(지하1층) 1~4번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신정": {
+    "stationName": "신정",
+    "line": "5호선",
+    "lat": 37.524997,
+    "lng": 126.856191,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신정_지하2층",
+        "floor": "B2",
+        "entrance": "2,3",
+        "detail": "2,3번 출입구 지하 (가)대합실 운임지역 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신정_지하2층",
+        "floor": "B2",
+        "entrance": "2,3",
+        "detail": "2,3번 출입구 지하 (가)대합실 운임지역 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "목동": {
+    "stationName": "목동",
+    "line": "5호선",
+    "lat": 37.526065,
+    "lng": 126.864931,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-목동_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 지하1층 7번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-목동_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 지하1층 7번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "오목교": {
+    "stationName": "오목교",
+    "line": "5호선",
+    "lat": 37.524496,
+    "lng": 126.875181,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-오목교_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 B1층 3번 출입구 방향 임대상가 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-오목교_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 B1층 3번 출입구 방향 임대상가 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "양평": {
+    "stationName": "양평",
+    "line": "5호선",
+    "lat": 37.5255688472834,
+    "lng": 126.88643626847433,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-양평(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "b1층 고객상담실 옆. 개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-양평(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "b1층 고객상담실 옆. 개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "영등포구청": {
+    "stationName": "영등포구청",
+    "line": "5호선",
+    "lat": 37.52497,
+    "lng": 126.895951,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-영등포구청(5)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 지하1층 7번 출입구 방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-영등포구청(5)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 지하1층 7번 출입구 방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-영등포구청(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실(개집표기 내부, 환승통로입구)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-영등포구청(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실(개집표기 내부, 환승통로입구)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "영등포시장": {
+    "stationName": "영등포시장",
+    "line": "5호선",
+    "lat": 37.522669,
+    "lng": 126.905139,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-영등포시장_지하1층",
+        "floor": "B1",
+        "entrance": "2,3",
+        "detail": "대합실 1층  2, 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-영등포시장_지하1층",
+        "floor": "B1",
+        "entrance": "2,3",
+        "detail": "대합실 1층  2, 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신길": {
+    "stationName": "신길",
+    "line": "5호선",
+    "lat": 37.517122,
+    "lng": 126.917169,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신길(5)_지하3층",
+        "floor": "B3",
+        "entrance": "3",
+        "detail": "대합실(B3) 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신길(5)_지하3층",
+        "floor": "B3",
+        "entrance": "3",
+        "detail": "대합실(B3) 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "여의도": {
+    "stationName": "여의도",
+    "line": "5호선",
+    "lat": 37.521624,
+    "lng": 126.924191,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-여의도(5)_지하1층",
+        "floor": "B1",
+        "entrance": "6",
+        "detail": "대합실1층  (가)개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-여의도(5)_지하1층",
+        "floor": "B1",
+        "entrance": "6",
+        "detail": "대합실1층  (가)개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "여의나루": {
+    "stationName": "여의나루",
+    "line": "5호선",
+    "lat": 37.527098,
+    "lng": 126.932901,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-여의나루_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실 비운임지역 ES옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-여의나루_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실 비운임지역 ES옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "마포": {
+    "stationName": "마포",
+    "line": "5호선",
+    "lat": 37.539574,
+    "lng": 126.945932,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-마포_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 토니모리좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마포_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 토니모리좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "공덕": {
+    "stationName": "공덕",
+    "line": "5호선",
+    "lat": 37.544018,
+    "lng": 126.951592,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-공덕(5)_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-공덕(5)_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-공덕(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 1층 7번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-공덕(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 1층 7번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "애오개": {
+    "stationName": "애오개",
+    "line": "5호선",
+    "lat": 37.553736,
+    "lng": 126.95682,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-애오개_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층개집표기 통과 후좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-애오개_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층개집표기 통과 후좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "충정로": {
+    "stationName": "충정로",
+    "line": "5호선",
+    "lat": 37.559973,
+    "lng": 126.963672,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-충정로(5)_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 B1층 8번 출입구 방향 아이센터 맞은 편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-충정로(5)_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 B1층 8번 출입구 방향 아이센터 맞은 편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-충정로(2)",
+        "floor": "B2",
+        "entrance": "6",
+        "detail": "지하2층 아현방면 끝단",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-충정로(2)",
+        "floor": "B2",
+        "entrance": "6",
+        "detail": "지하2층 아현방면 끝단",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "서대문": {
+    "stationName": "서대문",
+    "line": "5호선",
+    "lat": 37.565773,
+    "lng": 126.966641,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-서대문_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "지하1층 대합실 1, 2번 출입구 내려와서 왼쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-서대문_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "지하1층 대합실 1, 2번 출입구 내려와서 왼쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "광화문": {
+    "stationName": "광화문",
+    "line": "5호선",
+    "lat": 37.571026,
+    "lng": 126.976669,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-광화문_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "세종측 대합실 지하1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-광화문_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "세종측 대합실 지하1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "종로3가": {
+    "stationName": "종로3가",
+    "line": "5호선",
+    "lat": 37.571607,
+    "lng": 126.991806,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-종로3가(5)_지하1층",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 지하1층 고객안전실 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(5)_지하1층",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 지하1층 고객안전실 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(1) 내부",
+        "floor": "B1",
+        "entrance": "11",
+        "detail": "지하1층 (라)개집표기 내부(고객안전실앞)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(1)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 (가)개집표기 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(1) 내부",
+        "floor": "B1",
+        "entrance": "11",
+        "detail": "지하1층 (라)개집표기 내부(고객안전실앞)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(1)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 (가)개집표기 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(3) 지하2층",
+        "floor": "B2",
+        "entrance": "7",
+        "detail": "지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(3)",
+        "floor": "B3",
+        "entrance": "8",
+        "detail": "엘리베이터 이용 지하3층 게이트 통과 후 오른쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(3) 지하2층",
+        "floor": "B2",
+        "entrance": "7",
+        "detail": "지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-종로3가(3)",
+        "floor": "B3",
+        "entrance": "8",
+        "detail": "엘리베이터 이용 지하3층 게이트 통과 후 오른쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "을지로4가": {
+    "stationName": "을지로4가",
+    "line": "5호선",
+    "lat": 37.566941,
+    "lng": 126.998079,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-을지로4가(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 B1층, \nB2층 내려가는 계단 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-을지로4가(5)_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 B1층, \nB2층 내려가는 계단 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-을지로4가(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 1,2번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-을지로4가(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 1,2번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "동대문역사문화공원": {
+    "stationName": "동대문역사문화공원",
+    "line": "5호선",
+    "lat": 37.565138,
+    "lng": 127.007896,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(5)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "지하1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(5)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "지하1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(4) 내부",
+        "floor": "B2",
+        "entrance": "8",
+        "detail": "지하2층 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(4)",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "지하1층 10,11번 기둥앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(4) 내부",
+        "floor": "B2",
+        "entrance": "8",
+        "detail": "지하2층 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동대문역사문화공원(4)",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "지하1층 10,11번 기둥앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신금호": {
+    "stationName": "신금호",
+    "line": "5호선",
+    "lat": 37.554548,
+    "lng": 127.020331,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신금호_지하1층",
+        "floor": "B2",
+        "entrance": "5",
+        "detail": "B2개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신금호_지하1층",
+        "floor": "B2",
+        "entrance": "5",
+        "detail": "B2개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "행당": {
+    "stationName": "행당",
+    "line": "5호선",
+    "lat": 37.557322,
+    "lng": 127.029476,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-행당_지하3층",
+        "floor": "B3",
+        "entrance": "1~4",
+        "detail": "지하3층 E/S 옆(고객상담실 및만남의장소 앞)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-행당_지하3층",
+        "floor": "B3",
+        "entrance": "1~4",
+        "detail": "지하3층 E/S 옆(고객상담실 및만남의장소 앞)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "왕십리": {
+    "stationName": "왕십리",
+    "line": "5호선",
+    "lat": 37.561533,
+    "lng": 127.037732,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-왕십리(5)_지하2층",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "B2 대합실 상가2002호점 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-왕십리(5)_지하2층",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "B2 대합실 상가2002호점 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-왕십리(2)",
+        "floor": "B2",
+        "entrance": "6-1",
+        "detail": "지하1층 6-1번 출입구 쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-왕십리(2)",
+        "floor": "B2",
+        "entrance": "6-1",
+        "detail": "지하1층 6-1번 출입구 쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "마장": {
+    "stationName": "마장",
+    "line": "5호선",
+    "lat": 37.5661,
+    "lng": 127.042973,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-마장_지하2층",
+        "floor": "B2",
+        "entrance": "1~4",
+        "detail": "지하2층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마장_지하2층",
+        "floor": "B2",
+        "entrance": "1~4",
+        "detail": "지하2층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "답십리": {
+    "stationName": "답십리",
+    "line": "5호선",
+    "lat": 37.566747,
+    "lng": 127.052704,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-답십리_지하1층",
+        "floor": "B1",
+        "entrance": "5,6",
+        "detail": "B1층 5,6번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-답십리_지하1층",
+        "floor": "B1",
+        "entrance": "5,6",
+        "detail": "B1층 5,6번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "장한평": {
+    "stationName": "장한평",
+    "line": "5호선",
+    "lat": 37.56144,
+    "lng": 127.064623,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-장한평_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하 1층 1번 출입구 나가기전 좌측방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-장한평_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하 1층 1번 출입구 나가기전 좌측방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "군자": {
+    "stationName": "군자",
+    "line": "5호선",
+    "lat": 37.557121,
+    "lng": 127.079542,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-군자(5)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "지하1층 대합실 (가)개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-군자(5)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "지하1층 대합실 (가)개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "아차산": {
+    "stationName": "아차산",
+    "line": "5호선",
+    "lat": 37.551691,
+    "lng": 127.089761,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-아차산_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-아차산_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "광나루": {
+    "stationName": "광나루",
+    "line": "5호선",
+    "lat": 37.545303,
+    "lng": 127.10357,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-광나루_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "지하1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-광나루_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "지하1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "천호": {
+    "stationName": "천호",
+    "line": "5호선",
+    "lat": 37.538397,
+    "lng": 127.123572,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-천호(5)_지하1층",
+        "floor": "B1",
+        "entrance": "5,6",
+        "detail": "지하1층 대합실(5,6번 출입구 방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-천호(5)_지하1층",
+        "floor": "B1",
+        "entrance": "5,6",
+        "detail": "지하1층 대합실(5,6번 출입구 방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "강동": {
+    "stationName": "강동",
+    "line": "5호선",
+    "lat": 37.535804,
+    "lng": 127.132481,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-강동_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 지하1층 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강동_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 지하1층 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "길동": {
+    "stationName": "길동",
+    "line": "5호선",
+    "lat": 37.537801,
+    "lng": 127.140004,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-길동_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-길동_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "굽은다리": {
+    "stationName": "굽은다리",
+    "line": "5호선",
+    "lat": 37.545477,
+    "lng": 127.142853,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-굽은다리_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-굽은다리_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "명일": {
+    "stationName": "명일",
+    "line": "5호선",
+    "lat": 37.55137,
+    "lng": 127.143999,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-명일_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-명일_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "고덕": {
+    "stationName": "고덕",
+    "line": "5호선",
+    "lat": 37.555004,
+    "lng": 127.154151,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-고덕_지상1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 1번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-고덕_지상1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 1번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "상일동": {
+    "stationName": "상일동",
+    "line": "5호선",
+    "lat": 37.556712,
+    "lng": 127.166417,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상일동_지상1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 지하1층 7번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-상일동_지상1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 지하1층 7번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "둔촌동": {
+    "stationName": "둔촌동",
+    "line": "5호선",
+    "lat": 37.527788,
+    "lng": 127.136248,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-둔촌동_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 지하1층, 3,4번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-둔촌동_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 지하1층, 3,4번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "올림픽공원": {
+    "stationName": "올림픽공원",
+    "line": "5호선",
+    "lat": 37.516078,
+    "lng": 127.130848,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-올림픽공원(5)_지하2층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 지하1층 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-올림픽공원(5)_지하2층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 지하1층 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "방이": {
+    "stationName": "방이",
+    "line": "5호선",
+    "lat": 37.508857,
+    "lng": 127.126133,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-방이_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 지하1층 3,4번 출입구방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-방이_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 지하1층 3,4번 출입구방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "오금": {
+    "stationName": "오금",
+    "line": "5호선",
+    "lat": 37.502162,
+    "lng": 127.128111,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-오금(5)_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "대합실 지하1층 방이역 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-오금(5)_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "대합실 지하1층 방이역 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-오금(3) 외부",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 1,2번 출입구 옆(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-오금(3)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 1,2번 출입구옆(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-오금(3) 외부",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 1,2번 출입구 옆(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-오금(3)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 1,2번 출입구옆(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "개롱": {
+    "stationName": "개롱",
+    "line": "5호선",
+    "lat": 37.498079,
+    "lng": 127.13482,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-개롱_지하1층",
+        "floor": "B1",
+        "entrance": "1,4",
+        "detail": "1,4번호 출입구 사이",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-개롱_지하1층",
+        "floor": "B1",
+        "entrance": "1,4",
+        "detail": "1,4번호 출입구 사이",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "거여": {
+    "stationName": "거여",
+    "line": "5호선",
+    "lat": 37.493105,
+    "lng": 127.14415,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-거여_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 1층 8번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-거여_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 1층 8번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "마천": {
+    "stationName": "마천",
+    "line": "5호선",
+    "lat": 37.49499,
+    "lng": 127.152781,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-마천_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 1번 출입구 방향에서우측 코너",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마천_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 1번 출입구 방향에서우측 코너",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "강일": {
+    "stationName": "강일",
+    "line": "5호선",
+    "lat": 37.557428744877704,
+    "lng": 127.17563831477813,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-강일_지하1층(대합실 나)",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "대합실 지하2층 3번 출입구측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강일_지하1층(대합실 가)",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "대합실 지하2층 4번 출입구측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강일_지하1층(대합실 나)",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "대합실 지하2층 3번 출입구측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강일_지하1층(대합실 가)",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "대합실 지하2층 4번 출입구측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "미사": {
+    "stationName": "미사",
+    "line": "5호선",
+    "lat": 37.561468,
+    "lng": 127.1911413,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-미사_지하1층(외부)",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 지하1층 5번 출입구옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-미사_지하1층(내부)",
+        "floor": "B1",
+        "entrance": "1.5",
+        "detail": "대합실 지하1층 방화방면 내부계단옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-미사_지하1층(외부)",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 지하1층 5번 출입구옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-미사_지하1층(내부)",
+        "floor": "B1",
+        "entrance": "1.5",
+        "detail": "대합실 지하1층 방화방면 내부계단옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "하남풍산": {
+    "stationName": "하남풍산",
+    "line": "5호선",
+    "lat": 37.5520632,
+    "lng": 127.201686,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-하남풍산 B1",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 1,2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-하남풍산 B1",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 1,2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "하남시청": {
+    "stationName": "하남시청",
+    "line": "5호선",
+    "lat": 37.54196308251825,
+    "lng": 127.2063060431385,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-하남시청_지하1층",
+        "floor": "B1",
+        "entrance": "1~3",
+        "detail": "대합실 지하1층 1~3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-하남시청_지하1층",
+        "floor": "B1",
+        "entrance": "1~3",
+        "detail": "대합실 지하1층 1~3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "하남검단산": {
+    "stationName": "하남검단산",
+    "line": "5호선",
+    "lat": 37.5397789222209,
+    "lng": 127.22322718521292,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-하남검단산_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 1,2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-하남검단산_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 1,2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "응암": {
+    "stationName": "응암",
+    "line": "6호선",
+    "lat": 37.598605,
+    "lng": 126.915577,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-응암_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 GS25 편의점 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-응암_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 GS25 편의점 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "역촌": {
+    "stationName": "역촌",
+    "line": "6호선",
+    "lat": 37.606021,
+    "lng": 126.922744,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-역촌_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-역촌_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "불광": {
+    "stationName": "불광",
+    "line": "6호선",
+    "lat": 37.610469,
+    "lng": 126.929887,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-불광(6)_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "지하1층 (가)대합실(6,7번 출입구 아래)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-불광(6)_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "지하1층 (가)대합실(6,7번 출입구 아래)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-불광(3)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실 (나)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-불광(3)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실 (나)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "독바위": {
+    "stationName": "독바위",
+    "line": "6호선",
+    "lat": 37.618456,
+    "lng": 126.933031,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-독바위_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 B1층 E/S 7호기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-독바위_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 B1층 E/S 7호기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "연신내": {
+    "stationName": "연신내",
+    "line": "6호선",
+    "lat": 37.619001,
+    "lng": 126.921008,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-연신내(6)_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "대합실 B1층 6,7번 출입구방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-연신내(6)_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "대합실 B1층 6,7번 출입구방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-연신내(3)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하 1층 대합실 라개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-연신내(3)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하 1층 대합실 라개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "구산": {
+    "stationName": "구산",
+    "line": "6호선",
+    "lat": 37.611377,
+    "lng": 126.91727,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-구산_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 B1층 4번 출입구 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-구산_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 B1층 4번 출입구 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "새절": {
+    "stationName": "새절",
+    "line": "6호선",
+    "lat": 37.591148,
+    "lng": 126.913629,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-새절_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 2번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-새절_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 2번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "증산": {
+    "stationName": "증산",
+    "line": "6호선",
+    "lat": 37.583876,
+    "lng": 126.909645,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-증산_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-증산_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "디지털미디어시티": {
+    "stationName": "디지털미디어시티",
+    "line": "6호선",
+    "lat": 37.576646,
+    "lng": 126.900984,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-디지털미디어시티(6)_지하1층(대합실 나)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 지하1층 4번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-디지털미디어시티(6)_지하1층(대합실 가)",
+        "floor": "B1",
+        "entrance": "2,3",
+        "detail": "대합실 지하1층 2,3번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-디지털미디어시티(6)_지하1층(대합실 나)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 지하1층 4번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-디지털미디어시티(6)_지하1층(대합실 가)",
+        "floor": "B1",
+        "entrance": "2,3",
+        "detail": "대합실 지하1층 2,3번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "월드컵경기장": {
+    "stationName": "월드컵경기장",
+    "line": "6호선",
+    "lat": 37.569532,
+    "lng": 126.899298,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-월드컵경기장(6)_지하2층(대합실 나)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실(B1 2번 출입구방향 개집표기옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-월드컵경기장(6)_지하2층(대합실 가)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실(B1 1번 출입구방향 개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-월드컵경기장(6)_지하2층(대합실 나)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실(B1 2번 출입구방향 개집표기옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-월드컵경기장(6)_지하2층(대합실 가)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실(B1 1번 출입구방향 개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "마포구청": {
+    "stationName": "마포구청",
+    "line": "6호선",
+    "lat": 37.563515,
+    "lng": 126.903343,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-마포구청_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "가대합실 지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마포구청_지하2층",
+        "floor": "B2",
+        "entrance": "3,4",
+        "detail": "나대합실 지하1층 편의점옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마포구청_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "가대합실 지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마포구청_지하2층",
+        "floor": "B2",
+        "entrance": "3,4",
+        "detail": "나대합실 지하1층 편의점옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "망원": {
+    "stationName": "망원",
+    "line": "6호선",
+    "lat": 37.556094,
+    "lng": 126.910052,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-망원_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1 대합실 1번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-망원_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1 대합실 1번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "합정": {
+    "stationName": "합정",
+    "line": "6호선",
+    "lat": 37.549463,
+    "lng": 126.913739,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-합정(6)_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 1층 8번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-합정(6)_지하1층",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 1층 8번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-합정(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실, 1,2번 출입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-합정(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실, 1,2번 출입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "상수": {
+    "stationName": "상수",
+    "line": "6호선",
+    "lat": 37.547716,
+    "lng": 126.922852,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상수_지하2층",
+        "floor": "B2",
+        "entrance": "1~4",
+        "detail": "B2 대합실 상가 미샤 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-상수_지하2층",
+        "floor": "B2",
+        "entrance": "1~4",
+        "detail": "B2 대합실 상가 미샤 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "광흥창": {
+    "stationName": "광흥창",
+    "line": "6호선",
+    "lat": 37.547456,
+    "lng": 126.931993,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-광흥창_지하2층",
+        "floor": "B2",
+        "entrance": "1,2,5,6",
+        "detail": "대합실 2층 (1,2,5,6번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-광흥창_지하2층",
+        "floor": "B2",
+        "entrance": "1,2,5,6",
+        "detail": "대합실 2층 (1,2,5,6번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "대흥": {
+    "stationName": "대흥",
+    "line": "6호선",
+    "lat": 37.547771,
+    "lng": 126.942069,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-대흥_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 4번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-대흥_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 4번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "효창공원앞": {
+    "stationName": "효창공원앞",
+    "line": "6호선",
+    "lat": 37.539261,
+    "lng": 126.961351,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-효창공원앞(6)_지하1층",
+        "floor": "B1",
+        "entrance": "3,6",
+        "detail": "대합실 1층 3,6번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-효창공원앞(6)_지하1층",
+        "floor": "B1",
+        "entrance": "3,6",
+        "detail": "대합실 1층 3,6번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "삼각지": {
+    "stationName": "삼각지",
+    "line": "6호선",
+    "lat": 37.534777,
+    "lng": 126.97311,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-삼각지(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 1층 7,8번 출입구 측면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-삼각지(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 1층 7,8번 출입구 측면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-삼각지(4)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "게이트 내부 신용산측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-삼각지(4)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "게이트 내부 신용산측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "녹사평": {
+    "stationName": "녹사평",
+    "line": "6호선",
+    "lat": 37.534675,
+    "lng": 126.986695,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-녹사평_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 1,2번 출입구 진입 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-녹사평_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 1,2번 출입구 진입 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "이태원": {
+    "stationName": "이태원",
+    "line": "6호선",
+    "lat": 37.534488,
+    "lng": 126.994302,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-이태원_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "B1 대합실 E/S 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-이태원_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "B1 대합실 E/S 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "한강진": {
+    "stationName": "한강진",
+    "line": "6호선",
+    "lat": 37.539631,
+    "lng": 127.001725,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-한강진_지하1층",
+        "floor": "B1",
+        "entrance": "1~3",
+        "detail": "대합실 B1층 임대상가(gs25)옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-한강진_지하1층",
+        "floor": "B1",
+        "entrance": "1~3",
+        "detail": "대합실 B1층 임대상가(gs25)옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "버티고개": {
+    "stationName": "버티고개",
+    "line": "6호선",
+    "lat": 37.548013,
+    "lng": 127.007055,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-버티고개_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-버티고개_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "약수": {
+    "stationName": "약수",
+    "line": "6호선",
+    "lat": 37.55434,
+    "lng": 127.010655,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-약수(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 B1 7,8번 출입구앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-약수(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 B1 7,8번 출입구앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-약수(3)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 개집표기 내 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-약수(3)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 개집표기 내 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "청구": {
+    "stationName": "청구",
+    "line": "6호선",
+    "lat": 37.560245,
+    "lng": 127.013828,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-청구(6)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1 대합실 1번 출입구 나가는 방향 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-청구(6)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1 대합실 1번 출입구 나가는 방향 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신당": {
+    "stationName": "신당",
+    "line": "6호선",
+    "lat": 37.565972,
+    "lng": 127.01782,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신당(6)_지하1층",
+        "floor": "B1",
+        "entrance": "5~8",
+        "detail": "대합실 B1층 5~8번 출입구 나가는 방향 계단 하부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신당(6)_지하1층",
+        "floor": "B1",
+        "entrance": "5~8",
+        "detail": "대합실 B1층 5~8번 출입구 나가는 방향 계단 하부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신당(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 22,23번기둥",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신당(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 22,23번기둥",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "동묘앞": {
+    "stationName": "동묘앞",
+    "line": "6호선",
+    "lat": 37.572627,
+    "lng": 127.016429,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-동묘앞(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 1층 7번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실 1층 7번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(1) 지상1",
+        "floor": "1",
+        "entrance": "",
+        "detail": "",
+        "info": "",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(1) B1",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 3번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)승강장화장실-동묘앞(1) B1",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "하선승강장 7-3지점",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)승강장화장실-동묘앞(1)",
+        "floor": "1",
+        "entrance": "3",
+        "detail": "상선승강장 4-3지점",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(1)",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "1층 고객안전실 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(1) 지상1",
+        "floor": "1",
+        "entrance": "",
+        "detail": "",
+        "info": "",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(1) B1",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 3번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)승강장화장실-동묘앞(1) B1",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "하선승강장 7-3지점",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)승강장화장실-동묘앞(1)",
+        "floor": "1",
+        "entrance": "3",
+        "detail": "상선승강장 4-3지점",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동묘앞(1)",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "1층 고객안전실 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "창신": {
+    "stationName": "창신",
+    "line": "6호선",
+    "lat": 37.579661,
+    "lng": 127.015241,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-창신 B1",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 E/V1호기 뒷편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-창신 B1",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 E/V1호기 뒷편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "보문": {
+    "stationName": "보문",
+    "line": "6호선",
+    "lat": 37.585286,
+    "lng": 127.019381,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-보문(6)_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "지하2층 대합실 아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-보문(6)_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "지하2층 대합실 아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "안암": {
+    "stationName": "안암",
+    "line": "6호선",
+    "lat": 37.586272,
+    "lng": 127.029005,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-안암_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 3,4번 출입구 계단 인근",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-안암_지하2층",
+        "floor": "B2",
+        "entrance": "3,4",
+        "detail": "대합실 B2층 봉화산방면 승강장 계단 인근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-안암_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 3,4번 출입구 계단 인근",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-안암_지하2층",
+        "floor": "B2",
+        "entrance": "3,4",
+        "detail": "대합실 B2층 봉화산방면 승강장 계단 인근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "고려대": {
+    "stationName": "고려대",
+    "line": "6호선",
+    "lat": 37.590508,
+    "lng": 127.036296,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-고려대_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하 1층 대합실(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-고려대_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하 1층 대합실(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "월곡": {
+    "stationName": "월곡",
+    "line": "6호선",
+    "lat": 37.601948,
+    "lng": 127.041518,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-월곡_지하1층",
+        "floor": "B1",
+        "entrance": "1~3",
+        "detail": "지하 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-월곡_지하1층",
+        "floor": "B1",
+        "entrance": "1~3",
+        "detail": "지하 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "상월곡": {
+    "stationName": "상월곡",
+    "line": "6호선",
+    "lat": 37.606377,
+    "lng": 127.048491,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상월곡_지하2층",
+        "floor": "B2",
+        "entrance": "1,4",
+        "detail": "지하 2층 대합실(1, 4번 출입구방면)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-상월곡_지하2층",
+        "floor": "B2",
+        "entrance": "1,4",
+        "detail": "지하 2층 대합실(1, 4번 출입구방면)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "돌곶이": {
+    "stationName": "돌곶이",
+    "line": "6호선",
+    "lat": 37.610537,
+    "lng": 127.056431,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-돌곶이_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "지하 1층 대합실(6,7번 출입구 사이)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-돌곶이_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "지하 1층 대합실(6,7번 출입구 사이)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "석계": {
+    "stationName": "석계",
+    "line": "6호선",
+    "lat": 37.614805,
+    "lng": 127.065851,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-석계 B2층 화장실",
+        "floor": "B2",
+        "entrance": "2,3",
+        "detail": "지하 2층 대합실(환승통로)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-석계(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "지하 1층 대합실(7번 출입구 앞)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-석계 B2층 화장실",
+        "floor": "B2",
+        "entrance": "2,3",
+        "detail": "지하 2층 대합실(환승통로)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-석계(6)_지하1층",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "지하 1층 대합실(7번 출입구 앞)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "태릉입구": {
+    "stationName": "태릉입구",
+    "line": "6호선",
+    "lat": 37.617983,
+    "lng": 127.07512,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-태릉입구(6)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-태릉입구(6)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-태릉입구(7)_지하3층",
+        "floor": "B3",
+        "entrance": "2,3",
+        "detail": "대합실 지하3층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-태릉입구(7)_지하3층",
+        "floor": "B3",
+        "entrance": "2,3",
+        "detail": "대합실 지하3층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "화랑대": {
+    "stationName": "화랑대",
+    "line": "6호선",
+    "lat": 37.620064,
+    "lng": 127.084689,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-화랑대_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "지하 1층 대합실(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-화랑대_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "지하 1층 대합실(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "봉화산": {
+    "stationName": "봉화산",
+    "line": "6호선",
+    "lat": 37.617283,
+    "lng": 127.091401,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-봉화산_지하1층",
+        "floor": "B1",
+        "entrance": "2,3",
+        "detail": "지하 1층 대합실(고객상담실 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-봉화산_지하1층",
+        "floor": "B1",
+        "entrance": "2,3",
+        "detail": "지하 1층 대합실(고객상담실 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "장암": {
+    "stationName": "장암",
+    "line": "7호선",
+    "lat": 37.700109,
+    "lng": 127.053196,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-장암_지상1층",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "1층개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-장암_지상1층",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "1층개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "도봉산": {
+    "stationName": "도봉산",
+    "line": "7호선",
+    "lat": 37.689313,
+    "lng": 127.046222,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-도봉산(7)_지상1층(환승통로)",
+        "floor": "1",
+        "entrance": "1-1",
+        "detail": "지상1층 대합실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-도봉산(7)_지상1층(대합실)",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "지상1층 환승통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-도봉산(7)_지상1층(환승통로)",
+        "floor": "1",
+        "entrance": "1-1",
+        "detail": "지상1층 대합실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-도봉산(7)_지상1층(대합실)",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "지상1층 환승통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "수락산": {
+    "stationName": "수락산",
+    "line": "7호선",
+    "lat": 37.67785,
+    "lng": 127.055315,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-수락산_지하2층",
+        "floor": "B2",
+        "entrance": "2,5",
+        "detail": "대합실 지하2층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-수락산_지하2층",
+        "floor": "B2",
+        "entrance": "2,5",
+        "detail": "대합실 지하2층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "마들": {
+    "stationName": "마들",
+    "line": "7호선",
+    "lat": 37.66494,
+    "lng": 127.057675,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-마들_지하2층",
+        "floor": "B2",
+        "entrance": "4,5",
+        "detail": "대합실 B2 에스컬레이터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-마들_지하2층",
+        "floor": "B2",
+        "entrance": "4,5",
+        "detail": "대합실 B2 에스컬레이터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "노원": {
+    "stationName": "노원",
+    "line": "7호선",
+    "lat": 37.655128,
+    "lng": 127.061368,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-노원(7)_지하2층",
+        "floor": "B2",
+        "entrance": "6",
+        "detail": "지하2층 대합실, (가)아이센터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-노원(7)_지하2층",
+        "floor": "B2",
+        "entrance": "6",
+        "detail": "지하2층 대합실, (가)아이센터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-노원(4)",
+        "floor": "2",
+        "entrance": "2,9",
+        "detail": "2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-노원(4)",
+        "floor": "2",
+        "entrance": "2,9",
+        "detail": "2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "중계": {
+    "stationName": "중계",
+    "line": "7호선",
+    "lat": 37.644583,
+    "lng": 127.064303,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-중계_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 1번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-중계_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 1번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "하계": {
+    "stationName": "하계",
+    "line": "7호선",
+    "lat": 37.636352,
+    "lng": 127.06799,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-하계_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 4번 출입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-하계_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 4번 출입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "공릉": {
+    "stationName": "공릉",
+    "line": "7호선",
+    "lat": 37.625742,
+    "lng": 127.072896,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-공릉_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "지하1층 아이센터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-공릉_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "지하1층 아이센터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "먹골": {
+    "stationName": "먹골",
+    "line": "7호선",
+    "lat": 37.610637,
+    "lng": 127.077725,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-먹골_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "B1층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-먹골_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "B1층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "중화": {
+    "stationName": "중화",
+    "line": "7호선",
+    "lat": 37.602545,
+    "lng": 127.079264,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-중화_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "B1층  2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-중화_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "B1층  2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "상봉": {
+    "stationName": "상봉",
+    "line": "7호선",
+    "lat": 37.596362,
+    "lng": 127.085032,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상봉(7)_지하1층",
+        "floor": "B1",
+        "entrance": "1,2,5,6",
+        "detail": "B1층 1,2,5,6번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-상봉(7)_지하1층",
+        "floor": "B1",
+        "entrance": "1,2,5,6",
+        "detail": "B1층 1,2,5,6번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "면목": {
+    "stationName": "면목",
+    "line": "7호선",
+    "lat": 37.588579,
+    "lng": 127.087503,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-면목_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "B1층 아이센터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-면목_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "B1층 아이센터 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "사가정": {
+    "stationName": "사가정",
+    "line": "7호선",
+    "lat": 37.580894,
+    "lng": 127.088478,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-사가정_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1층  1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사가정_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1층  1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "용마산": {
+    "stationName": "용마산",
+    "line": "7호선",
+    "lat": 37.573647,
+    "lng": 127.086727,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-용마산_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1층  1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-용마산_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1층  1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "중곡": {
+    "stationName": "중곡",
+    "line": "7호선",
+    "lat": 37.565923,
+    "lng": 127.08432,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-중곡_지하2층",
+        "floor": "B2",
+        "entrance": "1~3",
+        "detail": "B2층 개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-중곡_지하2층",
+        "floor": "B2",
+        "entrance": "1~3",
+        "detail": "B2층 개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "어린이대공원": {
+    "stationName": "어린이대공원",
+    "line": "7호선",
+    "lat": 37.548014,
+    "lng": 127.074658,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-어린이대공원_지하2층",
+        "floor": "B2",
+        "entrance": "1,6",
+        "detail": "B2층  아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-어린이대공원_지하2층",
+        "floor": "B2",
+        "entrance": "1,6",
+        "detail": "B2층  아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "건대입구": {
+    "stationName": "건대입구",
+    "line": "7호선",
+    "lat": 37.540693,
+    "lng": 127.07023,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-건대입구(7)_지하2층",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "B2층 개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-건대입구(7)_지하2층",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "B2층 개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-건대입구(2)",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "대합실 2층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-건대입구(2)",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "대합실 2층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "자양": {
+    "stationName": "자양",
+    "line": "7호선",
+    "lat": 37.53788,
+    "lng": 127.08921,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-자양_지상2층",
+        "floor": "2",
+        "entrance": "1,4",
+        "detail": "지상2층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-자양_지상2층",
+        "floor": "2",
+        "entrance": "1,4",
+        "detail": "지상2층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "청담": {
+    "stationName": "청담",
+    "line": "7호선",
+    "lat": 37.519365,
+    "lng": 127.05335,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-청담 B3",
+        "floor": "B3",
+        "entrance": "3,12",
+        "detail": "B3 대합실 (나)아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-청담 B3",
+        "floor": "B3",
+        "entrance": "3,12",
+        "detail": "B3 대합실 (나)아이센터 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "강남구청": {
+    "stationName": "강남구청",
+    "line": "7호선",
+    "lat": 37.517186,
+    "lng": 127.04128,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-강남구청(7)_지하2층",
+        "floor": "B2",
+        "entrance": "1,4",
+        "detail": "B2층 대합실 (가)아이센터 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강남구청(7)_지하2층",
+        "floor": "B2",
+        "entrance": "1,4",
+        "detail": "B2층 대합실 (가)아이센터 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "학동": {
+    "stationName": "학동",
+    "line": "7호선",
+    "lat": 37.514229,
+    "lng": 127.031656,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-학동 B2",
+        "floor": "B3",
+        "entrance": "1,2",
+        "detail": "B2 1,2번 출입구 계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-학동 B2",
+        "floor": "B3",
+        "entrance": "1,2",
+        "detail": "B2 1,2번 출입구 계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "논현": {
+    "stationName": "논현",
+    "line": "7호선",
+    "lat": 37.511093,
+    "lng": 127.021415,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-논현 B1",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 B1층 7,8번 출입구 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-논현 장애인화장실",
+        "floor": "B2",
+        "entrance": "7,8",
+        "detail": "대합실 2층 메트로의원 상가 뒤편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-논현 B1",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 B1층 7,8번 출입구 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-논현 장애인화장실",
+        "floor": "B2",
+        "entrance": "7,8",
+        "detail": "대합실 2층 메트로의원 상가 뒤편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "반포": {
+    "stationName": "반포",
+    "line": "7호선",
+    "lat": 37.508178,
+    "lng": 127.011727,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-반포_지하2층",
+        "floor": "B2",
+        "entrance": "1,2,5,6",
+        "detail": "대합실 지하2층 계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-반포_지하2층",
+        "floor": "B2",
+        "entrance": "1,2,5,6",
+        "detail": "대합실 지하2층 계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "고속터미널": {
+    "stationName": "고속터미널",
+    "line": "7호선",
+    "lat": 37.50481,
+    "lng": 127.004943,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-고속터미널(7)_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 왼쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-고속터미널(7)_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 지하1층 3번 출입구 왼쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "내방": {
+    "stationName": "내방",
+    "line": "7호선",
+    "lat": 37.487618,
+    "lng": 126.993513,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-내방_지하1층",
+        "floor": "B1",
+        "entrance": "5~8",
+        "detail": "대합실 지하1층 5~8번 출입구방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-내방_지하1층",
+        "floor": "B1",
+        "entrance": "5~8",
+        "detail": "대합실 지하1층 5~8번 출입구방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "이수": {
+    "stationName": "이수",
+    "line": "7호선",
+    "lat": 37.4865928,
+    "lng": 126.9820061,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-이수(7)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "지하1층 연결통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-이수(7)_지하3층",
+        "floor": "B3",
+        "entrance": "7,8",
+        "detail": "지하3층 (가)개집표기 내부 상선 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-이수(7)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "지하1층 연결통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-이수(7)_지하3층",
+        "floor": "B3",
+        "entrance": "7,8",
+        "detail": "지하3층 (가)개집표기 내부 상선 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "남성": {
+    "stationName": "남성",
+    "line": "7호선",
+    "lat": 37.484596,
+    "lng": 126.971251,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-남성_지하2층",
+        "floor": "B2",
+        "entrance": "2,3",
+        "detail": "대합실 상선 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-남성_지하2층",
+        "floor": "B2",
+        "entrance": "2,3",
+        "detail": "대합실 상선 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "숭실대입구": {
+    "stationName": "숭실대입구",
+    "line": "7호선",
+    "lat": 37.496029,
+    "lng": 126.953822,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-숭실대입구_지하2층",
+        "floor": "B2",
+        "entrance": "1~4",
+        "detail": "대합실 2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-숭실대입구_지하2층",
+        "floor": "B2",
+        "entrance": "1~4",
+        "detail": "대합실 2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "상도": {
+    "stationName": "상도",
+    "line": "7호선",
+    "lat": 37.502834,
+    "lng": 126.94791,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상도_지하2층",
+        "floor": "B2",
+        "entrance": "3~5",
+        "detail": "지하 2층 대합실 계단좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-상도_지하2층",
+        "floor": "B2",
+        "entrance": "3~5",
+        "detail": "지하 2층 대합실 계단좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "장승배기": {
+    "stationName": "장승배기",
+    "line": "7호선",
+    "lat": 37.504898,
+    "lng": 126.93915,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-장승배기_지하2층",
+        "floor": "B2",
+        "entrance": "5,6",
+        "detail": "지하2층 대합실 5,6번 출입구방향 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-장승배기_지하2층",
+        "floor": "B2",
+        "entrance": "5,6",
+        "detail": "지하2층 대합실 5,6번 출입구방향 내부계단 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신대방삼거리": {
+    "stationName": "신대방삼거리",
+    "line": "7호선",
+    "lat": 37.499701,
+    "lng": 126.928276,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신대방삼거리_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "대합실 2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신대방삼거리_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "대합실 2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "보라매": {
+    "stationName": "보라매",
+    "line": "7호선",
+    "lat": 37.499872,
+    "lng": 126.920428,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-보라매_지하1층(대합실)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-보라매_지하1층(대합실)",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신풍": {
+    "stationName": "신풍",
+    "line": "7호선",
+    "lat": 37.50008,
+    "lng": 126.90993,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신풍_지하1층",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 1층 5번 출입구방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신풍_지하1층",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 1층 5번 출입구방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "대림": {
+    "stationName": "대림",
+    "line": "7호선",
+    "lat": 37.49297,
+    "lng": 126.895801,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-대림(7)_지하1층",
+        "floor": "B1",
+        "entrance": "9,10",
+        "detail": "대합실 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-대림(7)_지하1층",
+        "floor": "B1",
+        "entrance": "9,10",
+        "detail": "대합실 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-대림(2)",
+        "floor": "2",
+        "entrance": "3,4,5,6",
+        "detail": "지상2층, 대합실 중앙(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-대림(2)",
+        "floor": "2",
+        "entrance": "3,4,5,6",
+        "detail": "지상2층, 대합실 중앙(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "남구로": {
+    "stationName": "남구로",
+    "line": "5호선",
+    "lat": 37.486056,
+    "lng": 126.887249,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-남구로_지하1층",
+        "floor": "B1",
+        "entrance": "2~5",
+        "detail": "대합실 1층 2~5번 출입구(E/S 7,8호기 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-남구로_지하1층",
+        "floor": "B1",
+        "entrance": "2~5",
+        "detail": "대합실 1층 2~5번 출입구(E/S 7,8호기 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "가산디지털단지": {
+    "stationName": "가산디지털단지",
+    "line": "7호선",
+    "lat": 37.481072,
+    "lng": 126.882343,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-가산디지털단지(7)_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 4번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-가산디지털단지(7)_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 4번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "철산": {
+    "stationName": "철산",
+    "line": "7호선",
+    "lat": 37.47605,
+    "lng": 126.867911,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-철산_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-철산_지하1층",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "광명사거리": {
+    "stationName": "광명사거리",
+    "line": "7호선",
+    "lat": 37.479252,
+    "lng": 126.854876,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-광명사거리_지하2층",
+        "floor": "B2",
+        "entrance": "4,5",
+        "detail": "대합실 2층 연결통로 (가)아이센터,(나)아이센터 중간",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-광명사거리_지하2층",
+        "floor": "B2",
+        "entrance": "4,5",
+        "detail": "대합실 2층 연결통로 (가)아이센터,(나)아이센터 중간",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "천왕": {
+    "stationName": "천왕",
+    "line": "7호선",
+    "lat": 37.486637,
+    "lng": 126.838713,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-천왕_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-천왕_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "온수": {
+    "stationName": "온수",
+    "line": "7호선",
+    "lat": 37.492258,
+    "lng": 126.823388,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-온수(7)_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 4번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-온수(7)_지하1층",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 4번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "암사역사공원": {
+    "stationName": "암사역사공원",
+    "line": "8호선",
+    "lat": 37.5575676,
+    "lng": 127.1401596,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-암사역사공원",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 B1층 3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-암사역사공원",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 B1층 3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "암사": {
+    "stationName": "암사",
+    "line": "8호선",
+    "lat": 37.55021,
+    "lng": 127.127562,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-암사_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-암사_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "강동구청": {
+    "stationName": "강동구청",
+    "line": "8호선",
+    "lat": 37.530341,
+    "lng": 127.120508,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-강동구청_지하2층",
+        "floor": "B2",
+        "entrance": "4,5",
+        "detail": "대합실 B2층 개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강동구청_지하2층",
+        "floor": "B2",
+        "entrance": "4,5",
+        "detail": "대합실 B2층 개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "몽촌토성": {
+    "stationName": "몽촌토성",
+    "line": "8호선",
+    "lat": 37.517409,
+    "lng": 127.112359,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-몽촌토성_지하1층",
+        "floor": "B1",
+        "entrance": "1,2,3",
+        "detail": "대합실 B1층 1,2,3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-몽촌토성_지하1층",
+        "floor": "B1",
+        "entrance": "1,2,3",
+        "detail": "대합실 B1층 1,2,3번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "잠실": {
+    "stationName": "잠실",
+    "line": "8호선",
+    "lat": 37.51395,
+    "lng": 127.102234,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-잠실(8)_지하1층",
+        "floor": "B1",
+        "entrance": "11",
+        "detail": "B1층 11번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-잠실(8)_지하1층",
+        "floor": "B1",
+        "entrance": "11",
+        "detail": "B1층 11번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-잠실(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1,2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-잠실(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1,2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "석촌": {
+    "stationName": "석촌",
+    "line": "8호선",
+    "lat": 37.505431,
+    "lng": 127.106979,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-석촌(8)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 B1층 개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-석촌(8)_지하1층",
+        "floor": "B1",
+        "entrance": "7,8",
+        "detail": "대합실 B1층 개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "송파": {
+    "stationName": "송파",
+    "line": "8호선",
+    "lat": 37.499703,
+    "lng": 127.112183,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-송파_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 B1층 1번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-송파_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 B1층 1번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "가락시장": {
+    "stationName": "가락시장",
+    "line": "8호선",
+    "lat": 37.492522,
+    "lng": 127.118234,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-가락시장(8)_지하1층",
+        "floor": "B1",
+        "entrance": "2-1",
+        "detail": "B1층 대합실과 가락몰 연결통로 사이",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-가락시장(8)_지하1층",
+        "floor": "B1",
+        "entrance": "2-1",
+        "detail": "B1층 대합실과 가락몰 연결통로 사이",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-가락시장(3) 외부",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "대합실 B2층 고객안전실 앞(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-가락시장(3)",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "대합실 B2층 고객상담실앞(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-가락시장(3) 외부",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "대합실 B2층 고객안전실 앞(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-가락시장(3)",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "대합실 B2층 고객상담실앞(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "문정": {
+    "stationName": "문정",
+    "line": "8호선",
+    "lat": 37.485855,
+    "lng": 127.1225,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-문정_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-문정_지하1층",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 2번 출입구 방향",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "장지": {
+    "stationName": "장지",
+    "line": "8호선",
+    "lat": 37.478703,
+    "lng": 127.126191,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-장지_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 3,4번 출입구 방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-장지_지하1층",
+        "floor": "B1",
+        "entrance": "3,4",
+        "detail": "대합실 B1층 3,4번 출입구 방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "복정": {
+    "stationName": "복정",
+    "line": "8호선",
+    "lat": 37.470047,
+    "lng": 127.126662,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-복정(8)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 아이센터 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-복정(8)_지하1층",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 지하1층 아이센터 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "산성": {
+    "stationName": "산성",
+    "line": "8호선",
+    "lat": 37.457122,
+    "lng": 127.149908,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-산성_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "B1층 1,2번 출입구 계단 오른쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-산성_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "B1층 1,2번 출입구 계단 오른쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "남한산성입구": {
+    "stationName": "남한산성입구",
+    "line": "8호선",
+    "lat": 37.451535,
+    "lng": 127.159816,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-남한산성입구_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "대합실 지하2층 에스컬레이터 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-남한산성입구_지하2층",
+        "floor": "B2",
+        "entrance": "1,2",
+        "detail": "대합실 지하2층 에스컬레이터 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "단대오거리": {
+    "stationName": "단대오거리",
+    "line": "8호선",
+    "lat": 37.44521,
+    "lng": 127.156866,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-단대오거리_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "대합실 지하1층 2호기E/V 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-단대오거리_지하1층",
+        "floor": "B1",
+        "entrance": "6,7",
+        "detail": "대합실 지하1층 2호기E/V 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신흥": {
+    "stationName": "신흥",
+    "line": "8호선",
+    "lat": 37.440918,
+    "lng": 127.147564,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신흥_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "B1층 대합실 1,2번 출입구방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신흥_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "B1층 대합실 1,2번 출입구방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "수진": {
+    "stationName": "수진",
+    "line": "8호선",
+    "lat": 37.437428,
+    "lng": 127.140722,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-수진_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 편의점 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-수진_지하1층",
+        "floor": "B1",
+        "entrance": "1,2",
+        "detail": "대합실 지하1층 편의점 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "모란": {
+    "stationName": "모란",
+    "line": "8호선",
+    "lat": 37.43213,
+    "lng": 127.129087,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-모란(8)_지하2층",
+        "floor": "B2",
+        "entrance": "10,11",
+        "detail": "B2층 대합실 상행 E/S 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-모란(8)_지하2층",
+        "floor": "B2",
+        "entrance": "10,11",
+        "detail": "B2층 대합실 상행 E/S 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "남위례": {
+    "stationName": "남위례",
+    "line": "8호선",
+    "lat": 37.4627715,
+    "lng": 127.1392162,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-남위례",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "대합실 지상2층 주출입구 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-남위례",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "대합실 지상2층 주출입구 근처",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "동대문": {
+    "stationName": "동대문",
+    "line": "1호선",
+    "lat": 37.57142,
+    "lng": 127.009745,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-동대문(1)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 4번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동대문(1)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 4번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-동대문(4)",
+        "floor": "B2",
+        "entrance": "9",
+        "detail": "지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동대문(4)",
+        "floor": "B2",
+        "entrance": "9",
+        "detail": "지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "종각": {
+    "stationName": "종각",
+    "line": "1호선",
+    "lat": 37.570161,
+    "lng": 126.982923,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-종각 종로3가측",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 (다)개집표기 부근(종로3가측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종각",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 (가)개집표기 부근 (연결통로 부근, 시청측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종각 종로3가측",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 (다)개집표기 부근(종로3가측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종각",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 (가)개집표기 부근 (연결통로 부근, 시청측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "종로5가": {
+    "stationName": "종로5가",
+    "line": "1호선",
+    "lat": 37.570926,
+    "lng": 127.001849,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-종로5가",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "지하1층 지하상가 연결통로앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종로5가",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "지하1층 지하상가 연결통로앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "청량리": {
+    "stationName": "청량리",
+    "line": "1호선",
+    "lat": 37.580178,
+    "lng": 127.046835,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-청량리(1)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "4번 출입구 아래",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-청량리(1)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "4번 출입구 아래",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "제기동": {
+    "stationName": "제기동",
+    "line": "1호선",
+    "lat": 37.578103,
+    "lng": 127.034893,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-제기동",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "2번 출입구 우측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-제기동",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "2번 출입구 우측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "시청": {
+    "stationName": "시청",
+    "line": "1호선",
+    "lat": 37.564718,
+    "lng": 126.977108,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-시청(1)",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 5번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-시청(1)",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 5번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-시청(2) 환승통로",
+        "floor": "B2",
+        "entrance": "11",
+        "detail": "지하2층 환승통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-시청(2)",
+        "floor": "B1",
+        "entrance": "10",
+        "detail": "지하1층 9,10번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-시청(2) 환승통로",
+        "floor": "B2",
+        "entrance": "11",
+        "detail": "지하2층 환승통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-시청(2)",
+        "floor": "B1",
+        "entrance": "10",
+        "detail": "지하1층 9,10번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "신설동": {
+    "stationName": "신설동",
+    "line": "1호선",
+    "lat": 37.575297,
+    "lng": 127.025087,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신설동(1)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실(지하1층) 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신설동(1)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실(지하1층) 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신설동(2)",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실(지하1층) 고객안전실 옆",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-신설동(2)",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "대합실(지하1층) 고객안전실 옆",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "서울역": {
+    "stationName": "서울역",
+    "line": "1호선",
+    "lat": 37.5560719,
+    "lng": 126.9723599,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-서울역(1)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 2번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-서울역(1)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 2번 출입구 부근",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-서울역(4)",
+        "floor": "B1",
+        "entrance": "11",
+        "detail": "14번 출입구  옆, 11번 출입구 물품보관함 건너편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-서울역(4)",
+        "floor": "B1",
+        "entrance": "11",
+        "detail": "14번 출입구  옆, 11번 출입구 물품보관함 건너편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "낙성대": {
+    "stationName": "낙성대",
+    "line": "2호선",
+    "lat": 37.47693,
+    "lng": 126.963693,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-낙성대",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 1층 고객안내부스앞(3,4,5,6번 출입구쪽)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-낙성대",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 1층 고객안내부스앞(3,4,5,6번 출입구쪽)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신도림": {
+    "stationName": "신도림",
+    "line": "2호선",
+    "lat": 37.508725,
+    "lng": 126.891295,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신도림(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실 (개집표기 내부, 1번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-신도림(2) 외부",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실(개집표기 외부,1번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신도림(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실 (개집표기 내부, 1번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-신도림(2) 외부",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실(개집표기 외부,1번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "봉천": {
+    "stationName": "봉천",
+    "line": "2호선",
+    "lat": 37.482362,
+    "lng": 126.941892,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-봉천",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "B1 아이센터 맞은편(1,6번 출입구)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-봉천",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "B1 아이센터 맞은편(1,6번 출입구)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "선릉": {
+    "stationName": "선릉",
+    "line": "2호선",
+    "lat": 37.504503,
+    "lng": 127.049008,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-선릉",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-선릉",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신림": {
+    "stationName": "신림",
+    "line": "2호선",
+    "lat": 37.484201,
+    "lng": 126.929715,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신림",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "B1 고객안전실 맞은편(3,4번 출입구),개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신림",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "B1 고객안전실 맞은편(3,4번 출입구),개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "아현": {
+    "stationName": "아현",
+    "line": "2호선",
+    "lat": 37.557345,
+    "lng": 126.956141,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-아현",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 대합실 이대역방면 끝단",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-아현",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 대합실 이대역방면 끝단",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "도림천": {
+    "stationName": "도림천",
+    "line": "2호선",
+    "lat": 37.514287,
+    "lng": 126.882768,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-도림천",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "지상1층, 고객안전실 옆(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-도림천",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "지상1층, 고객안전실 옆(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "잠실새내": {
+    "stationName": "잠실새내",
+    "line": "2호선",
+    "lat": 37.511687,
+    "lng": 127.086162,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-잠실새내",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-잠실새내",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 1층 2번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "종합운동장": {
+    "stationName": "종합운동장",
+    "line": "2호선",
+    "lat": 37.510997,
+    "lng": 127.073642,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-종합운동장",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1,2번 출입구 앞 (잠실새내측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종합운동장(2) #5출구",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 1층 5번 출입구 앞 (삼성측)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종합운동장",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "대합실 1층 1,2번 출입구 앞 (잠실새내측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-종합운동장(2) #5출구",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "대합실 1층 5번 출입구 앞 (삼성측)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "용두": {
+    "stationName": "용두",
+    "line": "2호선",
+    "lat": 37.574028,
+    "lng": 127.038091,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-용두",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "(내선대합실)5번 출입구 입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-용두 #1,2출구",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "(외선대합실)1,2번 출입구 입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)승강장화장실-용두 외선",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "(외선승강장)2-2 승강장 앞",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)승강장화장실-용두",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "(내선승강장)3-3 승강장 앞",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-용두",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "(내선대합실)5번 출입구 입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-용두 #1,2출구",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "(외선대합실)1,2번 출입구 입구",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)승강장화장실-용두 외선",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "(외선승강장)2-2 승강장 앞",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)승강장화장실-용두",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "(내선승강장)3-3 승강장 앞",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "방배": {
+    "stationName": "방배",
+    "line": "2호선",
+    "lat": 37.481426,
+    "lng": 126.997596,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-방배",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "서초방면 대합실 끝(1,4번 출입구방향),개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-방배",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "서초방면 대합실 끝(1,4번 출입구방향),개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "서울대입구": {
+    "stationName": "서울대입구",
+    "line": "2호선",
+    "lat": 37.481247,
+    "lng": 126.952739,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-서울대입구",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 1층 (7,8번 출입구쪽)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-서울대입구",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "대합실 1층 (7,8번 출입구쪽)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "교대": {
+    "stationName": "교대",
+    "line": "2호선",
+    "lat": 37.493415,
+    "lng": 127.01408,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-교대(2)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 1,2,3,4,번 출입구 쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-교대(2)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 1,2,3,4,번 출입구 쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-교대(3)",
+        "floor": "B1",
+        "entrance": "12",
+        "detail": "대합실1층 고객안전실 맞은편,개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-교대(3)",
+        "floor": "B1",
+        "entrance": "12",
+        "detail": "대합실1층 고객안전실 맞은편,개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신대방": {
+    "stationName": "신대방",
+    "line": "2호선",
+    "lat": 37.487462,
+    "lng": 126.913149,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신대방",
+        "floor": "2",
+        "entrance": "1,4",
+        "detail": "2층 고객안전실(1,4번 출입구),개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-신대방",
+        "floor": "2",
+        "entrance": "1,4",
+        "detail": "2층 고객안전실(1,4번 출입구),개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "사당": {
+    "stationName": "사당",
+    "line": "2호선",
+    "lat": 37.47653,
+    "lng": 126.981685,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-사당(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실 1,2번 출입구 쪽(방배측)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(2) 낙성대측",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "지하1층 대합실 7,8번 출입구 쪽(낙성대측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(2)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 대합실 1,2번 출입구 쪽(방배측)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(2) 낙성대측",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "지하1층 대합실 7,8번 출입구 쪽(낙성대측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(4) 지하1층남태령측",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 남태령측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(4) 지하2층환승통로",
+        "floor": "B2",
+        "entrance": "12",
+        "detail": "지하2층 환승통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-사당(4)",
+        "floor": "B1",
+        "entrance": "12",
+        "detail": "(지하1층 총신대측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(4) 지하1층남태령측",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 남태령측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-사당(4) 지하2층환승통로",
+        "floor": "B2",
+        "entrance": "12",
+        "detail": "지하2층 환승통로",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-사당(4)",
+        "floor": "B1",
+        "entrance": "12",
+        "detail": "(지하1층 총신대측)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "문래": {
+    "stationName": "문래",
+    "line": "2호선",
+    "lat": 37.517933,
+    "lng": 126.89476,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-문래",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실(개집표기 외부, 2,3번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-문래",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 대합실(개집표기 외부, 2,3번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "당산": {
+    "stationName": "당산",
+    "line": "2호선",
+    "lat": 37.53438,
+    "lng": 126.902281,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-당산(2)",
+        "floor": "2",
+        "entrance": "4",
+        "detail": "지상2층, 대합실 중앙(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-당산(2)",
+        "floor": "2",
+        "entrance": "4",
+        "detail": "지상2층, 대합실 중앙(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "홍대입구": {
+    "stationName": "홍대입구",
+    "line": "2호선",
+    "lat": 37.557192,
+    "lng": 126.925381,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-홍대입구(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실, 2번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-홍대입구(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실, 2번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "성수": {
+    "stationName": "성수",
+    "line": "2호선",
+    "lat": 37.544581,
+    "lng": 127.055961,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-성수",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "대합실 2층 2번 출입구측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-성수",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "대합실 2층 2번 출입구측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "양천구청": {
+    "stationName": "양천구청",
+    "line": "2호선",
+    "lat": 37.512398,
+    "lng": 126.865819,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-양천구청",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1 대합실(개집표기 내부,신정자량사업소출입구 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-양천구청",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "B1 대합실(개집표기 내부,신정자량사업소출입구 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "신정네거리": {
+    "stationName": "신정네거리",
+    "line": "2호선",
+    "lat": 37.520074,
+    "lng": 126.852912,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신정네거리",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "B1 대합실(개집표기 외부, 2번, 3번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신정네거리",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "B1 대합실(개집표기 외부, 2번, 3번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "상왕십리": {
+    "stationName": "상왕십리",
+    "line": "2호선",
+    "lat": 37.564354,
+    "lng": 127.029354,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상왕십리",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 5,6번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-상왕십리",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 1층 5,6번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "한양대": {
+    "stationName": "한양대",
+    "line": "2호선",
+    "lat": 37.555273,
+    "lng": 127.043655,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-한양대",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "고객안전실 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-한양대",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "고객안전실 맞은편",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "뚝섬": {
+    "stationName": "뚝섬",
+    "line": "2호선",
+    "lat": 37.547184,
+    "lng": 127.047367,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-뚝섬",
+        "floor": "2",
+        "entrance": "6",
+        "detail": "고객안전실 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-뚝섬",
+        "floor": "2",
+        "entrance": "6",
+        "detail": "고객안전실 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "이대": {
+    "stationName": "이대",
+    "line": "2호선",
+    "lat": 37.556733,
+    "lng": 126.946013,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-이대",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실 5번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-이대",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실 5번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "을지로입구": {
+    "stationName": "을지로입구",
+    "line": "2호선",
+    "lat": 37.566014,
+    "lng": 126.982618,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-을지로입구",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 (다)개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-을지로입구",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 (다)개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "서초": {
+    "stationName": "서초",
+    "line": "2호선",
+    "lat": 37.491897,
+    "lng": 127.007917,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-서초",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "교대방면 대합실(1,2,7,8번 출입구),개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-서초",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "교대방면 대합실(1,2,7,8번 출입구),개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "구로디지털단지": {
+    "stationName": "구로디지털단지",
+    "line": "2호선",
+    "lat": 37.485266,
+    "lng": 126.901401,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-구로디지털단지",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "지상2층, 고객안전실 앞 (개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-구로디지털단지",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "지상2층, 고객안전실 앞 (개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "삼성": {
+    "stationName": "삼성",
+    "line": "2호선",
+    "lat": 37.508844,
+    "lng": 127.06316,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-삼성",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-삼성",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "대합실 1층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "용답": {
+    "stationName": "용답",
+    "line": "2호선",
+    "lat": 37.561904,
+    "lng": 127.050899,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-용답",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-용답",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "구의": {
+    "stationName": "구의",
+    "line": "2호선",
+    "lat": 37.537077,
+    "lng": 127.085916,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-구의",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "대합실 2층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-구의",
+        "floor": "2",
+        "entrance": "2",
+        "detail": "대합실 2층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신촌": {
+    "stationName": "신촌",
+    "line": "2호선",
+    "lat": 37.555134,
+    "lng": 126.936893,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신촌",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실, 5번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신촌",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실, 5번 출입구 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "강변": {
+    "stationName": "강변",
+    "line": "2호선",
+    "lat": 37.535095,
+    "lng": 127.094681,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-강변",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "대합실 1층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-강변",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "대합실 1층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신답": {
+    "stationName": "신답",
+    "line": "2호선",
+    "lat": 37.57004,
+    "lng": 127.046481,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신답",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "1층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-신답",
+        "floor": "1",
+        "entrance": "1",
+        "detail": "1층 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "잠실나루": {
+    "stationName": "잠실나루",
+    "line": "2호선",
+    "lat": 37.520733,
+    "lng": 127.10379,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-잠실나루",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "대합실 1층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-잠실나루",
+        "floor": "1",
+        "entrance": "2",
+        "detail": "대합실 1층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "을지로3가": {
+    "stationName": "을지로3가",
+    "line": "2호선",
+    "lat": 37.566295,
+    "lng": 126.99191,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-을지로3가(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 (다)개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-을지로3가(2)",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 (다)개집표기 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-을지로3가(3)",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "가 대합실 고객안전실 아래 지하 2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-을지로3가(3)",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "가 대합실 고객안전실 아래 지하 2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "역삼": {
+    "stationName": "역삼",
+    "line": "2호선",
+    "lat": 37.500622,
+    "lng": 127.036456,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-역삼",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "대합실 2층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-역삼",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "대합실 2층 통로 중앙",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "강남": {
+    "stationName": "강남",
+    "line": "2호선",
+    "lat": 37.497175,
+    "lng": 127.027926,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-강남",
+        "floor": "B1",
+        "entrance": "1,12",
+        "detail": "1층 고객안전실(1,12번 출입구),개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-강남",
+        "floor": "B1",
+        "entrance": "1,12",
+        "detail": "1층 고객안전실(1,12번 출입구),개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "구파발": {
+    "stationName": "구파발",
+    "line": "3호선",
+    "lat": 37.636763,
+    "lng": 126.918821,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-구파발",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 대합실 (가)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-구파발",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 대합실 (가)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "신사": {
+    "stationName": "신사",
+    "line": "3호선",
+    "lat": 37.516334,
+    "lng": 127.020114,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신사",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-신사",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "양재": {
+    "stationName": "양재",
+    "line": "3호선",
+    "lat": 37.484147,
+    "lng": 127.034631,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-양재",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 B1층 상선 방향(9-4),개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-양재",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 B1층 상선 방향(9-4),개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "학여울": {
+    "stationName": "학여울",
+    "line": "3호선",
+    "lat": 37.496663,
+    "lng": 127.070594,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-학여울",
+        "floor": "B4",
+        "entrance": "1",
+        "detail": "대합실 B4층 외부 E/V 옆 (개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-학여울",
+        "floor": "B4",
+        "entrance": "1",
+        "detail": "대합실 B4층 외부 E/V 옆 (개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "대치": {
+    "stationName": "대치",
+    "line": "3호선",
+    "lat": 37.494612,
+    "lng": 127.063642,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-대치",
+        "floor": "B1",
+        "entrance": "6",
+        "detail": "대합실 B1층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-대치",
+        "floor": "B1",
+        "entrance": "6",
+        "detail": "대합실 B1층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "녹번": {
+    "stationName": "녹번",
+    "line": "3호선",
+    "lat": 37.600927,
+    "lng": 126.935756,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-녹번",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실 개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-녹번",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실 개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "압구정": {
+    "stationName": "압구정",
+    "line": "3호선",
+    "lat": 37.527072,
+    "lng": 127.028461,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-압구정",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-압구정",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하 1층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "금호": {
+    "stationName": "금호",
+    "line": "3호선",
+    "lat": 37.548034,
+    "lng": 127.015872,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-금호",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 (가)개집표기 내 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-금호",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 (가)개집표기 내 대합실",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "수서": {
+    "stationName": "수서",
+    "line": "3호선",
+    "lat": 37.487371,
+    "lng": 127.10188,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-수서",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 고객안전실좌측(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-수서",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 고객안전실좌측(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "대청": {
+    "stationName": "대청",
+    "line": "3호선",
+    "lat": 37.493514,
+    "lng": 127.079532,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-대청",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "대합실  B2층 상선 개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-대청",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "대합실  B2층 상선 개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "일원": {
+    "stationName": "일원",
+    "line": "3호선",
+    "lat": 37.483681,
+    "lng": 127.08439,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-일원",
+        "floor": "B2",
+        "entrance": "7",
+        "detail": "대합실 B2층 7번 출입구옆, 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-일원",
+        "floor": "B2",
+        "entrance": "7",
+        "detail": "대합실 B2층 7번 출입구옆, 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "홍제": {
+    "stationName": "홍제",
+    "line": "3호선",
+    "lat": 37.589066,
+    "lng": 126.943736,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-홍제 지하2층",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "지하2층 대합실 (다)개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-홍제",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실 상가(다이소) 옆",
+        "info": "일반(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-홍제 지하2층",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "지하2층 대합실 (다)개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-홍제",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 대합실 상가(다이소) 옆",
+        "info": "일반(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "옥수": {
+    "stationName": "옥수",
+    "line": "3호선",
+    "lat": 37.540685,
+    "lng": 127.017965,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-옥수(3) 환승통로",
+        "floor": "3",
+        "entrance": "3",
+        "detail": "3층 환승통로측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-옥수",
+        "floor": "3",
+        "entrance": "7",
+        "detail": "3층 금호역측",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-옥수(3) 환승통로",
+        "floor": "3",
+        "entrance": "3",
+        "detail": "3층 환승통로측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-옥수",
+        "floor": "3",
+        "entrance": "7",
+        "detail": "3층 금호역측",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "안국": {
+    "stationName": "안국",
+    "line": "3호선",
+    "lat": 37.576477,
+    "lng": 126.985443,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-안국",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "지하3층 대합실 C계단 방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-안국",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "지하3층 대합실 C계단 방면",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  },
+  "동대입구": {
+    "stationName": "동대입구",
+    "line": "3호선",
+    "lat": 37.559052,
+    "lng": 127.005602,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-동대입구",
+        "floor": "B2",
+        "entrance": "6",
+        "detail": "대합실 2층 (가)개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동대입구",
+        "floor": "B2",
+        "entrance": "6",
+        "detail": "대합실 2층 (가)개집표기 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "무악재": {
+    "stationName": "무악재",
+    "line": "3호선",
+    "lat": 37.582299,
+    "lng": 126.950291,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-무악재",
+        "floor": "B2",
+        "entrance": "1",
+        "detail": "지하2층 대합실 (가)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-무악재",
+        "floor": "B2",
+        "entrance": "1",
+        "detail": "지하2층 대합실 (가)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "경복궁": {
+    "stationName": "경복궁",
+    "line": "3호선",
+    "lat": 37.575762,
+    "lng": 126.97353,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-경복궁",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "지하2층 대합실 (가)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-경복궁",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "지하2층 대합실 (가)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "경찰병원": {
+    "stationName": "경찰병원",
+    "line": "3호선",
+    "lat": 37.495918,
+    "lng": 127.12454,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-경찰병원 외부",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 아이센터 옆(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-경찰병원",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 고객안전실 앞(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-경찰병원 외부",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 아이센터 옆(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-경찰병원",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층 고객안전실 앞(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "독립문": {
+    "stationName": "독립문",
+    "line": "3호선",
+    "lat": 37.574571,
+    "lng": 126.957748,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-독립문",
+        "floor": "B2",
+        "entrance": "3-1",
+        "detail": "지하2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-독립문",
+        "floor": "B2",
+        "entrance": "3-1",
+        "detail": "지하2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "잠원": {
+    "stationName": "잠원",
+    "line": "3호선",
+    "lat": 37.512759,
+    "lng": 127.01122,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-잠원",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 B1층 고객안전실 앞(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-잠원",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "대합실 B1층 고객안전실 앞(개집표기 내부)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "매봉": {
+    "stationName": "매봉",
+    "line": "3호선",
+    "lat": 37.486947,
+    "lng": 127.046769,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-매봉",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층개집표기옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-매봉",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 B1층개집표기옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "남부터미널": {
+    "stationName": "남부터미널",
+    "line": "3호선",
+    "lat": 37.485013,
+    "lng": 127.016189,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-남부터미널",
+        "floor": "B2",
+        "entrance": "1",
+        "detail": "대합실 B2층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-남부터미널",
+        "floor": "B2",
+        "entrance": "1",
+        "detail": "대합실 B2층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "창동": {
+    "stationName": "창동",
+    "line": "4호선",
+    "lat": 37.653166,
+    "lng": 127.047731,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-창동",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-창동",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "길음": {
+    "stationName": "길음",
+    "line": "4호선",
+    "lat": 37.603407,
+    "lng": 127.025053,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-길음",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실 (가)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-길음",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "지하1층 대합실 (가)개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "성신여대입구": {
+    "stationName": "성신여대입구",
+    "line": "4호선",
+    "lat": 37.592624,
+    "lng": 127.016403,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-성신여대입구(4)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 고객 안내부스에서 10m 안쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-성신여대입구(4)",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 고객 안내부스에서 10m 안쪽",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "한성대입구": {
+    "stationName": "한성대입구",
+    "line": "4호선",
+    "lat": 37.588458,
+    "lng": 127.006221,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-한성대입구",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "1번 출입구방향, (가)개집표기 쪽(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-한성대입구",
+        "floor": "B1",
+        "entrance": "7",
+        "detail": "1번 출입구방향, (가)개집표기 쪽(개집표기 외부)",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "남태령": {
+    "stationName": "남태령",
+    "line": "4호선",
+    "lat": 37.463873,
+    "lng": 126.989134,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-남태령 B2",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "(지하2층 고객안전실 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-남태령 B2",
+        "floor": "B2",
+        "entrance": "2",
+        "detail": "(지하2층 고객안전실 옆)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "충무로": {
+    "stationName": "충무로",
+    "line": "4호선",
+    "lat": 37.561243,
+    "lng": 126.99428,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-충무로(4)",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "지하2층 3,4,5,6,7번 출입구쪽,개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-충무로(4)",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "지하2층 3,4,5,6,7번 출입구쪽,개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "불암산": {
+    "stationName": "불암산",
+    "line": "4호선",
+    "lat": 37.670098,
+    "lng": 127.0789245,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-당고개 지상2층",
+        "floor": "2",
+        "entrance": "3",
+        "detail": "대합실 2층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-당고개",
+        "floor": "1",
+        "entrance": "4",
+        "detail": "대합실 1층 (1,4번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-당고개 지상2층",
+        "floor": "2",
+        "entrance": "3",
+        "detail": "대합실 2층 고객안전실 앞",
+        "info": "일반(남,여) / 교통약자(남,여,공용)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-당고개",
+        "floor": "1",
+        "entrance": "4",
+        "detail": "대합실 1층 (1,4번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "명동": {
+    "stationName": "명동",
+    "line": "4호선",
+    "lat": 37.560989,
+    "lng": 126.986325,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-명동",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "B1 2~8번 출입구쪽,개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-명동",
+        "floor": "B1",
+        "entrance": "5",
+        "detail": "B1 2~8번 출입구쪽,개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": true
+      }
+    ]
+  },
+  "상계": {
+    "stationName": "상계",
+    "line": "4호선",
+    "lat": 37.660878,
+    "lng": 127.073572,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-상계",
+        "floor": "2",
+        "entrance": "4",
+        "detail": "2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-상계",
+        "floor": "2",
+        "entrance": "4",
+        "detail": "2층 대합실 (나)개집표기 내부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "이촌": {
+    "stationName": "이촌",
+    "line": "4호선",
+    "lat": 37.522272,
+    "lng": 126.974345,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-이촌",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-이촌",
+        "floor": "B1",
+        "entrance": "3",
+        "detail": "지하1층 3번 출입구 앞",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "미아사거리": {
+    "stationName": "미아사거리",
+    "line": "4호선",
+    "lat": 37.613292,
+    "lng": 127.030053,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-미아사거리",
+        "floor": "B1",
+        "entrance": "1,6",
+        "detail": "지하1층 고객안전실 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-미아사거리",
+        "floor": "B1",
+        "entrance": "1,6",
+        "detail": "지하1층 고객안전실 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "총신대입구": {
+    "stationName": "총신대입구",
+    "line": "4호선",
+    "lat": 37.4875329,
+    "lng": 126.9823285,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-총신대입구(4)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 동작측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-총신대입구(4)",
+        "floor": "B1",
+        "entrance": "1",
+        "detail": "지하1층 동작측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "회현": {
+    "stationName": "회현",
+    "line": "4호선",
+    "lat": 37.558514,
+    "lng": 126.978246,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-회현",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "개집표기 내부 지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-회현",
+        "floor": "B2",
+        "entrance": "3",
+        "detail": "개집표기 내부 지하2층",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "신용산": {
+    "stationName": "신용산",
+    "line": "4호선",
+    "lat": 37.52917,
+    "lng": 126.967894,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-신용산",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 삼각지측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-신용산",
+        "floor": "B1",
+        "entrance": "4",
+        "detail": "지하1층 삼각지측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "혜화": {
+    "stationName": "혜화",
+    "line": "4호선",
+    "lat": 37.582336,
+    "lng": 127.001844,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-혜화",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "(지하1층 3번 출입구 방면)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-혜화",
+        "floor": "B1",
+        "entrance": "8",
+        "detail": "(지하1층 3번 출입구 방면)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "쌍문": {
+    "stationName": "쌍문",
+    "line": "4호선",
+    "lat": 37.648627,
+    "lng": 127.034709,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-쌍문",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 (나)환기실 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-쌍문",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "지하1층 (나)환기실 옆",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "수유": {
+    "stationName": "수유",
+    "line": "4호선",
+    "lat": 37.638052,
+    "lng": 127.025732,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-수유",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 지하1층 고객안전실 옆(2,8번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-수유",
+        "floor": "B1",
+        "entrance": "2",
+        "detail": "대합실 지하1층 고객안전실 옆(2,8번 출입구방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "숙대입구": {
+    "stationName": "숙대입구",
+    "line": "4호선",
+    "lat": 37.54456,
+    "lng": 126.972106,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-숙대입구",
+        "floor": "B1",
+        "entrance": "9",
+        "detail": "B1 (가)대합실과 (나)대합실 연결통로 가운데",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-숙대입구",
+        "floor": "B1",
+        "entrance": "9",
+        "detail": "B1 (가)대합실과 (나)대합실 연결통로 가운데",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "동작": {
+    "stationName": "동작",
+    "line": "4호선",
+    "lat": 37.502971,
+    "lng": 126.979306,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-동작(4)",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "대합실 2층 구내식당좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      },
+      {
+        "name": "건축)대합실화장실-동작(4)",
+        "floor": "2",
+        "entrance": "1",
+        "detail": "대합실 2층 구내식당좌측",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": true
+      }
+    ]
+  },
+  "미아": {
+    "stationName": "미아",
+    "line": "4호선",
+    "lat": 37.62667,
+    "lng": 127.025983,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-미아",
+        "floor": "B1",
+        "entrance": "6",
+        "detail": "대합실 지하1층 교양휴게실 앞 (3,4번개집표기방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-미아",
+        "floor": "B1",
+        "entrance": "6",
+        "detail": "대합실 지하1층 교양휴게실 앞 (3,4번개집표기방향)",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": true,
+        "inside": false
+      }
+    ]
+  },
+  "도곡": {
+    "stationName": "도곡",
+    "line": "3호선",
+    "lat": 37.490858,
+    "lng": 127.055381,
+    "restrooms": [
+      {
+        "name": "건축)대합실화장실-도곡",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "대합실  B2층 개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      },
+      {
+        "name": "건축)대합실화장실-도곡",
+        "floor": "B2",
+        "entrance": "4",
+        "detail": "대합실  B2층 개집표기 외부",
+        "info": "일반(남,여) / 교통약자(남,여)",
+        "wheelchair": false,
+        "inside": false
+      }
+    ]
+  }
+}
