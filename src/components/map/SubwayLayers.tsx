@@ -51,18 +51,21 @@ const SubwayLayers = ({
   // 노선 두께: 경로 검색 중엔 1.5px (RouteLayers가 굵은 경로선을 위에 그림), 일반엔 줌 기반
   const lineWidth: any = hasRoute ? 1.5 : ["interpolate", ["linear"], ["zoom"], 9, 1.5, 12, 2.5, 14, 4, 16, 5];
 
-  // ── 역 점 테두리 색 ───────────────────────────────────────────────────────
-  let stationStrokeColor: any;
+  // ── 역 점 색 (채움) ──────────────────────────────────────────────────────
+  // ["at", 0, ["get", "lineColors"]] → lineColors 배열의 첫 번째 색상 문자열 직접 사용
+  // (이전 코드의 ["get", ["at", ...]]는 색상값을 property key로 쓰는 버그)
+  const firstLineColor: any = ["at", 0, ["get", "lineColors"]];
+  let stationFillColor: any;
   if (hasRoute) {
-    stationStrokeColor = GRAY_STATION;
+    stationFillColor = GRAY_STATION;
   } else if (focusedLine) {
-    stationStrokeColor = ["case",
+    stationFillColor = ["case",
       ["in", ["literal", focusedLine], ["get", "lines"]],
-      ["get", ["at", 0, ["get", "lineColors"]]],
+      firstLineColor,
       GRAY_STATION
     ];
   } else {
-    stationStrokeColor = ["get", ["at", 0, ["get", "lineColors"]]];
+    stationFillColor = firstLineColor;
   }
 
   // ── 역명 라벨 색 ─────────────────────────────────────────────────────────
@@ -133,37 +136,47 @@ const SubwayLayers = ({
           }}
         />
 
-        {/* 선택된 역 강조 링 */}
+        {/* 선택된 역 강조 링 — 노선 색 흰 배경 위에 선명하게 */}
         <Layer
           id="subway-station-selected-ring"
           type="circle"
           filter={['==', ['get', 'name'], selectedStationName ?? '']}
           layout={{ "visibility": vis }}
           paint={{
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 8, 12, 12, 14, 17, 16, 22],
-            "circle-color": "transparent",
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 9, 12, 13, 14, 19, 16, 24],
+            "circle-color": isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.9)",
             "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 14, 3],
-            "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
-            "circle-opacity": 0,
-            "circle-stroke-opacity": 0.45,
+            "circle-stroke-color": firstLineColor,
+            "circle-opacity": 1,
+            "circle-stroke-opacity": 1,
           }}
         />
 
-        {/* 역 점 — 노선 색 채움, 흰색 테두리로 분리 */}
+        {/* 역 점 — 노선 색 채움, 배경 대비 흰색 테두리 */}
         <Layer
           id="subway-station-circle"
           type="circle"
           layout={{ "visibility": vis }}
           paint={{
             "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 12, 5, 14, 8, 16, 10],
-            "circle-color": stationStrokeColor,
+            "circle-color": [
+              "case",
+              ["==", ["get", "name"], selectedStationName ?? ''],
+              isDarkMode ? "#ffffff" : "#ffffff",
+              stationFillColor,
+            ],
             "circle-stroke-width": [
               "case",
               ["==", ["get", "name"], selectedStationName ?? ''],
-              ["interpolate", ["linear"], ["zoom"], 12, 2.5, 14, 3.5, 16, 4.5],
+              ["interpolate", ["linear"], ["zoom"], 10, 2, 12, 3, 14, 4, 16, 5],
               ["interpolate", ["linear"], ["zoom"], 10, 1, 12, 1.5, 14, 2, 16, 2.5],
             ],
-            "circle-stroke-color": isDarkMode ? "#1a1a2e" : "#ffffff",
+            "circle-stroke-color": [
+              "case",
+              ["==", ["get", "name"], selectedStationName ?? ''],
+              firstLineColor,
+              isDarkMode ? "#1a1a2e" : "#ffffff",
+            ],
           }}
         />
 

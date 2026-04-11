@@ -199,12 +199,9 @@ export default function Home() {
             mapSt.setIsLocating(false);
             clearInterval(timerInterval);
 
-            // 최초 위치 → 지도 이동 (직접 호출, 배치 렌더 우회)
             mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 13, duration: 2000 });
             mapSt.setHasInitialLocation(true);
 
-
-            // 가장 가까운 역을 출발역으로
             if (stations.length > 0) {
               const nearest: any = await findNearestStation(latitude, longitude, stations);
               if (nearest?.name && !route.startStation) {
@@ -213,13 +210,16 @@ export default function Home() {
             }
           }
         },
-        (err) => {
+        (_err) => {
+          // 최초 시도 실패 시에도 initLocRef를 true로 — "위치 찾는 중" UI가 반복되지 않도록
           if (!initLocRef.current) {
+            initLocRef.current = true;
             mapSt.setIsLocating(false);
             clearInterval(timerInterval);
           }
         },
-        { enableHighAccuracy: true, timeout: 10_000, maximumAge: 0 }
+        // PC는 GPS 없음 → enableHighAccuracy:false(네트워크 위치)로 빠르게, 캐시 허용
+        { enableHighAccuracy: false, timeout: 15_000, maximumAge: 60_000 }
       );
     };
 

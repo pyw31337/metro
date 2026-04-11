@@ -41,7 +41,8 @@ export function useUserLocation(map: any | null) {
                 lastUpdateRef.current = Date.now();
             },
             () => { /* silent */ },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            // PC엔 GPS 없음 → enableHighAccuracy:false로 네트워크 위치 사용, 60초 캐시 허용
+            { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
         );
     };
 
@@ -61,7 +62,7 @@ export function useUserLocation(map: any | null) {
             }
         };
         document.addEventListener('visibilitychange', handleVisibility);
-        window.addEventListener('focus', fetchLocation);
+        // focus 이벤트 제거 — 창 전환마다 권한 프롬프트 트리거 방지
 
         // ~10fps interpolation loop (RAF 대신 setInterval 사용 → 백그라운드 자동 스로틀)
         const interpInterval = setInterval(() => {
@@ -98,7 +99,6 @@ export function useUserLocation(map: any | null) {
             clearInterval(pollInterval);
             clearInterval(interpInterval);
             document.removeEventListener('visibilitychange', handleVisibility);
-            window.removeEventListener('focus', fetchLocation);
         };
     }, [map]);
 }
