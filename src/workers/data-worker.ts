@@ -27,15 +27,18 @@ const LINE_SPEED_KMH: Record<string, number> = {
 };
 const DEFAULT_SPEED_KMH = 40;
 
-// 환승 소요시간 (분) — 기본 3.5분, 빠른환승역 2분
-const TRANSFER_TIME_DEFAULT = 3.5;
-const TRANSFER_TIME_FAST    = 2.0;
+// 환승 소요시간 (분) = 보행시간 + 다음 열차 대기시간
+// 실측 기준: 빠른환승 ~1.5분 보행 + 4.5분 대기 = 6분
+//            일반환승 ~3분 보행   + 5분 대기   = 8분
+const TRANSFER_TIME_DEFAULT = 8.0;
+const TRANSFER_TIME_FAST    = 6.0;
 
-// Dijkstra 전략별 환승 패널티 (분 단위로 처리)
-// "transfer" 전략: 환승 1회 = 60분 패널티 → 거의 환승 안 하는 경로 선택
-// "time" 전략   : 실제 환승 시간만 추가
-const TRANSFER_PENALTY_TIME     = 0;   // time 전략: 패널티 없음, 실 환승시간만
-const TRANSFER_PENALTY_TRANSFER = 60;  // transfer 전략: 환승 1회당 60분 패널티
+// Dijkstra 전략별 환승 패널티
+// "time" 전략   : 패널티 없음, 실 환승시간만
+// "transfer" 전략: 환승 1회당 600분 패널티 → 환승 횟수 우선 최소화 (같은 환승수면 시간 최소화)
+// 600분은 현실적인 어떤 경로도 초과하지 않으므로 환승횟수가 항상 먼저 최소화됨
+const TRANSFER_PENALTY_TIME     = 0;
+const TRANSFER_PENALTY_TRANSFER = 600;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Inline Haversine (Worker는 import.meta 경로 이슈를 피하기 위해 인라인)
