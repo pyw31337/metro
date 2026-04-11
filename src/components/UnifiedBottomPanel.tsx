@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, MapPin, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown } from "lucide-react";
-import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
+import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown } from "lucide-react";
 import * as Hangul from "hangul-js";
 import { Station, SUBWAY_LINES } from "@/data/subway-lines";
 import { normStation, stationLines } from "@/data/stationRegistry";
@@ -12,8 +11,6 @@ import type { PathStrategy } from "@/store/useRouteStore";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import type { BusPathResult } from "@/utils/busRouting";
 import { getBusRouteStyle } from "@/utils/busRouting";
-import { useIngestion } from "@/hooks/useIngestion";
-import IngestionProgress from "./IngestionProgress";
 import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
 import { useRouteStore } from "@/store/useRouteStore";
@@ -336,7 +333,6 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
 
     const [noRouteStale, setNoRouteStale] = useState(false); // persists until input changes or route found
     const [now, setNow] = useState(() => Date.now());
-    const { tasks, isIngesting } = useIngestion();
 
     const sourceInputRef = useRef<HTMLInputElement>(null);
     const destInputRef = useRef<HTMLInputElement>(null);
@@ -510,13 +506,13 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
 
     return (
         <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center transition-all duration-300" style={{ bottom: `${keyboardOffset}px` }}>
-            <motion.div 
-                layout
-                className="max-w-lg w-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-2xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-visible"
-                style={{ paddingBottom: keyboardOffset > 0 ? "8px" : "calc(env(safe-area-inset-bottom) + 8px)" }}
-                initial={{ y: 200 }}
-                animate={{ y: isCollapsed ? "calc(100% - 44px)" : 0 }}
-                transition={{ type: "spring", stiffness: 400, damping: 30, mass: 0.8 }}
+            <div
+                className="animate-panel-in max-w-lg w-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-2xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-visible"
+                style={{
+                    paddingBottom: keyboardOffset > 0 ? "8px" : "calc(env(safe-area-inset-bottom) + 8px)",
+                    transform: isCollapsed ? 'translateY(calc(100% - 44px))' : 'translateY(0)',
+                    transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                }}
             >
                 <div onClick={() => { hapticLight(); setIsCollapsed(!isCollapsed); }} className="w-full py-2.5 flex items-center justify-center cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
                     <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 transition-colors" />
@@ -524,14 +520,10 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
 
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
                     {activeTab === "subway" && noRouteStale && !pathResults && !isCalculating && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-rose-500/8 dark:bg-rose-500/12 border border-rose-500/20 mb-1"
-                        >
+                        <div className="animate-fade-in-up flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-rose-500/8 dark:bg-rose-500/12 border border-rose-500/20 mb-1">
                             <span className="text-[12px] font-black text-rose-500">경로를 찾을 수 없습니다</span>
                             <span className="text-[10px] font-bold text-rose-400/70">· 역명을 확인해주세요</span>
-                        </motion.div>
+                        </div>
                     )}
 
                     {activeTab === "subway" && pathResults && pathResults.time && pathResults.transfer && (
@@ -554,60 +546,54 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 </button>
                             </div>
                             
-                            <div className="px-1 py-1">
-                                <IngestionProgress tasks={tasks} isVisible={isIngesting} />
-                            </div>
-
                         </div>
                     )}
 
-                    <AnimatePresence mode="wait">
-                        {activeField && (() => {
-                            const query = (activeField === "source" ? source : activeField === "dest" ? destination : waypointInput).trim();
-                            if (searchResults.length > 0) return (
-                                <motion.div key="results" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
-                                    <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
-                                        {searchResults.map((s, i) => (
-                                            <SuggestionItem
-                                                key={`${s.type}-${s.id || s.name}-${i}`}
-                                                item={s}
-                                                isActive={activeIndex === i}
-                                                onClick={() => selectLocation(s)}
-                                                onMouseEnter={() => setActiveIndex(i)}
-                                                getLineBadge={getLineBadge}
-                                            />
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            );
-                            if (query.length >= 1) return (
-                                <motion.div key="no-results" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 mb-1">
-                                    &apos;{query}&apos; 검색 결과가 없습니다
-                                </motion.div>
-                            );
-                            if (history.length > 0) return (
-                                <motion.div key="history" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
-                                    <div className="flex items-center justify-between px-3 py-1.5">
-                                        <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">최근 검색</span>
-                                        <button onClick={clearHistory} className="text-[9px] font-bold text-zinc-400 hover:text-rose-500 transition-colors">지우기</button>
-                                    </div>
-                                    <div className="py-0.5">
-                                        {history.map((h, i) => (
-                                            <SuggestionItem
-                                                key={`hist-${h.name}-${i}`}
-                                                item={h}
-                                                isActive={false}
-                                                onClick={() => selectLocation(h)}
-                                                onMouseEnter={() => {}}
-                                                getLineBadge={getLineBadge}
-                                            />
-                                        ))}
-                                    </div>
-                                </motion.div>
-                            );
-                            return null;
-                        })()}
-                    </AnimatePresence>
+                    {activeField && (() => {
+                        const query = (activeField === "source" ? source : activeField === "dest" ? destination : waypointInput).trim();
+                        if (searchResults.length > 0) return (
+                            <div className="animate-fade-in-up overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
+                                <div className="max-h-[180px] overflow-y-auto no-scrollbar py-1">
+                                    {searchResults.map((s, i) => (
+                                        <SuggestionItem
+                                            key={`${s.type}-${s.id || s.name}-${i}`}
+                                            item={s}
+                                            isActive={activeIndex === i}
+                                            onClick={() => selectLocation(s)}
+                                            onMouseEnter={() => setActiveIndex(i)}
+                                            getLineBadge={getLineBadge}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                        if (query.length >= 1) return (
+                            <div className="animate-fade-in-up py-2 text-center text-[11px] font-bold text-zinc-400 dark:text-zinc-500 mb-1">
+                                &apos;{query}&apos; 검색 결과가 없습니다
+                            </div>
+                        );
+                        if (history.length > 0) return (
+                            <div className="animate-fade-in-up overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
+                                <div className="flex items-center justify-between px-3 py-1.5">
+                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">최근 검색</span>
+                                    <button onClick={clearHistory} className="text-[9px] font-bold text-zinc-400 hover:text-rose-500 transition-colors">지우기</button>
+                                </div>
+                                <div className="py-0.5">
+                                    {history.map((h, i) => (
+                                        <SuggestionItem
+                                            key={`hist-${h.name}-${i}`}
+                                            item={h}
+                                            isActive={false}
+                                            onClick={() => selectLocation(h)}
+                                            onMouseEnter={() => {}}
+                                            getLineBadge={getLineBadge}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                        return null;
+                    })()}
 
 
                     {activeTab === "wc" && <WCPanel />}
@@ -616,22 +602,22 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                         <div className="flex flex-col gap-2 mt-0.5 relative">
                             {isLocating && (
                                 <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-10">
-                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-blue-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
+                                    <div className="animate-fade-in-up bg-blue-500 text-white text-[11px] font-black px-4 py-1.5 rounded-full shadow-lg flex items-center gap-2">
                                         <Locate size={12} className="animate-pulse" />
                                         현재 위치 조회 중... {locatingTimer}초
-                                    </motion.div>
+                                    </div>
                                 </div>
                             )}
                             {(externalValidationError || validationError) && (
                                 <div className="absolute -top-10 left-0 right-0 flex justify-center pointer-events-none z-10">
-                                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto">
-                                        {(externalValidationError || validationError) === "source" ? 
-                                            <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</> : 
-                                            (externalValidationError || validationError) === "dest" ? 
-                                            <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</> : 
+                                    <div className="animate-fade-in-up bg-white dark:bg-zinc-800 text-[11px] px-4 py-1.5 rounded-full shadow-lg border border-red-500/20 pointer-events-auto">
+                                        {(externalValidationError || validationError) === "source" ?
+                                            <><span className="text-red-600 font-bold">출발지</span>를 입력해 주세요</> :
+                                            (externalValidationError || validationError) === "dest" ?
+                                            <><span className="text-red-600 font-bold">도착지</span>를 입력해 주세요</> :
                                             <span className="text-red-600 font-black">경로를 찾을 수 없습니다</span>
                                         }
-                                    </motion.div>
+                                    </div>
                                 </div>
                             )}
                             {/* Row 1: 도착지 입력 + [+경유지][바꾸기] 정사각형 버튼 */}
@@ -744,23 +730,15 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                     )}
 
                     <div className="flex items-center gap-2">
-                        <LayoutGroup id="tab-bar">
                         <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl relative">
                             {TABS.map((tab) => (
                                 <button key={tab.id} onClick={() => { hapticLight(); onTabChange(tab.id); }} className={`flex-1 relative flex flex-col items-center justify-center py-1 rounded-lg transition-colors ${activeTab === tab.id ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
-                                    {activeTab === tab.id && (
-                                        <motion.div
-                                            layoutId="tab-indicator"
-                                            className="absolute inset-0 bg-white dark:bg-zinc-800 rounded-lg shadow-sm"
-                                            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                                        />
-                                    )}
+                                    <div className={`absolute inset-0 bg-white dark:bg-zinc-800 rounded-lg shadow-sm transition-opacity duration-200 ${activeTab === tab.id ? 'opacity-100' : 'opacity-0'}`} />
                                     <span className="relative z-10">{tab.icon}</span>
                                     <span className="relative z-10 text-[9px] font-black mt-0.5">{tab.label}</span>
                                 </button>
                             ))}
                         </div>
-                        </LayoutGroup>
                         {activeTab !== "wc" && (
                             <>
                                 <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { hapticLight(); setValidationError("source"); return; } if (!destination) { hapticLight(); setValidationError("dest"); return; } hapticMedium(); onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
@@ -770,7 +748,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                     </div>
 
                     {activeTab === 'bus' && selectedBusStop && (
-                        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative">
+                        <div className="animate-fade-in-up mb-2 p-4 rounded-2xl bg-zinc-100 dark:bg-white/5 border border-black/5 dark:border-white/5 overflow-hidden relative">
                             <div className="absolute top-2 right-2">
                                 <button onClick={() => { hapticLight(); setSelectedBusStop(null); }} className="p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 text-zinc-400 active:scale-90 transition-all">
                                     <X size={14} />
@@ -814,11 +792,11 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     </button>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     )}
 
                     {activeTab === 'bus' && busPathResult && !selectedBusStop && (
-                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-2 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 dark:border-white/5 backdrop-blur-md">
+                        <div className="animate-fade-in-up mt-2 p-4 rounded-2xl bg-white/50 dark:bg-zinc-900/50 border border-white/20 dark:border-white/5 backdrop-blur-md">
                             <div className="flex items-center justify-between mb-3">
                                 <span className="text-[11px] font-black text-emerald-500 uppercase tracking-widest">
                                     {busPathResult.type === 'direct' ? '직행 버스' : '환승 버스'}
@@ -872,10 +850,10 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     <div className="text-[12px] font-black text-zinc-700 dark:text-zinc-200 truncate">{busPathResult.endStop.name}</div>
                                 </div>
                             </div>
-                        </motion.div>
+                        </div>
                     )}
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 });

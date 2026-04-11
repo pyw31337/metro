@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useMemo, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { AnimatePresence, motion } from "framer-motion";
 
-import { SUBWAY_LINES, Station as SubwayStation, getStationByName } from "@/data/subway-lines";
+import type { Station as SubwayStation } from "@/data/subway-lines";
 import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 
 import { useDataWorker }      from "@/hooks/useDataWorker";
@@ -12,10 +11,8 @@ import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
 import { normalizeStationName } from "@/utils/stationUtils";
 import { setMapCenter }         from "@/utils/mapCenter";
 import { findBusPath }         from "@/utils/busRouting";
-import { getCityCodeByCoords } from "@/utils/regionUtils";
 import { hapticSuccess, hapticError } from "@/utils/haptic";
 import { db }                  from "@/services/db";
-import { DataIngestionService } from "@/services/dataIngestion";
 
 import { useRouteStore }  from "@/store/useRouteStore";
 import { useMapStore }    from "@/store/useMapStore";
@@ -141,11 +138,16 @@ export default function Home() {
     return () => { window.removeEventListener('offline', onOffline); window.removeEventListener('online', onOnline); };
   }, []);
 
-  // ── 모든 역 목록 (고유) ──
-  const stations = useMemo(() => {
-    const seen = new Map<string, SubwayStation>();
-    SUBWAY_LINES.forEach(line => line.stations.forEach(s => { if (!seen.has(s.name)) seen.set(s.name, s); }));
-    return Array.from(seen.values());
+  // ── 모든 역 목록 (고유) — 초기 번들에서 제외, 비동기 로드 ──
+  const [stations, setStations] = useState<SubwayStation[]>([]);
+  useEffect(() => {
+    import('@/data/subway-lines').then(({ SUBWAY_LINES }) => {
+      const seen = new Map<string, SubwayStation>();
+      SUBWAY_LINES.forEach((line: any) => line.stations.forEach((s: SubwayStation) => {
+        if (!seen.has(s.name)) seen.set(s.name, s);
+      }));
+      setStations(Array.from(seen.values()));
+    });
   }, []);
 
   // ── activePath computed ──
@@ -382,20 +384,22 @@ export default function Home() {
   // 경로 결과 나오면 지도 자동 fitBounds
   useEffect(() => {
     if (!activePath?.path?.length || !mapRef.current) return;
-    const coords: [number, number][] = [];
-    for (const name of activePath.path) {
-      const s = getStationByName(name);
-      if (s?.lat && s?.lng) coords.push([s.lng, s.lat]);
-    }
-    if (coords.length < 2) return;
-    const minLng = Math.min(...coords.map(c => c[0]));
-    const maxLng = Math.max(...coords.map(c => c[0]));
-    const minLat = Math.min(...coords.map(c => c[1]));
-    const maxLat = Math.max(...coords.map(c => c[1]));
-    mapRef.current.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
-      padding: { top: 80, bottom: 220, left: 40, right: 40 },
-      duration: 1200,
-      maxZoom: 14
+    import('@/data/subway-lines').then(({ getStationByName }) => {
+      const coords: [number, number][] = [];
+      for (const name of activePath.path) {
+        const s = getStationByName(name);
+        if (s?.lat && s?.lng) coords.push([s.lng, s.lat]);
+      }
+      if (coords.length < 2) return;
+      const minLng = Math.min(...coords.map(c => c[0]));
+      const maxLng = Math.max(...coords.map(c => c[0]));
+      const minLat = Math.min(...coords.map(c => c[1]));
+      const maxLat = Math.max(...coords.map(c => c[1]));
+      mapRef.current?.fitBounds([[minLng, minLat], [maxLng, maxLat]], {
+        padding: { top: 80, bottom: 220, left: 40, right: 40 },
+        duration: 1200,
+        maxZoom: 14
+      });
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePath]);
@@ -516,16 +520,8 @@ export default function Home() {
       .where('lat').between(bounds.minLat, bounds.maxLat)
       .and(s => s.lng >= bounds.minLng && s.lng <= bounds.maxLng)
       .limit(1).count();
-    if (count === 0) {
-      const lat = (bounds.minLat + bounds.maxLat) / 2;
-      const lng = (bounds.minLng + bounds.maxLng) / 2;
-      const cityCode = getCityCodeByCoords(lat, lng);
-      if (cityCode) {
-        await DataIngestionService.fetchRegionalBusStops(cityCode);
-        const all = await db.busStops.toArray() as BusStop[];
-        useSubwayStore.getState().setBusStops(all);
-      }
-    }
+    // 정적 데이터(master-bus-stops.json)로 이미 전체 정류장 로드됨 — 동적 fetch 불필요
+    void count;
   }, []);
 
   // Stable callbacks — use getState() for Zustand actions so no subscription needed
@@ -654,41 +650,27 @@ export default function Home() {
       </div>
 
       {/* 날씨 팝업 */}
-      <AnimatePresence>
-        {ui.weatherOpen && (
-          <WeatherPopup
-            onClose={() => ui.setWeatherOpen(false)}
-          />
-        )}
-      </AnimatePresence>
+      {ui.weatherOpen && (
+        <WeatherPopup onClose={() => ui.setWeatherOpen(false)} />
+      )}
 
       {/* 오프라인 알림 배지 */}
-      <AnimatePresence>
-        {isOffline && (
-          <motion.div
-            initial={{ opacity: 0, y: -16 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -16 }}
-            transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none"
-          >
-            오프라인 · 캐시 데이터 사용 중
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {isOffline && (
+        <div className="animate-popup fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none">
+          오프라인 · 캐시 데이터 사용 중
+        </div>
+      )}
 
       {/* 화장실 나침반 - 탭 무관하게 화장실 선택 시 표시 */}
-      <AnimatePresence>
-        {subway.selectedWC && mapSt.userLocation && (
-          <DirectionCompass
-            key={subway.selectedWC.id}
-            userLocation={mapSt.userLocation}
-            targetLocation={[subway.selectedWC.lat, subway.selectedWC.lng]}
-            targetName={subway.selectedWC.name}
-            onClose={() => subway.setSelectedWC(null)}
-          />
-        )}
-      </AnimatePresence>
+      {subway.selectedWC && mapSt.userLocation && (
+        <DirectionCompass
+          key={subway.selectedWC.id}
+          userLocation={mapSt.userLocation}
+          targetLocation={[subway.selectedWC.lat, subway.selectedWC.lng]}
+          targetName={subway.selectedWC.name}
+          onClose={() => subway.setSelectedWC(null)}
+        />
+      )}
     </main>
   );
 }

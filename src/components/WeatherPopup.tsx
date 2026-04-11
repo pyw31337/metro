@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { X, Sun, Cloud, CloudRain, CloudSnow, CloudLightning, Wind } from "lucide-react";
-import { motion } from "framer-motion";
 import { hapticLight } from "@/utils/haptic";
 import { getMapCenter } from "@/utils/mapCenter";
 
@@ -88,12 +87,9 @@ export default function WeatherPopup({ onClose }: WeatherPopupProps) {
 
     return (
         <div className="fixed inset-0 z-[6000] flex items-center justify-center p-4 bg-black/20 backdrop-blur-[2px] pointer-events-auto" onClick={onClose}>
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="w-full max-w-[340px] bg-white/95 dark:bg-zinc-950/90 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/20 dark:border-white/10 shadow-2xl pointer-events-auto"
-                onClick={(e) => e.stopPropagation()}
+            <div
+                className="animate-popup w-full max-w-[340px] bg-white/95 dark:bg-zinc-950/90 backdrop-blur-2xl rounded-[32px] overflow-hidden border border-white/20 dark:border-white/10 shadow-2xl pointer-events-auto"
+                onClick={(e: React.MouseEvent) => e.stopPropagation()}
             >
                 <div className="p-5 flex flex-col gap-4">
                     <div className="flex items-start justify-between">
@@ -155,7 +151,7 @@ export default function WeatherPopup({ onClose }: WeatherPopupProps) {
                         )}
                     </div>
                 </div>
-            </motion.div>
+            </div>
         </div>
     );
 }

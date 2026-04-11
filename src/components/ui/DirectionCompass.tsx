@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
 import { Compass, Navigation2, X } from "lucide-react";
 import { hapticLight } from "@/utils/haptic";
 
@@ -80,11 +79,7 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
     }, [bearing]);
 
     return (
-        <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.9, y: 20 }}
-            className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[1000] w-[260px] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-5"
+        <div className="animate-popup fixed bottom-32 left-1/2 -translate-x-1/2 z-[1000] w-[260px] bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl rounded-3xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] p-5"
         >
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-2">
@@ -109,15 +104,17 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                     {/* Circle Background */}
                     <div className={`w-24 h-24 rounded-full border-2 flex items-center justify-center transition-colors duration-500 ${compassReady ? 'border-blue-200 dark:border-blue-500/30 border-solid' : 'border-dashed border-zinc-200 dark:border-white/10'}`}>
                         {/* The Pointer */}
-                        <motion.div
-                            animate={{ rotate: relativeAngle }}
-                            transition={{ type: "spring", stiffness: 100, damping: 15 }}
+                        <div
+                            style={{
+                                transform: `rotate(${relativeAngle}deg)`,
+                                transition: 'transform 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
+                            }}
                             className="relative w-full h-full flex items-center justify-center"
                         >
                             <div className={`w-1 h-12 rounded-full relative -top-6 transition-opacity duration-300 ${compassReady ? 'opacity-100 bg-gradient-to-t from-blue-500 to-rose-500' : 'opacity-40 bg-gradient-to-t from-zinc-400 to-zinc-600'}`}>
                                 <div className={`absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-b-[10px] -mt-1 ${compassReady ? 'border-b-rose-500' : 'border-b-zinc-600'}`} />
                             </div>
-                        </motion.div>
+                        </div>
                     </div>
 
                     <div className="mt-4 flex flex-col items-center">
@@ -143,6 +140,6 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                         <p className="text-[9px] font-bold text-rose-500">나침반 권한이 거부되었습니다.<br/>브라우저 설정에서 센서 권한을 허용해주세요.</p>
                     </div>
                 )}
-        </motion.div>
+        </div>
     );
 }
