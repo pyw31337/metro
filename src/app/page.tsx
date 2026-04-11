@@ -509,11 +509,16 @@ export default function Home() {
       // Track for real-time bus position overlay
       useSubwayStore.getState().setSelectedBusRoute(resolvedId);
 
-      const path = await MetropolitanBusService.fetchRoutePath(cityCode, resolvedId);
-      if (path) {
-        useSubwayStore.getState().setRoutePathData(path);
-        const coord = path.features[0]?.geometry?.coordinates[0];
-        if (coord) mapRef.current?.flyTo({ center: coord, zoom: 13, duration: 2000 });
+      const result = await MetropolitanBusService.buildRouteWithStops(cityCode, resolvedId);
+      if (result) {
+        useSubwayStore.getState().setRoutePathData(result.geoJSON);
+        if (result.bounds && mapRef.current) {
+          mapRef.current.fitBounds(result.bounds, {
+            padding: { top: 80, bottom: 220, left: 40, right: 40 },
+            duration: 2000,
+            maxZoom: 14,
+          });
+        }
       }
     } catch {}
   }, []);

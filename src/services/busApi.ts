@@ -250,6 +250,195 @@ export class MetropolitanBusService {
   }
 
   /**
+   * Fetch ordered stop list for a route.
+   * Seoul uses ws.bus.go.kr; all others use TAGO getRouteAcctoThrghSttnList.
+   */
+  static async fetchRouteStopsOrdered(
+    cityCode: string,
+    routeId: string
+  ): Promise<{ name: string; lat: number; lng: number; order: number }[]> {
+    const apiKey = process.env.NEXT_PUBLIC_BUS_API_KEY || "";
+    if (!apiKey || apiKey === "sample") return [];
+    try {
+      if (cityCode === "11") {
+        const url = `${this.SEOUL_URL}busRouteInfo/getStaionByRoute?busRouteId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) return [];
+        const json = await res.json();
+        if (json?.ServiceResult?.msgHeader?.headerCd !== "0") return [];
+        const items: any[] = json?.ServiceResult?.msgBody?.itemList || [];
+        return items
+          .map((it: any, i: number) => ({
+            name: String(it.stationNm || ""),
+            lat: parseFloat(it.gpsY),
+            lng: parseFloat(it.gpsX),
+            order: parseInt(String(it.seq || i + 1)),
+          }))
+          .filter(s => !isNaN(s.lat) && !isNaN(s.lng) && s.lat > 0 && s.lng > 0);
+      } else {
+        const url = `${this.TAGO_URL}BusRouteInfoInqireService/getRouteAcctoThrghSttnList?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
+        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) return [];
+        const json = await res.json();
+        const items = json?.response?.body?.items?.item || [];
+        const arr = Array.isArray(items) ? items : [items];
+        return arr
+          .map((it: any) => ({
+            name: String(it.nodenm || ""),
+            lat: parseFloat(it.gpslati),
+            lng: parseFloat(it.gpslong),
+            order: parseInt(String(it.nodeord || "0")),
+          }))
+          .filter(s => !isNaN(s.lat) && !isNaN(s.lng) && s.lat > 0 && s.lng > 0)
+          .sort((a, b) => a.order - b.order);
+      }
+    } catch {
+      return [];
+    }
+  }
+
+  /**
+   * Validate raw [lng, lat] path coordinates:
+   * - Filter points outside Korea
+   * - Split into segments at jumps > 0.05° (~5km)
+   * Returns array of segments (each segment is an array of [lng, lat] pairs).
+   */
+  private static validatePathSegments(coords: [number, number][]): [number, number][][] {
+    const MIN_LAT = 33.0, MAX_LAT = 38.9, MIN_LNG = 124.0, MAX_LNG = 132.0;
+    const MAX_JUMP = 0.05;
+    const valid = coords.filter(
+      c => c[0] >= MIN_LNG && c[0] <= MAX_LNG && c[1] >= MIN_LAT && c[1] <= MAX_LAT
+    );
+    const segments: [number, number][][] = [];
+    let seg: [number, number][] = [];
+    for (const c of valid) {
+      if (seg.length === 0) {
+        seg.push(c);
+      } else {
+        const prev = seg[seg.length - 1];
+        if (Math.abs(c[0] - prev[0]) > MAX_JUMP || Math.abs(c[1] - prev[1]) > MAX_JUMP) {
+          if (seg.length >= 2) segments.push(seg);
+          seg = [c];
+        } else {
+          seg.push(c);
+        }
+      }
+    }
+    if (seg.length >= 2) segments.push(seg);
+    return segments;
+  }
+
+  /**
+   * Build an enriched FeatureCollection combining the validated path and ordered stops.
+   * Features:
+   *   - LineString / MultiLineString  (properties.featureType = "route")
+   *   - Point per stop               (properties.featureType = "stop", isFirst, isLast)
+   */
+  static buildEnrichedRouteGeoJSON(
+    rawPathCoords: [number, number][],  // [lng, lat]
+    stops: { name: string; lat: number; lng: number; order: number }[]
+  ): any {
+    const features: any[] = [];
+
+    // ── Path geometry ──────────────────────────────────────────────────────
+    const segments = this.validatePathSegments(rawPathCoords);
+
+    if (segments.length === 1) {
+      features.push({
+        type: "Feature",
+        geometry: { type: "LineString", coordinates: segments[0] },
+        properties: { featureType: "route" },
+      });
+    } else if (segments.length > 1) {
+      features.push({
+        type: "Feature",
+        geometry: { type: "MultiLineString", coordinates: segments },
+        properties: { featureType: "route" },
+      });
+    } else if (stops.length >= 2) {
+      // No valid path — draw straight lines between stops as fallback
+      features.push({
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: stops.map(s => [s.lng, s.lat] as [number, number]),
+        },
+        properties: { featureType: "route" },
+      });
+    }
+
+    // ── Stop points ────────────────────────────────────────────────────────
+    if (stops.length > 0) {
+      stops.forEach((s, i) => {
+        features.push({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [s.lng, s.lat] },
+          properties: {
+            featureType: "stop",
+            name: s.name,
+            order: i,
+            isFirst: i === 0,
+            isLast: i === stops.length - 1,
+          },
+        });
+      });
+    } else if (segments.length > 0) {
+      // No stop data — synthesise endpoints from path
+      const first = segments[0][0];
+      const lastSeg = segments[segments.length - 1];
+      const last = lastSeg[lastSeg.length - 1];
+      features.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: first },
+        properties: { featureType: "stop", name: "출발", order: 0, isFirst: true, isLast: false },
+      });
+      features.push({
+        type: "Feature",
+        geometry: { type: "Point", coordinates: last },
+        properties: { featureType: "stop", name: "도착", order: 999, isFirst: false, isLast: true },
+      });
+    }
+
+    return { type: "FeatureCollection", features };
+  }
+
+  /**
+   * Fetch path geometry + ordered stops simultaneously, then build an enriched GeoJSON.
+   * Returns { geoJSON, stops, bounds } or null if neither path nor stops are available.
+   */
+  static async buildRouteWithStops(cityCode: string, routeId: string): Promise<{
+    geoJSON: any;
+    stops: { name: string; lat: number; lng: number; order: number }[];
+    bounds: [[number, number], [number, number]] | null;
+  } | null> {
+    const [rawGeoJSON, stops] = await Promise.all([
+      this.fetchRoutePath(cityCode, routeId),
+      this.fetchRouteStopsOrdered(cityCode, routeId).catch(() => [] as { name: string; lat: number; lng: number; order: number }[]),
+    ]);
+
+    // Extract raw [lng, lat] coordinates from the fetched path
+    let rawCoords: [number, number][] = [];
+    if (rawGeoJSON?.features?.[0]?.geometry) {
+      const geom = rawGeoJSON.features[0].geometry;
+      if (geom.type === "LineString") rawCoords = geom.coordinates;
+    }
+
+    if (rawCoords.length === 0 && stops.length === 0) return null;
+
+    const geoJSON = this.buildEnrichedRouteGeoJSON(rawCoords, stops);
+
+    // Compute bounds from stops (authoritative) or from path coords
+    const allLngs = stops.length > 0 ? stops.map(s => s.lng) : rawCoords.map(c => c[0]);
+    const allLats = stops.length > 0 ? stops.map(s => s.lat) : rawCoords.map(c => c[1]);
+    const bounds: [[number, number], [number, number]] | null =
+      allLngs.length > 0
+        ? [[Math.min(...allLngs), Math.min(...allLats)], [Math.max(...allLngs), Math.max(...allLats)]]
+        : null;
+
+    return { geoJSON, stops, bounds };
+  }
+
+  /**
    * Fetch all routes serving a Seoul bus stop (ws.bus.go.kr getRouteByStation)
    * @param arsId Seoul bus stop ID (arsId)
    */
