@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { StationArrival } from '@/types/metro';
-import { fetchStationArrivals, getScheduledArrivalsFromDB } from '@/services/arrivalApi';
+import { fetchStationArrivals, getScheduledArrivalsFromDB, getArrivalsFromScheduleIndex } from '@/services/arrivalApi';
 import { getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { normalizeStationName } from '@/utils/stationUtils';
 
@@ -47,12 +47,19 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
     }
 
     try {
-      // 1. 로컬 DB 예정 데이터 (IndexedDB master-timetables)
+      // 1. 수집된 시간표 인덱스 (subway-schedule-index.json, 1-9호선 458개 역)
+      const indexed = await getArrivalsFromScheduleIndex(cleanName);
+      if (indexed.length > 0 && mountedRef.current) {
+        setArrivals(indexed);
+        setIsLive(false);
+      }
+
+      // 2. 로컬 DB 예정 데이터 (IndexedDB master-timetables, 9개 역)
       const scheduled = await getScheduledArrivalsFromDB(cleanName);
 
       if (scheduled.length > 0 && mountedRef.current) {
         setArrivals(scheduled.slice(0, 6).map(a => ({ ...a, isScheduled: true })));
-        setIsLive(false);
+        setIsLive(false); // IndexedDB가 indexed보다 정확하므로 덮어씀
         const lineScheds: Record<string, ScheduleInfo> = {};
         scheduled.forEach(s => {
           if (s.lineName && !lineScheds[s.lineName]) {
@@ -71,8 +78,8 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
         setArrivals(live);
         setIsLive(true);
         setLastUpdated(Date.now());
-      } else if (scheduled.length === 0 && staticArrivals.length === 0) {
-        // 정적/DB/실시간 모두 실패한 경우에만 에러
+      } else if (scheduled.length === 0 && indexed.length === 0 && staticArrivals.length === 0) {
+        // 정적/인덱스/DB/실시간 모두 실패한 경우에만 에러
         setArrivals([]);
         setError('운행 정보가 없습니다.');
       }

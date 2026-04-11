@@ -5,6 +5,126 @@ import { API_ENDPOINTS } from '@/utils/api-client';
 import { normalizeLineName } from '@/utils/stationUtils';
 import { normStation } from '@/data/stationRegistry';
 
+// ── 지하철 시간표 인덱스 (subway-schedule-index.json) ────────────────────────
+// 서울시 openapi.seoul.go.kr에서 수집한 799개 역-노선 첫차/막차/행선지 데이터
+// (1-9호선 약 458개 역 커버, 코레일 계열 미포함)
+interface ScheduleEntry {
+  first: string;      // 첫차 시각 "HH:MM" (예: "05:22")
+  last:  string|null; // 막차 시각 "HH:MM" 또는 "25:MM" (다음날 새벽)
+  dest:  string;      // 행선지 역명 (예: "동두천")
+  count: number;      // 총 열차 수
+}
+interface ScheduleIndexEntry {
+  name: string; line: string; frCode: string; stationCd: string;
+  week?: Record<string, ScheduleEntry>;
+  sat?:  Record<string, ScheduleEntry>;
+  sun?:  Record<string, ScheduleEntry>;
+}
+type ScheduleIndex = Record<string, ScheduleIndexEntry>;
+
+const _schedBase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
+let _schedIndex: ScheduleIndex | null = null;
+let _schedLoading: Promise<ScheduleIndex> | null = null;
+
+async function getScheduleIndex(): Promise<ScheduleIndex> {
+  if (_schedIndex) return _schedIndex;
+  if (_schedLoading) return _schedLoading;
+  _schedLoading = (async () => {
+    try {
+      const res = await fetch(`${_schedBase}/data/subway-schedule-index.json`,
+        { signal: AbortSignal.timeout(5000) });
+      _schedIndex = res.ok ? await res.json() : {};
+    } catch { _schedIndex = {}; }
+    return _schedIndex!;
+  })();
+  return _schedLoading;
+}
+
+const LINE_HEADWAY_MAP: Record<string, number> = {
+  '1호선': 7, '2호선': 4, '3호선': 6, '4호선': 6, '5호선': 6,
+  '6호선': 7, '7호선': 6, '8호선': 7, '9호선': 6,
+  '수인분당선': 8, '경의중앙선': 18, '경춘선': 18, '공항철도': 12,
+  '신분당선': 9, '신림선': 8, '우이신설선': 8, 'GTX-A': 20,
+};
+
+/**
+ * 수집된 시간표 인덱스를 이용해 StationArrival 배열을 반환합니다.
+ * 1-9호선 역은 실제 첫차/막차/행선지를 사용하고,
+ * 나머지 역은 static 추정치보다 정확한 행선지를 제공합니다.
+ */
+export const getArrivalsFromScheduleIndex = async (
+  stationName: string
+): Promise<StationArrival[]> => {
+  const index = await getScheduleIndex();
+  if (!Object.keys(index).length) return [];
+
+  const clean = normStation(stationName);
+  const now   = new Date();
+  const h     = now.getHours();
+  if (h >= 1 && h < 5) return []; // 운행 종료 시간대
+
+  const dow    = now.getDay();
+  const dayKey = dow === 0 ? 'sun' : dow === 6 ? 'sat' : 'week';
+  const nowSec = h * 3600 + now.getMinutes() * 60 + now.getSeconds();
+
+  const results: StationArrival[] = [];
+
+  for (const [key, entry] of Object.entries(index)) {
+    const entryClean = normStation(entry.name);
+    if (entryClean !== clean && entry.name !== stationName) continue;
+
+    const dayData = (entry as any)[dayKey] as Record<string, ScheduleEntry> | undefined;
+    if (!dayData) continue;
+
+    const freqSec = (LINE_HEADWAY_MAP[entry.line] ?? 10) * 60;
+
+    for (const [dirTag, sched] of Object.entries(dayData)) {
+      if (!sched || !sched.first || !sched.dest) continue;
+
+      // 첫차 시각 → 초
+      const [fh, fm] = sched.first.split(':').map(Number);
+      const firstSec = fh * 3600 + fm * 60;
+
+      // 막차 시각 → 초 (25:xx = 다음날)
+      let lastSec = 23 * 3600 + 59 * 60;
+      if (sched.last) {
+        const [lh, lm] = sched.last.split(':').map(Number);
+        lastSec = lh * 3600 + lm * 60; // 25:xx도 그대로 사용
+      }
+
+      // 현재 시간이 운행 범위 밖이면 스킵
+      if (nowSec < firstSec || nowSec > lastSec) continue;
+
+      // 현재 시간 이후 다음 2편 생성
+      for (let i = 1; i <= 2; i++) {
+        const waitSec = freqSec * i - (nowSec % freqSec);
+        const arrSec  = nowSec + waitSec;
+        if (arrSec > lastSec) break; // 막차 이후는 제외
+
+        const updnLine = dirTag === '1' ? '상행' : '하행';
+        results.push({
+          lineName:    entry.line,
+          subwayId:    '',
+          updnLine,
+          trainLineNm: `${sched.dest}행`,
+          statnNm:     entry.name,
+          arvlMsg2:    waitSec < 60 ? '곧 도착' : `${Math.floor(waitSec / 60)}분 후`,
+          arvlMsg3:    '',
+          arvlCd:      '99',
+          bstatnNm:    sched.dest,
+          barvlDt:     String(waitSec),
+          btrainNo:    '',
+          isScheduled: true,
+        });
+      }
+    }
+  }
+
+  return results
+    .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
+    .slice(0, 8);
+};
+
 // transfer-info: 번들 제외, 첫 사용 시 fetch 후 모듈 캐시
 let _transferDataCache: any[] | null = null;
 async function getTransferData(): Promise<any[]> {
