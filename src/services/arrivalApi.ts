@@ -156,7 +156,7 @@ export const getArrivalsFromScheduleIndex = async (
 
 /**
  * station-arrivals-index.json을 이용해 정확한 열차 시각으로 도착 정보를 반환합니다.
- * 코레일(경의중앙선·수인분당선·경춘선·서해선·경강선·1/3/4호선) 및 인천1/2호선 436개 역 커버.
+ * 서울 1-9호선 + 코레일(경의중앙선·수인분당선·경춘선·서해선·경강선·1/3/4호선) + 인천1/2호선 700+ 역 커버.
  * 실시간 API 대체 목적이므로 getArrivalsFromScheduleIndex보다 정밀합니다.
  */
 export const getArrivalsFromFullTimetable = async (
@@ -172,8 +172,6 @@ export const getArrivalsFromFullTimetable = async (
   if (h >= 1 && h < 5) return []; // 운행 종료 시간대
 
   const dow    = now.getDay();
-  // holiday data covers both Sat and Sun for Korail/Incheon
-  const dayKey = (dow === 0 || dow === 6) ? 'sun' : 'week';
   // After midnight (h === 0), treat current time as 24h+ so "24:30"-style times compare correctly
   const nowMin = h === 0 ? 24 * 60 + now.getMinutes() : h * 60 + now.getMinutes();
 
@@ -188,12 +186,20 @@ export const getArrivalsFromFullTimetable = async (
 
     if (normStation(stnName) !== clean && stnName !== stationName) continue;
 
-    const times = dayData[dayKey] ?? dayData['week'];
+    // Sat: prefer 'sat' (Seoul Metro new data), fall back to 'sun' (Korail/Incheon), then 'week'
+    // Sun: prefer 'sun', fall back to 'week'
+    // Weekday: 'week'
+    const times = dow === 6
+      ? (dayData['sat'] ?? dayData['sun'] ?? dayData['week'])
+      : dow === 0
+        ? (dayData['sun'] ?? dayData['week'])
+        : dayData['week'];
     if (!times) continue;
 
     // Find dest from schedule index
     const idxEntry = schedIdx[key];
-    const weekData = idxEntry?.[dayKey === 'week' ? 'week' : 'sun'] ?? idxEntry?.['week'];
+    const schedDayKey = dow === 6 ? 'sat' : dow === 0 ? 'sun' : 'week';
+    const weekData = idxEntry?.[schedDayKey] ?? idxEntry?.['week'];
 
     for (const [dirTag, trainTimes] of Object.entries(times)) {
       if (!trainTimes || trainTimes.length === 0) continue;
