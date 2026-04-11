@@ -121,37 +121,49 @@ const SubwayLayers = ({
       </Source>
 
       <Source id="subway-stations" type="geojson" data={subwayData.stations}>
-        {/* 선택된 역 강조 링 (바탕 레이어) */}
+        {/* 투명 히트 영역 — 쉽게 탭할 수 있도록 실제 원보다 넓게 */}
+        <Layer
+          id="subway-station-hit"
+          type="circle"
+          layout={{ "visibility": vis }}
+          paint={{
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 14, 12, 18, 14, 22, 16, 26],
+            "circle-color": "transparent",
+            "circle-opacity": 0,
+          }}
+        />
+
+        {/* 선택된 역 강조 링 */}
         <Layer
           id="subway-station-selected-ring"
           type="circle"
           filter={['==', ['get', 'name'], selectedStationName ?? '']}
           layout={{ "visibility": vis }}
           paint={{
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 6, 12, 10, 14, 16, 16, 20],
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 8, 12, 12, 14, 17, 16, 22],
             "circle-color": "transparent",
-            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 14, 3.5],
+            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 2, 14, 3],
             "circle-stroke-color": ["get", ["at", 0, ["get", "lineColors"]]],
             "circle-opacity": 0,
-            "circle-stroke-opacity": 0.5,
+            "circle-stroke-opacity": 0.45,
           }}
         />
 
-        {/* 역 점 */}
+        {/* 역 점 — 노선 색 채움, 흰색 테두리로 분리 */}
         <Layer
           id="subway-station-circle"
           type="circle"
           layout={{ "visibility": vis }}
           paint={{
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 12, 4, 14, 7, 16, 9],
-            "circle-color": "white",
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 12, 5, 14, 8, 16, 10],
+            "circle-color": stationStrokeColor,
             "circle-stroke-width": [
               "case",
               ["==", ["get", "name"], selectedStationName ?? ''],
-              ["interpolate", ["linear"], ["zoom"], 12, 3, 14, 4.5, 16, 5.5],
-              ["interpolate", ["linear"], ["zoom"], 12, 1.5, 14, 2.5, 16, 3],
+              ["interpolate", ["linear"], ["zoom"], 12, 2.5, 14, 3.5, 16, 4.5],
+              ["interpolate", ["linear"], ["zoom"], 10, 1, 12, 1.5, 14, 2, 16, 2.5],
             ],
-            "circle-stroke-color": stationStrokeColor,
+            "circle-stroke-color": isDarkMode ? "#1a1a2e" : "#ffffff",
           }}
         />
 

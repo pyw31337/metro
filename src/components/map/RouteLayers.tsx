@@ -43,10 +43,11 @@ const RouteLayers = ({
       {/* Path Line Layer */}
       {pathLineData.features.length > 0 && (
         <Source id="path-result" type="geojson" data={pathLineData}>
-          {/* 외곽 흰색 casing — 배경 노선과 확실히 구분 */}
+          {/* 외곽 흰색 casing — 역 마커 아래에 위치 */}
           <Layer
             id="path-line-casing"
             type="line"
+            beforeId="subway-station-circle"
             layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
               "line-color": "#ffffff",
@@ -54,10 +55,11 @@ const RouteLayers = ({
               "line-opacity": 0.9
             }}
           />
-          {/* 내부 색상 선 */}
+          {/* 내부 색상 선 — casing 위, 역 마커 아래 */}
           <Layer
             id="path-line-solid"
             type="line"
+            beforeId="subway-station-circle"
             layout={{ "line-join": "round", "line-cap": "round" }}
             paint={{
               "line-color": ["get", "color"],

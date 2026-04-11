@@ -73,7 +73,7 @@ const SUBWAY_GEOJSON = convertSubwayToGeoJSON();
 
 // Module-level constant — prevents new array reference on every render, preserving memo(MapBase)
 const INTERACTIVE_LAYER_IDS = [
-    'subway-station-circle', 'subway-station-label',
+    'subway-station-hit', 'subway-station-circle', 'subway-station-label',
     'subway-line-layer', 'subway-line-interaction',
     'bus-unclustered', 'bus-unclustered-hitbox', 'bus-clusters', 'bus-station-label',
     'train-layer',
@@ -325,7 +325,7 @@ function MapLibreBackground(props: MapLibreProps) {
             return;
         }
 
-        if (feature.layer.id === 'subway-station-circle' || feature.layer.id === 'subway-station-label') {
+        if (['subway-station-hit', 'subway-station-circle', 'subway-station-label'].includes(feature.layer.id)) {
             const name = feature.properties.name;
             const lines = typeof feature.properties.lines === 'string' ? JSON.parse(feature.properties.lines) : feature.properties.lines;
             onStationClick?.(name, [coords.lat, coords.lng]);
