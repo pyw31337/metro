@@ -93,13 +93,22 @@ export const getArrivalsFromScheduleIndex = async (
       }
 
       // 현재 시간이 운행 범위 밖이면 스킵
-      if (nowSec < firstSec || nowSec > lastSec) continue;
+      // lastSec > 24*3600 이면 다음날 새벽까지 운행 (25:xx, 00:xx)
+      const midnightSec = 24 * 3600;
+      const isRunning = nowSec >= firstSec && (
+        lastSec >= midnightSec             // 자정 이후까지 운행 → 항상 포함
+          ? nowSec < lastSec               // 현재가 막차 전
+          : nowSec <= lastSec              // 자정 이전 종료 노선
+      );
+      if (!isRunning) continue;
+
+      const isEstimated = (sched as any).count === -1; // 코레일·경전철 추정치
 
       // 현재 시간 이후 다음 2편 생성
       for (let i = 1; i <= 2; i++) {
         const waitSec = freqSec * i - (nowSec % freqSec);
         const arrSec  = nowSec + waitSec;
-        if (arrSec > lastSec) break; // 막차 이후는 제외
+        if (arrSec > lastSec && lastSec < midnightSec) break; // 자정 이전 종료 시 막차 이후 제외
 
         const updnLine = dirTag === '1' ? '상행' : '하행';
         results.push({
@@ -109,7 +118,7 @@ export const getArrivalsFromScheduleIndex = async (
           trainLineNm: `${sched.dest}행`,
           statnNm:     entry.name,
           arvlMsg2:    waitSec < 60 ? '곧 도착' : `${Math.floor(waitSec / 60)}분 후`,
-          arvlMsg3:    '',
+          arvlMsg3:    isEstimated ? '(배차간격 추정)' : '',
           arvlCd:      '99',
           bstatnNm:    sched.dest,
           barvlDt:     String(waitSec),
