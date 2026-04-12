@@ -88,7 +88,7 @@ export class MetropolitanBusService {
         const items = json?.response?.body?.busArrivalItem || [];
         const arr = Array.isArray(items) ? items : [items];
         return arr.map((it: any) => ({
-          routeNo: "정보없음", // GBIS arrival doesn't always include route number in this endpoint
+          routeNo: String(it.routeNm || it.routeNo || it.rtNm || ""),
           routeId: String(it.routeId || ""),
           arrivalTime: parseInt(it.predictTime1 || "0") * 60, // GBIS returns minutes
           remainStops: parseInt(it.locationNo1 || "0"),

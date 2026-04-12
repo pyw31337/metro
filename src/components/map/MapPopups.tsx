@@ -16,6 +16,7 @@ import { useBusArrivals } from "@/hooks/useBusArrivals";
 import { useStopRoutes } from "@/hooks/useStopRoutes";
 import { useBusRouteInfo } from "@/hooks/useBusRouteInfo";
 import { useStationFacilities } from "@/hooks/useStationFacilities";
+import { useStationAddress, formatShortAddress } from "@/hooks/useStationAddress";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 
@@ -86,7 +87,7 @@ const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, addr
 // ── 선택된 노선의 운행 정보 카드 ───────────────────────────────────
 const RouteScheduleCard = ({ routeId, cityCode, arsId }: { routeId: string; cityCode: string; arsId?: string }) => {
   const { info, loading } = useBusRouteInfo(routeId, cityCode, arsId);
-  if (loading) return <div className="text-[10px] text-zinc-400 animate-pulse py-1">시간표 로딩중...</div>;
+  if (loading) return null;
   if (!info) return null;
   return (
     <div className="mt-1.5 p-2 rounded-xl bg-zinc-50 dark:bg-white/5 border border-zinc-100 dark:border-white/5 space-y-1">
@@ -128,6 +129,16 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
   const { routes, loading: routeLoading } = useStopRoutes(stopId, cityCode);
   const [selectedRoute, setSelectedRoute] = useState<{ no: string; id: string; cityCode: string } | null>(null);
 
+  // GBIS arrival API가 routeNo를 반환하지 않는 경우 routes 목록으로 보완
+  const enrichedArrivals = useMemo(() => {
+    if (!arrivals.some((a: any) => !a.routeNo)) return arrivals;
+    const routeMap = new Map(routes.map(r => [r.id, r.no]));
+    return arrivals.map((bus: any) => ({
+      ...bus,
+      routeNo: bus.routeNo || routeMap.get(bus.routeId) || bus.routeId?.slice(-4) || "?",
+    }));
+  }, [arrivals, routes]);
+
   const handleRouteClick = useCallback((no: string, city: string, id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setSelectedRoute(prev => (prev?.id === id ? null : { no, id, cityCode: city }));
@@ -137,12 +148,12 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
   // ── 도착 정보 ────────────────────────────────────────────────────
   const arrivalSection = (() => {
     if (arrLoading) return <div className="py-3 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
-    if (arrivals.length === 0) return null;
+    if (enrichedArrivals.length === 0) return null;
     return (
       <div className="space-y-1.5">
         <h4 className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">실시간 도착</h4>
         <div className="space-y-1.5 max-h-[160px] overflow-y-auto no-scrollbar">
-          {arrivals.map((bus: any, idx: number) => {
+          {enrichedArrivals.map((bus: any, idx: number) => {
             const style = getBusRouteStyle(bus.routeNo);
             const isSelected = selectedRoute?.id === bus.routeId;
             return (
@@ -202,7 +213,7 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
     );
   })();
 
-  if (!arrLoading && arrivals.length === 0 && !routeLoading && routes.length === 0) {
+  if (!arrLoading && enrichedArrivals.length === 0 && !routeLoading && routes.length === 0) {
     return <div className="py-3 text-center text-[11px] text-zinc-400">도착/노선 정보가 없습니다.</div>;
   }
 
@@ -256,6 +267,8 @@ const MapPopups = ({
   }, [routeSegments, selectedStationName]);
   const { data: realTimeCongestion } = useCongestion(selectedStationName);
   const stationFacilities = useStationFacilities(activeTab === 'subway' ? selectedStationName : null);
+  const stationAddr = useStationAddress(activeTab === 'subway' ? selectedStationName : null);
+  const stationAddrText = formatShortAddress(stationAddr);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -307,16 +320,21 @@ const MapPopups = ({
                 onPointerDown={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                        <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[150px]">
-                            {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
-                        </h3>
-                        {activeTab === 'subway' && (
-                            arrivalLoading
-                                ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
-                                : isLiveArrival
-                                    ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    : <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" />
+                    <div className="flex flex-col gap-0.5 overflow-hidden min-w-0">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[150px]">
+                                {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
+                            </h3>
+                            {activeTab === 'subway' && (
+                                arrivalLoading
+                                    ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
+                                    : isLiveArrival
+                                        ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                        : <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" />
+                            )}
+                        </div>
+                        {activeTab === 'subway' && stationAddrText && (
+                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">{stationAddrText}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">

@@ -1,0 +1,5370 @@
+{
+  "녹양": {
+    "road": "평화로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11684"
+  },
+  "남영": {
+    "road": "청파로",
+    "suburb": "원효로1동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04313"
+  },
+  "용산": {
+    "road": "한강대로21나길",
+    "suburb": "한강로동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04378"
+  },
+  "노량진": {
+    "road": "노량진로",
+    "suburb": "노량진1동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06902"
+  },
+  "대방": {
+    "road": "대방지하차도",
+    "suburb": "신길7동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06938"
+  },
+  "영등포": {
+    "road": "영등포고가차도",
+    "suburb": "영등포본동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07366"
+  },
+  "신도림": {
+    "road": "",
+    "suburb": "구로5동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08288"
+  },
+  "회기": {
+    "road": "망우로21길",
+    "suburb": "휘경1동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02494"
+  },
+  "외대앞": {
+    "road": "휘경로11길",
+    "suburb": "이문2동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02427"
+  },
+  "신이문": {
+    "road": "",
+    "suburb": "이문1동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02409"
+  },
+  "광운대": {
+    "road": "석계로",
+    "suburb": "월계1동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01886"
+  },
+  "월계": {
+    "road": "월계로53길",
+    "suburb": "월계2동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01864"
+  },
+  "녹천": {
+    "road": "마들로5길",
+    "suburb": "월계2동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01423"
+  },
+  "창동": {
+    "road": "마들로11가길",
+    "suburb": "창4동",
+    "borough": "도봉구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01411"
+  },
+  "신길": {
+    "road": "영등포로57길",
+    "suburb": "신길1동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07317"
+  },
+  "석계": {
+    "road": "북부간선도로",
+    "suburb": "석관동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01914"
+  },
+  "봉명": {
+    "road": "순천향3길",
+    "suburb": "쌍용동",
+    "borough": "동남구",
+    "district": "",
+    "city": "천안시",
+    "postcode": "31151"
+  },
+  "쌍용": {
+    "road": "",
+    "suburb": "쌍용2동",
+    "borough": "서북구",
+    "district": "",
+    "city": "천안시",
+    "postcode": "31174"
+  },
+  "아산": {
+    "road": "아산역로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "아산시",
+    "postcode": "31470"
+  },
+  "배방": {
+    "road": "한내로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "아산시",
+    "postcode": "31480"
+  },
+  "온양온천": {
+    "road": "온양온천역광장",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "아산시",
+    "postcode": "31514"
+  },
+  "신창": {
+    "road": "행목로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "아산시",
+    "postcode": "31533"
+  },
+  "구로": {
+    "road": "경인로",
+    "suburb": "",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08213"
+  },
+  "가산디지털단지": {
+    "road": "",
+    "suburb": "가산동",
+    "borough": "금천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08502"
+  },
+  "금천구청": {
+    "road": "서해안고속도로",
+    "suburb": "독산1동",
+    "borough": "금천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "14324"
+  },
+  "관악": {
+    "road": "만안로",
+    "suburb": "",
+    "borough": "만안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "13960"
+  },
+  "안양": {
+    "road": "일번가지하쇼핑몰",
+    "suburb": "",
+    "borough": "만안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "13992"
+  },
+  "명학": {
+    "road": "만안로",
+    "suburb": "",
+    "borough": "만안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "14033"
+  },
+  "금정": {
+    "road": "공단로",
+    "suburb": "",
+    "borough": "금정동",
+    "district": "",
+    "city": "군포시",
+    "postcode": "15827"
+  },
+  "의왕": {
+    "road": "의왕역회전교차로",
+    "suburb": "",
+    "borough": "부곡동",
+    "district": "",
+    "city": "의왕시",
+    "postcode": "16088"
+  },
+  "성균관대": {
+    "road": "율전고가교",
+    "suburb": "",
+    "borough": "장안구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16357"
+  },
+  "석수": {
+    "road": "연현로",
+    "suburb": "",
+    "borough": "만안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "08641"
+  },
+  "화서": {
+    "road": "덕영대로",
+    "suburb": "",
+    "borough": "팔달구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16432"
+  },
+  "수원": {
+    "road": "",
+    "suburb": "",
+    "borough": "권선구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16622"
+  },
+  "독산": {
+    "road": "범안로",
+    "suburb": "가산동",
+    "borough": "금천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08587"
+  },
+  "세류": {
+    "road": "정조로",
+    "suburb": "",
+    "borough": "권선구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16658"
+  },
+  "병점": {
+    "road": "택시 전용로",
+    "suburb": "",
+    "borough": "병점구",
+    "district": "",
+    "city": "화성시",
+    "postcode": "18412"
+  },
+  "세마": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "오산시",
+    "postcode": "18106"
+  },
+  "오산대": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "오산시",
+    "postcode": "18114"
+  },
+  "송탄": {
+    "road": "송탄1로",
+    "suburb": "송탄",
+    "borough": "",
+    "district": "",
+    "city": "평택시",
+    "postcode": "17760"
+  },
+  "서정리": {
+    "road": "반성마을길",
+    "suburb": "송탄",
+    "borough": "",
+    "district": "",
+    "city": "평택시",
+    "postcode": "17783"
+  },
+  "평택": {
+    "road": "원평로52번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "평택시",
+    "postcode": "17917"
+  },
+  "성환": {
+    "road": "",
+    "suburb": "",
+    "borough": "서북구",
+    "district": "",
+    "city": "천안시",
+    "postcode": "31016"
+  },
+  "직산": {
+    "road": "천안대로",
+    "suburb": "",
+    "borough": "서북구",
+    "district": "",
+    "city": "천안시",
+    "postcode": "31050"
+  },
+  "두정": {
+    "road": "",
+    "suburb": "",
+    "borough": "서북구",
+    "district": "",
+    "city": "천안시",
+    "postcode": "31114"
+  },
+  "천안": {
+    "road": "",
+    "suburb": "",
+    "borough": "동남구",
+    "district": "",
+    "city": "천안시",
+    "postcode": "31144"
+  },
+  "광명": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "광명시",
+    "postcode": "14345"
+  },
+  "개봉": {
+    "road": "남부순환로97길",
+    "suburb": "개봉2동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08277"
+  },
+  "오류동": {
+    "road": "서해안로",
+    "suburb": "오류2동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08272"
+  },
+  "역곡": {
+    "road": "역곡로1번길",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14673"
+  },
+  "군포": {
+    "road": "군포역1길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "군포시",
+    "postcode": "15860"
+  },
+  "당정": {
+    "road": "당정역로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "군포시",
+    "postcode": "15851"
+  },
+  "서동탄": {
+    "road": "외삼미로15번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "오산시",
+    "postcode": "18428"
+  },
+  "부천": {
+    "road": "자유로",
+    "suburb": "",
+    "borough": "소사구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14716"
+  },
+  "송내": {
+    "road": "송내대로",
+    "suburb": "",
+    "borough": "소사구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14742"
+  },
+  "부평": {
+    "road": "동수북로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21404"
+  },
+  "백운": {
+    "road": "마장로55번길",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21405"
+  },
+  "주안": {
+    "road": "염창로",
+    "suburb": "주안5동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22129"
+  },
+  "제물포": {
+    "road": "경인로",
+    "suburb": "숭의4동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22164"
+  },
+  "동인천": {
+    "road": "중앙로",
+    "suburb": "송현동",
+    "borough": "동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22554"
+  },
+  "인천": {
+    "road": "제물량로",
+    "suburb": "북성동",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22312"
+  },
+  "구일": {
+    "road": "서부간선지하도로",
+    "suburb": "구로2동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08212"
+  },
+  "소사": {
+    "road": "소사로276번길",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14660"
+  },
+  "부개": {
+    "road": "경인로1083번길",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "14741"
+  },
+  "간석": {
+    "road": "석산로",
+    "suburb": "주안6동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22143"
+  },
+  "도원": {
+    "road": "참외전로",
+    "suburb": "도원동",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22103"
+  },
+  "온수": {
+    "road": "경인로577번길",
+    "suburb": "수궁동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "14779"
+  },
+  "중동": {
+    "road": "Jungdong-ro",
+    "suburb": "",
+    "borough": "소사구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14721"
+  },
+  "오산": {
+    "road": "역광장로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "오산시",
+    "postcode": "18137"
+  },
+  "진위": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "평택시",
+    "postcode": "17714"
+  },
+  "동암": {
+    "road": "동암광장로12번길",
+    "suburb": "십정동",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21445"
+  },
+  "도화": {
+    "road": "숙골로24번길",
+    "suburb": "도화1동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22102"
+  },
+  "방학": {
+    "road": "도봉로150가길",
+    "suburb": "방학1동",
+    "borough": "도봉구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01332"
+  },
+  "도봉": {
+    "road": "도봉로152가길",
+    "suburb": "도봉2동",
+    "borough": "도봉구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01307"
+  },
+  "도봉산": {
+    "road": "도봉로",
+    "suburb": "도봉2동",
+    "borough": "도봉구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01318"
+  },
+  "망월사": {
+    "road": "",
+    "suburb": "",
+    "borough": "호원1동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11712"
+  },
+  "회룡": {
+    "road": "회룡천 자전거길",
+    "suburb": "",
+    "borough": "호원2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11637"
+  },
+  "의정부": {
+    "road": "의정부역지하차도",
+    "suburb": "",
+    "borough": "의정부1동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11696"
+  },
+  "가능": {
+    "road": "신촌로84번길",
+    "suburb": "",
+    "borough": "의정부1동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11678"
+  },
+  "양주": {
+    "road": "",
+    "suburb": "",
+    "borough": "남방동",
+    "district": "",
+    "city": "양주시",
+    "postcode": "11501"
+  },
+  "덕계": {
+    "road": "덕계로4길",
+    "suburb": "회천신도시",
+    "borough": "",
+    "district": "",
+    "city": "양주시",
+    "postcode": "11444"
+  },
+  "덕정": {
+    "road": "화합로",
+    "suburb": "회천신도시",
+    "borough": "",
+    "district": "",
+    "city": "양주시",
+    "postcode": "11450"
+  },
+  "지행": {
+    "road": "지행로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "동두천시",
+    "postcode": "11362"
+  },
+  "동두천중앙": {
+    "road": "평화로2397번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "동두천시",
+    "postcode": "11330"
+  },
+  "동두천": {
+    "road": "원터강변로41번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "동두천시",
+    "postcode": "11324"
+  },
+  "보산": {
+    "road": "중앙로361번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "동두천시",
+    "postcode": "11311"
+  },
+  "종로3가": {
+    "road": "돈화문로",
+    "suburb": "종로3가",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03134"
+  },
+  "종로5가": {
+    "road": "종로",
+    "suburb": "종로5·6가동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03129"
+  },
+  "동대문": {
+    "road": "종로",
+    "suburb": "창신1동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03106"
+  },
+  "신설동": {
+    "road": "천호대로",
+    "suburb": "용신동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02582"
+  },
+  "제기동": {
+    "road": "왕산로",
+    "suburb": "용신동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02566"
+  },
+  "청량리": {
+    "road": "청량문화광장",
+    "suburb": "전농1동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02490"
+  },
+  "동묘앞": {
+    "road": "종로56길",
+    "suburb": "숭인2동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03114"
+  },
+  "소요산": {
+    "road": "봉동로6번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "동두천시",
+    "postcode": "11307"
+  },
+  "지제": {
+    "road": "경기대로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "평택시",
+    "postcode": "17840"
+  },
+  "서울": {
+    "road": "후암로",
+    "suburb": "회현동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04637"
+  },
+  "시청": {
+    "road": "을지로지하상가",
+    "suburb": "소공동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04524"
+  },
+  "종각": {
+    "road": "종로",
+    "suburb": "종로1가",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03158"
+  },
+  "강변": {
+    "road": "강변역로",
+    "suburb": "구의3동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05116"
+  },
+  "잠실나루": {
+    "road": "",
+    "suburb": "잠실6동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05504"
+  },
+  "잠실": {
+    "road": "올림픽로",
+    "suburb": "잠실6동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05551"
+  },
+  "잠실새내": {
+    "road": "올림픽로",
+    "suburb": "잠실3동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05502"
+  },
+  "종합운동장": {
+    "road": "올림픽로",
+    "suburb": "잠실7동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05500"
+  },
+  "삼성": {
+    "road": "테헤란로",
+    "suburb": "대치2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06181"
+  },
+  "선릉": {
+    "road": "선릉로",
+    "suburb": "삼성2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06212"
+  },
+  "역삼": {
+    "road": "테헤란로",
+    "suburb": "역삼1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06133"
+  },
+  "강남": {
+    "road": "강남대로",
+    "suburb": "서초2동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06620"
+  },
+  "교대": {
+    "road": "서초중앙로22길",
+    "suburb": "서초1동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06633"
+  },
+  "방배": {
+    "road": "효령로",
+    "suburb": "방배1동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06686"
+  },
+  "사당": {
+    "road": "사당고가차도",
+    "suburb": "방배2동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06693"
+  },
+  "낙성대": {
+    "road": "남부순환로",
+    "suburb": "인헌동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08793"
+  },
+  "서울대입구": {
+    "road": "관악로",
+    "suburb": "행운동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08787"
+  },
+  "봉천": {
+    "road": "남부순환로",
+    "suburb": "청룡동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08757"
+  },
+  "신림": {
+    "road": "신림로",
+    "suburb": "서원동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08754"
+  },
+  "신대방": {
+    "road": "도림천 자전거길",
+    "suburb": "신사동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08377"
+  },
+  "구로디지털단지": {
+    "road": "도림천 자전거길",
+    "suburb": "구로3동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08377"
+  },
+  "문래": {
+    "road": "당산로",
+    "suburb": "문래동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07298"
+  },
+  "영등포구청": {
+    "road": "당산로27길",
+    "suburb": "당산1동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07261"
+  },
+  "용답": {
+    "road": "용답길",
+    "suburb": "용답동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04805"
+  },
+  "신정네거리": {
+    "road": "중앙로",
+    "suburb": "신정3동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08085"
+  },
+  "을지로입구": {
+    "road": "을지로",
+    "suburb": "명동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04533"
+  },
+  "을지로3가": {
+    "road": "을지로지하상가",
+    "suburb": "을지로동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04549"
+  },
+  "을지로4가": {
+    "road": "창경궁로",
+    "suburb": "을지로동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04545"
+  },
+  "동대문역사문화공원": {
+    "road": "장충단로",
+    "suburb": "광희동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04564"
+  },
+  "신당": {
+    "road": "퇴계로81길",
+    "suburb": "19통",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04570"
+  },
+  "한양대": {
+    "road": "왕십리로",
+    "suburb": "",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04763"
+  },
+  "뚝섬": {
+    "road": "아차산로",
+    "suburb": "성수1가2동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04789"
+  },
+  "성수": {
+    "road": "아차산로",
+    "suburb": "성수2가3동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04794"
+  },
+  "건대입구": {
+    "road": "동일로22길",
+    "suburb": "모진동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05019"
+  },
+  "구의": {
+    "road": "아차산로",
+    "suburb": "자양2동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05044"
+  },
+  "당산": {
+    "road": "당산로",
+    "suburb": "당산2동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07222"
+  },
+  "합정": {
+    "road": "양화로",
+    "suburb": "합정동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04045"
+  },
+  "홍대입구": {
+    "road": "홍익로6길",
+    "suburb": "서교동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04051"
+  },
+  "신촌": {
+    "road": "백범로",
+    "suburb": "19통",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04058"
+  },
+  "이대": {
+    "road": "신촌로",
+    "suburb": "11통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03774"
+  },
+  "아현": {
+    "road": "신촌로",
+    "suburb": "아현동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04116"
+  },
+  "충정로": {
+    "road": "서소문로",
+    "suburb": "충현동",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04506"
+  },
+  "신답": {
+    "road": "천호대로",
+    "suburb": "용답동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02597"
+  },
+  "까치산": {
+    "road": "강서로",
+    "suburb": "화곡8동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07757"
+  },
+  "서초": {
+    "road": "서초대로",
+    "suburb": "서초3동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06646"
+  },
+  "왕십리": {
+    "road": "",
+    "suburb": "행당1동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04751"
+  },
+  "상왕십리": {
+    "road": "왕십리로",
+    "suburb": "왕십리2동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04710"
+  },
+  "대림": {
+    "road": "도림천로",
+    "suburb": "대림3동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07419"
+  },
+  "도림천": {
+    "road": "경인로67길",
+    "suburb": "",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08201"
+  },
+  "양천구청": {
+    "road": "목동로3길",
+    "suburb": "신정7동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08102"
+  },
+  "용두": {
+    "road": "고산자로",
+    "suburb": "용신동",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02565"
+  },
+  "양재": {
+    "road": "강남대로",
+    "suburb": "양재1동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06267"
+  },
+  "매봉": {
+    "road": "남부순환로",
+    "suburb": "도곡1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06274"
+  },
+  "도곡": {
+    "road": "선릉로",
+    "suburb": "대치1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06289"
+  },
+  "대치": {
+    "road": "남부순환로",
+    "suburb": "대치2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06284"
+  },
+  "학여울": {
+    "road": "남부순환로",
+    "suburb": "대치2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06286"
+  },
+  "대청": {
+    "road": "일원로",
+    "suburb": "일원1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06334"
+  },
+  "일원": {
+    "road": "광평로",
+    "suburb": "일원본동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06361"
+  },
+  "수서": {
+    "road": "광평로",
+    "suburb": "",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06367"
+  },
+  "동대입구": {
+    "road": "동호로",
+    "suburb": "장충동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04606"
+  },
+  "금호": {
+    "road": "동호로",
+    "suburb": "금호4가동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04724"
+  },
+  "옥수": {
+    "road": "뚝섬로",
+    "suburb": "",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04739"
+  },
+  "압구정": {
+    "road": "논현로",
+    "suburb": "가로수길",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06022"
+  },
+  "신사": {
+    "road": "도산대로",
+    "suburb": "신사동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06039"
+  },
+  "잠원": {
+    "road": "잠원로4길",
+    "suburb": "잠원동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06519"
+  },
+  "고속터미널": {
+    "road": "신반포로",
+    "suburb": "반포4동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06545"
+  },
+  "남부터미널": {
+    "road": "효령로",
+    "suburb": "서초3동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06717"
+  },
+  "경복궁": {
+    "road": "사직로",
+    "suburb": "사직동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03170"
+  },
+  "안국": {
+    "road": "율곡로",
+    "suburb": "종로1·2·3·4가동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03060"
+  },
+  "지축": {
+    "road": "지효로",
+    "suburb": "효자동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10585"
+  },
+  "구파발": {
+    "road": "진관2로",
+    "suburb": "진관동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03306"
+  },
+  "연신내": {
+    "road": "통일로",
+    "suburb": "갈현1동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03350"
+  },
+  "불광": {
+    "road": "통일로",
+    "suburb": "대조동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03397"
+  },
+  "녹번": {
+    "road": "통일로",
+    "suburb": "녹번동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03372"
+  },
+  "홍제": {
+    "road": "통일로",
+    "suburb": "홍제1동",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03639"
+  },
+  "무악재": {
+    "road": "통일로",
+    "suburb": "홍제1동",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03635"
+  },
+  "독립문": {
+    "road": "통일로",
+    "suburb": "",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03030"
+  },
+  "가락시장": {
+    "road": "중대로",
+    "suburb": "가락1동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05833"
+  },
+  "경찰병원": {
+    "road": "자전거 전용",
+    "suburb": "가락2동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05824"
+  },
+  "오금": {
+    "road": "오금로",
+    "suburb": "가락본동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05701"
+  },
+  "원당": {
+    "road": "충장로",
+    "suburb": "성사1동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10465"
+  },
+  "대곡": {
+    "road": "중앙로",
+    "suburb": "능곡동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10456"
+  },
+  "백석": {
+    "road": "일산로",
+    "suburb": "백석2동",
+    "borough": "일산동구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10447"
+  },
+  "마두": {
+    "road": "중앙로",
+    "suburb": "장항2동",
+    "borough": "일산동구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10414"
+  },
+  "정발산": {
+    "road": "중앙로",
+    "suburb": "장항2동",
+    "borough": "일산동구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10409"
+  },
+  "주엽": {
+    "road": "중앙로",
+    "suburb": "주엽1동",
+    "borough": "일산서구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10388"
+  },
+  "대화": {
+    "road": "중앙로",
+    "suburb": "",
+    "borough": "일산서구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10376"
+  },
+  "원흥": {
+    "road": "원흥1로",
+    "suburb": "삼송2동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10560"
+  },
+  "삼송": {
+    "road": "동송로",
+    "suburb": "삼송1동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10591"
+  },
+  "약수": {
+    "road": "다산로",
+    "suburb": "약수동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04597"
+  },
+  "충무로": {
+    "road": "퇴계로",
+    "suburb": "필동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04625"
+  },
+  "화정": {
+    "road": "화정로",
+    "suburb": "화정2동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10497"
+  },
+  "남태령": {
+    "road": "과천대로",
+    "suburb": "방배2동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08810"
+  },
+  "당고개": {
+    "road": "상계로",
+    "suburb": "상계3·4동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01633"
+  },
+  "상계": {
+    "road": "당현천 자전거길",
+    "suburb": "중계4동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01662"
+  },
+  "노원": {
+    "road": "노해로79길",
+    "suburb": "상계2동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01695"
+  },
+  "쌍문": {
+    "road": "도봉로",
+    "suburb": "창1동",
+    "borough": "도봉구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01453"
+  },
+  "수유": {
+    "road": "도봉로",
+    "suburb": "번1동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01074"
+  },
+  "미아": {
+    "road": "도봉로",
+    "suburb": "송천동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01171"
+  },
+  "미아사거리": {
+    "road": "도봉로",
+    "suburb": "송중동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01171"
+  },
+  "길음": {
+    "road": "",
+    "suburb": "길음1동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02735"
+  },
+  "성신여대입구": {
+    "road": "동소문로",
+    "suburb": "삼선동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02830"
+  },
+  "한성대입구": {
+    "road": "동소문로",
+    "suburb": "삼선동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02833"
+  },
+  "혜화": {
+    "road": "대학로11길",
+    "suburb": "이화동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03079"
+  },
+  "명동": {
+    "road": "퇴계로",
+    "suburb": "명동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04629"
+  },
+  "회현": {
+    "road": "퇴계로",
+    "suburb": "회현동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04529"
+  },
+  "숙대입구": {
+    "road": "한강대로",
+    "suburb": "남영동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04321"
+  },
+  "삼각지": {
+    "road": "한강대로",
+    "suburb": "한강로동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04375"
+  },
+  "신용산": {
+    "road": "한강대로",
+    "suburb": "한강로동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04386"
+  },
+  "동작": {
+    "road": "동작대로",
+    "suburb": "사당2동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06994"
+  },
+  "이수(총신대)": {
+    "road": "동작대로",
+    "suburb": "사당2동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06568"
+  },
+  "경마공원": {
+    "road": "경마공원대로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "과천시",
+    "postcode": "13823"
+  },
+  "대공원": {
+    "road": "대공원광장로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "과천시",
+    "postcode": "13828"
+  },
+  "과천": {
+    "road": "중앙로",
+    "suburb": "과천지식정보타운",
+    "borough": "",
+    "district": "",
+    "city": "과천시",
+    "postcode": "13838"
+  },
+  "정부과천청사": {
+    "road": "중앙로",
+    "suburb": "과천지식정보타운",
+    "borough": "",
+    "district": "",
+    "city": "과천시",
+    "postcode": "13838"
+  },
+  "인덕원": {
+    "road": "흥안대로",
+    "suburb": "",
+    "borough": "동안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "13951"
+  },
+  "평촌": {
+    "road": "관평로182번길",
+    "suburb": "평촌",
+    "borough": "동안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "14066"
+  },
+  "범계": {
+    "road": "범계역광장",
+    "suburb": "평촌",
+    "borough": "동안구",
+    "district": "",
+    "city": "안양시",
+    "postcode": "14073"
+  },
+  "선바위": {
+    "road": "경마공원대로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "과천시",
+    "postcode": "13815"
+  },
+  "산본": {
+    "road": "번영로",
+    "suburb": "",
+    "borough": "광정동",
+    "district": "",
+    "city": "",
+    "postcode": "15862"
+  },
+  "대야미": {
+    "road": "대야1로24번길",
+    "suburb": "",
+    "borough": "대야동",
+    "district": "",
+    "city": "군포시",
+    "postcode": "15886"
+  },
+  "반월": {
+    "road": "",
+    "suburb": "",
+    "borough": "상록구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15521"
+  },
+  "상록수": {
+    "road": "상록수로",
+    "suburb": "",
+    "borough": "상록구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15532"
+  },
+  "한대앞": {
+    "road": "충장로",
+    "suburb": "",
+    "borough": "상록구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15513"
+  },
+  "중앙": {
+    "road": "중앙대로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15361"
+  },
+  "고잔": {
+    "road": "중앙대로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15355"
+  },
+  "초지": {
+    "road": "중앙대로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15386"
+  },
+  "안산": {
+    "road": "",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15431"
+  },
+  "신길온천": {
+    "road": "신길중앙로1길",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15398"
+  },
+  "정왕": {
+    "road": "오동마을로6번길",
+    "suburb": "",
+    "borough": "정왕본동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "15049"
+  },
+  "오이도": {
+    "road": "",
+    "suburb": "",
+    "borough": "정왕본동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "15018"
+  },
+  "수리산": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "",
+    "postcode": "15823"
+  },
+  "이촌": {
+    "road": "서빙고로",
+    "suburb": "한강로동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04388"
+  },
+  "둔촌동": {
+    "road": "양재대로",
+    "suburb": "성내3동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05376"
+  },
+  "올림픽공원": {
+    "road": "양재대로",
+    "suburb": "",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05649"
+  },
+  "미사": {
+    "road": "미사강변중앙로",
+    "suburb": "미사강변도시",
+    "borough": "미사1동",
+    "district": "",
+    "city": "하남시",
+    "postcode": "12913"
+  },
+  "하남풍산": {
+    "road": "덕풍로",
+    "suburb": "",
+    "borough": "덕풍3동",
+    "district": "",
+    "city": "하남시",
+    "postcode": "12928"
+  },
+  "강일": {
+    "road": "고덕로",
+    "suburb": "상일2동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05216"
+  },
+  "하남검단산": {
+    "road": "대청로",
+    "suburb": "",
+    "borough": "신장2동",
+    "district": "",
+    "city": "하남시",
+    "postcode": "12954"
+  },
+  "하남시청": {
+    "road": "하남대로",
+    "suburb": "",
+    "borough": "덕풍3동",
+    "district": "",
+    "city": "하남시",
+    "postcode": "12957"
+  },
+  "방화": {
+    "road": "금낭화로",
+    "suburb": "방화3동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07511"
+  },
+  "개화산": {
+    "road": "양천로",
+    "suburb": "방화1동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07602"
+  },
+  "김포공항": {
+    "road": "하늘길",
+    "suburb": "방화2동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07612"
+  },
+  "송정": {
+    "road": "공항대로",
+    "suburb": "공항동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07622"
+  },
+  "마곡": {
+    "road": "공항대로",
+    "suburb": "공항동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07800"
+  },
+  "애오개": {
+    "road": "마포대로",
+    "suburb": "아현동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04202"
+  },
+  "서대문": {
+    "road": "통일로",
+    "suburb": "충현동",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03735"
+  },
+  "광화문": {
+    "road": "광화문광장",
+    "suburb": "사직동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03172"
+  },
+  "발산": {
+    "road": "공항대로",
+    "suburb": "마곡지구도시개발지구",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07794"
+  },
+  "우장산": {
+    "road": "강서로",
+    "suburb": "우장산동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07639"
+  },
+  "화곡": {
+    "road": "강서로",
+    "suburb": "화곡1동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07702"
+  },
+  "신정": {
+    "road": "오목로",
+    "suburb": "신정4동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08020"
+  },
+  "목동": {
+    "road": "오목로",
+    "suburb": "목1동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07993"
+  },
+  "오목교": {
+    "road": "오목로",
+    "suburb": "목1동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08007"
+  },
+  "양평": {
+    "road": "양산로",
+    "suburb": "양평1동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07270"
+  },
+  "영등포시장": {
+    "road": "영중로",
+    "suburb": "영등포동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07245"
+  },
+  "여의도": {
+    "road": "여의나루로",
+    "suburb": "여의동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07322"
+  },
+  "여의나루": {
+    "road": "한강남자전거길",
+    "suburb": "여의동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07335"
+  },
+  "마포": {
+    "road": "마포대로",
+    "suburb": "14통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04174"
+  },
+  "공덕": {
+    "road": "만리재로",
+    "suburb": "43통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04195"
+  },
+  "신금호": {
+    "road": "행당로",
+    "suburb": "금호1가동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04721"
+  },
+  "행당": {
+    "road": "행당로",
+    "suburb": "행당2동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04714"
+  },
+  "마장": {
+    "road": "마장로",
+    "suburb": "",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04759"
+  },
+  "답십리": {
+    "road": "천호대로",
+    "suburb": "용답동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04805"
+  },
+  "장한평": {
+    "road": "장한로",
+    "suburb": "용답동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02633"
+  },
+  "군자": {
+    "road": "능동로",
+    "suburb": "중곡2동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04919"
+  },
+  "아차산": {
+    "road": "천호대로",
+    "suburb": "구의2동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04954"
+  },
+  "광나루": {
+    "road": "천호대로",
+    "suburb": "",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04983"
+  },
+  "천호": {
+    "road": "천호대로",
+    "suburb": "성내2동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05329"
+  },
+  "강동": {
+    "road": "천호대로",
+    "suburb": "성내2동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05383"
+  },
+  "길동": {
+    "road": "양재대로",
+    "suburb": "길동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05353"
+  },
+  "굽은다리": {
+    "road": "양재대로",
+    "suburb": "명일1동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05307"
+  },
+  "명일": {
+    "road": "양재대로",
+    "suburb": "명일1동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05257"
+  },
+  "고덕": {
+    "road": "고덕로",
+    "suburb": "명일2동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05268"
+  },
+  "상일동": {
+    "road": "고덕로",
+    "suburb": "상일1동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05224"
+  },
+  "방이": {
+    "road": "양재대로",
+    "suburb": "방이1동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05657"
+  },
+  "개롱": {
+    "road": "오금로",
+    "suburb": "가락2동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05742"
+  },
+  "거여": {
+    "road": "오금로",
+    "suburb": "거여1동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05772"
+  },
+  "마천": {
+    "road": "마천로57길",
+    "suburb": "마천1동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05758"
+  },
+  "청구": {
+    "road": "청구로",
+    "suburb": "4통",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04610"
+  },
+  "망원": {
+    "road": "월드컵로",
+    "suburb": "서교동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03996"
+  },
+  "상수": {
+    "road": "독막로",
+    "suburb": "24통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04074"
+  },
+  "광흥창": {
+    "road": "독막로",
+    "suburb": "13통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04087"
+  },
+  "대흥": {
+    "road": "백범로",
+    "suburb": "2통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04149"
+  },
+  "버티고개": {
+    "road": "다산로",
+    "suburb": "약수동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04597"
+  },
+  "응암": {
+    "road": "증산로",
+    "suburb": "신사1동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03449"
+  },
+  "역촌": {
+    "road": "진흥로",
+    "suburb": "역촌동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03461"
+  },
+  "독바위": {
+    "road": "",
+    "suburb": "불광1동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03362"
+  },
+  "구산": {
+    "road": "연서로",
+    "suburb": "대조동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03388"
+  },
+  "새절": {
+    "road": "증산로",
+    "suburb": "신사2동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03442"
+  },
+  "증산": {
+    "road": "증산로",
+    "suburb": "증산동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03497"
+  },
+  "디지털미디어시티": {
+    "road": "증산지하차도",
+    "suburb": "21통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03929"
+  },
+  "월드컵경기장": {
+    "road": "성미다리",
+    "suburb": "성산2동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03932"
+  },
+  "마포구청": {
+    "road": "홍제천서자전거길",
+    "suburb": "성산2동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03715"
+  },
+  "효창공원앞": {
+    "road": "백범로",
+    "suburb": "",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04319"
+  },
+  "녹사평": {
+    "road": "이태원로",
+    "suburb": "용산2가동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04345"
+  },
+  "이태원": {
+    "road": "이태원로",
+    "suburb": "이태원",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04391"
+  },
+  "한강진": {
+    "road": "이태원로",
+    "suburb": "",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04399"
+  },
+  "창신": {
+    "road": "지봉로",
+    "suburb": "숭인1동",
+    "borough": "종로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03108"
+  },
+  "보문": {
+    "road": "보문로",
+    "suburb": "보문동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02874"
+  },
+  "안암": {
+    "road": "고려대로",
+    "suburb": "안암동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02855"
+  },
+  "고려대": {
+    "road": "안암로",
+    "suburb": "",
+    "borough": "동대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02842"
+  },
+  "월곡": {
+    "road": "월곡로",
+    "suburb": "월곡2동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02751"
+  },
+  "상월곡": {
+    "road": "북부간선도로",
+    "suburb": "월곡2동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02790"
+  },
+  "돌곶이": {
+    "road": "북부간선도로",
+    "suburb": "석관동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02790"
+  },
+  "태릉입구": {
+    "road": "동일로",
+    "suburb": "공릉1동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01856"
+  },
+  "화랑대": {
+    "road": "북부간선도로",
+    "suburb": "공릉2동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02020"
+  },
+  "봉화산": {
+    "road": "신내로",
+    "suburb": "신내2동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02024"
+  },
+  "신내": {
+    "road": "신내역로",
+    "suburb": "신내1동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02052"
+  },
+  "강남구청": {
+    "road": "선릉로",
+    "suburb": "논현2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06059"
+  },
+  "학동": {
+    "road": "학동로",
+    "suburb": "논현2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06061"
+  },
+  "논현": {
+    "road": "강남대로",
+    "suburb": "논현1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06044"
+  },
+  "반포": {
+    "road": "신반포로",
+    "suburb": "반포1동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06522"
+  },
+  "내방": {
+    "road": "서초대로",
+    "suburb": "방배본동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06573"
+  },
+  "까치울": {
+    "road": "길주로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14478"
+  },
+  "부천종합운동장": {
+    "road": "소사로",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14560"
+  },
+  "춘의": {
+    "road": "부천로",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14555"
+  },
+  "부평구청": {
+    "road": "길주로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21354"
+  },
+  "산곡": {
+    "road": "마장로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21369"
+  },
+  "석남": {
+    "road": "길주로",
+    "suburb": "석남2동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22790"
+  },
+  "사가정": {
+    "road": "면목로",
+    "suburb": "면목3·8동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02213"
+  },
+  "용마산": {
+    "road": "용마산로",
+    "suburb": "면목4동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02255"
+  },
+  "중곡": {
+    "road": "능동로",
+    "suburb": "중곡3동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04933"
+  },
+  "어린이대공원": {
+    "road": "능동로",
+    "suburb": "",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04998"
+  },
+  "남성": {
+    "road": "사당로",
+    "suburb": "사당4동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07004"
+  },
+  "숭실대입구": {
+    "road": "상도로",
+    "suburb": "상도1동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06971"
+  },
+  "상도": {
+    "road": "상도로",
+    "suburb": "상도1동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06968"
+  },
+  "장승배기": {
+    "road": "상도로",
+    "suburb": "상도2동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06963"
+  },
+  "신대방삼거리": {
+    "road": "보라매로",
+    "suburb": "대방동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07055"
+  },
+  "보라매": {
+    "road": "여의대방로",
+    "suburb": "대방동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07058"
+  },
+  "신풍": {
+    "road": "신풍로",
+    "suburb": "신길6동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07435"
+  },
+  "남구로": {
+    "road": "도림로",
+    "suburb": "구로4동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08320"
+  },
+  "철산": {
+    "road": "철산로",
+    "suburb": "",
+    "borough": "철산3동",
+    "district": "",
+    "city": "광명시",
+    "postcode": "14240"
+  },
+  "광명사거리": {
+    "road": "오리로",
+    "suburb": "",
+    "borough": "광명4동",
+    "district": "",
+    "city": "광명시",
+    "postcode": "14268"
+  },
+  "천왕": {
+    "road": "오리로",
+    "suburb": "오류2동",
+    "borough": "구로구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08363"
+  },
+  "장암": {
+    "road": "동일로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11726"
+  },
+  "중화": {
+    "road": "동일로",
+    "suburb": "중화1동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02102"
+  },
+  "상봉": {
+    "road": "망우로",
+    "suburb": "상봉1동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02137"
+  },
+  "면목": {
+    "road": "면목로",
+    "suburb": "면목본동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02160"
+  },
+  "뚝섬유원지": {
+    "road": "",
+    "suburb": "자양3동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05096"
+  },
+  "청담": {
+    "road": "학동로",
+    "suburb": "삼성1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06074"
+  },
+  "수락산": {
+    "road": "동일로",
+    "suburb": "상계1동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01612"
+  },
+  "마들": {
+    "road": "동일로",
+    "suburb": "상계8동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01676"
+  },
+  "중계": {
+    "road": "동일로",
+    "suburb": "중계2·3동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01768"
+  },
+  "하계": {
+    "road": "동일로",
+    "suburb": "하계2동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01783"
+  },
+  "공릉": {
+    "road": "동일로",
+    "suburb": "공릉1동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01844"
+  },
+  "먹골": {
+    "road": "동일로",
+    "suburb": "묵2동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02088"
+  },
+  "신중동": {
+    "road": "길주로",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14584"
+  },
+  "부천시청": {
+    "road": "길주로",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14584"
+  },
+  "상동": {
+    "road": "상동로",
+    "suburb": "",
+    "borough": "원미구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14545"
+  },
+  "삼산체육관": {
+    "road": "길주로",
+    "suburb": "삼산동",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21341"
+  },
+  "굴포천": {
+    "road": "장제로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21355"
+  },
+  "암사": {
+    "road": "올림픽로",
+    "suburb": "암사1동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05241"
+  },
+  "강동구청": {
+    "road": "올림픽로",
+    "suburb": "성내1동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05391"
+  },
+  "몽촌토성": {
+    "road": "올림픽로",
+    "suburb": "잠실4동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05544"
+  },
+  "신흥": {
+    "road": "산성대로",
+    "suburb": "",
+    "borough": "중원구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13354"
+  },
+  "수진": {
+    "road": "산성대로",
+    "suburb": "",
+    "borough": "중원구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13366"
+  },
+  "모란": {
+    "road": "성남대로",
+    "suburb": "",
+    "borough": "중원구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13385"
+  },
+  "석촌": {
+    "road": "송파대로",
+    "suburb": "",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05616"
+  },
+  "송파": {
+    "road": "송파대로",
+    "suburb": "가락1동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05676"
+  },
+  "문정": {
+    "road": "송파대로",
+    "suburb": "문정2동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05855"
+  },
+  "장지": {
+    "road": "송파대로",
+    "suburb": "",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05838"
+  },
+  "복정": {
+    "road": "성남대로",
+    "suburb": "위례신도시",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05845"
+  },
+  "산성": {
+    "road": "헌릉로",
+    "suburb": "",
+    "borough": "수정구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13644"
+  },
+  "남한산성입구": {
+    "road": "산성대로",
+    "suburb": "",
+    "borough": "중원구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13140"
+  },
+  "단대오거리": {
+    "road": "희망로",
+    "suburb": "",
+    "borough": "수정구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13179"
+  },
+  "석촌고분": {
+    "road": "가락로7길",
+    "suburb": "",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05690"
+  },
+  "송파나루": {
+    "road": "가락로7길",
+    "suburb": "",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05690"
+  },
+  "한성백제": {
+    "road": "위례성대로",
+    "suburb": "방이2동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05628"
+  },
+  "둔촌오륜": {
+    "road": "강동대로",
+    "suburb": "",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05410"
+  },
+  "선정릉": {
+    "road": "선릉로",
+    "suburb": "논현2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06092"
+  },
+  "삼성중앙": {
+    "road": "삼성로",
+    "suburb": "삼성2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06156"
+  },
+  "봉은사": {
+    "road": "봉은사로",
+    "suburb": "삼성1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06081"
+  },
+  "삼전": {
+    "road": "백제고분로18길",
+    "suburb": "잠실본동",
+    "borough": "송파구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05568"
+  },
+  "중앙보훈병원": {
+    "road": "",
+    "suburb": "둔촌2동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05367"
+  },
+  "개화": {
+    "road": "개화동로8길",
+    "suburb": "방화2동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07502"
+  },
+  "공항시장": {
+    "road": "방화동로",
+    "suburb": "공항동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07622"
+  },
+  "신방화": {
+    "road": "",
+    "suburb": "방화1동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07598"
+  },
+  "마곡나루": {
+    "road": "마곡중앙12로",
+    "suburb": "마곡지구도시개발지구",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07796"
+  },
+  "양천향교": {
+    "road": "양천로",
+    "suburb": "마곡지구도시개발지구",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07573"
+  },
+  "증미": {
+    "road": "양천로",
+    "suburb": "가양3동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07551"
+  },
+  "등촌": {
+    "road": "공항대로",
+    "suburb": "목3동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07946"
+  },
+  "선유도": {
+    "road": "양평로",
+    "suburb": "양평2동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07205"
+  },
+  "샛강": {
+    "road": "의사당대로",
+    "suburb": "여의동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07332"
+  },
+  "흑석": {
+    "road": "현충로",
+    "suburb": "노량진1동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06909"
+  },
+  "구반포": {
+    "road": "신반포로",
+    "suburb": "반포본동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06504"
+  },
+  "신반포": {
+    "road": "신반포로",
+    "suburb": "반포2동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06504"
+  },
+  "신논현": {
+    "road": "봉은사로",
+    "suburb": "역삼1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06121"
+  },
+  "염창": {
+    "road": "공항대로",
+    "suburb": "목2동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07556"
+  },
+  "신목동": {
+    "road": "안양천로",
+    "suburb": "목2동",
+    "borough": "양천구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07969"
+  },
+  "국회의사당": {
+    "road": "의사당대로",
+    "suburb": "여의동",
+    "borough": "영등포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07236"
+  },
+  "노들": {
+    "road": "노량진로",
+    "suburb": "노량진1동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06907"
+  },
+  "사평": {
+    "road": "사평대로",
+    "suburb": "반포1동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06544"
+  },
+  "가양": {
+    "road": "양천로",
+    "suburb": "가양2동",
+    "borough": "강서구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07574"
+  },
+  "언주": {
+    "road": "봉은사로",
+    "suburb": "역삼1동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06135"
+  },
+  "삼동": {
+    "road": "순암로",
+    "suburb": "",
+    "borough": "광남1동",
+    "district": "",
+    "city": "광주시",
+    "postcode": "12768"
+  },
+  "경기광주": {
+    "road": "인천타워대로",
+    "suburb": "송도4동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22007"
+  },
+  "초월": {
+    "road": "곤지암천 자전거길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "광주시",
+    "postcode": "12736"
+  },
+  "곤지암": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "광주시",
+    "postcode": "12801"
+  },
+  "신둔도예촌": {
+    "road": "원적로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "이천시",
+    "postcode": "17303"
+  },
+  "이천": {
+    "road": "",
+    "suburb": "",
+    "borough": "중리동",
+    "district": "",
+    "city": "이천시",
+    "postcode": "17391"
+  },
+  "부발": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "이천시",
+    "postcode": "17332"
+  },
+  "여주": {
+    "road": "여주역",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "여주시",
+    "postcode": "12644"
+  },
+  "세종대왕릉": {
+    "road": "능서로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "여주시",
+    "postcode": "12641"
+  },
+  "이매": {
+    "road": "성남대로",
+    "suburb": "판교",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13567"
+  },
+  "판교": {
+    "road": "판교역로146번길",
+    "suburb": "판교",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13529"
+  },
+  "서빙고": {
+    "road": "서빙고로",
+    "suburb": "서빙고동",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04428"
+  },
+  "중랑": {
+    "road": "중랑천로14길",
+    "suburb": "중화2동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02130"
+  },
+  "망우": {
+    "road": "망우역광장",
+    "suburb": "상봉1동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02072"
+  },
+  "양원": {
+    "road": "양원역로10길",
+    "suburb": "망우본동",
+    "borough": "중랑구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02062"
+  },
+  "구리": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "구리시",
+    "postcode": "11922"
+  },
+  "도농": {
+    "road": "",
+    "suburb": "",
+    "borough": "다산1동",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12258"
+  },
+  "양정": {
+    "road": "양정로",
+    "suburb": "",
+    "borough": "양정동",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12245"
+  },
+  "덕소": {
+    "road": "덕소로2번길",
+    "suburb": "덕소10리",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12214"
+  },
+  "도심": {
+    "road": "덕소로",
+    "suburb": "도곡14리",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12212"
+  },
+  "팔당": {
+    "road": "",
+    "suburb": "팔당2리",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12277"
+  },
+  "운길산": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12281"
+  },
+  "양수": {
+    "road": "상촌길",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "",
+    "postcode": "12584"
+  },
+  "신원": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "양서면",
+    "postcode": "12583"
+  },
+  "응봉": {
+    "road": "고산자로",
+    "suburb": "",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04741"
+  },
+  "국수": {
+    "road": "국수새터말길",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "",
+    "postcode": "12580"
+  },
+  "아신": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "옥천면",
+    "postcode": "12508"
+  },
+  "오빈": {
+    "road": "당너머길",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "",
+    "postcode": "12546"
+  },
+  "양평(중앙)": {
+    "road": "관문길",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "양평읍",
+    "postcode": "12552"
+  },
+  "원덕": {
+    "road": "원덕흑천길",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "",
+    "postcode": "12566"
+  },
+  "용문": {
+    "road": "용문시장7길",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "",
+    "postcode": "12514"
+  },
+  "지평": {
+    "road": "지평의병로",
+    "suburb": "",
+    "borough": "",
+    "district": "양평군",
+    "city": "",
+    "postcode": "12541"
+  },
+  "신촌(경의선)": {
+    "road": "명물길",
+    "suburb": "신촌동",
+    "borough": "서대문구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03777"
+  },
+  "수색": {
+    "road": "수색로",
+    "suburb": "수색동",
+    "borough": "은평구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03504"
+  },
+  "화전": {
+    "road": "화전지하차도",
+    "suburb": "대덕동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10540"
+  },
+  "강매": {
+    "road": "강매로",
+    "suburb": "행신2동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10531"
+  },
+  "행신": {
+    "road": "소원로",
+    "suburb": "행신2동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10523"
+  },
+  "능곡": {
+    "road": "토당로",
+    "suburb": "행주동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10510"
+  },
+  "곡산": {
+    "road": "",
+    "suburb": "백석1동",
+    "borough": "일산동구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10442"
+  },
+  "풍산": {
+    "road": "",
+    "suburb": "풍산동",
+    "borough": "일산동구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10406"
+  },
+  "일산": {
+    "road": "경의로",
+    "suburb": "일산3동",
+    "borough": "일산서구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10373"
+  },
+  "탄현": {
+    "road": "일현로",
+    "suburb": "탄현1동",
+    "borough": "일산서구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10241"
+  },
+  "운정": {
+    "road": "24",
+    "suburb": "",
+    "borough": "운정3동",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10896"
+  },
+  "금릉": {
+    "road": "금릉역로",
+    "suburb": "",
+    "borough": "금촌2동",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10915"
+  },
+  "월롱": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10946"
+  },
+  "파주": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10838"
+  },
+  "문산": {
+    "road": "통일로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10823"
+  },
+  "임진강": {
+    "road": "25",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10818"
+  },
+  "서강대": {
+    "road": "서강로14길",
+    "suburb": "21통",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04101"
+  },
+  "백마": {
+    "road": "고풍로5번길",
+    "suburb": "풍산동",
+    "borough": "일산동구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10309"
+  },
+  "야당": {
+    "road": "송학1길",
+    "suburb": "",
+    "borough": "운정3동",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10909"
+  },
+  "금촌": {
+    "road": "",
+    "suburb": "",
+    "borough": "금촌1동",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10930"
+  },
+  "한남": {
+    "road": "서빙고로",
+    "suburb": "",
+    "borough": "용산구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04420"
+  },
+  "가좌": {
+    "road": "",
+    "suburb": "성산2동",
+    "borough": "마포구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "03712"
+  },
+  "갈매": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "구리시",
+    "postcode": "11902"
+  },
+  "별내": {
+    "road": "순화궁로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12113"
+  },
+  "퇴계원": {
+    "road": "퇴계원로6번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12126"
+  },
+  "사릉": {
+    "road": "진건우회로",
+    "suburb": "",
+    "borough": "진건읍",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12140"
+  },
+  "평내호평": {
+    "road": "경춘선 자전거길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12150"
+  },
+  "마석": {
+    "road": "마석로26번길",
+    "suburb": "",
+    "borough": "화도읍",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12175"
+  },
+  "대성리": {
+    "road": "경춘로",
+    "suburb": "",
+    "borough": "",
+    "district": "가평군",
+    "city": "",
+    "postcode": "12457"
+  },
+  "청평": {
+    "road": "청평역로",
+    "suburb": "",
+    "borough": "",
+    "district": "가평군",
+    "city": "",
+    "postcode": "12452"
+  },
+  "상천": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "가평군",
+    "city": "",
+    "postcode": "12449"
+  },
+  "가평": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "가평군",
+    "city": "가평읍",
+    "postcode": "12423"
+  },
+  "굴봉산": {
+    "road": "서백길",
+    "suburb": "",
+    "borough": "남산면",
+    "district": "",
+    "city": "춘천시",
+    "postcode": "24464"
+  },
+  "백양리": {
+    "road": "북한강변길",
+    "suburb": "",
+    "borough": "남산면",
+    "district": "",
+    "city": "춘천시",
+    "postcode": "24465"
+  },
+  "강촌": {
+    "road": "",
+    "suburb": "",
+    "borough": "남산면",
+    "district": "",
+    "city": "춘천시",
+    "postcode": "24465"
+  },
+  "김유정": {
+    "road": "",
+    "suburb": "",
+    "borough": "신동면",
+    "district": "",
+    "city": "춘천시",
+    "postcode": "24412"
+  },
+  "남춘천": {
+    "road": "우묵길",
+    "suburb": "",
+    "borough": "퇴계동",
+    "district": "",
+    "city": "춘천시",
+    "postcode": "24368"
+  },
+  "금곡": {
+    "road": "금곡로19번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12238"
+  },
+  "천마산": {
+    "road": "경춘선 자전거길",
+    "suburb": "",
+    "borough": "화도읍",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12168"
+  },
+  "춘천": {
+    "road": "평화로",
+    "suburb": "",
+    "borough": "근화동",
+    "district": "",
+    "city": "춘천시",
+    "postcode": "24238"
+  },
+  "계양": {
+    "road": "다남로",
+    "suburb": "계양1동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21015"
+  },
+  "검암": {
+    "road": "인천국제공항고속도로",
+    "suburb": "검암경서동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22694"
+  },
+  "청라국제도시": {
+    "road": "경명대로",
+    "suburb": "청라3동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22754"
+  },
+  "운서": {
+    "road": "인천국제공항고속도로",
+    "suburb": "공항신도시",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22371"
+  },
+  "공항화물청사": {
+    "road": "공항동로135번길",
+    "suburb": "",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22381"
+  },
+  "인천공항1터미널": {
+    "road": "공항제1터미널고가도로",
+    "suburb": "",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22382"
+  },
+  "인천공항2터미널": {
+    "road": "",
+    "suburb": "",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": ""
+  },
+  "영종": {
+    "road": "인천국제공항고속도로",
+    "suburb": "영종동",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22372"
+  },
+  "양촌": {
+    "road": "유현삭시로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10045"
+  },
+  "구래": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10071"
+  },
+  "마산": {
+    "road": "김포한강7로22번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10067"
+  },
+  "장기": {
+    "road": "김포한강1로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10080"
+  },
+  "운양": {
+    "road": "김포한강1로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10078"
+  },
+  "걸포북변": {
+    "road": "김포대로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10099"
+  },
+  "사우": {
+    "road": "돌문로62번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10108"
+  },
+  "풍무": {
+    "road": "유현로237번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10113"
+  },
+  "고촌": {
+    "road": "인향로24번길",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "10129"
+  },
+  "한티": {
+    "road": "선릉로",
+    "suburb": "도곡2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06228"
+  },
+  "구룡": {
+    "road": "개포로",
+    "suburb": "개포2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06323"
+  },
+  "개포동": {
+    "road": "삼성로",
+    "suburb": "개포2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06329"
+  },
+  "대모산입구": {
+    "road": "개포로",
+    "suburb": "개포2동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06335"
+  },
+  "서울숲": {
+    "road": "왕십리로",
+    "suburb": "성수1가1동",
+    "borough": "성동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04769"
+  },
+  "압구정로데오": {
+    "road": "선릉로",
+    "suburb": "신사동",
+    "borough": "강남구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06014"
+  },
+  "가천대": {
+    "road": "성남대로",
+    "suburb": "",
+    "borough": "수정구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13109"
+  },
+  "태평": {
+    "road": "성남대로",
+    "suburb": "",
+    "borough": "수정구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13109"
+  },
+  "야탑": {
+    "road": "성남대로",
+    "suburb": "판교",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13506"
+  },
+  "서현": {
+    "road": "서현로210번길",
+    "suburb": "분당",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13591"
+  },
+  "수내": {
+    "road": "",
+    "suburb": "분당",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13595"
+  },
+  "정자": {
+    "road": "성남대로",
+    "suburb": "분당",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13555"
+  },
+  "미금": {
+    "road": "돌마로",
+    "suburb": "",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13630"
+  },
+  "신갈": {
+    "road": "기흥로",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16963"
+  },
+  "상갈": {
+    "road": "금화로",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17072"
+  },
+  "청명": {
+    "road": "봉영로",
+    "suburb": "",
+    "borough": "영통구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16707"
+  },
+  "영통": {
+    "road": "봉영로",
+    "suburb": "",
+    "borough": "영통구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16701"
+  },
+  "망포": {
+    "road": "덕영대로",
+    "suburb": "",
+    "borough": "영통구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16690"
+  },
+  "매탄권선": {
+    "road": "권선로",
+    "suburb": "",
+    "borough": "영통구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16546"
+  },
+  "수원시청": {
+    "road": "효원로",
+    "suburb": "",
+    "borough": "권선구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16490"
+  },
+  "매교": {
+    "road": "정조로",
+    "suburb": "",
+    "borough": "팔달구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16576"
+  },
+  "구성": {
+    "road": "용구대로2325번길",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16921"
+  },
+  "보정": {
+    "road": "용구대로",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16903"
+  },
+  "오리": {
+    "road": "성남대로",
+    "suburb": "",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13636"
+  },
+  "죽전": {
+    "road": "",
+    "suburb": "",
+    "borough": "신봉동",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16896"
+  },
+  "기흥": {
+    "road": "신갈천자전거길",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17068"
+  },
+  "소새울": {
+    "road": "소사로125번길",
+    "suburb": "",
+    "borough": "소사구",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14762"
+  },
+  "시흥대야": {
+    "road": "서해안로",
+    "suburb": "",
+    "borough": "대야동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "14906"
+  },
+  "신천": {
+    "road": "",
+    "suburb": "",
+    "borough": "신천동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "14948"
+  },
+  "신현": {
+    "road": "",
+    "suburb": "",
+    "borough": "신현동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "14957"
+  },
+  "시흥시청": {
+    "road": "새재로",
+    "suburb": "",
+    "borough": "연성동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "14998"
+  },
+  "시흥능곡": {
+    "road": "능곡번영길",
+    "suburb": "",
+    "borough": "능곡동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "14995"
+  },
+  "달미": {
+    "road": "순환로",
+    "suburb": "땟골마을",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15212"
+  },
+  "선부": {
+    "road": "삼일로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15243"
+  },
+  "원곡": {
+    "road": "동산로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15434"
+  },
+  "원시": {
+    "road": "별망로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15600"
+  },
+  "달월": {
+    "road": "",
+    "suburb": "",
+    "borough": "월곶동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "15005"
+  },
+  "월곶": {
+    "road": "월곶중앙로14번길",
+    "suburb": "",
+    "borough": "월곶동",
+    "district": "",
+    "city": "시흥시",
+    "postcode": "14966"
+  },
+  "소래포구": {
+    "road": "소래역로",
+    "suburb": "논현1동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21673"
+  },
+  "인천논현": {
+    "road": "청능대로",
+    "suburb": "논현고잔동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21653"
+  },
+  "호구포": {
+    "road": "호구포로",
+    "suburb": "논현2동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21640"
+  },
+  "남동인더스파크": {
+    "road": "남동대로239번길",
+    "suburb": "논현2동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21696"
+  },
+  "원인재": {
+    "road": "벚꽃로",
+    "suburb": "연수2동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21931"
+  },
+  "연수": {
+    "road": "새말로96번길",
+    "suburb": "연수1동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21927"
+  },
+  "송도": {
+    "road": "",
+    "suburb": "옥련2동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21954"
+  },
+  "인하대": {
+    "road": "독배로317번길",
+    "suburb": "용현5동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22188"
+  },
+  "숭의": {
+    "road": "아암대로",
+    "suburb": "숭의1·3동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22175"
+  },
+  "신포": {
+    "road": "인중로",
+    "suburb": "신포동",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22313"
+  },
+  "동천": {
+    "road": "신수로",
+    "suburb": "",
+    "borough": "신봉동",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16826"
+  },
+  "수지구청": {
+    "road": "풍덕천로",
+    "suburb": "",
+    "borough": "신봉동",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16836"
+  },
+  "성복": {
+    "road": "수지로",
+    "suburb": "",
+    "borough": "신봉동",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16848"
+  },
+  "상현": {
+    "road": "광교중앙로",
+    "suburb": "",
+    "borough": "신봉동",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16944"
+  },
+  "광교중앙": {
+    "road": "도청로",
+    "suburb": "",
+    "borough": "영통구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16508"
+  },
+  "양재시민의숲": {
+    "road": "강남대로",
+    "suburb": "양재2동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06779"
+  },
+  "광교": {
+    "road": "영동고속도로",
+    "suburb": "",
+    "borough": "영통구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16222"
+  },
+  "청계산입구": {
+    "road": "청계산로",
+    "suburb": "양재2동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06802"
+  },
+  "강남대": {
+    "road": "신갈천자전거길",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16978"
+  },
+  "지석": {
+    "road": "신갈천자전거길",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16978"
+  },
+  "어정": {
+    "road": "신갈천자전거길",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "16978"
+  },
+  "동백": {
+    "road": "은목지하차도",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17010"
+  },
+  "초당": {
+    "road": "초당지하차도",
+    "suburb": "",
+    "borough": "기흥구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17013"
+  },
+  "시청·용인대": {
+    "road": "",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17020"
+  },
+  "명지대": {
+    "road": "금학천 자전거길",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17055"
+  },
+  "김량장": {
+    "road": "금학천 자전거길",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17055"
+  },
+  "운동장·송담대": {
+    "road": "",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17153"
+  },
+  "고진": {
+    "road": "경안천 자전거길",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17148"
+  },
+  "보평": {
+    "road": "경안천 자전거길",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17041"
+  },
+  "둔전": {
+    "road": "경안천로",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17038"
+  },
+  "삼가": {
+    "road": "중부대로",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17091"
+  },
+  "전대·에버랜드": {
+    "road": "에버랜드로",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17028"
+  },
+  "북한산우이": {
+    "road": "방학로",
+    "suburb": "쌍문1동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01004"
+  },
+  "솔밭공원": {
+    "road": "삼양로",
+    "suburb": "쌍문1동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01006"
+  },
+  "4·19민주묘지": {
+    "road": "삼양로",
+    "suburb": "수유2동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01044"
+  },
+  "가오리": {
+    "road": "삼양로",
+    "suburb": "수유2동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01041"
+  },
+  "삼양사거리": {
+    "road": "삼양로",
+    "suburb": "송천동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01121"
+  },
+  "솔샘": {
+    "road": "인수봉로6길",
+    "suburb": "삼양동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01190"
+  },
+  "북한산보국문": {
+    "road": "보국문로",
+    "suburb": "정릉4동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02717"
+  },
+  "정릉": {
+    "road": "아리랑로",
+    "suburb": "정릉1동",
+    "borough": "성북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "02815"
+  },
+  "화계": {
+    "road": "삼양로",
+    "suburb": "인수동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01081"
+  },
+  "삼양": {
+    "road": "삼양로",
+    "suburb": "삼양동",
+    "borough": "강북구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01121"
+  },
+  "동오": {
+    "road": "장곡로",
+    "suburb": "",
+    "borough": "신곡2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11740"
+  },
+  "새말": {
+    "road": "부용천 자전거길",
+    "suburb": "",
+    "borough": "신곡2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11755"
+  },
+  "경기도청북부청사": {
+    "road": "장곡로",
+    "suburb": "",
+    "borough": "신곡2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11775"
+  },
+  "효자": {
+    "road": "부용천 자전거길",
+    "suburb": "",
+    "borough": "신곡2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11755"
+  },
+  "범골": {
+    "road": "신흥로",
+    "suburb": "",
+    "borough": "호원2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11632"
+  },
+  "경전철의정부": {
+    "road": "신흥로",
+    "suburb": "",
+    "borough": "의정부2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11651"
+  },
+  "의정부시청": {
+    "road": "의정로",
+    "suburb": "",
+    "borough": "의정부2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11672"
+  },
+  "흥선": {
+    "road": "호국로",
+    "suburb": "",
+    "borough": "의정부2동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11672"
+  },
+  "의정부중앙": {
+    "road": "호국로",
+    "suburb": "",
+    "borough": "의정부1동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11689"
+  },
+  "곤제": {
+    "road": "부용천 자전거길",
+    "suburb": "",
+    "borough": "자금동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11772"
+  },
+  "어룡": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11803"
+  },
+  "발곡": {
+    "road": "중랑천동자전거길",
+    "suburb": "",
+    "borough": "신곡1동",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11733"
+  },
+  "송산": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11789"
+  },
+  "탑석": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "의정부시",
+    "postcode": "11792"
+  },
+  "검단사거리": {
+    "road": "검단로",
+    "suburb": "오류왕길동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22617"
+  },
+  "인천대공원": {
+    "road": "수인로",
+    "suburb": "장수서창동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21541"
+  },
+  "마전": {
+    "road": "완정로",
+    "suburb": "당하동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22638"
+  },
+  "독정": {
+    "road": "서곶로",
+    "suburb": "당하동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22687"
+  },
+  "검바위": {
+    "road": "서곶로",
+    "suburb": "검암경서동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22698"
+  },
+  "서구청": {
+    "road": "서곶로",
+    "suburb": "연희동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22722"
+  },
+  "가정": {
+    "road": "봉오대로",
+    "suburb": "가정1동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22715"
+  },
+  "인천가좌": {
+    "road": "인천대로",
+    "suburb": "가좌1동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22796"
+  },
+  "가재울": {
+    "road": "열우물로",
+    "suburb": "가좌4동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22821"
+  },
+  "주안국가산단": {
+    "road": "길파로",
+    "suburb": "주안5동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22125"
+  },
+  "인천시청": {
+    "road": "예술로",
+    "suburb": "간석1동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21558"
+  },
+  "석천사거리": {
+    "road": "구월로",
+    "suburb": "구월2동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21554"
+  },
+  "모래내시장": {
+    "road": "호구포로",
+    "suburb": "구월4동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21623"
+  },
+  "만수": {
+    "road": "구월로372번길",
+    "suburb": "만수1동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21540"
+  },
+  "운연": {
+    "road": "매소홀로",
+    "suburb": "장수서창동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21604"
+  },
+  "가정중앙시장": {
+    "road": "가남로",
+    "suburb": "가정1동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22799"
+  },
+  "서부여성회관": {
+    "road": "인천대로",
+    "suburb": "석남2동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22796"
+  },
+  "시민공원": {
+    "road": "경인로",
+    "suburb": "주안1동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22148"
+  },
+  "석바위시장": {
+    "road": "구월로",
+    "suburb": "주안6동",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21554"
+  },
+  "왕길": {
+    "road": "검단로",
+    "suburb": "오류왕길동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22652"
+  },
+  "완정": {
+    "road": "서곶로",
+    "suburb": "당하동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22677"
+  },
+  "남동구청": {
+    "road": "인주대로",
+    "suburb": "만수6동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21591"
+  },
+  "아시아드경기장": {
+    "road": "서곶로",
+    "suburb": "연희동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22722"
+  },
+  "검단오류": {
+    "road": "검단로",
+    "suburb": "오류왕길동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22652"
+  },
+  "귤현": {
+    "road": "장제로",
+    "suburb": "계양1동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21015"
+  },
+  "박촌": {
+    "road": "장제로",
+    "suburb": "계양1동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21022"
+  },
+  "임학": {
+    "road": "장제로",
+    "suburb": "계양2동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21034"
+  },
+  "계산": {
+    "road": "경명대로",
+    "suburb": "계산2동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21050"
+  },
+  "경인교대입구": {
+    "road": "계양대로",
+    "suburb": "계산1동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21054"
+  },
+  "작전": {
+    "road": "계양대로",
+    "suburb": "작전2동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21089"
+  },
+  "갈산": {
+    "road": "부평대로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21333"
+  },
+  "부평시장": {
+    "road": "부평대로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21393"
+  },
+  "동수": {
+    "road": "경인로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21410"
+  },
+  "부평삼거리": {
+    "road": "경인로",
+    "suburb": "",
+    "borough": "부평구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21435"
+  },
+  "예술회관": {
+    "road": "예술로",
+    "suburb": "구월1동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21558"
+  },
+  "인천터미널": {
+    "road": "",
+    "suburb": "",
+    "borough": "미추홀구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22241"
+  },
+  "문학경기장": {
+    "road": "예술로",
+    "suburb": "",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22241"
+  },
+  "선학": {
+    "road": "경원대로",
+    "suburb": "",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21938"
+  },
+  "신연수": {
+    "road": "함박뫼로",
+    "suburb": "연수3동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21936"
+  },
+  "동춘": {
+    "road": "경원대로",
+    "suburb": "동춘3동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21974"
+  },
+  "동막": {
+    "road": "승기천 자전거길",
+    "suburb": "동춘2동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21699"
+  },
+  "캠퍼스타운": {
+    "road": "송도국제대로",
+    "suburb": "송도국제도시",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21982"
+  },
+  "테크노파크": {
+    "road": "송도국제대로",
+    "suburb": "송도국제도시",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21984"
+  },
+  "지식정보단지": {
+    "road": "인천타워대로",
+    "suburb": "송도1동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22000"
+  },
+  "인천대입구": {
+    "road": "컨벤시아대로",
+    "suburb": "송도4동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22009"
+  },
+  "센트럴파크": {
+    "road": "인천타워대로",
+    "suburb": "송도4동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22009"
+  },
+  "국제업무지구": {
+    "road": "인천타워대로",
+    "suburb": "송도4동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22007"
+  },
+  "간석오거리": {
+    "road": "백범로",
+    "suburb": "간석4동",
+    "borough": "남동구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21544"
+  },
+  "송도달빛축제공원": {
+    "road": "",
+    "suburb": "송도4동",
+    "borough": "연수구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22020"
+  },
+  "사리": {
+    "road": "감골로",
+    "suburb": "",
+    "borough": "상록구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15564"
+  },
+  "야목": {
+    "road": "본오매송로",
+    "suburb": "",
+    "borough": "효행구",
+    "district": "",
+    "city": "화성시",
+    "postcode": "18286"
+  },
+  "어천": {
+    "road": "어천역길",
+    "suburb": "",
+    "borough": "효행구",
+    "district": "",
+    "city": "화성시",
+    "postcode": "18287"
+  },
+  "오목천": {
+    "road": "철길산책로",
+    "suburb": "",
+    "borough": "권선구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16631"
+  },
+  "고색": {
+    "road": "철길산책로",
+    "suburb": "",
+    "borough": "권선구",
+    "district": "",
+    "city": "수원시",
+    "postcode": "16650"
+  },
+  "장기주차장": {
+    "road": "공항주차장길",
+    "suburb": "",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22382"
+  },
+  "합동청사": {
+    "road": "영종해안남로321번길",
+    "suburb": "",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22382"
+  },
+  "파라다이스시티": {
+    "road": "",
+    "suburb": "",
+    "borough": "중구",
+    "district": "",
+    "city": "",
+    "postcode": "22382"
+  },
+  "워터파크": {
+    "road": "",
+    "suburb": "용유동",
+    "borough": "중구",
+    "district": "",
+    "city": "",
+    "postcode": "22384"
+  },
+  "용유": {
+    "road": "용유로",
+    "suburb": "용유동",
+    "borough": "중구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22386"
+  },
+  "성남": {
+    "road": "분당수서로",
+    "suburb": "판교",
+    "borough": "분당구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13590"
+  },
+  "동탄": {
+    "road": "경부고속도로",
+    "suburb": "동탄신도시",
+    "borough": "",
+    "district": "",
+    "city": "화성시",
+    "postcode": "18478"
+  },
+  "서울역": {
+    "road": "서울역광장",
+    "suburb": "회현동",
+    "borough": "중구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "04509"
+  },
+  "진접": {
+    "road": "철마산 등산로(진접역 출발)",
+    "suburb": "",
+    "borough": "진접읍",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12051"
+  },
+  "오남": {
+    "road": "양지로",
+    "suburb": "",
+    "borough": "오남읍",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12036"
+  },
+  "별내별가람": {
+    "road": "덕송2로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12097"
+  },
+  "불암산": {
+    "road": "덕릉로115다길",
+    "suburb": "상계3·4동",
+    "borough": "노원구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "01633"
+  },
+  "총신대입구": {
+    "road": "동작대로",
+    "suburb": "방배본동",
+    "borough": "서초구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06568"
+  },
+  "운천": {
+    "road": "통일로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10818"
+  },
+  "탕정": {
+    "road": "곡교천로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "아산시",
+    "postcode": "31465"
+  },
+  "평택지제": {
+    "road": "경기대로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "평택시",
+    "postcode": "17824"
+  },
+  "청산": {
+    "road": "학담로",
+    "suburb": "",
+    "borough": "",
+    "district": "연천군",
+    "city": "청산면",
+    "postcode": "11023"
+  },
+  "전곡": {
+    "road": "전곡역로",
+    "suburb": "",
+    "borough": "",
+    "district": "연천군",
+    "city": "전곡읍",
+    "postcode": "11031"
+  },
+  "연천": {
+    "road": "연천로259번길",
+    "suburb": "",
+    "borough": "",
+    "district": "연천군",
+    "city": "연천읍",
+    "postcode": "11015"
+  },
+  "이수": {
+    "road": "동작대로25길",
+    "suburb": "사당2동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07008"
+  },
+  "다산": {
+    "road": "가운로1길",
+    "suburb": "",
+    "borough": "다산2동",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12257"
+  },
+  "장자호수공원": {
+    "road": "체육관로",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "구리시",
+    "postcode": "11948"
+  },
+  "암사역사공원": {
+    "road": "아리수로",
+    "suburb": "암사3동",
+    "borough": "강동구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05237"
+  },
+  "남위례": {
+    "road": "공원로",
+    "suburb": "",
+    "borough": "수정구",
+    "district": "",
+    "city": "성남시",
+    "postcode": "13114"
+  },
+  "보라매공원": {
+    "road": "여의대방로20길",
+    "suburb": "신대방2동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07434"
+  },
+  "보라매병원": {
+    "road": "보라매로5길",
+    "suburb": "신대방2동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "07071"
+  },
+  "당곡": {
+    "road": "봉천로",
+    "suburb": "신림동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08708"
+  },
+  "서원": {
+    "road": "문성로",
+    "suburb": "서원동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08775"
+  },
+  "서울대벤처타운": {
+    "road": "호암로",
+    "suburb": "대학동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08821"
+  },
+  "용인중앙시장": {
+    "road": "백옥대로",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17052"
+  },
+  "운정중앙": {
+    "road": "운정지하차도",
+    "suburb": "",
+    "borough": "교하동",
+    "district": "",
+    "city": "파주시",
+    "postcode": "10903"
+  },
+  "킨텍스": {
+    "road": "킨텍스로",
+    "suburb": "",
+    "borough": "일산서구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10220"
+  },
+  "한국항공대": {
+    "road": "대덕로156번길",
+    "suburb": "대덕동",
+    "borough": "덕양구",
+    "district": "",
+    "city": "고양시",
+    "postcode": "10540"
+  },
+  "원종": {
+    "road": "",
+    "suburb": "",
+    "borough": "",
+    "district": "",
+    "city": "부천시",
+    "postcode": "14401"
+  },
+  "시우": {
+    "road": "능길로",
+    "suburb": "",
+    "borough": "단원구",
+    "district": "",
+    "city": "안산시",
+    "postcode": "15405"
+  },
+  "자양": {
+    "road": "강변역로",
+    "suburb": "자양2동",
+    "borough": "광진구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "05047"
+  },
+  "동구릉": {
+    "road": "한강 자전거길",
+    "suburb": "",
+    "borough": "양정동",
+    "district": "",
+    "city": "남양주시",
+    "postcode": "12245"
+  },
+  "검단호수공원": {
+    "road": "아라 자전거길",
+    "suburb": "당하동",
+    "borough": "서구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "21014"
+  },
+  "신검단중앙": {
+    "road": "부근길",
+    "suburb": "계양1동",
+    "borough": "계양구",
+    "district": "",
+    "city": "인천광역시",
+    "postcode": "22871"
+  },
+  "아라": {
+    "road": "이화남로",
+    "suburb": "계양1동",
+    "borough": "",
+    "district": "",
+    "city": "김포시",
+    "postcode": "21004"
+  },
+  "서울지방병무청": {
+    "road": "알마타길",
+    "suburb": "대방동",
+    "borough": "동작구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "06939"
+  },
+  "관악산": {
+    "road": "",
+    "suburb": "대학동",
+    "borough": "관악구",
+    "district": "",
+    "city": "서울특별시",
+    "postcode": "08826"
+  },
+  "시청.용인대": {
+    "road": "",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17051"
+  },
+  "전대.에버랜드": {
+    "road": "",
+    "suburb": "",
+    "borough": "처인구",
+    "district": "",
+    "city": "용인시",
+    "postcode": "17023"
+  }
+}
