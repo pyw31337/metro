@@ -166,7 +166,8 @@ function processUpdates(units: any[]) {
         lastSeenTime:         now,              // 만료 판정: 항상 실제 수신 시각
         currentBearing:       initBearing,
         bearingInitialized:   initBearingOk,
-        colorFadeStart:       initBearingOk ? now : null,
+        // 베어링 미확인 열차도 300ms 후 컬러(||)로 전환 — 영구 회색 방지
+        colorFadeStart:       now,
         birthTime:            now,
         deathTime:       null,
         lineStationIdx:  unit.lineStationIdx ?? 0,
@@ -381,7 +382,8 @@ function startTick() {
         isSimulated:     unit.isSimulated,
         opacity:         Math.round(opacity * 100) / 100,
         colorProgress:   Math.round(colorProgress * 100) / 100,
-        isDwelling,
+        // 방향 미확인(베어링 0) 열차도 || 아이콘 사용 — 북향 화살표 방지
+        isDwelling:      isDwelling || !unit.bearingInitialized,
         updnLine:        (unit as any).updnLine,
         currentStationName: (unit as any).currentStationName,
       });

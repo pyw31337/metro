@@ -686,16 +686,20 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
     if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
 
     const tryFetchWithKeys = async () => {
-        const keysToTry = [apiKey, ...USER_APPROVED_KEYS, "sample"];
-        for (const key of keysToTry) {
-            if (!key) continue;
-            const url = API_ENDPOINTS.SUBWAY_POSITION(key, lineName);
-            try {
-                const json = await fetchWithFallbacks(url);
-                if (json?.realtimePositionList) return json;
-            } catch (e) {}
+        // 중복 키 제거 후 병렬 시도 — 가장 먼저 성공한 키 결과 사용
+        const keysToTry = [...new Set([apiKey, ...USER_APPROVED_KEYS, "sample"].filter(Boolean))];
+        try {
+            return await Promise.any(
+                keysToTry.map(async (key) => {
+                    const url = API_ENDPOINTS.SUBWAY_POSITION(key!, lineName);
+                    const json = await fetchWithFallbacks(url);
+                    if (!json?.realtimePositionList) throw new Error('no data');
+                    return json;
+                })
+            );
+        } catch {
+            return null;
         }
-        return null;
     };
 
     try {
