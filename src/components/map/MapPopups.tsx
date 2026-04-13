@@ -274,18 +274,12 @@ const MapPopups = ({
   const stationExits = useStationExits(activeTab === 'subway' ? selectedStationName : null);
   const stationRestrooms = useSubwayRestrooms(activeTab === 'subway' ? selectedStationName : null);
   const [exitExpanded, setExitExpanded] = useState(false);
-  const [restroomExpanded, setRestroomExpanded] = useState(false);
-  const [atmExpanded, setAtmExpanded] = useState(false);
-  const [nurseryExpanded, setNurseryExpanded] = useState(false);
-  const [lockerExpanded, setLockerExpanded] = useState(false);
+  const [facilitiesExpanded, setFacilitiesExpanded] = useState(false);
 
   // 역 바뀌면 섹션 접기
   useEffect(() => {
     setExitExpanded(false);
-    setRestroomExpanded(false);
-    setAtmExpanded(false);
-    setNurseryExpanded(false);
-    setLockerExpanded(false);
+    setFacilitiesExpanded(false);
   }, [selectedStationName]);
 
   // ── 노선 탭 드래그 스크롤 (마우스 + 터치) ──────────────────────────────────
@@ -364,8 +358,8 @@ const MapPopups = ({
             offset={15}
             className="custom-station-popup"
         >
-            <div 
-                className="p-4 w-[280px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
+            <div
+                className="p-4 w-[320px] bg-white/95 dark:bg-zinc-900/95 backdrop-blur-2xl rounded-2xl border border-white/20 dark:border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.3)] overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
@@ -373,19 +367,19 @@ const MapPopups = ({
                 <div className="flex items-center justify-between mb-3.5 pb-2 border-b border-zinc-100 dark:border-white/5">
                     <div className="flex flex-col gap-0.5 overflow-hidden min-w-0">
                         <div className="flex items-center gap-2">
-                            <h3 className="text-[18px] font-black text-zinc-900 dark:text-white truncate max-w-[150px]">
+                            <h3 className="text-[20px] font-black text-zinc-900 dark:text-white truncate max-w-[170px] tracking-tight">
                                 {activeTab === 'subway' ? selectedStationName : selectedBusStop?.name}
                             </h3>
                             {activeTab === 'subway' && (
                                 arrivalLoading
-                                    ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
+                                    ? <span className="shrink-0 w-2 h-2 rounded-full bg-zinc-400 animate-pulse" />
                                     : isLiveArrival
-                                        ? <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                        : <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-amber-400" />
+                                        ? <span className="shrink-0 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        : <span className="shrink-0 w-2 h-2 rounded-full bg-amber-400" />
                             )}
                         </div>
                         {activeTab === 'subway' && stationAddrText && (
-                            <span className="text-[10px] text-zinc-400 dark:text-zinc-500 truncate">{stationAddrText}</span>
+                            <span className="text-[11px] text-zinc-400 dark:text-zinc-500 truncate">{stationAddrText}</span>
                         )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
@@ -431,7 +425,7 @@ const MapPopups = ({
                                       hapticLight();
                                       onActiveLineChange(badge.lineName);
                                     }}
-                                    className={`inline-flex items-center justify-center h-[26px] px-3 rounded-full text-[10px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
+                                    className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
                                     style={{
                                       touchAction: 'pan-x',
                                       backgroundColor: isActive ? badge.color : 'transparent',
@@ -489,187 +483,124 @@ const MapPopups = ({
                     );
                 })()}
 
-                {/* Restroom Info */}
-                {activeTab === 'subway' && stationRestrooms && stationRestrooms.restrooms.length > 0 && (() => {
-                    const wc = stationRestrooms.restrooms;
+                {/* Facilities — unified accordion */}
+                {activeTab === 'subway' && (() => {
+                    const fc = stationFacilities;
+                    const wc = stationRestrooms?.restrooms ?? fc?.restroom ?? [];
+                    const atm = fc?.atm ?? [];
+                    const nursery = fc?.nursery ?? [];
+                    const locker = fc?.locker ?? [];
+                    const badges = [
+                        wc.length > 0      && { icon: '🚻', count: wc.length },
+                        atm.length > 0     && { icon: '💳', count: atm.length },
+                        nursery.length > 0 && { icon: '🍼', count: nursery.length },
+                        locker.length > 0  && { icon: '🔒', count: locker.length },
+                    ].filter(Boolean) as { icon: string; count: number }[];
+                    if (badges.length === 0) return null;
+
                     return (
-                        <div className="mb-3">
+                        <div className="mb-3 rounded-xl border border-zinc-100 dark:border-white/8 overflow-hidden">
                             <button
-                                onClick={(e) => { e.stopPropagation(); hapticLight(); setRestroomExpanded(v => !v); }}
-                                className="w-full flex items-center justify-between py-1.5 text-left"
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setFacilitiesExpanded(v => !v); }}
+                                className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
                             >
-                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
-                                    🚻 화장실 안내 ({wc.length}곳)
-                                </span>
-                                <span className="text-[10px] text-zinc-400">{restroomExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
-                            </button>
-                            {restroomExpanded && (
-                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
-                                    {wc.map((r, i) => (
-                                        <div key={i} className="flex items-start gap-2 text-[10px]">
-                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
-                                                {r.floor || 'B1'}
-                                            </span>
-                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
-                                                {r.entrance && <span className="text-zinc-400">{r.entrance}번 출구 · </span>}
-                                                {r.detail || r.info}
-                                            </span>
-                                            {r.wheelchair && (
-                                                <span className="shrink-0 text-blue-400 text-[11px]">♿</span>
-                                            )}
-                                        </div>
+                                <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                    <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tight shrink-0">역사 시설</span>
+                                    {badges.map(b => (
+                                        <span key={b.icon} className="inline-flex items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold">
+                                            <span>{b.icon}</span><span>{b.count}</span>
+                                        </span>
                                     ))}
+                                </div>
+                                <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{facilitiesExpanded ? '▲' : '▼'}</span>
+                            </button>
+                            {facilitiesExpanded && (
+                                <div className="px-3 py-2 space-y-3 border-t border-zinc-100 dark:border-white/8">
+                                    {/* 화장실 */}
+                                    {wc.length > 0 && (
+                                        <div>
+                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🚻 화장실 ({wc.length}곳)</div>
+                                            <div className="space-y-1">
+                                                {wc.map((r: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{r.floor || 'B1'}</span>
+                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                            {r.entrance && <span className="text-zinc-400">{r.entrance}번 출구 · </span>}
+                                                            {r.detail || r.info}
+                                                        </span>
+                                                        {r.wheelchair && <span className="shrink-0 text-blue-400">♿</span>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {/* ATM */}
+                                    {atm.length > 0 && (
+                                        <div>
+                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">💳 ATM ({atm.length}곳)</div>
+                                            <div className="space-y-1">
+                                                {atm.map((item: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
+                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                            {[item.bank, item.direction, item.detail].filter(Boolean).join(' · ') || item.info || item.name || ''}
+                                                        </span>
+                                                        {item.hours && <span className="shrink-0 text-zinc-400 text-[9px]">{item.hours}</span>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {/* 수유실 */}
+                                    {nursery.length > 0 && (
+                                        <div>
+                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🍼 수유실 ({nursery.length}곳)</div>
+                                            <div className="space-y-1">
+                                                {nursery.map((item: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
+                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                            {item.entrance && <span className="text-zinc-400">{item.entrance}번 출구 · </span>}
+                                                            {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
+                                                        </span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                    {/* 물품보관 */}
+                                    {locker.length > 0 && (
+                                        <div>
+                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🔒 물품보관 ({locker.length}곳)</div>
+                                            <div className="space-y-1">
+                                                {locker.map((item: any, i: number) => (
+                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
+                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                            {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
+                                                        </span>
+                                                        {item.count != null && <span className="shrink-0 text-zinc-400 text-[9px]">{item.count}개</span>}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
                     );
                 })()}
 
-                {/* ATM Info */}
-                {activeTab === 'subway' && stationFacilities && stationFacilities.atm.length > 0 && (() => {
-                    const items = stationFacilities.atm;
-                    return (
-                        <div className="mb-3">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); hapticLight(); setAtmExpanded(v => !v); }}
-                                className="w-full flex items-center justify-between py-1.5 text-left"
-                            >
-                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
-                                    💳 ATM 안내 ({items.length}곳)
-                                </span>
-                                <span className="text-[10px] text-zinc-400">{atmExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
-                            </button>
-                            {atmExpanded && (
-                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
-                                    {items.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2 text-[10px]">
-                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
-                                                {item.floor || item.stnFloor || 'B1'}
-                                            </span>
-                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
-                                                {[item.bank, item.direction, item.detail].filter(Boolean).join(' · ') || item.info || item.name || ''}
-                                            </span>
-                                            {item.hours && (
-                                                <span className="shrink-0 text-zinc-400 dark:text-zinc-500 text-[9px] leading-5">{item.hours}</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
-
-                {/* Nursery Info */}
-                {activeTab === 'subway' && stationFacilities && stationFacilities.nursery.length > 0 && (() => {
-                    const items = stationFacilities.nursery;
-                    return (
-                        <div className="mb-3">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); hapticLight(); setNurseryExpanded(v => !v); }}
-                                className="w-full flex items-center justify-between py-1.5 text-left"
-                            >
-                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
-                                    🍼 수유실 안내 ({items.length}곳)
-                                </span>
-                                <span className="text-[10px] text-zinc-400">{nurseryExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
-                            </button>
-                            {nurseryExpanded && (
-                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
-                                    {items.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2 text-[10px]">
-                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
-                                                {item.floor || item.stnFloor || 'B1'}
-                                            </span>
-                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
-                                                {item.entrance && <span className="text-zinc-400">{item.entrance}번 출구 · </span>}
-                                                {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
-
-                {/* Locker Info */}
-                {activeTab === 'subway' && stationFacilities && stationFacilities.locker.length > 0 && (() => {
-                    const items = stationFacilities.locker;
-                    return (
-                        <div className="mb-3">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); hapticLight(); setLockerExpanded(v => !v); }}
-                                className="w-full flex items-center justify-between py-1.5 text-left"
-                            >
-                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
-                                    🔒 물품보관 안내 ({items.length}곳)
-                                </span>
-                                <span className="text-[10px] text-zinc-400">{lockerExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
-                            </button>
-                            {lockerExpanded && (
-                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
-                                    {items.map((item, i) => (
-                                        <div key={i} className="flex items-start gap-2 text-[10px]">
-                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
-                                                {item.floor || item.stnFloor || 'B1'}
-                                            </span>
-                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
-                                                {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
-                                            </span>
-                                            {item.count != null && (
-                                                <span className="shrink-0 text-zinc-400 dark:text-zinc-500 text-[9px] leading-5">{item.count}개</span>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
-
-                {/* Navigation Actions */}
-                <div className="grid grid-cols-3 gap-1.5 mb-4">
-                    {(() => {
-                        const stationName = selectedStationName || selectedBusStop?.name || selectedWC?.name || "";
-                        const isStartSet = !!startStation;
-                        if (!stationName) return null;
-                        
-                        return (
-                            <>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); hapticLight(); onSetStart(stationName); setPopupCoords(null); }}
-                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
-                                >
-                                    출발지
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); hapticLight(); onSetWaypoint(stationName); setPopupCoords(null); }}
-                                    className="py-2 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-95"
-                                >
-                                    경유지
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); hapticLight(); onSetEnd(stationName); setPopupCoords(null); }}
-                                    className={`py-2 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
-                                >
-                                    도착지
-                                </button>
-                            </>
-                        );
-                    })()}
-                </div>
-
+                {/* Arrivals */}
                 <div className="space-y-2">
                     {(activeTab === 'subway' && selectedStationName) ? (
                         arrivalLoading && stationArrivals.length === 0 ? (
-                            <div className="py-4 flex items-center justify-center gap-2 text-zinc-400 dark:text-white/30 text-[11px] font-bold">
+                            <div className="py-5 flex items-center justify-center gap-2 text-zinc-400 dark:text-white/30 text-[11px] font-bold">
                                 <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse" />
                                 <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse [animation-delay:0.2s]" />
                                 <span className="w-1.5 h-1.5 rounded-full bg-zinc-400 animate-pulse [animation-delay:0.4s]" />
                             </div>
                         ) : stationArrivals.length > 0 ? (() => {
-                            // 이미 지난 열차 제거 (barvlDt <= 0 이고 당역·진입 아닌 것)
                             const notExpired = (arr: any) =>
                                 arr.arvlCd === '1' || arr.arvlCd === '0' || (parseInt(arr.barvlDt) || 0) > 0;
                             const isUp   = (arr: any) => arr.updnLine.includes('상행') || arr.updnLine.includes('내선') || arr.updnLine.includes('상선');
@@ -679,79 +610,93 @@ const MapPopups = ({
                             const allUp   = validArrivals.filter(isUp);
                             const allDown = validArrivals.filter(isDown);
 
-                            // 경로 검색 중: 해당 역의 경로 방향만 표시
                             const showUp   = routeDirection === null || routeDirection === '0';
                             const showDown = routeDirection === null || routeDirection === '1';
                             const upTrains   = showUp   ? allUp   : [];
                             const downTrains = showDown ? allDown : [];
 
                             const offHourMsg = (() => { const h = new Date().getHours(); return (h >= 1 && h < 5) ? "운행 종료" : "정보 없음"; })();
-
-                            // 경로 방향 한쪽만 표시할 때는 전체 너비로
                             const singleDirection = routeDirection !== null;
+
                             return (
-                            <div className={`mt-1 ${singleDirection ? 'flex flex-col gap-1.5' : 'grid grid-cols-2 gap-2'}`}>
-                                {showUp && (
-                                <div className="flex flex-col gap-1.5">
-                                    <ArrivalHeader
-                                        defaultTitle="상행 · 내선"
-                                        trains={upTrains}
-                                        textColor="text-blue-500 dark:text-blue-400"
-                                        borderColor="border-blue-500/20"
-                                    />
-                                    {upTrains.length > 0 ? (
-                                        upTrains.slice(0, 3).map((arr: any, i: number) => (
-                                            <div key={i} className="flex items-center gap-1.5 group">
-                                                <div className="flex-1">
-                                                    <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
+                                <div className={`${singleDirection ? 'flex flex-col gap-2' : 'grid grid-cols-2 gap-2'}`}>
+                                    {showUp && (
+                                        <div className="flex flex-col gap-1.5 rounded-xl bg-blue-50/60 dark:bg-blue-500/[0.06] p-2">
+                                            <ArrivalHeader
+                                                defaultTitle="상행 · 내선"
+                                                trains={upTrains}
+                                                textColor="text-blue-500 dark:text-blue-400"
+                                                borderColor="border-blue-500/20"
+                                            />
+                                            {upTrains.length > 0 ? (
+                                                upTrains.slice(0, 3).map((arr: any, i: number) => (
+                                                    <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                                ))
+                                            ) : (
+                                                <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
+                                            )}
+                                        </div>
+                                    )}
+                                    {showDown && (
+                                        <div className="flex flex-col gap-1.5 rounded-xl bg-orange-50/60 dark:bg-orange-500/[0.06] p-2">
+                                            <ArrivalHeader
+                                                defaultTitle="하행 · 외선"
+                                                trains={downTrains}
+                                                textColor="text-orange-500 dark:text-orange-400"
+                                                borderColor="border-orange-500/20"
+                                            />
+                                            {downTrains.length > 0 ? (
+                                                downTrains.slice(0, 3).map((arr: any, i: number) => (
+                                                    <ArrivalItemListItem key={i} arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
+                                                ))
+                                            ) : (
+                                                <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
-                                )}
-                                {showDown && (
-                                <div className="flex flex-col gap-1.5">
-                                    <ArrivalHeader
-                                        defaultTitle="하행 · 외선"
-                                        trains={downTrains}
-                                        textColor="text-orange-500 dark:text-orange-400"
-                                        borderColor="border-orange-500/20"
-                                    />
-                                    {downTrains.length > 0 ? (
-                                        downTrains.slice(0, 3).map((arr: any, i: number) => (
-                                            <div key={i} className="flex items-center gap-1.5 group">
-                                                <div className="flex-1">
-                                                    <ArrivalItemListItem arr={arr} timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} />
-                                                </div>
-                                            </div>
-                                        ))
-                                    ) : (
-                                        <div className="text-[10px] text-zinc-400 text-center py-2">{offHourMsg}</div>
-                                    )}
-                                </div>
-                                )}
-                            </div>
-                        );
-                    })() : (
-                            <div className="py-4 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">
-                                {(() => {
-                                    const hour = new Date().getHours();
-                                    return (hour >= 1 && hour < 5) ? "운행 시간이 아닙니다." : "도착 정보가 없습니다.";
-                                })()}
+                            );
+                        })() : (
+                            <div className="py-5 text-center text-zinc-400 dark:text-white/30 text-[11px] font-bold">
+                                {(() => { const h = new Date().getHours(); return (h >= 1 && h < 5) ? "운행 시간이 아닙니다." : "도착 정보가 없습니다."; })()}
                             </div>
                         )
                     ) : (selectedBusStop) ? (
-                        <>
-                            <BusStopPanel stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
-                        </>
+                        <BusStopPanel stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
                     ) : null}
                 </div>
-                
+
+                {/* Navigation Actions — 도착 정보 아래 */}
+                {(() => {
+                    const stationName = selectedStationName || selectedBusStop?.name || selectedWC?.name || "";
+                    const isStartSet = !!startStation;
+                    if (!stationName) return null;
+                    return (
+                        <div className="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); onSetStart(stationName); setPopupCoords(null); }}
+                                className={`py-2.5 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                            >
+                                출발지
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); onSetWaypoint(stationName); setPopupCoords(null); }}
+                                className="py-2.5 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-95"
+                            >
+                                경유지
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); onSetEnd(stationName); setPopupCoords(null); }}
+                                className={`py-2.5 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                            >
+                                도착지
+                            </button>
+                        </div>
+                    );
+                })()}
+
                 {selectedBusStop && (
-                   <RoadViewButtons lat={selectedBusStop.lat} lng={selectedBusStop.lng}  />
+                    <RoadViewButtons lat={selectedBusStop.lat} lng={selectedBusStop.lng} />
                 )}
             </div>
         </Popup>

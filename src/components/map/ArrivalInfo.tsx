@@ -151,7 +151,7 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
           </span>
         )}
         <span
-          className="text-[12px] font-semibold leading-tight whitespace-nowrap"
+          className="text-[14px] font-bold leading-tight whitespace-nowrap"
           style={isHighlight ? { color: lineColor } : {}}
         >
           {displayTime}
