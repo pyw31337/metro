@@ -66,7 +66,7 @@ export class MetropolitanBusService {
           break;
       }
 
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) return [];
       const json = await res.json();
 
@@ -128,7 +128,7 @@ export class MetropolitanBusService {
     if (!apiKey || apiKey === "sample") return [];
     try {
       const url = `${this.TAGO_URL}BusRouteInfoInqireService/getRouteAcctoThrghSttnList?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) return [];
       const json = await res.json();
       const items = json?.response?.body?.items?.item || [];
@@ -221,7 +221,7 @@ export class MetropolitanBusService {
     if (!apiKey || apiKey === "sample") return null;
     try {
       const url = `${this.TAGO_URL}BusRouteInfoInqireService/getRoutePath?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) return null;
       const json = await res.json();
       const items = json?.response?.body?.items?.item || [];
@@ -262,7 +262,7 @@ export class MetropolitanBusService {
     try {
       if (cityCode === "11") {
         const url = `${this.SEOUL_URL}busRouteInfo/getStaionByRoute?busRouteId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) return [];
         const json = await res.json();
         if (json?.ServiceResult?.msgHeader?.headerCd !== "0") return [];
@@ -277,7 +277,7 @@ export class MetropolitanBusService {
           .filter(s => !isNaN(s.lat) && !isNaN(s.lng) && s.lat > 0 && s.lng > 0);
       } else {
         const url = `${this.TAGO_URL}BusRouteInfoInqireService/getRouteAcctoThrghSttnList?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
-        const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
         if (!res.ok) return [];
         const json = await res.json();
         const items = json?.response?.body?.items?.item || [];
@@ -447,7 +447,7 @@ export class MetropolitanBusService {
     if (!apiKey || apiKey === "sample") return [];
     try {
       const url = `${this.SEOUL_URL}stationinfo/getRouteByStation?arsId=${arsId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
       if (!res.ok) return [];
       const json = await res.json();
       const headerCd = json?.ServiceResult?.msgHeader?.headerCd;
@@ -471,7 +471,7 @@ export class MetropolitanBusService {
     if (!apiKey || apiKey === "sample") return null;
     try {
       const url = `${this.SEOUL_URL}stationinfo/getBustimeByStation?arsId=${arsId}&busRouteId=${busRouteId}&serviceKey=${encodeURIComponent(apiKey)}&resultType=json`;
-      const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
       if (!res.ok) return null;
       const json = await res.json();
       const headerCd = json?.ServiceResult?.msgHeader?.headerCd;
@@ -512,7 +512,7 @@ export class MetropolitanBusService {
         url = `${this.TAGO_URL}BusLcInfoInqireService/getRouteLcInfoList?cityCode=${cityCode}&routeId=${routeId}&serviceKey=${encodeURIComponent(apiKey)}&_type=json`;
       }
 
-      const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+      const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
       if (!res.ok) return [];
       const json = await res.json();
 
