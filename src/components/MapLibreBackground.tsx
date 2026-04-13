@@ -114,15 +114,15 @@ function drawTrainCard(color: string): ImageData | null {
     c.fillStyle = color;
     rr(13, 13, 102, 102, 18); c.fill();
 
-    // 3) 흰색 쐐기(∧) — 위쪽이 진행 방향
+    // 3) 흰색 쐐기(∧) — 위쪽이 진행 방향, 원래 크기의 60%로 중앙 배치
     c.strokeStyle = 'white';
-    c.lineWidth   = 17;
+    c.lineWidth   = 11;
     c.lineCap     = 'round';
     c.lineJoin    = 'round';
     c.beginPath();
-    c.moveTo(28, 84);
-    c.lineTo(64, 36);
-    c.lineTo(100, 84);
+    c.moveTo(42, 78);
+    c.lineTo(64, 50);
+    c.lineTo(86, 78);
     c.stroke();
 
     return ctx.getImageData(0, 0, 128, 128);
