@@ -43,6 +43,7 @@ const LINE_SPEED_KMH: Record<string, number> = {
   '9호선': 42,  '경의중앙선': 55, '공항철도': 75,
   '수인분당선': 45, '신분당선': 72, '경춘선': 55,
   '신림선': 35, '우이신설선': 30,
+  '서해선': 60, '경강선': 100, 'GTX-A': 150,
 };
 
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
