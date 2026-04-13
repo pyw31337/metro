@@ -139,12 +139,25 @@ function processUpdates(units: any[]) {
         ? (unit.futurePos ?? unit.nextPos)
         : unit.nextPos;
 
+      // 초기 베어링: startPos→bearingTarget 우선.
+      // 두 좌표가 동일하면(prevPos 없는 말단역 등 → calcBearing=0이 되는 버그) futurePos 방향으로 보완.
+      function bestInitialBearing(): number {
+        const b1 = calcBearing(startPos, bearingTarget);
+        if (b1 !== 0) return b1;
+        // startPos === bearingTarget → futurePos 방향 시도
+        const fp = unit.futurePos ?? unit.nextPos;
+        const b2 = calcBearing(unit.nextPos, fp);
+        if (b2 !== 0) return b2;
+        // prevPos → nextPos 방향 시도
+        return calcBearing(unit.prevPos ?? unit.nextPos, unit.nextPos);
+      }
+
       state.set(unit.id, {
         ...unit,
         lastPos:         startPos,
         lastUpdateTime:  now - backwardMs,
         lastSeenTime:    now,              // 만료 판정: 항상 실제 수신 시각
-        currentBearing:  calcBearing(startPos, bearingTarget),
+        currentBearing:  bestInitialBearing(),
         birthTime:       now,
         deathTime:       null,
         lineStationIdx:  unit.lineStationIdx ?? 0,
@@ -311,8 +324,11 @@ function startTick() {
       }
 
       // 베어링 스무딩
+      // 큰 각도 차이(>30°) → 빠르게 수렴(0.20), 미세 조정 → 부드럽게(0.10)
       const targetBearing = calcBearing(pos, bearingTarget);
-      unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, 0.08);
+      const bearingDiff = Math.abs(((targetBearing - unit.currentBearing + 540) % 360) - 180);
+      const lerpT = bearingDiff > 30 ? 0.20 : 0.10;
+      unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, lerpT);
 
       // 불투명도 (페이드 인/아웃)
       let opacity = 1;

@@ -82,40 +82,48 @@ const INTERACTIVE_LAYER_IDS = [
 ];
 
 
-// 통통한 화살표 아이콘 — 위쪽(y=0)이 진행 방향, icon-rotate로 방위각 회전.
-// 네모+세모 조합 대신 단일 fat-arrow 실루엣: 넓은 화살촉 + 오목 노치 + 둥근 꼬리
+// 라운드 정사각형 카드 + 위쪽을 가리키는 쐐기(∧) 아이콘.
+// icon-rotate 로 실제 방위각만큼 회전 → 진행 방향이 카드 위쪽과 일치.
 function drawTrainCard(color: string): ImageData | null {
     const canvas = document.createElement('canvas');
     canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
+    const c = ctx;
 
-    // fat arrow path — 한 번 정의해 border·fill 두 번 재사용
-    const c = ctx; // null 체크 통과 후 non-null 참조 캡처
-    function arrow() {
+    // roundRect polyfill (구형 브라우저 대비)
+    function rr(x: number, y: number, w: number, h: number, r: number) {
         c.beginPath();
-        c.moveTo(64, 4);           // 앞 끝 (tip)
-        c.lineTo(112, 66);         // 우측 날개 끝
-        c.lineTo(80, 52);          // 우측 오목 노치 (arrowhead → shaft)
-        c.lineTo(80, 108);         // 우측 몸통 하단 (rounding 시작)
-        c.arcTo(80, 120, 70, 120, 10);  // 우하 둥근 모서리
-        c.lineTo(58, 120);
-        c.arcTo(48, 120, 48, 108, 10);  // 좌하 둥근 모서리
-        c.lineTo(48, 52);          // 좌측 오목 노치
-        c.lineTo(16, 66);          // 좌측 날개 끝
-        c.closePath();
+        if ((c as any).roundRect) {
+            (c as any).roundRect(x, y, w, h, r);
+        } else {
+            c.moveTo(x + r, y);
+            c.lineTo(x + w - r, y); c.arcTo(x+w, y,   x+w, y+r,   r);
+            c.lineTo(x+w, y+h-r);  c.arcTo(x+w, y+h, x+w-r, y+h, r);
+            c.lineTo(x+r, y+h);    c.arcTo(x,   y+h, x,   y+h-r, r);
+            c.lineTo(x, y+r);      c.arcTo(x,   y,   x+r, y,     r);
+            c.closePath();
+        }
     }
 
-    // 1) 흰색 외곽선 (stroke으로 border 효과)
-    c.lineWidth   = 10;
-    c.strokeStyle = 'white';
-    c.lineJoin    = 'round';
-    c.lineCap     = 'round';
-    arrow(); c.stroke();
+    // 1) 흰색 외곽 카드 (테두리 역할)
+    c.fillStyle = 'white';
+    rr(4, 4, 120, 120, 24); c.fill();
 
-    // 2) 노선 색 채움
+    // 2) 노선색 내부 카드
     c.fillStyle = color;
-    arrow(); c.fill();
+    rr(13, 13, 102, 102, 18); c.fill();
+
+    // 3) 흰색 쐐기(∧) — 위쪽이 진행 방향
+    c.strokeStyle = 'white';
+    c.lineWidth   = 17;
+    c.lineCap     = 'round';
+    c.lineJoin    = 'round';
+    c.beginPath();
+    c.moveTo(28, 84);
+    c.lineTo(64, 36);
+    c.lineTo(100, 84);
+    c.stroke();
 
     return ctx.getImageData(0, 0, 128, 128);
 }
