@@ -17,6 +17,7 @@ import { useStopRoutes } from "@/hooks/useStopRoutes";
 import { useBusRouteInfo } from "@/hooks/useBusRouteInfo";
 import { useStationFacilities } from "@/hooks/useStationFacilities";
 import { useStationAddress, formatShortAddress } from "@/hooks/useStationAddress";
+import { useStationExits } from "@/hooks/useStationExits";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 
@@ -269,6 +270,11 @@ const MapPopups = ({
   const stationFacilities = useStationFacilities(activeTab === 'subway' ? selectedStationName : null);
   const stationAddr = useStationAddress(activeTab === 'subway' ? selectedStationName : null);
   const stationAddrText = formatShortAddress(stationAddr);
+  const stationExits = useStationExits(activeTab === 'subway' ? selectedStationName : null);
+  const [exitExpanded, setExitExpanded] = useState(false);
+
+  // 역 바뀌면 출구 섹션 접기
+  useEffect(() => { setExitExpanded(false); }, [selectedStationName]);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -421,6 +427,44 @@ const MapPopups = ({
                                     <span className="text-zinc-400 dark:text-white/30">{c.count}</span>
                                 </span>
                             ))}
+                        </div>
+                    );
+                })()}
+
+                {/* Exit Info */}
+                {activeTab === 'subway' && stationExits && (() => {
+                    const sortedExits = Object.entries(stationExits.exits)
+                        .sort((a, b) => {
+                            const na = parseInt(a[0]), nb = parseInt(b[0]);
+                            return isNaN(na) || isNaN(nb) ? a[0].localeCompare(b[0]) : na - nb;
+                        });
+                    if (sortedExits.length === 0) return null;
+                    return (
+                        <div className="mb-3">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setExitExpanded(v => !v); }}
+                                className="w-full flex items-center justify-between py-1.5 text-left"
+                            >
+                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
+                                    출구 안내 ({sortedExits.length}개)
+                                </span>
+                                <span className="text-[10px] text-zinc-400">{exitExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
+                            </button>
+                            {exitExpanded && (
+                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
+                                    {sortedExits.map(([exitNo, facilities]) => (
+                                        <div key={exitNo} className="flex gap-2 text-[10px]">
+                                            <span className="shrink-0 w-7 h-5 flex items-center justify-center rounded-md bg-zinc-800 dark:bg-white/15 text-white dark:text-white font-black text-[9px]">
+                                                {exitNo}
+                                            </span>
+                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 truncate">
+                                                {facilities.slice(0, 4).join(' · ')}
+                                                {facilities.length > 4 && <span className="text-zinc-400"> +{facilities.length - 4}</span>}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     );
                 })()}
