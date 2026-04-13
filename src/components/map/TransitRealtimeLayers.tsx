@@ -336,9 +336,9 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           filter={['==', ['get', 'type'], 'subway']}
           layout={{
             'visibility':               trainVis,
-            'icon-image':               ['case', ['get', 'isDwelling'], 'train-card-dwell-AAAAAA', 'train-card-AAAAAA'],
+            'icon-image':               'train-card-dwell-AAAAAA',
             'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.096, 14, 0.20, 18, 0.40],
-            'icon-rotate':              ['case', ['get', 'isDwelling'], 0, ['get', 'bearing']],
+            'icon-rotate':              0,
             'icon-rotation-alignment':  'map',
             'icon-allow-overlap':       true,
             'icon-ignore-placement':    true,
