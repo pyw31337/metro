@@ -39,10 +39,12 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [alertMsg,    setAlertMsg]    = useState<string | null>(null);
 
   const boardedIdRef        = useRef<string | null>(null);
+  const selectedIdRef       = useRef<string | null>(null);
   const alertedStationRef   = useRef<string | null>(null);
   const pulseRafRef         = useRef<number | null>(null);
 
-  useEffect(() => { boardedIdRef.current = boardedId; }, [boardedId]);
+  useEffect(() => { boardedIdRef.current  = boardedId;  }, [boardedId]);
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
   // ─── 탑승 해제 ───
   const deBoard = useCallback(() => {
@@ -106,6 +108,13 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
     const handleUpdate = (units: RealtimeUnit[]) => {
       const ap = activePathRef.current;
+
+      // ── 선택 열차 위치 실시간 추적 ──
+      const sId = selectedIdRef.current;
+      if (sId) {
+        const selUnit = units.find(u => u.id === sId);
+        if (selUnit) setSelectedPos([...selUnit.pos] as [number, number]);
+      }
 
       // ── 탑승 열차 위치 추적 + 1정거장전 알림 (필터링 전 전체 units에서) ──
       const bId = boardedIdRef.current;
@@ -251,17 +260,6 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     };
   }, [map, selectedId]);
 
-  // ─── 선택 레이블 필터 동기화 ───
-  useEffect(() => {
-    if (!map) return;
-    try {
-      map.setFilter('transit-train-label',
-        selectedId
-          ? ['==', ['get', 'id'], selectedId]
-          : ['==', ['get', 'id'], '']
-      );
-    } catch {}
-  }, [map, selectedId]);
 
   // ─── activeLine 변경 시 opacity 표현식 갱신 ───
   useEffect(() => {
@@ -319,27 +317,6 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           paint={{ 'icon-opacity': buildOpacityExpr(activeLine) }}
         />
 
-        {/* 선택된 열차 레이블 (행선지) */}
-        <Layer
-          id="transit-train-label"
-          type="symbol"
-          filter={['==', ['get', 'id'], '']}
-          layout={{
-            'visibility':            trainVis,
-            'text-field':            ['get', 'label'],
-            'text-font':             ['Open Sans Bold'],
-            'text-size':             11,
-            'text-offset':           [0, 1.8],
-            'text-anchor':           'top',
-            'text-allow-overlap':    true,
-            'text-ignore-placement': true,
-          }}
-          paint={{
-            'text-color':      '#ffffff',
-            'text-halo-color': '#000000',
-            'text-halo-width': 2,
-          }}
-        />
 
         {/* 버스 — 원형 배경 */}
         <Layer
