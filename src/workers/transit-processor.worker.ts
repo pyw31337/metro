@@ -206,13 +206,21 @@ function processUpdates(units: any[]) {
 
       } else {
         // ── 주행 중(ratio<1.0)에 새 목적지로 변경 ──
-        // 현재 시각적 위치에서 새 목적지로 재시작
+        // 현재 시각적 위치에서 새 목적지로 재시작.
+        // 이동 필요 거리를 측정해 segmentMs를 비례 스케일:
+        // 여러 역을 건너뛰는 경우(급행·데이터 점프)에도 순간이동처럼 보이지 않도록 처리.
         const visualPos: [number, number] =
           lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
+        const stdDist  = coordDist(existing.lastPos, existing.nextPos);
+        const jumpDist = coordDist(visualPos, newNextPos);
+        // 표준 구간 대비 실제 이동 거리 비율로 segmentMs 보정 (최소 45s, 최대 5분)
+        const scaledSegMs = stdDist > 0
+          ? Math.max(45_000, Math.min(300_000, segMs * (jumpDist / stdDist)))
+          : segMs;
         existing.lastPos        = visualPos;
         existing.nextPos        = newNextPos;
         existing.futurePos      = unit.futurePos ?? newNextPos;
-        existing.segmentMs      = segMs;
+        existing.segmentMs      = scaledSegMs;
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
         existing.lastUpdateTime = now;
@@ -235,6 +243,13 @@ function coordsClose(a: [number, number], b: [number, number]): boolean {
   const dx = a[0] - b[0];
   const dy = a[1] - b[1];
   return (dx * dx + dy * dy) < 0.000001;
+}
+
+// 두 좌표 간 유클리드 거리(도 단위) — 순간이동 방지용 상대 비교에 충분
+function coordDist(a: [number, number], b: [number, number]): number {
+  const dx = a[0] - b[0];
+  const dy = a[1] - b[1];
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

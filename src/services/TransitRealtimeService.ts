@@ -87,8 +87,18 @@ const LINE_COLOR   = new Map<string, string>();
 const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
 const LINE_BY_ID   = new Map(SUBWAY_LINES.map(l => [l.id,   l]));
 // Per-line O(1) station index: Map<lineName, Map<stationName, stationIndex>>
+// canonical 이름(s.name) + normStation alias(괄호·역 제거) 모두 등록
+// 예: "신촌(2호선)" → "신촌"도 같은 인덱스로 조회 가능
 const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
-  SUBWAY_LINES.map(l => [l.name, new Map(l.stations.map((s, i) => [s.name, i]))])
+  SUBWAY_LINES.map(l => {
+    const m = new Map<string, number>();
+    l.stations.forEach((s, i) => {
+      m.set(s.name, i);
+      const bare = normStation(s.name);
+      if (bare !== s.name) m.set(bare, i); // "신촌(2호선)" → "신촌"
+    });
+    return [l.name, m];
+  })
 );
 
 (function buildIndex() {
