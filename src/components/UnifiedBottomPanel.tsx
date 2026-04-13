@@ -16,6 +16,7 @@ import { useRouteStore } from "@/store/useRouteStore";
 import { useMapStore } from "@/store/useMapStore";
 import { hapticLight, hapticMedium, hapticSuccess } from "@/utils/haptic";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { RouteArrivalPanel } from "@/components/map/RouteArrivalPanel";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -315,6 +316,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     selectedStrategy,
     onStrategyChange,
     pathResults,
+    activePath,
     timeDisplayMode,
     setTimeDisplayMode,
     isLocating = false,
@@ -562,7 +564,9 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     <Navigation size={12} className={showAllRouteBubbles ? "animate-pulse" : ""} />
                                 </button>
                             </div>
-                            
+
+                            {/* ── 탑승 열차 현황 패널 ── */}
+                            <RouteArrivalPanel activePath={activePath} />
                         </div>
                     )}
 
