@@ -220,6 +220,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           isSimulated:    u.isSimulated,
           opacity:        u.opacity,
           colorProgress:  u.colorProgress ?? 1,
+          isDwelling:     u.isDwelling ?? false,
           updnLine:       u.updnLine ?? '',
           currentStation: u.currentStationName ?? '',
         },
@@ -328,16 +329,16 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
       <Source id="transit-realtime-source" type="geojson" data={geoData}>
 
-        {/* 열차 아이콘 — 회색 (베어링 미초기화) */}
+        {/* 열차 아이콘 — 회색 (베어링 미초기화): 정차 시 ∥, 주행 시 ∧ */}
         <Layer
           id="transit-trains-gray"
           type="symbol"
           filter={['==', ['get', 'type'], 'subway']}
           layout={{
             'visibility':               trainVis,
-            'icon-image':               'train-card-AAAAAA',
+            'icon-image':               ['case', ['get', 'isDwelling'], 'train-card-dwell-AAAAAA', 'train-card-AAAAAA'],
             'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.096, 14, 0.20, 18, 0.40],
-            'icon-rotate':              ['get', 'bearing'],
+            'icon-rotate':              ['case', ['get', 'isDwelling'], 0, ['get', 'bearing']],
             'icon-rotation-alignment':  'map',
             'icon-allow-overlap':       true,
             'icon-ignore-placement':    true,
@@ -346,16 +347,16 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           paint={{ 'icon-opacity': buildGrayOpacityExpr(activeLine) }}
         />
 
-        {/* 열차 아이콘 — 노선색 (베어링 초기화 후 페이드인) */}
+        {/* 열차 아이콘 — 노선색 (베어링 초기화 후 페이드인): 정차 시 ∥, 주행 시 ∧ */}
         <Layer
           id="transit-trains"
           type="symbol"
           filter={['==', ['get', 'type'], 'subway']}
           layout={{
             'visibility':               trainVis,
-            'icon-image':               ['concat', 'train-card-', ['get', 'lineColor']],
+            'icon-image':               ['case', ['get', 'isDwelling'], ['concat', 'train-card-dwell-', ['get', 'lineColor']], ['concat', 'train-card-', ['get', 'lineColor']]],
             'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.096, 14, 0.20, 18, 0.40],
-            'icon-rotate':              ['get', 'bearing'],
+            'icon-rotate':              ['case', ['get', 'isDwelling'], 0, ['get', 'bearing']],
             'icon-rotation-alignment':  'map',
             'icon-allow-overlap':       true,
             'icon-ignore-placement':    true,

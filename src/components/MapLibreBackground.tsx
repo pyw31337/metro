@@ -91,7 +91,6 @@ function drawTrainCard(color: string): ImageData | null {
     if (!ctx) return null;
     const c = ctx;
 
-    // roundRect polyfill (구형 브라우저 대비)
     function rr(x: number, y: number, w: number, h: number, r: number) {
         c.beginPath();
         if ((c as any).roundRect) {
@@ -106,15 +105,13 @@ function drawTrainCard(color: string): ImageData | null {
         }
     }
 
-    // 1) 흰색 외곽 카드 (테두리 역할)
     c.fillStyle = 'white';
     rr(4, 4, 120, 120, 24); c.fill();
 
-    // 2) 노선색 내부 카드
     c.fillStyle = color;
     rr(13, 13, 102, 102, 18); c.fill();
 
-    // 3) 흰색 쐐기(∧) — 위쪽이 진행 방향, 원래 크기의 60%로 중앙 배치
+    // 쐐기(∧) — 진행 방향
     c.strokeStyle = 'white';
     c.lineWidth   = 11;
     c.lineCap     = 'round';
@@ -124,6 +121,44 @@ function drawTrainCard(color: string): ImageData | null {
     c.lineTo(64, 50);
     c.lineTo(86, 78);
     c.stroke();
+
+    return ctx.getImageData(0, 0, 128, 128);
+}
+
+// 정차 중 아이콘 — ∥ (일시정지 심볼).  icon-rotate=0 고정으로 사용.
+function drawTrainCardDwell(color: string): ImageData | null {
+    const canvas = document.createElement('canvas');
+    canvas.width = 128; canvas.height = 128;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    const c = ctx;
+
+    function rr(x: number, y: number, w: number, h: number, r: number) {
+        c.beginPath();
+        if ((c as any).roundRect) {
+            (c as any).roundRect(x, y, w, h, r);
+        } else {
+            c.moveTo(x + r, y);
+            c.lineTo(x + w - r, y); c.arcTo(x+w, y,   x+w, y+r,   r);
+            c.lineTo(x+w, y+h-r);  c.arcTo(x+w, y+h, x+w-r, y+h, r);
+            c.lineTo(x+r, y+h);    c.arcTo(x,   y+h, x,   y+h-r, r);
+            c.lineTo(x, y+r);      c.arcTo(x,   y,   x+r, y,     r);
+            c.closePath();
+        }
+    }
+
+    c.fillStyle = 'white';
+    rr(4, 4, 120, 120, 24); c.fill();
+
+    c.fillStyle = color;
+    rr(13, 13, 102, 102, 18); c.fill();
+
+    // ∥ — 두 수직 막대 (일시정지)
+    c.fillStyle = 'white';
+    c.beginPath(); (c as any).roundRect?.(40, 38, 14, 52, 4) ?? (() => { c.rect(40, 38, 14, 52); })();
+    c.fill();
+    c.beginPath(); (c as any).roundRect?.(74, 38, 14, 52, 4) ?? (() => { c.rect(74, 38, 14, 52); })();
+    c.fill();
 
     return ctx.getImageData(0, 0, 128, 128);
 }
@@ -147,9 +182,15 @@ const MapIconRegister = memo(() => {
                 const color = c.startsWith('#') ? c : `#${c}`;
                 const cleanColor = c.replace('#', '').toUpperCase();
                 const id = `train-card-${cleanColor}`;
-                if (map.hasImage(id)) return;
-                const data = drawTrainCard(color);
-                if (data) map.addImage(id, data);
+                if (!map.hasImage(id)) {
+                    const data = drawTrainCard(color);
+                    if (data) map.addImage(id, data);
+                }
+                const dwellId = `train-card-dwell-${cleanColor}`;
+                if (!map.hasImage(dwellId)) {
+                    const dwellData = drawTrainCardDwell(color);
+                    if (dwellData) map.addImage(dwellId, dwellData);
+                }
             });
 
             if (!map.hasImage('rocket')) {
@@ -169,7 +210,12 @@ const MapIconRegister = memo(() => {
         // styleimagemissing: 레이어가 아이콘을 찾지 못할 때 즉시 생성
         // → style 재로드 타이밍 경쟁 없이 항상 확실하게 렌더됨
         const onMissing = (e: any) => {
-            if (e.id?.startsWith('train-card-')) {
+            if (e.id?.startsWith('train-card-dwell-')) {
+                const cleanColor = e.id.replace('train-card-dwell-', '');
+                const color = `#${cleanColor}`;
+                const data = drawTrainCardDwell(color);
+                if (data && !map.hasImage(e.id)) map.addImage(e.id, data);
+            } else if (e.id?.startsWith('train-card-')) {
                 const cleanColor = e.id.replace('train-card-', '');
                 const color = `#${cleanColor}`;
                 const data = drawTrainCard(color);

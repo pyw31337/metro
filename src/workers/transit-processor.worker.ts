@@ -306,9 +306,17 @@ function startTick() {
       if (ratio === undefined) continue;
 
       let pos: [number, number];
-      let bearingTarget: [number, number];
+      let bearingTarget: [number, number] | null = null;
 
-      if (ratio <= 1.0) {
+      // Phase 2(정차): pos 고정, 베어링 동결
+      const elapsed2 = now - unit.lastUpdateTime;
+      const isDwelling = elapsed2 >= unit.segmentMs && elapsed2 < unit.segmentMs + unit.dwellMs;
+
+      if (isDwelling) {
+        // 역사 정차 중 — pos는 nextPos 고정, bearing은 마지막 값 그대로
+        pos           = unit.nextPos;
+        bearingTarget = null; // 동결 — 베어링 업데이트 안 함
+      } else if (ratio <= 1.0) {
         const t = easeInOut(ratio);
         if (unit.waypoints && unit.waypoints.length >= 2) {
           pos           = interpolateAlongPath(unit.waypoints, t);
@@ -329,19 +337,20 @@ function startTick() {
         }
       }
 
-      // 베어링 스무딩
-      // bearingInitialized=false(초기 0)이면 첫 비-0 방위각에서 스냅 → 북향 깜박임 방지
-      const targetBearing = calcBearing(pos, bearingTarget);
-      if (!unit.bearingInitialized) {
-        if (targetBearing !== 0) {
-          unit.currentBearing     = targetBearing;
-          unit.bearingInitialized = true;
-          unit.colorFadeStart     = now; // 색상 전환 시작
+      // 베어링 스무딩 — 정차 중(isDwelling)이면 업데이트 건너뜀
+      if (bearingTarget !== null) {
+        const targetBearing = calcBearing(pos, bearingTarget);
+        if (!unit.bearingInitialized) {
+          if (targetBearing !== 0) {
+            unit.currentBearing     = targetBearing;
+            unit.bearingInitialized = true;
+            unit.colorFadeStart     = now;
+          }
+        } else {
+          const bearingDiff = Math.abs(((targetBearing - unit.currentBearing + 540) % 360) - 180);
+          const lerpT = bearingDiff > 30 ? 0.20 : 0.10;
+          unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, lerpT);
         }
-      } else {
-        const bearingDiff = Math.abs(((targetBearing - unit.currentBearing + 540) % 360) - 180);
-        const lerpT = bearingDiff > 30 ? 0.20 : 0.10;
-        unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, lerpT);
       }
 
       // 색상 전환 진행도 (0=회색, 1=노선색) — colorFadeStart 기준 800ms 선형
@@ -369,6 +378,7 @@ function startTick() {
         isSimulated:     unit.isSimulated,
         opacity:         Math.round(opacity * 100) / 100,
         colorProgress:   Math.round(colorProgress * 100) / 100,
+        isDwelling,
         updnLine:        (unit as any).updnLine,
         currentStationName: (unit as any).currentStationName,
       });
