@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, memo, useState, useCallback } from "react";
+import { useEffect, useMemo, memo, useState, useCallback, useRef } from "react";
 import { Popup } from "react-map-gl/maplibre";
 import { X, Accessibility, Bell, Baby, RefreshCw, ChevronRight, MapPin, Clock, ArrowRight } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
@@ -279,6 +279,39 @@ const MapPopups = ({
   // 역 바뀌면 섹션 접기
   useEffect(() => { setExitExpanded(false); setRestroomExpanded(false); }, [selectedStationName]);
 
+  // ── 노선 탭 드래그 스크롤 (마우스 + 터치) ──────────────────────────────────
+  // overflow-x-auto 단독으로는 마우스 드래그 스크롤이 안 됨.
+  // MapLibre 팝업이 pointer 이벤트를 중간에 가로채기도 하므로
+  // setPointerCapture + preventDefault 조합으로 직접 구현.
+  const lineTabsRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = lineTabsRef.current;
+    if (!el) return;
+    let startX = 0, scrollLeft = 0, dragging = false, moved = false;
+    const onDown = (e: PointerEvent) => {
+      e.stopPropagation();
+      startX = e.clientX; scrollLeft = el.scrollLeft;
+      dragging = true; moved = false;
+    };
+    const onMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 5) { moved = true; el.setPointerCapture(e.pointerId); }
+      if (moved) { e.preventDefault(); e.stopPropagation(); el.scrollLeft = scrollLeft - dx; }
+    };
+    const onUp = () => { dragging = false; };
+    el.addEventListener('pointerdown', onDown);
+    el.addEventListener('pointermove', onMove, { passive: false });
+    el.addEventListener('pointerup', onUp);
+    el.addEventListener('pointercancel', onUp);
+    return () => {
+      el.removeEventListener('pointerdown', onDown);
+      el.removeEventListener('pointermove', onMove);
+      el.removeEventListener('pointerup', onUp);
+      el.removeEventListener('pointercancel', onUp);
+    };
+  }, [selectedStationName]); // 역 바뀌면 ref 갱신 후 재부착
+
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
     // activeLine 예: "2호선", "수인분당선", "경의중앙선"
@@ -370,11 +403,10 @@ const MapPopups = ({
                 </div>
 
                 {activeTab === 'subway' && badges.length > 0 && (
-                    <div 
-                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-1 w-full min-w-0 scroll-smooth pointer-events-auto"
+                    <div
+                        ref={lineTabsRef}
+                        className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-1 w-full min-w-0 cursor-grab active:cursor-grabbing"
                         style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-x' }}
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onMouseDown={(e) => e.stopPropagation()}
                         onWheel={(e) => e.stopPropagation()}
                     >
                         {badges.map((badge: { lineName: string; color: string }, idx: number) => {
