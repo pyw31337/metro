@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, memo, useState, useCallback, useRef } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import { X, Accessibility, Bell, Baby, RefreshCw, ChevronRight, MapPin, Clock, ArrowRight } from "lucide-react";
+import { X, Accessibility, Bell, Baby, RefreshCw, ChevronRight, MapPin, Clock, ArrowRight, Info, ArrowLeft } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
@@ -275,11 +275,13 @@ const MapPopups = ({
   const stationRestrooms = useSubwayRestrooms(activeTab === 'subway' ? selectedStationName : null);
   const [exitExpanded, setExitExpanded] = useState(false);
   const [facilitiesExpanded, setFacilitiesExpanded] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
 
-  // 역 바뀌면 섹션 접기
+  // 역 바뀌면 패널 초기화
   useEffect(() => {
     setExitExpanded(false);
     setFacilitiesExpanded(false);
+    setShowInfo(false);
   }, [selectedStationName]);
 
   // ── 노선 탭 드래그 스크롤 (마우스 + 터치) ──────────────────────────────────
@@ -383,12 +385,20 @@ const MapPopups = ({
                         )}
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                        {activeTab === 'subway' && onRefreshArrival && (
+                        {activeTab === 'subway' && !showInfo && onRefreshArrival && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); hapticLight(); onRefreshArrival(); }}
                                 className={`p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500 transition-all active:scale-90 ${arrivalLoading ? 'animate-spin' : ''}`}
                             >
                                 <RefreshCw size={12} />
+                            </button>
+                        )}
+                        {activeTab === 'subway' && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setShowInfo(v => !v); }}
+                                className={`p-1.5 rounded-full transition-all active:scale-90 ${showInfo ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500'}`}
+                            >
+                                {showInfo ? <ArrowLeft size={14} /> : <Info size={14} />}
                             </button>
                         )}
                         <button
@@ -405,7 +415,7 @@ const MapPopups = ({
                     </div>
                 </div>
 
-                {activeTab === 'subway' && badges.length > 0 && (
+                {activeTab === 'subway' && !showInfo && badges.length > 0 && (
                     <div
                         ref={lineTabsRef}
                         className="flex items-center gap-2 mb-4 overflow-x-auto no-scrollbar py-1 w-full min-w-0 cursor-grab active:cursor-grabbing"
@@ -415,7 +425,7 @@ const MapPopups = ({
                         {badges.map((badge: { lineName: string; color: string }, idx: number) => {
                             const label = getLineLongName(badge.lineName);
                             const isActive = activeLine === badge.lineName;
-                            
+
                             return (
                                 <button
                                     key={idx}
@@ -439,150 +449,145 @@ const MapPopups = ({
                         })}
                     </div>
                 )}
-                
-                {activeTab === 'subway' && realTimeCongestion && (
+
+                {activeTab === 'subway' && !showInfo && realTimeCongestion && (
                     <CongestionInfo data={realTimeCongestion} />
                 )}
 
-
-                {/* Exit Info */}
-                {activeTab === 'subway' && stationExits && (() => {
-                    const sortedExits = Object.entries(stationExits.exits)
-                        .sort((a, b) => {
-                            const na = parseInt(a[0]), nb = parseInt(b[0]);
-                            return isNaN(na) || isNaN(nb) ? a[0].localeCompare(b[0]) : na - nb;
-                        });
-                    if (sortedExits.length === 0) return null;
-                    return (
-                        <div className="mb-3">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); hapticLight(); setExitExpanded(v => !v); }}
-                                className="w-full flex items-center justify-between py-1.5 text-left"
-                            >
-                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
-                                    출구 안내 ({sortedExits.length}개)
-                                </span>
-                                <span className="text-[10px] text-zinc-400">{exitExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
-                            </button>
-                            {exitExpanded && (
-                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
-                                    {sortedExits.map(([exitNo, facilities]) => (
-                                        <div key={exitNo} className="flex gap-2 text-[10px]">
-                                            <span className="shrink-0 w-7 h-5 flex items-center justify-center rounded-md bg-zinc-800 dark:bg-white/15 text-white dark:text-white font-black text-[9px]">
-                                                {exitNo}
-                                            </span>
-                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 truncate">
-                                                {facilities.slice(0, 4).join(' · ')}
-                                                {facilities.length > 4 && <span className="text-zinc-400"> +{facilities.length - 4}</span>}
-                                            </span>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })()}
-
-                {/* Facilities — unified accordion */}
-                {activeTab === 'subway' && (() => {
+                {/* Info Panel — 출구 안내 + 역사 시설 */}
+                {activeTab === 'subway' && showInfo && (() => {
                     const fc = stationFacilities;
                     const wc = stationRestrooms?.restrooms ?? fc?.restroom ?? [];
                     const atm = fc?.atm ?? [];
                     const nursery = fc?.nursery ?? [];
                     const locker = fc?.locker ?? [];
-                    const badges = [
-                        wc.length > 0      && { icon: '🚻', count: wc.length },
-                        atm.length > 0     && { icon: '💳', count: atm.length },
-                        nursery.length > 0 && { icon: '🍼', count: nursery.length },
-                        locker.length > 0  && { icon: '🔒', count: locker.length },
-                    ].filter(Boolean) as { icon: string; count: number }[];
-                    if (badges.length === 0) return null;
+
+                    const sortedExits = stationExits
+                        ? Object.entries(stationExits.exits).sort((a, b) => {
+                            const na = parseInt(a[0]), nb = parseInt(b[0]);
+                            return isNaN(na) || isNaN(nb) ? a[0].localeCompare(b[0]) : na - nb;
+                          })
+                        : [];
 
                     return (
-                        <div className="mb-3 rounded-xl border border-zinc-100 dark:border-white/8 overflow-hidden">
-                            <button
-                                onClick={(e) => { e.stopPropagation(); hapticLight(); setFacilitiesExpanded(v => !v); }}
-                                className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
-                            >
-                                <div className="flex items-center gap-2 flex-wrap min-w-0">
-                                    <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tight shrink-0">역사 시설</span>
-                                    {badges.map(b => (
-                                        <span key={b.icon} className="inline-flex items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold">
-                                            <span>{b.icon}</span><span>{b.count}</span>
+                        <div className="space-y-3">
+                            {/* 출구 안내 */}
+                            {sortedExits.length > 0 && (
+                                <div>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); hapticLight(); setExitExpanded(v => !v); }}
+                                        className="w-full flex items-center justify-between py-1.5 text-left"
+                                    >
+                                        <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
+                                            출구 안내 ({sortedExits.length}개)
                                         </span>
-                                    ))}
+                                        <span className="text-[10px] text-zinc-400">{exitExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
+                                    </button>
+                                    {exitExpanded && (
+                                        <div className="space-y-1.5 max-h-[200px] overflow-y-auto no-scrollbar mt-1">
+                                            {sortedExits.map(([exitNo, facs]) => (
+                                                <div key={exitNo} className="flex gap-2 text-[10px]">
+                                                    <span className="shrink-0 w-7 h-5 flex items-center justify-center rounded-md bg-zinc-800 dark:bg-white/15 text-white dark:text-white font-black text-[9px]">
+                                                        {exitNo}
+                                                    </span>
+                                                    <span className="text-zinc-500 dark:text-zinc-400 leading-5 truncate">
+                                                        {(facs as string[]).slice(0, 4).join(' · ')}
+                                                        {(facs as string[]).length > 4 && <span className="text-zinc-400"> +{(facs as string[]).length - 4}</span>}
+                                                    </span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{facilitiesExpanded ? '▲' : '▼'}</span>
-                            </button>
-                            {facilitiesExpanded && (
-                                <div className="px-3 py-2 space-y-3 border-t border-zinc-100 dark:border-white/8">
-                                    {/* 화장실 */}
-                                    {wc.length > 0 && (
-                                        <div>
-                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🚻 화장실 ({wc.length}곳)</div>
-                                            <div className="space-y-1">
-                                                {wc.map((r: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
-                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{r.floor || 'B1'}</span>
-                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
-                                                            {r.entrance && <span className="text-zinc-400">{r.entrance}번 출구 · </span>}
-                                                            {r.detail || r.info}
-                                                        </span>
-                                                        {r.wheelchair && <span className="shrink-0 text-blue-400">♿</span>}
-                                                    </div>
-                                                ))}
-                                            </div>
+                            )}
+
+                            {/* 역사 시설 */}
+                            {(wc.length > 0 || atm.length > 0 || nursery.length > 0 || locker.length > 0) && (
+                                <div className="rounded-xl border border-zinc-100 dark:border-white/8 overflow-hidden">
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); hapticLight(); setFacilitiesExpanded(v => !v); }}
+                                        className="w-full flex items-center justify-between px-3 py-2.5 text-left bg-zinc-50 dark:bg-white/[0.03] hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2 flex-wrap min-w-0">
+                                            <span className="text-[10px] font-black text-zinc-500 dark:text-zinc-400 uppercase tracking-tight shrink-0">역사 시설</span>
+                                            {wc.length > 0      && <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold"><span>🚻</span><span>{wc.length}</span></span>}
+                                            {atm.length > 0     && <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold"><span>💳</span><span>{atm.length}</span></span>}
+                                            {nursery.length > 0 && <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold"><span>🍼</span><span>{nursery.length}</span></span>}
+                                            {locker.length > 0  && <span className="inline-flex items-center gap-0.5 text-[10px] text-zinc-500 dark:text-zinc-400 font-bold"><span>🔒</span><span>{locker.length}</span></span>}
                                         </div>
-                                    )}
-                                    {/* ATM */}
-                                    {atm.length > 0 && (
-                                        <div>
-                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">💳 ATM ({atm.length}곳)</div>
-                                            <div className="space-y-1">
-                                                {atm.map((item: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
-                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
-                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
-                                                            {[item.bank, item.direction, item.detail].filter(Boolean).join(' · ') || item.info || item.name || ''}
-                                                        </span>
-                                                        {item.hours && <span className="shrink-0 text-zinc-400 text-[9px]">{item.hours}</span>}
+                                        <span className="text-[10px] text-zinc-400 shrink-0 ml-2">{facilitiesExpanded ? '▲' : '▼'}</span>
+                                    </button>
+                                    {facilitiesExpanded && (
+                                        <div className="px-3 py-2 space-y-3 border-t border-zinc-100 dark:border-white/8">
+                                            {/* 화장실 */}
+                                            {wc.length > 0 && (
+                                                <div>
+                                                    <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🚻 화장실 ({wc.length}곳)</div>
+                                                    <div className="space-y-1">
+                                                        {wc.map((r: any, i: number) => (
+                                                            <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                                <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{r.floor || 'B1'}</span>
+                                                                <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                                    {r.entrance && <span className="text-zinc-400">{r.entrance}번 출구 · </span>}
+                                                                    {r.detail || r.info}
+                                                                </span>
+                                                                {r.wheelchair && <span className="shrink-0 text-blue-400">♿</span>}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {/* 수유실 */}
-                                    {nursery.length > 0 && (
-                                        <div>
-                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🍼 수유실 ({nursery.length}곳)</div>
-                                            <div className="space-y-1">
-                                                {nursery.map((item: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
-                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
-                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
-                                                            {item.entrance && <span className="text-zinc-400">{item.entrance}번 출구 · </span>}
-                                                            {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
-                                                        </span>
+                                                </div>
+                                            )}
+                                            {/* ATM */}
+                                            {atm.length > 0 && (
+                                                <div>
+                                                    <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">💳 ATM ({atm.length}곳)</div>
+                                                    <div className="space-y-1">
+                                                        {atm.map((item: any, i: number) => (
+                                                            <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                                <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
+                                                                <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                                    {[item.bank, item.direction, item.detail].filter(Boolean).join(' · ') || item.info || item.name || ''}
+                                                                </span>
+                                                                {item.hours && <span className="shrink-0 text-zinc-400 text-[9px]">{item.hours}</span>}
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
-                                    {/* 물품보관 */}
-                                    {locker.length > 0 && (
-                                        <div>
-                                            <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🔒 물품보관 ({locker.length}곳)</div>
-                                            <div className="space-y-1">
-                                                {locker.map((item: any, i: number) => (
-                                                    <div key={i} className="flex items-center gap-2 text-[11px]">
-                                                        <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
-                                                        <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
-                                                            {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
-                                                        </span>
-                                                        {item.count != null && <span className="shrink-0 text-zinc-400 text-[9px]">{item.count}개</span>}
+                                                </div>
+                                            )}
+                                            {/* 수유실 */}
+                                            {nursery.length > 0 && (
+                                                <div>
+                                                    <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🍼 수유실 ({nursery.length}곳)</div>
+                                                    <div className="space-y-1">
+                                                        {nursery.map((item: any, i: number) => (
+                                                            <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                                <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
+                                                                <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                                    {item.entrance && <span className="text-zinc-400">{item.entrance}번 출구 · </span>}
+                                                                    {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
+                                                                </span>
+                                                            </div>
+                                                        ))}
                                                     </div>
-                                                ))}
-                                            </div>
+                                                </div>
+                                            )}
+                                            {/* 물품보관 */}
+                                            {locker.length > 0 && (
+                                                <div>
+                                                    <div className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 mb-1.5 uppercase tracking-tight">🔒 물품보관 ({locker.length}곳)</div>
+                                                    <div className="space-y-1">
+                                                        {locker.map((item: any, i: number) => (
+                                                            <div key={i} className="flex items-center gap-2 text-[11px]">
+                                                                <span className="shrink-0 px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">{item.floor || item.stnFloor || 'B1'}</span>
+                                                                <span className="text-zinc-500 dark:text-zinc-400 flex-1 min-w-0 truncate">
+                                                                    {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
+                                                                </span>
+                                                                {item.count != null && <span className="shrink-0 text-zinc-400 text-[9px]">{item.count}개</span>}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -592,7 +597,7 @@ const MapPopups = ({
                 })()}
 
                 {/* Arrivals */}
-                <div className="space-y-2">
+                {!showInfo && <div className="space-y-2">
                     {(activeTab === 'subway' && selectedStationName) ? (
                         arrivalLoading && stationArrivals.length === 0 ? (
                             <div className="py-5 flex items-center justify-center gap-2 text-zinc-400 dark:text-white/30 text-[11px] font-bold">
@@ -664,7 +669,7 @@ const MapPopups = ({
                     ) : (selectedBusStop) ? (
                         <BusStopPanel stopId={selectedBusStop.id} cityCode={selectedBusStop.cityCode || "11"} onSelectBusRoute={onSelectBusRoute} />
                     ) : null}
-                </div>
+                </div>}
 
                 {/* Navigation Actions — 도착 정보 아래 */}
                 {(() => {
@@ -694,6 +699,7 @@ const MapPopups = ({
                         </div>
                     );
                 })()}
+
 
                 {selectedBusStop && (
                     <RoadViewButtons lat={selectedBusStop.lat} lng={selectedBusStop.lng} />
