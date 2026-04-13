@@ -151,7 +151,10 @@ function processUpdates(units: any[]) {
         const b2 = calcBearing(unit.nextPos, fp);
         if (b2 !== 0) return b2;
         // prevPos → nextPos 방향 시도
-        return calcBearing(unit.prevPos ?? unit.nextPos, unit.nextPos);
+        const b3 = calcBearing(unit.prevPos ?? unit.nextPos, unit.nextPos);
+        if (b3 !== 0) return b3;
+        // 서비스에서 미리 계산한 노선방향 베어링 (종착역 등 인접역 없을 때 폴백)
+        return (unit as any).directionBearing ?? 0;
       }
 
       const initBearing = bestInitialBearing();
@@ -353,8 +356,8 @@ function startTick() {
         }
       }
 
-      // 색상 전환 진행도 (0=회색, 1=노선색) — colorFadeStart 기준 800ms 선형
-      const COLOR_FADE_MS = 800;
+      // 색상 전환 진행도 (0=회색, 1=노선색) — colorFadeStart 기준 300ms 선형
+      const COLOR_FADE_MS = 300;
       const colorProgress = unit.colorFadeStart !== null
         ? Math.min(1, (now - unit.colorFadeStart) / COLOR_FADE_MS)
         : 0;

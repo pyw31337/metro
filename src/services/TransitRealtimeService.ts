@@ -31,7 +31,7 @@ export type SimStatus = 'starting' | 'simulated' | 'mixed' | 'live';
 // 상수
 // ─────────────────────────────────────────────────────────────────────────────
 const POLLING_INTERVAL_MS = 12_500;
-const STAGGER_MS          = 150;    // 노선 간 폴링 간격
+const STAGGER_MS          = 50;     // 노선 간 폴링 간격 (150→50ms: 초기 로딩 0.6초 단축)
 const DWELL_MS            = 15_000; // 역 정차 시간 기본값 (15초, 30→15 단축)
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -226,6 +226,19 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const prevPos    = prevAdj ?? coord;
   const futurePos  = nextAdj ?? coord;
 
+  // 노선방향 베어링: 종착역처럼 인접역 한쪽이 없을 때 worker의 최후 폴백으로 전달
+  const _bearingFrom = prevAdj ?? coord;
+  const _bearingTo   = nextAdj ?? coord;
+  const directionBearing = (() => {
+    if (_bearingFrom[0] === _bearingTo[0] && _bearingFrom[1] === _bearingTo[1]) return 0;
+    const [lng1, lat1] = _bearingFrom, [lng2, lat2] = _bearingTo;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const lat1R = lat1 * Math.PI / 180, lat2R = lat2 * Math.PI / 180;
+    const y = Math.sin(dLng) * Math.cos(lat2R);
+    const x = Math.cos(lat1R) * Math.sin(lat2R) - Math.sin(lat1R) * Math.cos(lat2R) * Math.cos(dLng);
+    return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+  })();
+
   // 구간 소요시간: 노선별 평균 속도 + Haversine 거리로 계산
   const segmentMs     = prevAdj ? calcSegmentMs(lineName, prevAdj, coord)   : 90_000;
   const nextSegmentMs = nextAdj ? calcSegmentMs(lineName, coord, nextAdj)   : 90_000;
@@ -269,6 +282,7 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
     isSimulated,
     lineStationIdx: stationIdx,
     lineDir,
+    directionBearing,
     // OSM 선로 waypoints: geometry 로드 완료 시 비-undefined
     waypoints:     prevAdj ? findSegmentWaypoints(lineName, prevAdj, coord)   : undefined,
     nextWaypoints: nextAdj ? findSegmentWaypoints(lineName, coord, nextAdj)   : undefined,
@@ -397,6 +411,24 @@ class TransitRealtimeService extends EventEmitter {
     this.isRunning = false;
     if (this.pollTimer) clearTimeout(this.pollTimer);
     this.worker?.postMessage({ type: 'STOP' });
+  }
+
+  /** 특정 노선을 즉시 재폴링 — 역/열차 클릭 시 해당 노선 데이터 우선 갱신 */
+  refreshLine(lineName: string) {
+    if (!this.isRunning) return;
+    fetchTrainPositions(lineName)
+      .then(trains => {
+        if (!this.isRunning || trains.length === 0) return;
+        const units = trains.map(t => buildUnit(t, false)).filter(Boolean);
+        if (units.length === 0) return;
+        if (!this.linesWithRealData.has(lineName)) {
+          this.linesWithRealData.add(lineName);
+          this.worker?.postMessage({ type: 'CLEAR_LINE_SIM', lineName });
+          this._updateSimStatus();
+        }
+        this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
+      })
+      .catch(() => {});
   }
 
   trackBusRoute(cityCode: string, routeId: string) {

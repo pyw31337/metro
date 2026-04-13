@@ -26,6 +26,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
   const [geoData, setGeoData]   = useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
   const [, setSimStatus] = useState<SimStatus>('starting');
+  const [trainStats, setTrainStats] = useState<{ total: number; dwelling: number; gray: number } | null>(null);
 
   // ── 선택 상태 ──
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
@@ -96,6 +97,11 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const activeLineRef = useRef(activeLine);
   useEffect(() => { activeLineRef.current = activeLine; }, [activeLine]);
 
+  // ── 역/노선 선택 시 해당 노선 즉시 재폴링 (우선 로딩) ──
+  useEffect(() => {
+    if (activeLine) transitRealtimeService.refreshLine(activeLine);
+  }, [activeLine]);
+
   // ─── 탑승 열차 펄스 애니메이션 — 3중 링 리플 ───
   useEffect(() => {
     if (!map || !boardedId) {
@@ -135,6 +141,14 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
     const handleUpdate = (units: RealtimeUnit[]) => {
       const ap = activePathRef.current;
+
+      // ── 열차 통계 (지하철만) ──
+      const subwayUnits = units.filter(u => u.type === 'subway');
+      setTrainStats({
+        total:    subwayUnits.length,
+        dwelling: subwayUnits.filter(u => u.isDwelling).length,
+        gray:     subwayUnits.filter(u => (u.colorProgress ?? 1) < 1).length,
+      });
 
       // ── 선택 열차 위치 실시간 추적 ──
       const sId = selectedIdRef.current;
@@ -505,6 +519,19 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             >×</button>
           </div>
         </Popup>
+      )}
+
+      {/* ── 열차 통계 오버레이 ── */}
+      {trainStats && (
+        <div className="absolute bottom-8 right-2 z-[9998] pointer-events-none">
+          <div className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold leading-snug space-y-0.5"
+            style={{ background: 'rgba(10,10,15,0.75)', backdropFilter: 'blur(8px)', color: 'rgba(255,255,255,0.7)' }}>
+            <div>열차 <span className="text-white font-black">{trainStats.total}</span></div>
+            <div>∧ 이동 <span className="text-emerald-400 font-black">{trainStats.total - trainStats.dwelling - trainStats.gray}</span></div>
+            <div>∥ 정차 <span className="text-amber-400 font-black">{trainStats.dwelling}</span></div>
+            {trainStats.gray > 0 && <div>⬛ 로딩 <span className="text-zinc-400 font-black">{trainStats.gray}</span></div>}
+          </div>
+        </div>
       )}
 
       {/* ── 탑승 알림 토스트 ── */}
