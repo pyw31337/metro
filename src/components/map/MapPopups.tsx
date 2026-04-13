@@ -275,9 +275,18 @@ const MapPopups = ({
   const stationRestrooms = useSubwayRestrooms(activeTab === 'subway' ? selectedStationName : null);
   const [exitExpanded, setExitExpanded] = useState(false);
   const [restroomExpanded, setRestroomExpanded] = useState(false);
+  const [atmExpanded, setAtmExpanded] = useState(false);
+  const [nurseryExpanded, setNurseryExpanded] = useState(false);
+  const [lockerExpanded, setLockerExpanded] = useState(false);
 
   // 역 바뀌면 섹션 접기
-  useEffect(() => { setExitExpanded(false); setRestroomExpanded(false); }, [selectedStationName]);
+  useEffect(() => {
+    setExitExpanded(false);
+    setRestroomExpanded(false);
+    setAtmExpanded(false);
+    setNurseryExpanded(false);
+    setLockerExpanded(false);
+  }, [selectedStationName]);
 
   // ── 노선 탭 드래그 스크롤 (마우스 + 터치) ──────────────────────────────────
   // overflow-x-auto 단독으로는 마우스 드래그 스크롤이 안 됨.
@@ -441,28 +450,6 @@ const MapPopups = ({
                     <CongestionInfo data={realTimeCongestion} />
                 )}
 
-                {/* Station Facilities */}
-                {activeTab === 'subway' && stationFacilities && (() => {
-                    const fc = stationFacilities;
-                    const chips: { label: string; count: number; icon: string }[] = [
-                        { label: '화장실', count: stationRestrooms?.restrooms.length ?? fc.restroom.length, icon: '🚻' },
-                        { label: 'ATM', count: fc.atm.length, icon: '💳' },
-                        { label: '수유실', count: fc.nursery.length, icon: '🍼' },
-                        { label: '물품보관', count: fc.locker.length, icon: '🔒' },
-                    ].filter(c => c.count > 0);
-                    if (!chips.length) return null;
-                    return (
-                        <div className="flex flex-wrap gap-1.5 mb-3">
-                            {chips.map(c => (
-                                <span key={c.label} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-white/8 text-[10px] text-zinc-500 dark:text-white/50 font-medium">
-                                    <span>{c.icon}</span>
-                                    <span>{c.label}</span>
-                                    <span className="text-zinc-400 dark:text-white/30">{c.count}</span>
-                                </span>
-                            ))}
-                        </div>
-                    );
-                })()}
 
                 {/* Exit Info */}
                 {activeTab === 'subway' && stationExits && (() => {
@@ -512,7 +499,7 @@ const MapPopups = ({
                                 className="w-full flex items-center justify-between py-1.5 text-left"
                             >
                                 <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
-                                    화장실 안내 ({wc.length}곳)
+                                    🚻 화장실 안내 ({wc.length}곳)
                                 </span>
                                 <span className="text-[10px] text-zinc-400">{restroomExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
                             </button>
@@ -529,6 +516,109 @@ const MapPopups = ({
                                             </span>
                                             {r.wheelchair && (
                                                 <span className="shrink-0 text-blue-400 text-[11px]">♿</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* ATM Info */}
+                {activeTab === 'subway' && stationFacilities && stationFacilities.atm.length > 0 && (() => {
+                    const items = stationFacilities.atm;
+                    return (
+                        <div className="mb-3">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setAtmExpanded(v => !v); }}
+                                className="w-full flex items-center justify-between py-1.5 text-left"
+                            >
+                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
+                                    💳 ATM 안내 ({items.length}곳)
+                                </span>
+                                <span className="text-[10px] text-zinc-400">{atmExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
+                            </button>
+                            {atmExpanded && (
+                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
+                                    {items.map((item, i) => (
+                                        <div key={i} className="flex items-start gap-2 text-[10px]">
+                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
+                                                {item.floor || item.stnFloor || 'B1'}
+                                            </span>
+                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
+                                                {[item.bank, item.direction, item.detail].filter(Boolean).join(' · ') || item.info || item.name || ''}
+                                            </span>
+                                            {item.hours && (
+                                                <span className="shrink-0 text-zinc-400 dark:text-zinc-500 text-[9px] leading-5">{item.hours}</span>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* Nursery Info */}
+                {activeTab === 'subway' && stationFacilities && stationFacilities.nursery.length > 0 && (() => {
+                    const items = stationFacilities.nursery;
+                    return (
+                        <div className="mb-3">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setNurseryExpanded(v => !v); }}
+                                className="w-full flex items-center justify-between py-1.5 text-left"
+                            >
+                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
+                                    🍼 수유실 안내 ({items.length}곳)
+                                </span>
+                                <span className="text-[10px] text-zinc-400">{nurseryExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
+                            </button>
+                            {nurseryExpanded && (
+                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
+                                    {items.map((item, i) => (
+                                        <div key={i} className="flex items-start gap-2 text-[10px]">
+                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
+                                                {item.floor || item.stnFloor || 'B1'}
+                                            </span>
+                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
+                                                {item.entrance && <span className="text-zinc-400">{item.entrance}번 출구 · </span>}
+                                                {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* Locker Info */}
+                {activeTab === 'subway' && stationFacilities && stationFacilities.locker.length > 0 && (() => {
+                    const items = stationFacilities.locker;
+                    return (
+                        <div className="mb-3">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setLockerExpanded(v => !v); }}
+                                className="w-full flex items-center justify-between py-1.5 text-left"
+                            >
+                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
+                                    🔒 물품보관 안내 ({items.length}곳)
+                                </span>
+                                <span className="text-[10px] text-zinc-400">{lockerExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
+                            </button>
+                            {lockerExpanded && (
+                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
+                                    {items.map((item, i) => (
+                                        <div key={i} className="flex items-start gap-2 text-[10px]">
+                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
+                                                {item.floor || item.stnFloor || 'B1'}
+                                            </span>
+                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
+                                                {[item.direction, item.detail, item.info].filter(Boolean).join(' · ') || item.name || ''}
+                                            </span>
+                                            {item.count != null && (
+                                                <span className="shrink-0 text-zinc-400 dark:text-zinc-500 text-[9px] leading-5">{item.count}개</span>
                                             )}
                                         </div>
                                     ))}
