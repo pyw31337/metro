@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { fetchTrainPositions, fetchArrivalBasedPositions } from './arrivalApi';
+import { fetchTrainPositions, fetchArrivalBasedPositions, parseSeoulDate } from './arrivalApi';
 import { MetropolitanBusService } from './busApi';
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { normStation } from '@/data/stationRegistry';
@@ -107,6 +107,8 @@ const ARRIVAL_PROBE_STATIONS = [
   // ── 7호선 (장암-부천종합운동장, 최장 노선)
   '이수',      // 중심
   '온수',      // 서부 부천 구간
+  '천왕',      // 서부 연장 끝단 (부평구청 발차 열차 조기 포착)
+  '부평구청',  // 7호선 서부 종착역 대기 열차
 
   // ── 8호선 (암사-모란)
   '잠실',      // 중심
@@ -263,7 +265,20 @@ function getNextCoord(
 // ─────────────────────────────────────────────────────────────────────────────
 // 열차 유닛 빌드
 // ─────────────────────────────────────────────────────────────────────────────
+// 위치 API lastRecptnDt 신선도 허용 범위 — 45초 초과 시 워커에서 조기 만료
+const STALE_THRESHOLD_MS = 45_000;
+
 function buildUnit(train: any, isSimulated: boolean): any | null {
+  // ── 실측 열차 신선도 검증 — 오래된 데이터는 즉시 만료 처리 ─────────────────
+  // lastRecptnDt: 마지막 신호 수신 시각 (예: "2026-04-14 07:50:32")
+  // 시뮬레이션이 아닌데 45초 이상 된 데이터면 유령 열차가 될 가능성이 높음
+  if (!isSimulated && train.lastRecptnDt) {
+    const recvTs = parseSeoulDate(train.lastRecptnDt);
+    if (recvTs > 0 && Date.now() - recvTs > STALE_THRESHOLD_MS) {
+      return null; // 오래된 데이터 — buildUnit 자체에서 제거
+    }
+  }
+
   // ── 노선 이름 결정 (API subwayNm 우선, middot 변형 등 정규화) ──────────────
   const rawLineName = train.subwayNm as string;
   const lineName = LINE_COLOR.has(rawLineName)
