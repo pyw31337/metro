@@ -168,9 +168,9 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
                     ["!=", ["get", "isLast"],  true],
                 ]}
                 paint={{
-                    "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 14, 4, 16, 6],
+                    "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 2, 13, 4, 16, 6],
                     "circle-color": "white",
-                    "circle-stroke-width": 1.5,
+                    "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 10, 1, 14, 2],
                     "circle-stroke-color": "#10b981",
                     "circle-opacity": ["interpolate", ["linear"], ["zoom"], 10, 0, 11, 1],
                 }}
@@ -181,7 +181,7 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
                 type="circle"
                 filter={["==", ["get", "isFirst"], true]}
                 paint={{
-                    "circle-radius": 9,
+                    "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 5, 14, 9],
                     "circle-color": "#3b82f6",
                     "circle-stroke-width": 3,
                     "circle-stroke-color": "white",
@@ -193,20 +193,21 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
                 type="circle"
                 filter={["==", ["get", "isLast"], true]}
                 paint={{
-                    "circle-radius": 9,
+                    "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 5, 14, 9],
                     "circle-color": "#ef4444",
                     "circle-stroke-width": 3,
                     "circle-stroke-color": "white",
                 }}
             />
-            {/* 출발 label */}
+            {/* 출발·도착 labels — zoom 11부터 표시 */}
             <Layer
                 id="bus-route-first-label"
                 type="symbol"
+                minzoom={11}
                 filter={["==", ["get", "isFirst"], true]}
                 layout={{
                     "text-field": ["concat", "출발\n", ["get", "name"]],
-                    "text-size": 10,
+                    "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 14, 11],
                     "text-anchor": "top",
                     "text-offset": [0, 1.2],
                     "text-max-width": 8,
@@ -215,16 +216,17 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
                     "text-color": "#3b82f6",
                     "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
                     "text-halo-width": 1.5,
+                    "text-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0, 12, 1],
                 }}
             />
-            {/* 도착 label */}
             <Layer
                 id="bus-route-last-label"
                 type="symbol"
+                minzoom={11}
                 filter={["==", ["get", "isLast"], true]}
                 layout={{
-                    "text-field": ["concat", "도착\n", ["get", "name"]],
-                    "text-size": 10,
+                    "text-field": ["concat", "종점\n", ["get", "name"]],
+                    "text-size": ["interpolate", ["linear"], ["zoom"], 11, 9, 14, 11],
                     "text-anchor": "top",
                     "text-offset": [0, 1.2],
                     "text-max-width": 8,
@@ -233,30 +235,60 @@ const BusLayers = ({ busData, routePathData, activeTab, isDarkMode }: BusLayersP
                     "text-color": "#ef4444",
                     "text-halo-color": isDarkMode ? "rgba(0,0,0,0.9)" : "rgba(255,255,255,0.9)",
                     "text-halo-width": 1.5,
+                    "text-opacity": ["interpolate", ["linear"], ["zoom"], 11, 0, 12, 1],
                 }}
             />
-            {/* Intermediate stop name labels at high zoom */}
+            {/* 중간 정류장 역명 — zoom 12부터, 홀짝 교대 배치로 겹침 최소화 */}
             <Layer
-                id="bus-route-stop-labels"
+                id="bus-route-stop-labels-even"
                 type="symbol"
-                minzoom={15}
+                minzoom={12}
                 filter={["all",
                     ["==", ["get", "featureType"], "stop"],
                     ["!=", ["get", "isFirst"], true],
                     ["!=", ["get", "isLast"],  true],
+                    ["==", ["%", ["get", "order"], 2], 0],
                 ]}
                 layout={{
                     "text-field": ["get", "name"],
-                    "text-size": 9,
-                    "text-anchor": "top",
-                    "text-offset": [0, 1.0],
+                    "text-size": ["interpolate", ["linear"], ["zoom"], 12, 9, 15, 11],
+                    "text-anchor": "bottom",
+                    "text-offset": [0, -1.1],
                     "text-max-width": 6,
+                    "text-allow-overlap": false,
+                    "symbol-avoid-edges": true,
                 }}
                 paint={{
-                    "text-color": isDarkMode ? "#d1fae5" : "#059669",
-                    "text-halo-color": isDarkMode ? "rgba(0,0,0,0.8)" : "rgba(255,255,255,0.8)",
+                    "text-color": isDarkMode ? "#d1fae5" : "#065f46",
+                    "text-halo-color": isDarkMode ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.9)",
                     "text-halo-width": 1.5,
-                    "text-opacity": ["interpolate", ["linear"], ["zoom"], 15, 0, 16, 1],
+                    "text-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 13, 1],
+                }}
+            />
+            <Layer
+                id="bus-route-stop-labels-odd"
+                type="symbol"
+                minzoom={12}
+                filter={["all",
+                    ["==", ["get", "featureType"], "stop"],
+                    ["!=", ["get", "isFirst"], true],
+                    ["!=", ["get", "isLast"],  true],
+                    ["==", ["%", ["get", "order"], 2], 1],
+                ]}
+                layout={{
+                    "text-field": ["get", "name"],
+                    "text-size": ["interpolate", ["linear"], ["zoom"], 12, 9, 15, 11],
+                    "text-anchor": "top",
+                    "text-offset": [0, 1.1],
+                    "text-max-width": 6,
+                    "text-allow-overlap": false,
+                    "symbol-avoid-edges": true,
+                }}
+                paint={{
+                    "text-color": isDarkMode ? "#d1fae5" : "#065f46",
+                    "text-halo-color": isDarkMode ? "rgba(0,0,0,0.85)" : "rgba(255,255,255,0.9)",
+                    "text-halo-width": 1.5,
+                    "text-opacity": ["interpolate", ["linear"], ["zoom"], 12, 0, 13, 1],
                 }}
             />
         </Source>
