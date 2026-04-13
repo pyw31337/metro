@@ -375,10 +375,68 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
  * Useful when the main position API is blocked.
  */
 export const getSubwayPositionsFromArrivals = async (lineName: string): Promise<TrainPosition[]> => {
-    // This is a high-level fallback that could be implemented to poll 
-    // key stations and estimate train positions. 
+    // This is a high-level fallback that could be implemented to poll
+    // key stations and estimate train positions.
     // For now, we focus on making the primary API work.
     return [];
+};
+
+/**
+ * 도착 API의 bstatnNm(현재열차위치역명)으로 열차 위치를 추정합니다.
+ * realtimePositionList에서 누락된 역사 정차·대기 열차를 보완하는 목적.
+ * 반환된 TrainPosition 배열은 buildUnit()과 완전 호환됩니다.
+ */
+export const fetchArrivalBasedPositions = async (stationName: string): Promise<TrainPosition[]> => {
+    const USER_APPROVED_KEYS = [
+        "634179436a7079773730786f4d5445",
+        "53517344677079773531694a786f6a",
+        "434f7275707079773537687a507658",
+    ];
+    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+    if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
+
+    const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(stationName)}`;
+
+    try {
+        const json = await fetchWithFallbacks(url);
+        const rawList: any[] = json?.realtimeArrivalList || [];
+        if (rawList.length === 0) return [];
+
+        const results: TrainPosition[] = [];
+        const seen = new Set<string>();
+
+        for (const item of rawList) {
+            const trainNo = item.btrainNo;
+            if (!trainNo || trainNo === '0000') continue;
+            if (!item.bstatnNm) continue;  // 현재위치 없으면 스킵
+            if (seen.has(trainNo)) continue;
+            seen.add(trainNo);
+
+            const barvlDt = parseInt(item.barvlDt || '9999');
+            // 도착 예정 시간 기반으로 arvlCd 추정:
+            // 30초 미만 → '0' 진입, 90초 미만 → '3' 전역출발, 그 이상 → '2' 출발
+            const arvlCd = barvlDt < 30 ? '0' : barvlDt < 90 ? '3' : '2';
+            const dest = (item.trainLineNm || '').replace(/행$/, '');
+
+            results.push({
+                subwayId:     item.subwayId || '',
+                subwayNm:     item.subwayNm || '',
+                statnId:      '',
+                statnNm:      item.bstatnNm,  // 현재열차위치역 → buildUnit statnNm
+                trainNo,
+                lastRecptnDt: '',
+                updnLine:     item.updnLine || '',
+                directAt:     '0',
+                trainSttus:   '1',
+                lstnyNm:      dest,
+                arrivalNm:    '',
+                arvlCd,
+            });
+        }
+        return results;
+    } catch {
+        return [];
+    }
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {

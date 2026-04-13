@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { fetchTrainPositions } from './arrivalApi';
+import { fetchTrainPositions, fetchArrivalBasedPositions } from './arrivalApi';
 import { MetropolitanBusService } from './busApi';
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { normStation } from '@/data/stationRegistry';
@@ -76,6 +76,24 @@ const SUBWAY_POLLING_NAMES = [
   '서해선', '경강선', 'GTX-A',
 ];
 
+// 도착 API 프로브 스테이션 — 위치 API 누락 열차(역 정차·대기) 보완
+// 각 역은 양방향 접근 열차를 모두 반환하므로 노선당 1개 중심역으로 커버
+const ARRIVAL_PROBE_STATIONS = [
+  '서울역',    // 1호선, 공항철도
+  '강남',      // 2호선, 신분당선
+  '을지로3가', // 3호선
+  '사당',      // 4호선
+  '여의도',    // 5호선, 9호선
+  '합정',      // 6호선
+  '이수',      // 7호선
+  '잠실',      // 8호선
+  '용산',      // 경의중앙선
+  '선릉',      // 수인분당선
+  '청량리',    // 경춘선
+  '솔샘',      // 우이신설선
+  '신림',      // 신림선
+];
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 정적 인덱스 (모듈 로드 시 1회 빌드)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,7 +106,7 @@ interface StationMeta {
 
 const STATION_META = new Map<string, StationMeta>();
 const LINE_COLOR   = new Map<string, string>();
-const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
+
 const LINE_BY_ID   = new Map(SUBWAY_LINES.map(l => [l.id,   l]));
 
 // ID 기반 역 인덱스 — 같은 노선명 복수 지선(1호선 4개, 2호선 3개 등)을 각각 올바르게 처리
@@ -105,18 +123,6 @@ const LINE_STATION_IDX_BY_ID: Map<string, Map<string, number>> = new Map(
   })
 );
 
-// 이름 기반 인덱스는 하위 호환용으로 유지 (단일 지선 노선 빠른 조회)
-const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
-  SUBWAY_LINES.map(l => {
-    const m = new Map<string, number>();
-    l.stations.forEach((s, i) => {
-      m.set(s.name, i);
-      const bare = normStation(s.name);
-      if (bare !== s.name) m.set(bare, i);
-    });
-    return [l.name, m];
-  })
-);
 
 (function buildIndex() {
   for (const line of SUBWAY_LINES) {
@@ -162,12 +168,6 @@ function parseIsDownward(updnLine: string | undefined): boolean {
   return true; // 알 수 없으면 하행으로 기본 처리
 }
 
-// 이름 기반 단순 인덱스 조회 (하위 호환)
-function resolveLineStationIdx(lineName: string, stationName: string): number {
-  const m = LINE_STATION_IDX.get(lineName);
-  if (!m) return -1;
-  return m.get(stationName) ?? m.get(normStation(stationName)) ?? -1;
-}
 
 /**
  * 역명이 실제로 속한 지선 객체와 인덱스를 반환.
@@ -605,6 +605,31 @@ class TransitRealtimeService extends EventEmitter {
         }, (SUBWAY_POLLING_NAMES.length + i) * STAGGER_MS);
       });
     }
+
+    // 도착 API 프로브 — 위치 API 누락 열차(역 정차·대기) 보완
+    // 스태거 완료 + 여유 500ms 후 실행해 위치 API와 API 키 경쟁 최소화
+    const probeDelay = SUBWAY_POLLING_NAMES.length * STAGGER_MS + 500;
+    setTimeout(() => {
+      if (!this.isRunning) return;
+      Promise.all(
+        ARRIVAL_PROBE_STATIONS.map(async (stationName) => {
+          try {
+            const positions = await fetchArrivalBasedPositions(stationName);
+            if (!positions.length) return;
+            const units = positions.map(t => buildUnit(t, false)).filter(Boolean);
+            if (!units.length) return;
+            for (const unit of units as any[]) {
+              if (!this.linesWithRealData.has(unit.lineName)) {
+                this.linesWithRealData.add(unit.lineName);
+                this.worker?.postMessage({ type: 'CLEAR_LINE_SIM', lineName: unit.lineName });
+                this._updateSimStatus();
+              }
+            }
+            this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
+          } catch {}
+        })
+      );
+    }, probeDelay);
 
     // 다음 폴링 예약
     this.pollTimer = setTimeout(() => {
