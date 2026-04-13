@@ -22,23 +22,43 @@ interface TransitUnit {
   // ── 충돌 방지용 노선 순서 정보 ──
   lineStationIdx: number;   // nextPos에 해당하는 역의 노선 인덱스
   lineDir: number;          // +1 = 하행(idx 증가), -1 = 상행(idx 감소)
+  // ── 가변 속도 · 정차 시간 ──
+  segmentMs: number;        // lastPos → nextPos 구간 소요시간 (ms)
+  nextSegmentMs: number;    // nextPos → futurePos 구간 소요시간 (ms)
+  dwellMs: number;          // nextPos 역에서 정차 시간 (ms)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 상수
 // ─────────────────────────────────────────────────────────────────────────────
-const ANIM_DURATION  = 12_000;  // 애니메이션 주기 (ms)
-const FADE_IN_MS     = 1_500;   // 페이드-인 시간
-const FADE_OUT_MS    = 1_500;   // 페이드-아웃 시간
-const EXPIRE_MS      = 90_000;  // 업데이트 없으면 사라지는 시간
+const ANIM_DURATION  = 90_000;  // 기본 구간 소요시간 fallback (ms) — 약 90초
+const DWELL_DEFAULT  = 30_000;  // 기본 정차 시간 (ms) — 30초
+const FADE_IN_MS     = 1_500;
+const FADE_OUT_MS    = 1_500;
+const EXPIRE_MS      = 90_000;
 const TICK_INTERVAL  = 1000 / 30; // 30fps
 
 // 같은 방향 열차 간 최소 간격 (역 구간 단위)
-// 0.35 = 두 역 사이 거리의 35% 이상 유지
 const MIN_TRAIN_GAP  = 0.35;
 
 const state = new Map<string, TransitUnit>();
 let isTicking = false;
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 3단계 ratio 계산: 주행(0→1) → 정차(1.0 고정) → 출발(1→1.5)
+//
+//   Phase 1  [0, segmentMs)          : lastPos → nextPos  (ratio 0→1)
+//   Phase 2  [segmentMs, +dwellMs)   : nextPos 정차       (ratio = 1.0)
+//   Phase 3  [segmentMs+dwellMs, …)  : nextPos → futurePos (ratio 1→1.5)
+// ─────────────────────────────────────────────────────────────────────────────
+function computeRatio(unit: TransitUnit, elapsed: number): number {
+  const seg   = unit.segmentMs;
+  const dwell = unit.dwellMs;
+
+  if (elapsed < seg)              return elapsed / seg;        // Phase 1: 주행
+  if (elapsed < seg + dwell)      return 1.0;                  // Phase 2: 정차
+  return Math.min(1.5, 1.0 + (elapsed - seg - dwell) / unit.nextSegmentMs); // Phase 3: 출발
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 메시지 핸들러
@@ -52,7 +72,6 @@ self.onmessage = (e: MessageEvent) => {
       if (!isTicking) startTick();
       break;
 
-    // 특정 노선의 시뮬레이션 열차를 페이드-아웃 후 제거
     case 'CLEAR_LINE_SIM': {
       const now = Date.now();
       for (const [id, unit] of state) {
@@ -63,7 +82,6 @@ self.onmessage = (e: MessageEvent) => {
       break;
     }
 
-    // 전체 시뮬레이션 열차 즉시 제거 (긴급 정리용)
     case 'CLEAR_SIMULATED': {
       const now = Date.now();
       for (const [id, unit] of state) {
@@ -87,19 +105,30 @@ function processUpdates(units: any[]) {
 
   for (const unit of units) {
     const existing = state.get(unit.id);
+    const segMs  = unit.segmentMs     ?? ANIM_DURATION;
+    const dwMs   = unit.dwellMs       ?? DWELL_DEFAULT;
+    const nxMs   = unit.nextSegmentMs ?? ANIM_DURATION;
 
     if (!existing) {
-      // ── 신규 등장: initialRatio가 알려주는 위치에서 시작 (페이드-인) ──
+      // ── 신규 등장: initialRatio → 경과 시간 역산 ──
       const startPos: [number, number] =
         unit.prevPos &&
         (unit.prevPos[0] !== unit.nextPos[0] || unit.prevPos[1] !== unit.nextPos[1])
           ? unit.prevPos
           : unit.nextPos;
 
-      const startRatio = unit.initialRatio ?? 0;
-      const backwardMs = Math.min(startRatio * ANIM_DURATION, 1.5 * ANIM_DURATION);
+      const initR = unit.initialRatio ?? 0;
+      let backwardMs: number;
+      if (initR <= 1.0) {
+        // Phase 1/2: 주행 중이거나 막 도착 (dwell 시작점)
+        backwardMs = initR * segMs;
+      } else {
+        // Phase 3: 이미 출발 후 (overshoot) — ratio > 1.0
+        backwardMs = segMs + dwMs + (initR - 1.0) * nxMs;
+      }
+      backwardMs = Math.min(backwardMs, segMs + dwMs + 0.5 * nxMs);
 
-      const bearingTarget: [number, number] = startRatio >= 1.0
+      const bearingTarget: [number, number] = initR >= 1.0
         ? (unit.futurePos ?? unit.nextPos)
         : unit.nextPos;
 
@@ -112,6 +141,9 @@ function processUpdates(units: any[]) {
         deathTime:       null,
         lineStationIdx:  unit.lineStationIdx ?? 0,
         lineDir:         unit.lineDir ?? 1,
+        segmentMs:       segMs,
+        nextSegmentMs:   nxMs,
+        dwellMs:         dwMs,
       });
 
     } else {
@@ -132,45 +164,51 @@ function processUpdates(units: any[]) {
         existing.birthTime = now;
       }
 
-      // 현재 애니메이션 ratio 계산
-      const elapsed = now - existing.lastUpdateTime;
-      let ratio = Math.min(1.5, elapsed / ANIM_DURATION);
-      if (existing.status === '1') ratio = Math.min(1.0, ratio);
-
-      // 현재 시각적 위치 계산
-      let visualPos: [number, number];
-      if (ratio <= 1.0) {
-        visualPos = lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
-      } else {
-        const overT = Math.min(1.0, ratio - 1.0);
-        visualPos = lerp(existing.nextPos, existing.futurePos ?? existing.nextPos, easeInOut(overT));
-      }
-
+      const elapsed    = now - existing.lastUpdateTime;
+      const ratio      = computeRatio(existing, elapsed);
       const newNextPos = unit.nextPos;
       const sameTarget = coordsClose(existing.nextPos, newNextPos);
+      // 도착점을 이미 통과했는지 (dwell 또는 출발 구간)
+      const pastArrival = elapsed >= existing.segmentMs;
 
-      if (sameTarget && ratio > 1.0) {
-        // ── 핵심 버그 수정 ──
-        // 이미 역을 통과한 overshoot 구간인데 API가 같은 역을 보고 →
-        // 기존에는 lastPos=visualPos, nextPos=역 좌표로 재설정해서 역방향 lerp 발생 (순간이동).
-        // 수정: nextPos/lastPos/lastUpdateTime 건드리지 않고 futurePos만 갱신.
-        // 애니메이션이 자연스럽게 계속됨.
-        existing.futurePos = unit.futurePos ?? unit.nextPos;
+      if (sameTarget) {
+        // ── 같은 역 보고 ──
+        // 핵심 수정: ratio<=1.0 구간에서도 lastUpdateTime 리셋 금지.
+        //   기존에는 ratio<=1.0 else 분기에서 무조건 lastUpdateTime=now 로 리셋하여
+        //   Zeno's paradox(폴링마다 재시작 → 역에 영원히 못 도착)가 발생했음.
+        //   수정: futurePos와 다음 구간 소요시간만 갱신하고 타이머는 건드리지 않음.
+        existing.futurePos      = unit.futurePos ?? unit.nextPos;
+        existing.nextSegmentMs  = nxMs;
+        // dwellMs도 갱신 (구간 속도 재계산으로 바뀔 수 있음)
+        existing.dwellMs        = dwMs;
 
-      } else if (!sameTarget && ratio > 1.0) {
-        // 다음 역으로 이동 (overshoot 구간에서 새 target 도착)
-        // lastPos = 구 역 좌표, nextPos = 새 역 좌표, 시간은 백데이트 →
-        // 현재 시각적 위치가 수학적으로 동일하게 유지되어 점프 없음.
-        const overRatio = Math.min(ratio - 1.0, 1.0);
-        existing.lastPos        = existing.nextPos;            // 구 역 = 새 출발점
+      } else if (pastArrival) {
+        // ── 다음 역으로 이동, dwell 또는 출발 구간에서 전환 ──
+        // 출발 구간이면 현재 overshoot 비율(overT)로 새 구간의 시작 위치를 역산하여
+        // 시각적 연속성 보장. dwell 중이면 overT=0으로 새 역에서 다시 출발.
+        const afterDwell = Math.max(0, elapsed - existing.segmentMs - existing.dwellMs);
+        const overT      = Math.min(1.0, afterDwell / existing.nextSegmentMs);
+
+        existing.lastPos        = existing.nextPos;
         existing.nextPos        = newNextPos;
         existing.futurePos      = unit.futurePos ?? newNextPos;
-        existing.lastUpdateTime = now - overRatio * ANIM_DURATION; // 연속성 보장
+        existing.segmentMs      = segMs;
+        existing.nextSegmentMs  = nxMs;
+        existing.dwellMs        = dwMs;
+        // overT 비율만큼 새 구간을 이미 진행한 것으로 백데이트 → 순간이동 없음
+        existing.lastUpdateTime = now - overT * segMs;
+
       } else {
-        // ratio <= 1.0 (일반 구간): 시각적 위치에서 새 target으로 재시작
+        // ── 주행 중(ratio<1.0)에 새 목적지로 변경 ──
+        // 현재 시각적 위치에서 새 목적지로 재시작
+        const visualPos: [number, number] =
+          lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
         existing.lastPos        = visualPos;
         existing.nextPos        = newNextPos;
         existing.futurePos      = unit.futurePos ?? newNextPos;
+        existing.segmentMs      = segMs;
+        existing.nextSegmentMs  = nxMs;
+        existing.dwellMs        = dwMs;
         existing.lastUpdateTime = now;
       }
     }
@@ -184,11 +222,11 @@ function processUpdates(units: any[]) {
   }
 }
 
-// 두 좌표가 ~50m 이내인지 (동일 역 판별)
+// 두 좌표가 ~100m 이내인지 (동일 역 판별)
 function coordsClose(a: [number, number], b: [number, number]): boolean {
   const dx = a[0] - b[0];
   const dy = a[1] - b[1];
-  return (dx * dx + dy * dy) < 0.000001; // ~100m² 이내
+  return (dx * dx + dy * dy) < 0.000001;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -201,22 +239,20 @@ function startTick() {
     const now = Date.now();
     const result: any[] = [];
 
-    // ── Phase 1: 각 유닛의 unclamped ratio 계산 ──
+    // ── Phase 1: 각 유닛의 ratio 계산 ──
     const unitRatios = new Map<string, number>();
     for (const [id, unit] of state) {
       if (unit.deathTime !== null && now - unit.deathTime > FADE_OUT_MS) continue;
       const elapsed = now - unit.lastUpdateTime;
-      let ratio = Math.min(1.5, elapsed / ANIM_DURATION);
-      if (unit.status === '1') ratio = Math.min(1.0, ratio); // 당역 정차
+      const ratio   = computeRatio(unit, elapsed);
       unitRatios.set(id, ratio);
     }
 
-    // ── Phase 2: 충돌 방지 — 같은 노선·방향 열차 간격 강제 ──
+    // ── Phase 2: 충돌 방지 ──
     enforceTrainOrder(unitRatios);
 
     // ── Phase 3: 렌더링 ──
     for (const [id, unit] of state) {
-      // 페이드-아웃 완료된 유닛 제거
       if (unit.deathTime !== null && now - unit.deathTime > FADE_OUT_MS) {
         state.delete(id);
         continue;
@@ -280,23 +316,13 @@ function startTick() {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 충돌 방지: 같은 노선·방향 열차를 순서대로 정렬하고 최소 간격 강제
-//
-// 각 열차의 "노선 위 1차원 위치(progress)"를 계산:
-//   하행(lineDir=+1): progress = stationIdx - 1 + ratio  (높을수록 앞)
-//   상행(lineDir=-1): progress = ratio - stationIdx - 1  (높을수록 앞)
-//
-// progress 내림차순 정렬 후, 인접 쌍(선두, 후속)마다:
-//   gap = progress_lead - progress_follow
-//   gap < MIN_TRAIN_GAP 이면 후속 열차의 ratio를 클램프
 // ─────────────────────────────────────────────────────────────────────────────
 function enforceTrainOrder(unitRatios: Map<string, number>) {
-  // 그룹: 노선명 + 방향으로 묶기
-  const groups = new Map<string, string[]>(); // key → [id, ...]
+  const groups = new Map<string, string[]>();
   for (const [id, unit] of state) {
     if (unit.type !== 'subway') continue;
-    if (unit.deathTime !== null) continue; // 사라지는 중인 열차 제외
-    const ratio = unitRatios.get(id);
-    if (ratio === undefined) continue;
+    if (unit.deathTime !== null) continue;
+    if (unitRatios.get(id) === undefined) continue;
     const key = `${unit.lineName}:${unit.lineDir}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(id);
@@ -305,11 +331,9 @@ function enforceTrainOrder(unitRatios: Map<string, number>) {
   for (const [key, ids] of groups) {
     if (ids.length < 2) continue;
 
-    // 키에서 lineDir 파싱 (마지막 ':' 이후 값)
     const colonIdx = key.lastIndexOf(':');
-    const lineDir  = parseInt(key.slice(colonIdx + 1), 10); // 1 또는 -1
+    const lineDir  = parseInt(key.slice(colonIdx + 1), 10);
 
-    // progress 내림차순 정렬 (선두 열차가 앞)
     ids.sort((a, b) => {
       const ua = state.get(a)!;
       const ub = state.get(b)!;
@@ -319,7 +343,6 @@ function enforceTrainOrder(unitRatios: Map<string, number>) {
            - computeProgress(ua.lineStationIdx, ra, lineDir);
     });
 
-    // 인접 쌍마다 간격 강제
     for (let i = 1; i < ids.length; i++) {
       const leadId   = ids[i - 1];
       const followId = ids[i];
@@ -333,10 +356,8 @@ function enforceTrainOrder(unitRatios: Map<string, number>) {
       const gap = leadProg - followProg;
 
       if (gap < MIN_TRAIN_GAP) {
-        // 후속 열차의 최대 허용 progress → 그에 맞는 최대 ratio 계산
         const maxFollowProg  = leadProg - MIN_TRAIN_GAP;
         const maxFollowRatio = computeMaxRatio(followUnit.lineStationIdx, maxFollowProg, lineDir);
-        // 최소 0.01 보장 (위치가 완전히 역행하지 않도록)
         unitRatios.set(followId, Math.max(0.01, Math.min(followRatio, maxFollowRatio)));
       }
     }
@@ -346,33 +367,16 @@ function enforceTrainOrder(unitRatios: Map<string, number>) {
 // ─────────────────────────────────────────────────────────────────────────────
 // 유틸리티 — progress 계산
 // ─────────────────────────────────────────────────────────────────────────────
-
-/**
- * 노선 위 1차원 위치값.
- * 하행(+1): stationIdx - 1 + ratio  → 높을수록 앞
- * 상행(-1): ratio - stationIdx - 1  → 높을수록 앞 (덜 음수)
- *
- * 유도:
- *   ratio=0 → lastPos (이전 역)
- *   ratio=1 → nextPos (현재 역 = stationIdx)
- *   ratio=1.5 → futurePos (다음 역)
- *   하행: 실제 인덱스 위치 = (stationIdx - 1) + ratio
- *   상행: lastPos = stationIdx+1, nextPos = stationIdx, futurePos = stationIdx-1
- *         실제 "진행도" = -(stationIdx + 1) + ratio = ratio - stationIdx - 1
- */
 function computeProgress(stationIdx: number, ratio: number, lineDir: number): number {
   return lineDir > 0
-    ? stationIdx - 1 + ratio    // 하행
-    : ratio - stationIdx - 1;  // 상행
+    ? stationIdx - 1 + ratio
+    : ratio - stationIdx - 1;
 }
 
-/**
- * 주어진 최대 progress에서 해당 열차의 최대 ratio 역산.
- */
 function computeMaxRatio(stationIdx: number, maxProgress: number, lineDir: number): number {
   return lineDir > 0
-    ? maxProgress - stationIdx + 1    // 하행: ratio = progress - (stationIdx - 1)
-    : maxProgress + stationIdx + 1;  // 상행: ratio = progress + stationIdx + 1
+    ? maxProgress - stationIdx + 1
+    : maxProgress + stationIdx + 1;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

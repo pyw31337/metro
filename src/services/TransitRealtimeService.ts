@@ -30,8 +30,40 @@ export type SimStatus = 'starting' | 'simulated' | 'mixed' | 'live';
 // ─────────────────────────────────────────────────────────────────────────────
 const POLLING_INTERVAL_MS = 12_500;
 const STAGGER_MS          = 150;    // 노선 간 폴링 간격
-const SIM_EXPIRE_MS       = 90_000; // 90초 후 실측 없으면 시뮬 유지 (이미 표시 중이므로 OK)
-const REAL_EXPIRE_MS      = 90_000; // 90초 이상 업데이트 없으면 실측 열차 제거
+const DWELL_MS            = 30_000; // 역 정차 시간 기본값 (30초)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 구간 소요시간 계산 — 노선별 실측 기반 평균 속도(km/h) + Haversine 거리
+// ─────────────────────────────────────────────────────────────────────────────
+const LINE_SPEED_KMH: Record<string, number> = {
+  '1호선': 40,  '2호선': 32,  '3호선': 38,  '4호선': 38,
+  '5호선': 38,  '6호선': 32,  '7호선': 38,  '8호선': 32,
+  '9호선': 42,  '경의중앙선': 55, '공항철도': 75,
+  '수인분당선': 45, '신분당선': 72, '경춘선': 55,
+  '신림선': 35, '우이신설선': 30,
+};
+
+function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R  = 6371;
+  const φ1 = lat1 * Math.PI / 180;
+  const φ2 = lat2 * Math.PI / 180;
+  const Δφ = (lat2 - lat1) * Math.PI / 180;
+  const Δλ = (lng2 - lng1) * Math.PI / 180;
+  const a  = Math.sin(Δφ / 2) ** 2 + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/**
+ * 두 좌표([lng,lat] GeoJSON 형식) 간 실제 열차 주행 소요시간(ms) 추정.
+ * 최소 45초 / 최대 5분으로 클램프.
+ */
+function calcSegmentMs(lineName: string, from: [number, number], to: [number, number]): number {
+  const speed = LINE_SPEED_KMH[lineName] ?? 40;
+  const dist  = haversineKm(from[1], from[0], to[1], to[0]);
+  if (dist < 0.05) return 60_000; // 사실상 같은 역 — 1분 기본
+  const ms = (dist / speed) * 3_600_000;
+  return Math.max(45_000, Math.min(300_000, Math.round(ms / 1000) * 1000));
+}
 
 const SUBWAY_POLLING_NAMES = [
   '1호선', '2호선', '3호선', '4호선', '5호선',
@@ -157,8 +189,14 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const color = (LINE_COLOR.get(lineName) ?? LINE_COLOR.get(meta.lineName) ?? '#3b82f6').replace('#', '').toUpperCase();
 
   const isDownward = parseIsDownward(train.updnLine);
-  const prevPos    = getAdjacentCoord(lineName, train.statnNm, isDownward) ?? coord;
-  const futurePos  = getNextCoord(lineName, train.statnNm, isDownward) ?? coord;
+  const prevAdj    = getAdjacentCoord(lineName, train.statnNm, isDownward);
+  const nextAdj    = getNextCoord(lineName, train.statnNm, isDownward);
+  const prevPos    = prevAdj ?? coord;
+  const futurePos  = nextAdj ?? coord;
+
+  // 구간 소요시간: 노선별 평균 속도 + Haversine 거리로 계산
+  const segmentMs     = prevAdj ? calcSegmentMs(lineName, prevAdj, coord)   : 90_000;
+  const nextSegmentMs = nextAdj ? calcSegmentMs(lineName, coord, nextAdj)   : 90_000;
 
   const dest  = train.lstnyNm ?? train.statnTnm ?? '';
   const arrow = isDownward ? '◀' : '▶';
@@ -166,12 +204,12 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
 
   const arvlCd = train.arvlCd ?? '99';
 
-  // arvlCd → initial animation ratio (where in the prevPos→nextPos→futurePos journey the train is)
-  // '0' 진입:      entering current station (~85% to station)
-  // '1' 당역:      at station (100% = nextPos)
-  // '2' 출발:      just departed (5% into overshoot zone, nextPos→futurePos)
-  // '3' 전역출발:  departed previous station (~25% to current station)
-  // '99' 운행중:   midway estimate
+  // arvlCd → initial animation ratio (3단계 모델 기준)
+  // '0' 진입:      역 도착 직전 ~85% 지점
+  // '1' 당역:      역 도착 = dwell 시작 (ratio 1.0)
+  // '2' 출발:      dwell 종료 직후 (ratio 1.05 ≈ nextSegmentMs의 5% 진행)
+  // '3' 전역출발:  이전 역 출발 직후 ~25% 지점
+  // '99' 운행중:   구간 중간 ~50% 추정
   const ARVL_RATIO: Record<string, number> = { '0': 0.85, '1': 1.0, '2': 1.05, '3': 0.25 };
   const initialRatio = ARVL_RATIO[arvlCd] ?? 0.5;
 
@@ -179,7 +217,7 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const stationIdx = LINE_STATION_IDX.get(lineName)?.get(train.statnNm)
     ?? LINE_STATION_IDX.get(lineName)?.get(normStation(train.statnNm))
     ?? 0;
-  const lineDir = isDownward ? 1 : -1; // +1 = 하행(idx 증가), -1 = 상행(idx 감소)
+  const lineDir = isDownward ? 1 : -1;
 
   return {
     id: `train-${train.subwayId ?? 'u'}-${train.trainNo}`,
@@ -192,6 +230,9 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
     label,
     status: arvlCd,
     initialRatio,
+    segmentMs,
+    nextSegmentMs,
+    dwellMs: DWELL_MS,
     updnLine: train.updnLine,
     currentStationName: train.statnNm,
     isSimulated,
