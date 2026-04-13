@@ -30,7 +30,7 @@ export type SimStatus = 'starting' | 'simulated' | 'mixed' | 'live';
 // ─────────────────────────────────────────────────────────────────────────────
 const POLLING_INTERVAL_MS = 12_500;
 const STAGGER_MS          = 150;    // 노선 간 폴링 간격
-const DWELL_MS            = 30_000; // 역 정차 시간 기본값 (30초)
+const DWELL_MS            = 15_000; // 역 정차 시간 기본값 (15초, 30→15 단축)
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 구간 소요시간 계산 — 노선별 실측 기반 평균 속도(km/h) + Haversine 거리
@@ -415,6 +415,11 @@ class TransitRealtimeService extends EventEmitter {
     }
   }
 
+  // 시뮬레이션 열차가 한 역에 머무는 폴링 횟수.
+  // segmentMs ~60s / pollInterval 12.5s = 4.8 + dwell 1.6 ≈ 6.5 → 7
+  // 이 값을 넘어야 pastArrival 분기를 타고 다음 역으로 자연스럽게 전환.
+  private static readonly SIM_POLLS_PER_STATION = 7;
+
   private _generateSimResults(): any[] {
     if (!this.simTrains) {
       this.simTrains = [];
@@ -431,12 +436,18 @@ class TransitRealtimeService extends EventEmitter {
             stationIndex: i,
             direction: i % 2 === 0 ? 1 : -1,
             trainNo: `SIM-${line.id}-${i}`,
+            // 열차마다 다른 위상(phase)에서 시작해 자연스러운 분포 형성
+            pollsAtStation: Math.floor((i / step) % TransitRealtimeService.SIM_POLLS_PER_STATION),
           });
         }
       }
     } else {
-      // 매 폴링 주기마다 한 역씩 이동
+      // 매 폴링마다 카운터 증가 — 임계값 도달 시에만 역 전진
+      // 이렇게 해야 워커의 sameTarget 분기가 활성화되어 3단계 애니메이션이 정상 작동
       for (const t of this.simTrains) {
+        t.pollsAtStation = (t.pollsAtStation ?? 0) + 1;
+        if (t.pollsAtStation < TransitRealtimeService.SIM_POLLS_PER_STATION) continue;
+        t.pollsAtStation = 0;
         const line = LINE_BY_ID.get(t.lineId);
         if (!line) continue;
         let next = t.stationIndex + t.direction;
@@ -464,6 +475,7 @@ class TransitRealtimeService extends EventEmitter {
         lstnyNm  : terminal.name,
         updnLine : t.direction > 0 ? '1' : '0',
         trainSttus: '1',
+        // 워커에서 initialRatio=0.5로 처리 (arvlCd 미포함 → 역 중간 지점부터 시작)
       });
     }
     return results;

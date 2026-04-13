@@ -36,7 +36,7 @@ interface TransitUnit {
 // 상수
 // ─────────────────────────────────────────────────────────────────────────────
 const ANIM_DURATION  = 90_000;  // 기본 구간 소요시간 fallback (ms) — 약 90초
-const DWELL_DEFAULT  = 30_000;  // 기본 정차 시간 (ms) — 30초
+const DWELL_DEFAULT  = 15_000;  // 기본 정차 시간 (ms) — 15초 (30→15 단축, 시각적 이동성 개선)
 const FADE_IN_MS     = 1_500;
 const FADE_OUT_MS    = 1_500;
 const EXPIRE_MS      = 90_000;
@@ -419,8 +419,11 @@ function computeMaxRatio(stationIdx: number, maxProgress: number, lineDir: numbe
 // ─────────────────────────────────────────────────────────────────────────────
 // 수학 유틸리티
 // ─────────────────────────────────────────────────────────────────────────────
+// easeInOutSine: cubic보다 훨씬 부드럽고 중간 구간 이동이 잘 보임.
+// cubic은 시작·끝 30%에서 이동량이 6% 밖에 안 돼 열차가 정지한 것처럼 보임.
+// sine은 시작·끝 25%에서도 ~30%의 이동량을 확보해 항상 움직임이 시각적으로 보임.
 function easeInOut(t: number): number {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  return -(Math.cos(Math.PI * t) - 1) / 2;
 }
 
 /**
