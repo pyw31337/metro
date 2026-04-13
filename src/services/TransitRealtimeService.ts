@@ -187,16 +187,36 @@ function getNextCoord(
 // 열차 유닛 빌드
 // ─────────────────────────────────────────────────────────────────────────────
 function buildUnit(train: any, isSimulated: boolean): any | null {
-  const meta = getStationMeta(train.statnNm);
-  if (!meta) return null;
-
-  const coord = meta.coord;
-  // API subwayNm might have dots/middots ("경의·중앙선") — normalise to canonical
+  // ── 노선 이름 결정 (API subwayNm 우선, middot 변형 등 정규화) ──────────────
   const rawLineName = train.subwayNm as string;
   const lineName = LINE_COLOR.has(rawLineName)
     ? rawLineName
-    : (meta.lineName ?? rawLineName);
-  const color = (LINE_COLOR.get(lineName) ?? LINE_COLOR.get(meta.lineName) ?? '#3b82f6').replace('#', '').toUpperCase();
+    : (() => {
+        // middot("경의·중앙선") 또는 알 수 없는 변형 → STATION_META로 폴백
+        const meta = getStationMeta(train.statnNm);
+        return meta?.lineName ?? rawLineName;
+      })();
+
+  // ── 노선 기반 역 인덱스 및 좌표 조회 ─────────────────────────────────────
+  // 핵심 수정: STATION_META["신촌"] 처럼 공유 역명이 첫 등록 노선 좌표를 반환하는
+  // 오류를 제거. 항상 해당 열차의 실제 노선에서 좌표를 가져옴.
+  // 예) 경의중앙선 "양평" → 경의중앙선 양평 좌표 (5호선 양평과 53km 차이)
+  const lineObj = LINE_BY_NAME.get(lineName);
+  const stIdx   = resolveLineStationIdx(lineName, train.statnNm);
+
+  let coord: [number, number];
+  if (lineObj && stIdx >= 0) {
+    // 정상: 노선 직접 조회
+    const s = lineObj.stations[stIdx];
+    coord = [s.lng, s.lat];
+  } else {
+    // 폴백: 노선 매핑 실패 시 STATION_META 사용 (정확도 낮음)
+    const meta = getStationMeta(train.statnNm);
+    if (!meta) return null;
+    coord = meta.coord;
+  }
+
+  const color = (LINE_COLOR.get(lineName) ?? '#3b82f6').replace('#', '').toUpperCase();
 
   const isDownward = parseIsDownward(train.updnLine);
   const prevAdj    = getAdjacentCoord(lineName, train.statnNm, isDownward);
@@ -224,9 +244,8 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const initialRatio = ARVL_RATIO[arvlCd] ?? 0.5;
 
   // 노선 위 1차원 순서 정보: 워커에서 충돌 방지에 사용
-  const stationIdx = LINE_STATION_IDX.get(lineName)?.get(train.statnNm)
-    ?? LINE_STATION_IDX.get(lineName)?.get(normStation(train.statnNm))
-    ?? 0;
+  // stIdx는 이미 위에서 resolveLineStationIdx로 구했으므로 재사용
+  const stationIdx = stIdx >= 0 ? stIdx : 0;
   const lineDir = isDownward ? 1 : -1;
 
   return {
