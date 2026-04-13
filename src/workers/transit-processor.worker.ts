@@ -10,7 +10,8 @@ interface TransitUnit {
   lastPos: [number, number];
   nextPos: [number, number];
   futurePos: [number, number];
-  lastUpdateTime: number;
+  lastUpdateTime: number;   // 애니메이션 기준 시각 (백데이트 가능)
+  lastSeenTime: number;     // 마지막 API 수신 시각 (만료 판정용 — 백데이트 없음)
   lineName: string;
   lineColor: string;
   label: string;
@@ -136,6 +137,7 @@ function processUpdates(units: any[]) {
         ...unit,
         lastPos:         startPos,
         lastUpdateTime:  now - backwardMs,
+        lastSeenTime:    now,              // 만료 판정: 항상 실제 수신 시각
         currentBearing:  calcBearing(startPos, bearingTarget),
         birthTime:       now,
         deathTime:       null,
@@ -157,6 +159,7 @@ function processUpdates(units: any[]) {
       existing.isSimulated    = unit.isSimulated;
       existing.lineStationIdx = unit.lineStationIdx ?? existing.lineStationIdx;
       existing.lineDir        = unit.lineDir        ?? existing.lineDir;
+      existing.lastSeenTime   = now;   // 만료 판정: 항상 실제 수신 시각으로 갱신
       (existing as any).updnLine           = (unit as any).updnLine;
       (existing as any).currentStationName = (unit as any).currentStationName;
       if (!unit.isSimulated && existing.deathTime !== null) {
@@ -215,8 +218,10 @@ function processUpdates(units: any[]) {
   }
 
   // 오래된 유닛 페이드-아웃 예약
+  // lastSeenTime(실제 API 수신 시각) 기준으로 만료 판정.
+  // lastUpdateTime은 애니메이션 백데이트로 과거로 설정될 수 있으므로 사용 불가.
   for (const [, unit] of state) {
-    if (Date.now() - unit.lastUpdateTime > EXPIRE_MS && !unit.deathTime) {
+    if (Date.now() - unit.lastSeenTime > EXPIRE_MS && !unit.deathTime) {
       unit.deathTime = Date.now();
     }
   }
