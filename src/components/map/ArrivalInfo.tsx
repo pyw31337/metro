@@ -132,58 +132,43 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
 
   const isHighlight = isAtStation || arr.arvlCd === '0';
 
-  // 시간 텍스트가 짧은지 (HH:MM 형태 = 5자 이하, 또는 "곧 도착"/"정차중")
-  const isShortTime = displayTime.length <= 5 || displayTime === '곧 도착' || displayTime === '정차중';
-  // 역수 표시가 있고 시간이 길면 → 2줄 레이아웃
-  const useTwoLine = !!stopsLeft && !isShortTime;
-
   return (
     <button
       onClick={() => onToggleTimeDisplay?.()}
       className={`
         w-full px-3 py-1.5 rounded-xl
         bg-black/[0.03] dark:bg-white/5
-        border transition-transform active:scale-[0.98]
+        border transition-transform active:scale-[0.98] flex items-center justify-between gap-1
         ${isAtStation ? 'border-blue-400/50' : isDivergent ? 'border-orange-400/60' : 'border-black/5 dark:border-white/5'}
-        ${useTwoLine ? 'flex flex-col items-start gap-0.5' : 'flex items-center justify-between'}
       `}
     >
-      {/* 상단/좌: LIVE 배지 + 시간 (+ 1줄일 때 오른쪽에 역수) */}
-      <div className={`flex items-center gap-1.5 min-w-0 ${useTwoLine ? 'w-full justify-between' : ''}`}>
-        <div className="flex items-center gap-1.5 min-w-0">
-          {!arr.isScheduled && (
-            <span className="shrink-0 flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black border border-emerald-500/30">
-              <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-              LIVE
-            </span>
-          )}
-          <span
-            className="text-[12px] font-semibold leading-tight whitespace-nowrap"
-            style={isHighlight ? { color: lineColor } : {}}
-          >
-            {displayTime}
+      {/* 좌: LIVE 배지 + 시간 + 분기 배지 */}
+      <div className="flex items-center gap-1.5 min-w-0 shrink">
+        {!arr.isScheduled && (
+          <span className="shrink-0 flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black border border-emerald-500/30">
+            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+            LIVE
           </span>
-          {isDivergent && (
-            <span className="shrink-0 text-[9px] px-1 py-0.5 border border-orange-400 text-orange-400 rounded font-black leading-none">
-              {rawDest}
-            </span>
-          )}
-        </div>
-
-        {/* 1줄 모드: 역수를 오른쪽에 */}
-        {!useTwoLine && stopsLeft && (
-          <span
-            className="text-[11px] font-bold leading-tight shrink-0 ml-2"
-            style={isHighlight ? { color: lineColor } : { color: '#94a3b8' }}
-          >
-            {stopsLeft}
+        )}
+        <span
+          className="text-[12px] font-semibold leading-tight whitespace-nowrap"
+          style={isHighlight ? { color: lineColor } : {}}
+        >
+          {displayTime}
+        </span>
+        {isDivergent && (
+          <span className="shrink-0 text-[9px] px-1 py-0.5 border border-orange-400 text-orange-400 rounded font-black leading-none">
+            {rawDest}
           </span>
         )}
       </div>
 
-      {/* 2줄 모드: 역수를 아래 줄 좌측 작게 */}
-      {useTwoLine && stopsLeft && (
-        <span className="text-[10px] font-bold leading-tight" style={{ color: '#94a3b8' }}>
+      {/* 우: 현재 위치(역수) — 항상 같은 줄 우측 */}
+      {stopsLeft && (
+        <span
+          className="text-[11px] font-bold leading-tight shrink-0"
+          style={isHighlight ? { color: lineColor } : { color: '#94a3b8' }}
+        >
           {stopsLeft}
         </span>
       )}

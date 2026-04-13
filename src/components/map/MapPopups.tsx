@@ -413,7 +413,7 @@ const MapPopups = ({
                 {activeTab === 'subway' && stationFacilities && (() => {
                     const fc = stationFacilities;
                     const chips: { label: string; count: number; icon: string }[] = [
-                        { label: '화장실', count: fc.restroom.length, icon: '🚻' },
+                        { label: '화장실', count: stationRestrooms?.restrooms.length ?? fc.restroom.length, icon: '🚻' },
                         { label: 'ATM', count: fc.atm.length, icon: '💳' },
                         { label: '수유실', count: fc.nursery.length, icon: '🍼' },
                         { label: '물품보관', count: fc.locker.length, icon: '🔒' },
