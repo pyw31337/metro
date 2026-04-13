@@ -18,6 +18,7 @@ import { useBusRouteInfo } from "@/hooks/useBusRouteInfo";
 import { useStationFacilities } from "@/hooks/useStationFacilities";
 import { useStationAddress, formatShortAddress } from "@/hooks/useStationAddress";
 import { useStationExits } from "@/hooks/useStationExits";
+import { useSubwayRestrooms } from "@/hooks/useSubwayRestrooms";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 
@@ -271,10 +272,12 @@ const MapPopups = ({
   const stationAddr = useStationAddress(activeTab === 'subway' ? selectedStationName : null);
   const stationAddrText = formatShortAddress(stationAddr);
   const stationExits = useStationExits(activeTab === 'subway' ? selectedStationName : null);
+  const stationRestrooms = useSubwayRestrooms(activeTab === 'subway' ? selectedStationName : null);
   const [exitExpanded, setExitExpanded] = useState(false);
+  const [restroomExpanded, setRestroomExpanded] = useState(false);
 
-  // 역 바뀌면 출구 섹션 접기
-  useEffect(() => { setExitExpanded(false); }, [selectedStationName]);
+  // 역 바뀌면 섹션 접기
+  useEffect(() => { setExitExpanded(false); setRestroomExpanded(false); }, [selectedStationName]);
 
   const filteredArrivals = useMemo(() => {
     if (!activeLine) return stationArrivals;
@@ -461,6 +464,42 @@ const MapPopups = ({
                                                 {facilities.slice(0, 4).join(' · ')}
                                                 {facilities.length > 4 && <span className="text-zinc-400"> +{facilities.length - 4}</span>}
                                             </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    );
+                })()}
+
+                {/* Restroom Info */}
+                {activeTab === 'subway' && stationRestrooms && stationRestrooms.restrooms.length > 0 && (() => {
+                    const wc = stationRestrooms.restrooms;
+                    return (
+                        <div className="mb-3">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); hapticLight(); setRestroomExpanded(v => !v); }}
+                                className="w-full flex items-center justify-between py-1.5 text-left"
+                            >
+                                <span className="text-[10px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-tight">
+                                    화장실 안내 ({wc.length}곳)
+                                </span>
+                                <span className="text-[10px] text-zinc-400">{restroomExpanded ? '접기 ▲' : '펼치기 ▼'}</span>
+                            </button>
+                            {restroomExpanded && (
+                                <div className="space-y-1.5 max-h-[180px] overflow-y-auto no-scrollbar mt-1">
+                                    {wc.map((r, i) => (
+                                        <div key={i} className="flex items-start gap-2 text-[10px]">
+                                            <span className="shrink-0 px-1.5 h-5 flex items-center justify-center rounded-md bg-zinc-100 dark:bg-white/10 text-zinc-500 dark:text-zinc-400 font-black text-[9px]">
+                                                {r.floor || 'B1'}
+                                            </span>
+                                            <span className="text-zinc-500 dark:text-zinc-400 leading-5 flex-1 min-w-0 truncate">
+                                                {r.entrance && <span className="text-zinc-400">{r.entrance}번 출구 · </span>}
+                                                {r.detail || r.info}
+                                            </span>
+                                            {r.wheelchair && (
+                                                <span className="shrink-0 text-blue-400 text-[11px]">♿</span>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

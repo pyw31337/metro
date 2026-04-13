@@ -1,4 +1,5 @@
 import { BusStop } from "@/types/metro";
+import { normStation } from "@/data/stationRegistry";
 
 /** 노선 번호 기반 색상 분류 (서울 간선/지선/광역/야간 기준) */
 export const getBusRouteStyle = (r: string): { bg: string; text: string } => {
@@ -51,7 +52,7 @@ export const findBusPath = (
         let clean = s.includes(' : ') ? s.split(' : ')[1] : s;
         clean = clean.replace(/\(.*\)/g, '').trim();
         // Keep up to 4 chars for Korean station names (don't split on space aggressively)
-        return clean.split(' ')[0].replace(/역$/, '');
+        return normStation(clean.split(' ')[0]);
     };
 
     const isMyLocation = (s: string) => s.includes('내 위치') || s.includes('(내 위치)');

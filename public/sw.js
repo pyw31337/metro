@@ -1,8 +1,8 @@
 // Metro Live Service Worker
 // Caches the app shell and static assets for offline use
 
-const CACHE_NAME = 'metro-live-v6';
-const STATIC_CACHE = 'metro-static-v4';
+const CACHE_NAME = 'metro-live-v7';
+const STATIC_CACHE = 'metro-static-v5';
 const TILE_CACHE = 'metro-tiles-v1';
 const FONT_CACHE = 'metro-fonts-v1';
 
@@ -20,6 +20,11 @@ const DATA_FILES = [
     '/metro/data/master-bus-routes.json',
     '/metro/data/capitalStations.json',
     '/metro/data/master-toilets.json',
+    '/metro/data/station-arrivals-index.json',
+    '/metro/data/subway-schedule-index.json',
+    '/metro/data/stop-routes-11.json',
+    '/metro/data/stop-routes-23.json',
+    '/metro/data/stop-routes-gg.json',
 ];
 
 self.addEventListener('install', (event) => {

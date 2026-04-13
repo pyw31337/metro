@@ -1,5 +1,6 @@
 import { db } from "@/services/db";
 import { SUBWAY_LINES, Station, SubwayLine } from "@/data/subway-lines";
+import { normStation } from "@/data/stationRegistry";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 노선별 평균 속도 (km/h)  — 실측 기반 추정값
@@ -302,7 +303,7 @@ function normalizeForGraph(name: string, graphKeys: Set<string>): string {
   const noParens = name.replace(/\(.*?\)/g, '').trim();
   if (graphKeys.has(noParens)) return noParens;
 
-  const noParensSuffix = noParens.replace(/역$/, '').trim();
+  const noParensSuffix = normStation(name);
   if (graphKeys.has(noParensSuffix)) return noParensSuffix;
 
   // 4. "내 위치 : X (내 위치)" 패턴 파싱
@@ -310,7 +311,7 @@ function normalizeForGraph(name: string, graphKeys: Set<string>): string {
   if (locationMatch) {
     const inner = locationMatch[1].trim();
     if (graphKeys.has(inner)) return inner;
-    const innerClean = inner.replace(/역$/, '').trim();
+    const innerClean = normStation(inner);
     if (graphKeys.has(innerClean)) return innerClean;
   }
 
