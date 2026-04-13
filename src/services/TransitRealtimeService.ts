@@ -72,6 +72,7 @@ const SUBWAY_POLLING_NAMES = [
   '6호선', '7호선', '8호선', '9호선',
   '경의중앙선', '공항철도', '수인분당선', '신분당선',
   '경춘선', '신림선', '우이신설선',
+  '서해선', '경강선', 'GTX-A',
 ];
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -88,16 +89,29 @@ const STATION_META = new Map<string, StationMeta>();
 const LINE_COLOR   = new Map<string, string>();
 const LINE_BY_NAME = new Map(SUBWAY_LINES.map(l => [l.name, l]));
 const LINE_BY_ID   = new Map(SUBWAY_LINES.map(l => [l.id,   l]));
-// Per-line O(1) station index: Map<lineName, Map<stationName, stationIndex>>
-// canonical 이름(s.name) + normStation alias(괄호·역 제거) 모두 등록
-// 예: "신촌(2호선)" → "신촌"도 같은 인덱스로 조회 가능
+
+// ID 기반 역 인덱스 — 같은 노선명 복수 지선(1호선 4개, 2호선 3개 등)을 각각 올바르게 처리
+// LINE_STATION_IDX(이름 기반)는 마지막 지선만 남으므로 여기서는 id로 키잉
+const LINE_STATION_IDX_BY_ID: Map<string, Map<string, number>> = new Map(
+  SUBWAY_LINES.map(l => {
+    const m = new Map<string, number>();
+    l.stations.forEach((s, i) => {
+      m.set(s.name, i);
+      const bare = normStation(s.name);
+      if (bare !== s.name) m.set(bare, i);
+    });
+    return [l.id, m];
+  })
+);
+
+// 이름 기반 인덱스는 하위 호환용으로 유지 (단일 지선 노선 빠른 조회)
 const LINE_STATION_IDX: Map<string, Map<string, number>> = new Map(
   SUBWAY_LINES.map(l => {
     const m = new Map<string, number>();
     l.stations.forEach((s, i) => {
       m.set(s.name, i);
       const bare = normStation(s.name);
-      if (bare !== s.name) m.set(bare, i); // "신촌(2호선)" → "신촌"
+      if (bare !== s.name) m.set(bare, i);
     });
     return [l.name, m];
   })
@@ -147,12 +161,31 @@ function parseIsDownward(updnLine: string | undefined): boolean {
   return true; // 알 수 없으면 하행으로 기본 처리
 }
 
-// 인접 역 좌표 반환
+// 이름 기반 단순 인덱스 조회 (하위 호환)
 function resolveLineStationIdx(lineName: string, stationName: string): number {
   const m = LINE_STATION_IDX.get(lineName);
   if (!m) return -1;
-  // exact → normalized (역 suffix, 괄호 제거)
   return m.get(stationName) ?? m.get(normStation(stationName)) ?? -1;
+}
+
+/**
+ * 역명이 실제로 속한 지선 객체와 인덱스를 반환.
+ * 동일 노선명을 공유하는 복수 지선(1호선 4개, 2호선 3개 등)을 모두 검색.
+ * 예: "성수" → 2-Loop이 아닌 2-Seongsu 반환
+ */
+function findLineStation(
+  lineName: string,
+  stationName: string,
+): { line: (typeof SUBWAY_LINES)[0]; idx: number } | null {
+  const norm = normStation(stationName);
+  for (const line of SUBWAY_LINES) {
+    if (line.name !== lineName) continue;
+    const m = LINE_STATION_IDX_BY_ID.get(line.id);
+    if (!m) continue;
+    const idx = m.get(stationName) ?? m.get(norm) ?? -1;
+    if (idx >= 0) return { line, idx };
+  }
+  return null;
 }
 
 function getAdjacentCoord(
@@ -160,13 +193,11 @@ function getAdjacentCoord(
   stationName: string,
   isDownward: boolean
 ): [number, number] | null {
-  const line = LINE_BY_NAME.get(lineName);
-  if (!line) return null;
-  const idx = resolveLineStationIdx(lineName, stationName);
-  if (idx < 0) return null;
-  const prevIdx = isDownward ? idx - 1 : idx + 1;
-  if (prevIdx < 0 || prevIdx >= line.stations.length) return null;
-  const s = line.stations[prevIdx];
+  const found = findLineStation(lineName, stationName);
+  if (!found) return null;
+  const prevIdx = isDownward ? found.idx - 1 : found.idx + 1;
+  if (prevIdx < 0 || prevIdx >= found.line.stations.length) return null;
+  const s = found.line.stations[prevIdx];
   return [s.lng, s.lat];
 }
 
@@ -175,13 +206,11 @@ function getNextCoord(
   stationName: string,
   isDownward: boolean
 ): [number, number] | null {
-  const line = LINE_BY_NAME.get(lineName);
-  if (!line) return null;
-  const idx = resolveLineStationIdx(lineName, stationName);
-  if (idx < 0) return null;
-  const nextIdx = isDownward ? idx + 1 : idx - 1;
-  if (nextIdx < 0 || nextIdx >= line.stations.length) return null;
-  const s = line.stations[nextIdx];
+  const found = findLineStation(lineName, stationName);
+  if (!found) return null;
+  const nextIdx = isDownward ? found.idx + 1 : found.idx - 1;
+  if (nextIdx < 0 || nextIdx >= found.line.stations.length) return null;
+  const s = found.line.stations[nextIdx];
   return [s.lng, s.lat];
 }
 
@@ -200,19 +229,20 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
       })();
 
   // ── 노선 기반 역 인덱스 및 좌표 조회 ─────────────────────────────────────
-  // 핵심 수정: STATION_META["신촌"] 처럼 공유 역명이 첫 등록 노선 좌표를 반환하는
-  // 오류를 제거. 항상 해당 열차의 실제 노선에서 좌표를 가져옴.
-  // 예) 경의중앙선 "양평" → 경의중앙선 양평 좌표 (5호선 양평과 53km 차이)
-  const lineObj = LINE_BY_NAME.get(lineName);
-  const stIdx   = resolveLineStationIdx(lineName, train.statnNm);
+  // findLineStation: 복수 지선(1호선 4개, 2호선 3개 등) 전부 탐색해 실제 지선 반환.
+  // 예) 2호선 "성수" → 2-Seongsu 지선, 1호선 "병점" → 1-Sinchang 지선
+  // 예) 경의중앙선 "양평" → 경의중앙선 좌표 (5호선 양평과 53km 차이 방지)
+  const branchResult = findLineStation(lineName, train.statnNm);
+  const lineObj = branchResult?.line ?? null;
+  const stIdx   = branchResult?.idx ?? -1;
 
   let coord: [number, number];
   if (lineObj && stIdx >= 0) {
-    // 정상: 노선 직접 조회
+    // 정상: 지선 직접 조회
     const s = lineObj.stations[stIdx];
     coord = [s.lng, s.lat];
   } else {
-    // 폴백: 노선 매핑 실패 시 STATION_META 사용 (정확도 낮음)
+    // 폴백: 지선 매핑 실패 시 STATION_META (정확도 낮음)
     const meta = getStationMeta(train.statnNm);
     if (!meta) return null;
     coord = meta.coord;
