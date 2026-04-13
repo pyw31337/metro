@@ -307,12 +307,14 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           type="symbol"
           filter={['==', ['get', 'type'], 'subway']}
           layout={{
-            'visibility':              trainVis,
-            'icon-image':              ['concat', 'train-card-', ['get', 'lineColor']],
-            'icon-size':               ['interpolate', ['linear'], ['zoom'], 10, 0.12, 14, 0.25, 18, 0.5],
-            'icon-allow-overlap':      true,
-            'icon-ignore-placement':   true,
-            'symbol-sort-key':         1000,
+            'visibility':               trainVis,
+            'icon-image':               ['concat', 'train-card-', ['get', 'lineColor']],
+            'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.12, 14, 0.25, 18, 0.5],
+            'icon-rotate':              ['get', 'bearing'],
+            'icon-rotation-alignment':  'map',
+            'icon-allow-overlap':       true,
+            'icon-ignore-placement':    true,
+            'symbol-sort-key':          1000,
           }}
           paint={{ 'icon-opacity': buildOpacityExpr(activeLine) }}
         />

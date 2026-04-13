@@ -220,7 +220,7 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const lineDir = isDownward ? 1 : -1;
 
   return {
-    id: `train-${train.subwayId ?? 'u'}-${train.trainNo}`,
+    id: `train-${train.subwayId ?? 'u'}-${train.trainNo || `${train.statnNm}-${train.updnLine ?? '0'}`}`,
     type: 'subway' as const,
     prevPos,
     nextPos: coord,

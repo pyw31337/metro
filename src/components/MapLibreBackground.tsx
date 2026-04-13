@@ -99,16 +99,16 @@ const safeRoundRect = (ctx: CanvasRenderingContext2D, x: number, y: number, w: n
     }
 };
 
-// 열차 카드 아이콘을 캔버스에 그려 ImageData 반환
-// 흰색 배경 fill → 노선 색 카드 → 흰색 열차 형상
-// (stroke 방식 대신 fill 방식을 써서 소형 아이콘에서도 흰 테두리가 확실히 렌더됨)
+// 열차 카드 아이콘을 캔버스에 그려 ImageData 반환.
+// 위쪽(y=0)이 진행 방향 — icon-rotate 적용 시 실제 방위각대로 회전.
+// 흰 테두리 → 노선색 카드 → 흰색 화살표(앞) + 차체(뒤)
 function drawTrainCard(color: string): ImageData | null {
     const canvas = document.createElement('canvas');
     canvas.width = 128; canvas.height = 128;
     const ctx = canvas.getContext('2d');
     if (!ctx) return null;
 
-    // 1) 흰색 배경 (약간 더 큰 라운드렉 → 흰 테두리 역할)
+    // 1) 흰색 외곽 테두리
     ctx.fillStyle = 'white';
     ctx.beginPath(); safeRoundRect(ctx, 6, 6, 116, 116, 26); ctx.fill();
 
@@ -116,11 +116,17 @@ function drawTrainCard(color: string): ImageData | null {
     ctx.fillStyle = color;
     ctx.beginPath(); safeRoundRect(ctx, 16, 16, 96, 96, 20); ctx.fill();
 
-    // 3) 흰색 열차 형상
+    // 3) 흰색 방향 화살표 (위쪽 = 진행 방향) + 차체
     ctx.fillStyle = 'white';
-    ctx.beginPath(); safeRoundRect(ctx, 30, 28, 68, 44, 8); ctx.fill(); // 차체
-    ctx.beginPath(); ctx.arc(44, 84, 10, 0, Math.PI * 2); ctx.fill(); // 바퀴 좌
-    ctx.beginPath(); ctx.arc(84, 84, 10, 0, Math.PI * 2); ctx.fill(); // 바퀴 우
+    // 화살촉 — 꼭지점(64,22) → 좌하(42,52) → 우하(86,52)
+    ctx.beginPath();
+    ctx.moveTo(64, 22);
+    ctx.lineTo(42, 52);
+    ctx.lineTo(86, 52);
+    ctx.closePath();
+    ctx.fill();
+    // 차체 — 화살촉 아래 둥근 직사각형
+    ctx.beginPath(); safeRoundRect(ctx, 38, 55, 52, 42, 9); ctx.fill();
 
     return ctx.getImageData(0, 0, 128, 128);
 }

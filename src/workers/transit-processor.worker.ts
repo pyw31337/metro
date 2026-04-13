@@ -46,11 +46,14 @@ const state = new Map<string, TransitUnit>();
 let isTicking = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 3단계 ratio 계산: 주행(0→1) → 정차(1.0 고정) → 출발(1→1.5)
+// 3단계 ratio 계산: 주행(0→1) → 정차(1.0 고정) → 출발(1→2.0)
 //
 //   Phase 1  [0, segmentMs)          : lastPos → nextPos  (ratio 0→1)
 //   Phase 2  [segmentMs, +dwellMs)   : nextPos 정차       (ratio = 1.0)
-//   Phase 3  [segmentMs+dwellMs, …)  : nextPos → futurePos (ratio 1→1.5)
+//   Phase 3  [segmentMs+dwellMs, …)  : nextPos → futurePos (ratio 1→2.0)
+//
+//   Phase 3 상한 2.0: overT = ratio - 1.0 → 0~1.0 → lerp(nextPos, futurePos, easeInOut(overT))
+//   열차가 futurePos(다음 역)까지 완전히 이동 후 정지. API 업데이트 시 자연스럽게 전환.
 // ─────────────────────────────────────────────────────────────────────────────
 function computeRatio(unit: TransitUnit, elapsed: number): number {
   const seg   = unit.segmentMs;
@@ -58,7 +61,7 @@ function computeRatio(unit: TransitUnit, elapsed: number): number {
 
   if (elapsed < seg)              return elapsed / seg;        // Phase 1: 주행
   if (elapsed < seg + dwell)      return 1.0;                  // Phase 2: 정차
-  return Math.min(1.5, 1.0 + (elapsed - seg - dwell) / unit.nextSegmentMs); // Phase 3: 출발
+  return Math.min(2.0, 1.0 + (elapsed - seg - dwell) / unit.nextSegmentMs); // Phase 3: 출발
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,7 +130,7 @@ function processUpdates(units: any[]) {
         // Phase 3: 이미 출발 후 (overshoot) — ratio > 1.0
         backwardMs = segMs + dwMs + (initR - 1.0) * nxMs;
       }
-      backwardMs = Math.min(backwardMs, segMs + dwMs + 0.5 * nxMs);
+      backwardMs = Math.min(backwardMs, segMs + dwMs + 1.0 * nxMs);
 
       const bearingTarget: [number, number] = initR >= 1.0
         ? (unit.futurePos ?? unit.nextPos)
