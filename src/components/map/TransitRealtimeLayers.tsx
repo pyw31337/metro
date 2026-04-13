@@ -56,17 +56,27 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   }, []);
 
   // ─── 레이어 z-order 보장 ───
-  // sourcedata는 매 프레임 발생할 수 있으므로 debounce로 처리
+  // leading+trailing 방식: sourcedata 첫 발생 시 즉시 실행(leading) + 폭풍 후 한 번 더(trailing)
+  // trailing-only 200ms debounce는 sourcedata 폭풍이 계속되면 실행이 지연돼 열차가 노선 아래로 묻히는 버그 유발
   useEffect(() => {
     if (!map) return;
     const TRAIN_LAYERS = ['transit-boarded-pulse-0', 'transit-boarded-pulse-1', 'transit-boarded-pulse-2', 'transit-trains-gray', 'transit-trains', 'transit-buses'];
     const ensureOnTop = () => {
       try { TRAIN_LAYERS.forEach(id => { if (map.getLayer(id)) map.moveLayer(id); }); } catch {}
     };
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    let trailingTimer: ReturnType<typeof setTimeout> | null = null;
+    let lastCallTime = 0;
+    const THROTTLE_MS = 150;
     const debouncedEnsure = () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(ensureOnTop, 200);
+      const now = Date.now();
+      // leading: 마지막 실행 후 THROTTLE_MS 이상 지났으면 즉시 실행
+      if (now - lastCallTime >= THROTTLE_MS) {
+        ensureOnTop();
+        lastCallTime = now;
+      }
+      // trailing: 이벤트 폭풍 끝난 후 한 번 더
+      if (trailingTimer) clearTimeout(trailingTimer);
+      trailingTimer = setTimeout(() => { ensureOnTop(); lastCallTime = Date.now(); }, THROTTLE_MS);
     };
     if (map.isStyleLoaded()) ensureOnTop();
     map.on('style.load', ensureOnTop);
@@ -74,7 +84,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     return () => {
       map.off('style.load', ensureOnTop);
       map.off('sourcedata', debouncedEnsure);
-      if (debounceTimer) clearTimeout(debounceTimer);
+      if (trailingTimer) clearTimeout(trailingTimer);
     };
   }, [map]);
 
