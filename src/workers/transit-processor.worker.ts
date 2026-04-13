@@ -17,6 +17,7 @@ interface TransitUnit {
   label: string;
   status: string;
   currentBearing: number;
+  bearingInitialized: boolean; // false이면 첫 비-0 targetBearing에서 스냅 (북향 깜박임 방지)
   isSimulated: boolean;
   birthTime: number;        // 페이드-인 시작 시각
   deathTime: number | null; // 페이드-아웃 시작 시각 (null = 살아있음)
@@ -152,13 +153,15 @@ function processUpdates(units: any[]) {
         return calcBearing(unit.prevPos ?? unit.nextPos, unit.nextPos);
       }
 
+      const initBearing = bestInitialBearing();
       state.set(unit.id, {
         ...unit,
-        lastPos:         startPos,
-        lastUpdateTime:  now - backwardMs,
-        lastSeenTime:    now,              // 만료 판정: 항상 실제 수신 시각
-        currentBearing:  bestInitialBearing(),
-        birthTime:       now,
+        lastPos:              startPos,
+        lastUpdateTime:       now - backwardMs,
+        lastSeenTime:         now,              // 만료 판정: 항상 실제 수신 시각
+        currentBearing:       initBearing,
+        bearingInitialized:   initBearing !== 0,
+        birthTime:            now,
         deathTime:       null,
         lineStationIdx:  unit.lineStationIdx ?? 0,
         lineDir:         unit.lineDir ?? 1,
@@ -324,11 +327,18 @@ function startTick() {
       }
 
       // 베어링 스무딩
-      // 큰 각도 차이(>30°) → 빠르게 수렴(0.20), 미세 조정 → 부드럽게(0.10)
+      // bearingInitialized=false(초기 0)이면 첫 비-0 방위각에서 스냅 → 북향 깜박임 방지
       const targetBearing = calcBearing(pos, bearingTarget);
-      const bearingDiff = Math.abs(((targetBearing - unit.currentBearing + 540) % 360) - 180);
-      const lerpT = bearingDiff > 30 ? 0.20 : 0.10;
-      unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, lerpT);
+      if (!unit.bearingInitialized) {
+        if (targetBearing !== 0) {
+          unit.currentBearing     = targetBearing;
+          unit.bearingInitialized = true;
+        }
+      } else {
+        const bearingDiff = Math.abs(((targetBearing - unit.currentBearing + 540) % 360) - 180);
+        const lerpT = bearingDiff > 30 ? 0.20 : 0.10;
+        unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, lerpT);
+      }
 
       // 불투명도 (페이드 인/아웃)
       let opacity = 1;

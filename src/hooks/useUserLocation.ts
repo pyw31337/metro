@@ -11,7 +11,8 @@ export function useUserLocation(map: any | null) {
     const lastPosRef   = useRef<{ lat: number; lng: number } | null>(null);
     const targetPosRef = useRef<{ lat: number; lng: number; accuracy: number; heading: number | null } | null>(null);
     const lastUpdateRef = useRef<number>(0);
-    const isMovingRef  = useRef(false); // 이동 중일 때만 interpolation 구동
+    const isMovingRef   = useRef(false); // 이동 중일 때만 interpolation 구동
+    const hasFlownToRef = useRef(false); // 최초 위치 수신 시 1회만 flyTo
 
     const fetchLocation = () => {
         if (!navigator.geolocation) return;
@@ -25,6 +26,16 @@ export function useUserLocation(map: any | null) {
                     heading: pos.coords.heading,
                     timestamp: Date.now()
                 };
+
+                // 최초 위치 수신 시 지도 중심 이동 (1회)
+                if (!hasFlownToRef.current && map) {
+                    hasFlownToRef.current = true;
+                    try {
+                        const doFly = () => map.flyTo({ center: [newLoc.lng, newLoc.lat], zoom: 15, duration: 1500 });
+                        if (map.isStyleLoaded()) doFly();
+                        else map.once('style.load', doFly);
+                    } catch {}
+                }
 
                 if (!lastPosRef.current) {
                     lastPosRef.current = newLoc;

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, memo } from "react";
-import Map, { MapRef } from "react-map-gl/maplibre";
+import Map, { MapRef, ScaleControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
@@ -85,6 +85,7 @@ const MapBase = ({
         }}
         attributionControl={false}
       >
+        <ScaleControl maxWidth={80} unit="metric" position="bottom-left" />
         {children}
       </Map>
 
