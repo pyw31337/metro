@@ -65,14 +65,15 @@ const SubwayLayers = ({
   // "color" 프로퍼티를 직접 참조 (lineColors 배열 접근보다 안정적)
   const stationLineColor: any = ["get", "color"];
 
-  // 역 점 반지름: 환승역은 조금 크게, zoom 기반
+  // 역 점 반지름: 선택 링의 60% (선택 링은 원본의 50% → 역 점은 원본 선택 링의 30%)
+  // 환승역은 0.5px 크게
   const baseRadius: any = [
     "interpolate", ["linear"], ["zoom"],
-    7,  ["case", isTransfer, 5,   4],
-    9,  ["case", isTransfer, 7,   5],
-    11, ["case", isTransfer, 9,   7],
-    13, ["case", isTransfer, 11,  9],
-    15, ["case", isTransfer, 14,  11],
+    7,  ["case", isTransfer, 2.5, 2.0],
+    9,  ["case", isTransfer, 3.0, 2.5],
+    11, ["case", isTransfer, 4.0, 3.3],
+    13, ["case", isTransfer, 5.0, 4.5],
+    15, ["case", isTransfer, 6.5, 5.7],
   ];
 
   // 역 점: 노선색 채움 + 흰 stroke → 밝은/어두운 배경 모두에서 명확히 보임
@@ -163,16 +164,16 @@ const SubwayLayers = ({
           }}
         />
 
-        {/* 선택된 역 강조 링 */}
+        {/* 선택된 역 강조 링 (원본의 50%) */}
         <Layer
           id="subway-station-selected-ring"
           type="circle"
           filter={['==', ['get', 'name'], selectedStationName ?? '']}
           layout={{ "visibility": vis }}
           paint={{
-            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 9, 11, 11, 13, 15, 15, 19],
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 4.5, 11, 5.5, 13, 7.5, 15, 9.5],
             "circle-color": isDarkMode ? "rgba(255,255,255,0.15)" : "rgba(255,255,255,0.9)",
-            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 9, 2, 13, 3],
+            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 9, 1, 13, 1.5],
             "circle-stroke-color": stationLineColor,
             "circle-opacity": 1,
             "circle-stroke-opacity": 1,
@@ -185,22 +186,10 @@ const SubwayLayers = ({
           type="circle"
           layout={{ "visibility": vis }}
           paint={{
-            "circle-radius": [
-              "case",
-              ["==", ["get", "name"], selectedStationName ?? ''],
-              ["interpolate", ["linear"], ["zoom"],
-                7,  ["case", isTransfer, 7,   5],
-                9,  ["case", isTransfer, 9,   7],
-                11, ["case", isTransfer, 12,  9],
-                13, ["case", isTransfer, 15,  12],
-                15, ["case", isTransfer, 18,  14],
-              ],
-              baseRadius,
-            ],
+            "circle-radius": baseRadius,
             "circle-color": ["coalesce", stationFillColor, "#888888"],
             "circle-opacity": 1,
-            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"],
-              7, 1.5, 9, 2, 11, 2.5, 13, 3, 15, 3.5],
+            "circle-stroke-width": 1.5,
             "circle-stroke-color": stationStrokeColor,
             "circle-stroke-opacity": 1,
           }}

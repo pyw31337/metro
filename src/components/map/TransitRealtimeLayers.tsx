@@ -25,7 +25,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const map = mapRef?.getMap();
 
   const [geoData, setGeoData]   = useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
-  const [simStatus, setSimStatus] = useState<SimStatus>('starting');
+  const [, setSimStatus] = useState<SimStatus>('starting');
 
   // ── 선택 상태 ──
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
@@ -324,7 +324,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           layout={{
             'visibility':               trainVis,
             'icon-image':               ['concat', 'train-card-', ['get', 'lineColor']],
-            'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.12, 14, 0.25, 18, 0.5],
+            'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.096, 14, 0.20, 18, 0.40],
             'icon-rotate':              ['get', 'bearing'],
             'icon-rotation-alignment':  'map',
             'icon-allow-overlap':       true,
