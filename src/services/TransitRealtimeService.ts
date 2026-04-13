@@ -104,6 +104,13 @@ function parseIsDownward(updnLine: string | undefined): boolean {
 }
 
 // 인접 역 좌표 반환
+function resolveLineStationIdx(lineName: string, stationName: string): number {
+  const m = LINE_STATION_IDX.get(lineName);
+  if (!m) return -1;
+  // exact → normalized (역 suffix, 괄호 제거)
+  return m.get(stationName) ?? m.get(normStation(stationName)) ?? -1;
+}
+
 function getAdjacentCoord(
   lineName: string,
   stationName: string,
@@ -111,7 +118,7 @@ function getAdjacentCoord(
 ): [number, number] | null {
   const line = LINE_BY_NAME.get(lineName);
   if (!line) return null;
-  const idx = LINE_STATION_IDX.get(lineName)?.get(stationName) ?? -1;
+  const idx = resolveLineStationIdx(lineName, stationName);
   if (idx < 0) return null;
   const prevIdx = isDownward ? idx - 1 : idx + 1;
   if (prevIdx < 0 || prevIdx >= line.stations.length) return null;
@@ -126,7 +133,7 @@ function getNextCoord(
 ): [number, number] | null {
   const line = LINE_BY_NAME.get(lineName);
   if (!line) return null;
-  const idx = LINE_STATION_IDX.get(lineName)?.get(stationName) ?? -1;
+  const idx = resolveLineStationIdx(lineName, stationName);
   if (idx < 0) return null;
   const nextIdx = isDownward ? idx + 1 : idx - 1;
   if (nextIdx < 0 || nextIdx >= line.stations.length) return null;
@@ -141,9 +148,13 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
   const meta = getStationMeta(train.statnNm);
   if (!meta) return null;
 
-  const coord    = meta.coord;
-  const lineName = train.subwayNm;
-  const color    = (LINE_COLOR.get(lineName) ?? '#3b82f6').replace('#', '').toUpperCase();
+  const coord = meta.coord;
+  // API subwayNm might have dots/middots ("경의·중앙선") — normalise to canonical
+  const rawLineName = train.subwayNm as string;
+  const lineName = LINE_COLOR.has(rawLineName)
+    ? rawLineName
+    : (meta.lineName ?? rawLineName);
+  const color = (LINE_COLOR.get(lineName) ?? LINE_COLOR.get(meta.lineName) ?? '#3b82f6').replace('#', '').toUpperCase();
 
   const isDownward = parseIsDownward(train.updnLine);
   const prevPos    = getAdjacentCoord(lineName, train.statnNm, isDownward) ?? coord;
