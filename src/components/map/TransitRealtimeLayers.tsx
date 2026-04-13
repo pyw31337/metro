@@ -59,7 +59,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   // sourcedata는 매 프레임 발생할 수 있으므로 debounce로 처리
   useEffect(() => {
     if (!map) return;
-    const TRAIN_LAYERS = ['transit-trains', 'transit-train-label', 'transit-buses'];
+    const TRAIN_LAYERS = ['transit-boarded-pulse-0', 'transit-boarded-pulse-1', 'transit-boarded-pulse-2', 'transit-trains', 'transit-buses'];
     const ensureOnTop = () => {
       try { TRAIN_LAYERS.forEach(id => { if (map.getLayer(id)) map.moveLayer(id); }); } catch {}
     };
@@ -83,24 +83,38 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const activeLineRef = useRef(activeLine);
   useEffect(() => { activeLineRef.current = activeLine; }, [activeLine]);
 
-  // ─── 탑승 열차 펄스 애니메이션 (requestAnimationFrame + setPaintProperty) ───
+  // ─── 탑승 열차 펄스 애니메이션 — 3중 링 리플 ───
   useEffect(() => {
     if (!map || !boardedId) {
       if (pulseRafRef.current) { cancelAnimationFrame(pulseRafRef.current); pulseRafRef.current = null; }
       return;
     }
-    let phase = 0;
+    const CYCLE_MS = 2400;
+    const start = performance.now();
     const animate = () => {
-      phase = (phase + 0.022) % 1;
-      try {
-        map.setPaintProperty('transit-boarded-pulse', 'circle-radius', 14 + phase * 32);
-        map.setPaintProperty('transit-boarded-pulse', 'circle-opacity', (1 - phase) * 0.55);
-      } catch {}
+      const t = (performance.now() - start) % CYCLE_MS / CYCLE_MS;
+      for (let i = 0; i < 3; i++) {
+        const phase = (t + i / 3) % 1;
+        const eased = 1 - Math.pow(1 - phase, 2);
+        try {
+          map.setPaintProperty(`transit-boarded-pulse-${i}`, 'circle-radius', 12 + eased * 38);
+          map.setPaintProperty(`transit-boarded-pulse-${i}`, 'circle-stroke-opacity', Math.pow(1 - phase, 1.8) * 0.7);
+        } catch {}
+      }
       pulseRafRef.current = requestAnimationFrame(animate);
     };
     pulseRafRef.current = requestAnimationFrame(animate);
     return () => { if (pulseRafRef.current) { cancelAnimationFrame(pulseRafRef.current); pulseRafRef.current = null; } };
   }, [map, boardedId]);
+
+  // ─── 탑승 열차 펄스 색상 동기화 ───
+  useEffect(() => {
+    if (!map || !boardedInfo) return;
+    const color = `#${boardedInfo.lineColor}`;
+    for (let i = 0; i < 3; i++) {
+      try { map.setPaintProperty(`transit-boarded-pulse-${i}`, 'circle-stroke-color', color); } catch {}
+    }
+  }, [map, boardedInfo]);
 
   // ─── 실시간 업데이트 구독 ───
   useEffect(() => {
@@ -280,21 +294,24 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
   return (
     <>
-      {/* ── 탑승 열차 펄스 소스 ── */}
+      {/* ── 탑승 열차 펄스 소스 (3중 링 리플) ── */}
       <Source id="transit-boarded-source" type="geojson" data={EMPTY_GEOJSON}>
-        <Layer
-          id="transit-boarded-pulse"
-          type="circle"
-          layout={{ visibility: (boardedId && isTrainVisible) ? 'visible' : 'none' }}
-          paint={{
-            'circle-radius':          14,
-            'circle-color':           'transparent',
-            'circle-opacity':         0.5,
-            'circle-stroke-width':    2.5,
-            'circle-stroke-color':    boardedInfo ? `#${boardedInfo.lineColor}` : '#ffffff',
-            'circle-stroke-opacity':  0.8,
-          }}
-        />
+        {[0, 1, 2].map(i => (
+          <Layer
+            key={i}
+            id={`transit-boarded-pulse-${i}`}
+            type="circle"
+            layout={{ visibility: (boardedId && isTrainVisible) ? 'visible' : 'none' }}
+            paint={{
+              'circle-radius':          12,
+              'circle-color':           'transparent',
+              'circle-opacity':         0,
+              'circle-stroke-width':    2,
+              'circle-stroke-color':    boardedInfo ? `#${boardedInfo.lineColor}` : '#ffffff',
+              'circle-stroke-opacity':  0,
+            }}
+          />
+        ))}
       </Source>
 
       <Source id="transit-realtime-source" type="geojson" data={geoData}>
