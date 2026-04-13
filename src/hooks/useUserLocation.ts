@@ -31,7 +31,7 @@ export function useUserLocation(map: any | null) {
                 if (!hasFlownToRef.current && map) {
                     hasFlownToRef.current = true;
                     try {
-                        const doFly = () => map.flyTo({ center: [newLoc.lng, newLoc.lat], zoom: 15, duration: 1500 });
+                        const doFly = () => map.flyTo({ center: [newLoc.lng, newLoc.lat], zoom: 16, duration: 1500 });
                         if (map.isStyleLoaded()) doFly();
                         else map.once('style.load', doFly);
                     } catch {}
