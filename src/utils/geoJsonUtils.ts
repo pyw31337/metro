@@ -9,14 +9,19 @@ export interface GeoJsonFeatureCollection {
   features: any[];
 }
 
-export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
+export const convertSubwayToGeoJSON = (
+  trackGeometry?: Map<string, [number,number][]>
+): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
   const stationMap = new Map<string, any>();
 
   SUBWAY_LINES.forEach((line: SubwayLine) => {
-    // 1. LineString Feature
-    const coordinates = line.stations.map(s => [s.lng, s.lat]);
+    // 1. LineString Feature — OSM 선로 geometry 우선, 없으면 직선 폴백
+    const osmPath = trackGeometry?.get(line.name);
+    const coordinates = osmPath && osmPath.length >= 2
+      ? osmPath
+      : line.stations.map(s => [s.lng, s.lat]);
     lineFeatures.push({
       type: "Feature" as const,
       geometry: { type: "LineString" as const, coordinates },

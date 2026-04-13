@@ -257,7 +257,16 @@ function MapLibreBackground(props: MapLibreProps) {
         return () => transitRealtimeService.untrackBusRoute(cityCode, selectedBusRoute);
     }, [selectedBusRoute, selectedBusStop]);
 
-    const subwayData = SUBWAY_GEOJSON;
+    const [subwayData, setSubwayData] = useState(SUBWAY_GEOJSON);
+    useEffect(() => {
+        fetch('/data/subway-track-geometry.json')
+            .then(r => r.json())
+            .then((json: Record<string, [number,number][]>) => {
+                const geo = new Map<string, [number,number][]>(Object.entries(json));
+                setSubwayData(convertSubwayToGeoJSON(geo));
+            })
+            .catch(() => { /* geometry 없으면 직선 유지 */ });
+    }, []);
     const filteredWCs = useMemo(() => convertWCToGeoJSON(wcItems, wcFilters), [wcItems, wcFilters]);
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
     const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult), [pathResult]);

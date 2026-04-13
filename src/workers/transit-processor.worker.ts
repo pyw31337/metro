@@ -27,6 +27,9 @@ interface TransitUnit {
   segmentMs: number;        // lastPos → nextPos 구간 소요시간 (ms)
   nextSegmentMs: number;    // nextPos → futurePos 구간 소요시간 (ms)
   dwellMs: number;          // nextPos 역에서 정차 시간 (ms)
+  // ── OSM 선로 waypoints ──
+  waypoints?: [number,number][];      // lastPos → nextPos 실제 선로 경유점 (Phase 1)
+  nextWaypoints?: [number,number][];  // nextPos → futurePos 실제 선로 경유점 (Phase 3)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -149,6 +152,8 @@ function processUpdates(units: any[]) {
         segmentMs:       segMs,
         nextSegmentMs:   nxMs,
         dwellMs:         dwMs,
+        waypoints:       unit.waypoints,
+        nextWaypoints:   unit.nextWaypoints,
       });
 
     } else {
@@ -179,19 +184,14 @@ function processUpdates(units: any[]) {
 
       if (sameTarget) {
         // ── 같은 역 보고 ──
-        // 핵심 수정: ratio<=1.0 구간에서도 lastUpdateTime 리셋 금지.
-        //   기존에는 ratio<=1.0 else 분기에서 무조건 lastUpdateTime=now 로 리셋하여
-        //   Zeno's paradox(폴링마다 재시작 → 역에 영원히 못 도착)가 발생했음.
-        //   수정: futurePos와 다음 구간 소요시간만 갱신하고 타이머는 건드리지 않음.
+        // futurePos와 다음 구간 소요시간·waypoints만 갱신, 타이머 유지
         existing.futurePos      = unit.futurePos ?? unit.nextPos;
         existing.nextSegmentMs  = nxMs;
-        // dwellMs도 갱신 (구간 속도 재계산으로 바뀔 수 있음)
         existing.dwellMs        = dwMs;
+        existing.nextWaypoints  = unit.nextWaypoints;
 
       } else if (pastArrival) {
         // ── 다음 역으로 이동, dwell 또는 출발 구간에서 전환 ──
-        // 출발 구간이면 현재 overshoot 비율(overT)로 새 구간의 시작 위치를 역산하여
-        // 시각적 연속성 보장. dwell 중이면 overT=0으로 새 역에서 다시 출발.
         const afterDwell = Math.max(0, elapsed - existing.segmentMs - existing.dwellMs);
         const overT      = Math.min(1.0, afterDwell / existing.nextSegmentMs);
 
@@ -201,19 +201,18 @@ function processUpdates(units: any[]) {
         existing.segmentMs      = segMs;
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
-        // overT 비율만큼 새 구간을 이미 진행한 것으로 백데이트 → 순간이동 없음
         existing.lastUpdateTime = now - overT * segMs;
+        // nextWaypoints가 현재 구간의 waypoints로 승격
+        existing.waypoints      = existing.nextWaypoints;
+        existing.nextWaypoints  = unit.nextWaypoints;
 
       } else {
         // ── 주행 중(ratio<1.0)에 새 목적지로 변경 ──
-        // 현재 시각적 위치에서 새 목적지로 재시작.
-        // 이동 필요 거리를 측정해 segmentMs를 비례 스케일:
-        // 여러 역을 건너뛰는 경우(급행·데이터 점프)에도 순간이동처럼 보이지 않도록 처리.
-        const visualPos: [number, number] =
-          lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
+        const visualPos: [number, number] = existing.waypoints && existing.waypoints.length >= 2
+          ? interpolateAlongPath(existing.waypoints, easeInOut(ratio))
+          : lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
         const stdDist  = coordDist(existing.lastPos, existing.nextPos);
         const jumpDist = coordDist(visualPos, newNextPos);
-        // 표준 구간 대비 실제 이동 거리 비율로 segmentMs 보정 (최소 45s, 최대 5분)
         const scaledSegMs = stdDist > 0
           ? Math.max(45_000, Math.min(300_000, segMs * (jumpDist / stdDist)))
           : segMs;
@@ -224,6 +223,9 @@ function processUpdates(units: any[]) {
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
         existing.lastUpdateTime = now;
+        // 중간 변경 시 waypoints는 undefined (fallback to lerp), 다음 구간은 수신값 사용
+        existing.waypoints      = undefined;
+        existing.nextWaypoints  = unit.nextWaypoints;
       }
     }
   }
@@ -288,12 +290,24 @@ function startTick() {
       let bearingTarget: [number, number];
 
       if (ratio <= 1.0) {
-        pos = lerp(unit.lastPos, unit.nextPos, easeInOut(ratio));
-        bearingTarget = unit.nextPos;
+        const t = easeInOut(ratio);
+        if (unit.waypoints && unit.waypoints.length >= 2) {
+          pos           = interpolateAlongPath(unit.waypoints, t);
+          bearingTarget = pathLookAhead(unit.waypoints, t);
+        } else {
+          pos           = lerp(unit.lastPos, unit.nextPos, t);
+          bearingTarget = unit.nextPos;
+        }
       } else {
         const overT = Math.min(1.0, ratio - 1.0);
-        pos = lerp(unit.nextPos, unit.futurePos ?? unit.nextPos, easeInOut(overT));
-        bearingTarget = unit.futurePos ?? unit.nextPos;
+        const t     = easeInOut(overT);
+        if (unit.nextWaypoints && unit.nextWaypoints.length >= 2) {
+          pos           = interpolateAlongPath(unit.nextWaypoints, t);
+          bearingTarget = pathLookAhead(unit.nextWaypoints, t);
+        } else {
+          pos           = lerp(unit.nextPos, unit.futurePos ?? unit.nextPos, t);
+          bearingTarget = unit.futurePos ?? unit.nextPos;
+        }
       }
 
       // 베어링 스무딩
@@ -407,6 +421,48 @@ function computeMaxRatio(stationIdx: number, maxProgress: number, lineDir: numbe
 // ─────────────────────────────────────────────────────────────────────────────
 function easeInOut(t: number): number {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+}
+
+/**
+ * OSM 선로 waypoints를 따라 매개변수 t(0→1)에서의 위치를 반환.
+ * 직선 lerp보다 실제 선로 곡선을 따름.
+ */
+function interpolateAlongPath(pts: [number,number][], t: number): [number,number] {
+  if (pts.length < 2) return pts[0] ?? [0, 0];
+  if (t <= 0) return pts[0];
+  if (t >= 1) return pts[pts.length - 1];
+
+  // 누적 거리 계산
+  const d: number[] = [0];
+  for (let i = 1; i < pts.length; i++) {
+    const dx = pts[i][0] - pts[i-1][0];
+    const dy = pts[i][1] - pts[i-1][1];
+    d.push(d[i-1] + Math.sqrt(dx*dx + dy*dy));
+  }
+  const total  = d[d.length - 1];
+  if (total === 0) return pts[0];
+  const target = t * total;
+
+  // 이진 탐색으로 해당 세그먼트 찾기
+  let lo = 0, hi = d.length - 2;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    d[mid + 1] < target ? (lo = mid + 1) : (hi = mid);
+  }
+  const segLen = d[lo + 1] - d[lo];
+  const segT   = segLen > 0 ? (target - d[lo]) / segLen : 0;
+  return [
+    pts[lo][0] + (pts[lo+1][0] - pts[lo][0]) * segT,
+    pts[lo][1] + (pts[lo+1][1] - pts[lo][1]) * segT,
+  ];
+}
+
+/**
+ * waypoints 위의 t 위치에서 약간 앞(5%)을 보는 방향 벡터의 끝점.
+ * 열차 방향 화살표가 선로 곡선을 따르게 함.
+ */
+function pathLookAhead(pts: [number,number][], t: number): [number,number] {
+  return interpolateAlongPath(pts, Math.min(1.0, t + 0.06));
 }
 
 function lerp(a: [number, number], b: [number, number], t: number): [number, number] {
