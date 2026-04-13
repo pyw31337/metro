@@ -59,7 +59,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   // sourcedata는 매 프레임 발생할 수 있으므로 debounce로 처리
   useEffect(() => {
     if (!map) return;
-    const TRAIN_LAYERS = ['transit-boarded-pulse-0', 'transit-boarded-pulse-1', 'transit-boarded-pulse-2', 'transit-trains', 'transit-buses'];
+    const TRAIN_LAYERS = ['transit-boarded-pulse-0', 'transit-boarded-pulse-1', 'transit-boarded-pulse-2', 'transit-trains-gray', 'transit-trains', 'transit-buses'];
     const ensureOnTop = () => {
       try { TRAIN_LAYERS.forEach(id => { if (map.getLayer(id)) map.moveLayer(id); }); } catch {}
     };
@@ -209,6 +209,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           bearing:        u.bearing,
           isSimulated:    u.isSimulated,
           opacity:        u.opacity,
+          colorProgress:  u.colorProgress ?? 1,
           updnLine:       u.updnLine ?? '',
           currentStation: u.currentStationName ?? '',
         },
@@ -275,11 +276,12 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   }, [map, selectedId]);
 
 
-  // ─── activeLine 변경 시 opacity 표현식 갱신 ───
+  // ─── activeLine 변경 시 opacity 표현식 갱신 (회색/노선색 레이어 모두) ───
   useEffect(() => {
     if (!map) return;
     try {
-      map.setPaintProperty('transit-trains', 'icon-opacity', buildOpacityExpr(activeLineRef.current));
+      map.setPaintProperty('transit-trains',      'icon-opacity', buildColorOpacityExpr(activeLineRef.current));
+      map.setPaintProperty('transit-trains-gray', 'icon-opacity', buildGrayOpacityExpr(activeLineRef.current));
     } catch {}
   }, [map, activeLine]);
 
@@ -316,7 +318,25 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
       <Source id="transit-realtime-source" type="geojson" data={geoData}>
 
-        {/* 열차 아이콘 */}
+        {/* 열차 아이콘 — 회색 (베어링 미초기화) */}
+        <Layer
+          id="transit-trains-gray"
+          type="symbol"
+          filter={['==', ['get', 'type'], 'subway']}
+          layout={{
+            'visibility':               trainVis,
+            'icon-image':               'train-card-AAAAAA',
+            'icon-size':                ['interpolate', ['linear'], ['zoom'], 10, 0.096, 14, 0.20, 18, 0.40],
+            'icon-rotate':              ['get', 'bearing'],
+            'icon-rotation-alignment':  'map',
+            'icon-allow-overlap':       true,
+            'icon-ignore-placement':    true,
+            'symbol-sort-key':          999,
+          }}
+          paint={{ 'icon-opacity': buildGrayOpacityExpr(activeLine) }}
+        />
+
+        {/* 열차 아이콘 — 노선색 (베어링 초기화 후 페이드인) */}
         <Layer
           id="transit-trains"
           type="symbol"
@@ -331,7 +351,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             'icon-ignore-placement':    true,
             'symbol-sort-key':          1000,
           }}
-          paint={{ 'icon-opacity': buildOpacityExpr(activeLine) }}
+          paint={{ 'icon-opacity': buildColorOpacityExpr(activeLine) }}
         />
 
 
@@ -502,16 +522,22 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
 // ─────────────────────────────────────────────────────────────────────────────
 // opacity MapLibre 표현식 빌더
 // ─────────────────────────────────────────────────────────────────────────────
-function buildOpacityExpr(activeLine: string | null | undefined): any {
+function baseOpacityExpr(activeLine: string | null | undefined): any {
   if (activeLine) {
-    return [
-      'case',
-      ['==', ['get', 'lineName'], activeLine],
-      ['get', 'opacity'],
-      ['*', ['get', 'opacity'], 0.2],
-    ];
+    return ['case', ['==', ['get', 'lineName'], activeLine], ['get', 'opacity'], ['*', ['get', 'opacity'], 0.2]];
   }
   return ['get', 'opacity'];
 }
+
+/** 노선색 레이어: opacity × colorProgress */
+function buildColorOpacityExpr(activeLine: string | null | undefined): any {
+  return ['*', baseOpacityExpr(activeLine), ['get', 'colorProgress']];
+}
+
+/** 회색 레이어: opacity × (1 - colorProgress) */
+function buildGrayOpacityExpr(activeLine: string | null | undefined): any {
+  return ['*', baseOpacityExpr(activeLine), ['max', 0, ['-', 1, ['get', 'colorProgress']]]];
+}
+
 
 export default memo(TransitRealtimeLayers);

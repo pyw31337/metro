@@ -18,6 +18,7 @@ interface TransitUnit {
   status: string;
   currentBearing: number;
   bearingInitialized: boolean; // false이면 첫 비-0 targetBearing에서 스냅 (북향 깜박임 방지)
+  colorFadeStart: number | null; // 색상 전환 시작 시각 (null=아직 회색)
   isSimulated: boolean;
   birthTime: number;        // 페이드-인 시작 시각
   deathTime: number | null; // 페이드-아웃 시작 시각 (null = 살아있음)
@@ -154,13 +155,15 @@ function processUpdates(units: any[]) {
       }
 
       const initBearing = bestInitialBearing();
+      const initBearingOk = initBearing !== 0;
       state.set(unit.id, {
         ...unit,
         lastPos:              startPos,
         lastUpdateTime:       now - backwardMs,
         lastSeenTime:         now,              // 만료 판정: 항상 실제 수신 시각
         currentBearing:       initBearing,
-        bearingInitialized:   initBearing !== 0,
+        bearingInitialized:   initBearingOk,
+        colorFadeStart:       initBearingOk ? now : null,
         birthTime:            now,
         deathTime:       null,
         lineStationIdx:  unit.lineStationIdx ?? 0,
@@ -333,12 +336,19 @@ function startTick() {
         if (targetBearing !== 0) {
           unit.currentBearing     = targetBearing;
           unit.bearingInitialized = true;
+          unit.colorFadeStart     = now; // 색상 전환 시작
         }
       } else {
         const bearingDiff = Math.abs(((targetBearing - unit.currentBearing + 540) % 360) - 180);
         const lerpT = bearingDiff > 30 ? 0.20 : 0.10;
         unit.currentBearing = lerpBearing(unit.currentBearing, targetBearing, lerpT);
       }
+
+      // 색상 전환 진행도 (0=회색, 1=노선색) — colorFadeStart 기준 800ms 선형
+      const COLOR_FADE_MS = 800;
+      const colorProgress = unit.colorFadeStart !== null
+        ? Math.min(1, (now - unit.colorFadeStart) / COLOR_FADE_MS)
+        : 0;
 
       // 불투명도 (페이드 인/아웃)
       let opacity = 1;
@@ -358,6 +368,7 @@ function startTick() {
         label:           unit.label,
         isSimulated:     unit.isSimulated,
         opacity:         Math.round(opacity * 100) / 100,
+        colorProgress:   Math.round(colorProgress * 100) / 100,
         updnLine:        (unit as any).updnLine,
         currentStationName: (unit as any).currentStationName,
       });

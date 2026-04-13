@@ -18,6 +18,7 @@ export interface RealtimeUnit {
   lineColor: string;
   isSimulated: boolean;   // 시뮬레이션 열차 여부
   opacity: number;        // 페이드 인/아웃 (0~1)
+  colorProgress: number;  // 0=회색, 1=노선색 (베어링 초기화 후 800ms 전환)
   updnLine?: string;
   currentStationName?: string;
 }

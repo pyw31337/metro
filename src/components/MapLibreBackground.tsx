@@ -141,6 +141,7 @@ const MapIconRegister = memo(() => {
             SUBWAY_LINES.forEach((line: any) => { if (line.color) uniqueColors.add(line.color.toUpperCase()); });
             uniqueColors.add('FF5722');
             uniqueColors.add('3B82F6');
+            uniqueColors.add('AAAAAA'); // 회색 — 베어링 미초기화 열차
 
             uniqueColors.forEach(c => {
                 const color = c.startsWith('#') ? c : `#${c}`;
