@@ -37,10 +37,12 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [boardedInfo, setBoardedInfo] = useState<TrainInfo | null>(null);
   const [boardedPos,  setBoardedPos]  = useState<[number, number] | null>(null);
   const [alertMsg,    setAlertMsg]    = useState<string | null>(null);
+  const [alertType,   setAlertType]   = useState<'info' | 'transfer' | 'exit'>('info');
 
   const boardedIdRef        = useRef<string | null>(null);
   const selectedIdRef       = useRef<string | null>(null);
   const alertedStationRef   = useRef<string | null>(null);
+  const prevStationRef      = useRef<string | null>(null);  // 경로 없을 때 역 변화 감지
   const pulseRafRef         = useRef<number | null>(null);
 
   useEffect(() => { boardedIdRef.current  = boardedId;  }, [boardedId]);
@@ -53,6 +55,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     setBoardedPos(null);
     boardedIdRef.current = null;
     alertedStationRef.current = null;
+    prevStationRef.current = null;
   }, []);
 
   // ─── 레이어 z-order 보장 ───
@@ -155,22 +158,43 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           }
           setBoardedPos([...boardedUnit.pos] as [number, number]);
 
-          // 도착 1정거장전 알림
-          if (ap?.segments && boardedUnit.currentStationName) {
+          // ── 탑승 진동 알림 ──
+          const cur = boardedUnit.currentStationName;
+          if (ap?.segments?.length && cur) {
+            // ── 경로 있음: 환승역 또는 목적지 1정거장 전 알림 ──
+            const curNorm = normStation(cur);
             const seg = ap.segments.find(s => s.line === boardedUnit.lineName);
             if (seg && seg.stations.length >= 2) {
               const exitStation    = seg.stations[seg.stations.length - 1];
               const preExitStation = seg.stations[seg.stations.length - 2];
-              const curNorm = normStation(boardedUnit.currentStationName);
-              const preNorm = normStation(preExitStation);
-              // 1정거장 전 역에 진입하는 순간 알림 (중복 방지)
-              if (curNorm === preNorm && alertedStationRef.current !== exitStation) {
+              if (curNorm === normStation(preExitStation) && alertedStationRef.current !== exitStation) {
                 alertedStationRef.current = exitStation;
-                try { navigator.vibrate?.([200, 100, 400, 100, 200]); } catch {}
-                setAlertMsg(`다음역은 "${exitStation}"입니다.\n하차 준비를 하세요.`);
+                // 전체 경로의 최종 목적지 여부 판별
+                const lastSeg  = ap.segments[ap.segments.length - 1];
+                const finalDest = lastSeg.stations[lastSeg.stations.length - 1];
+                const isFinalDest = exitStation === finalDest;
+                if (isFinalDest) {
+                  try { navigator.vibrate?.([200, 100, 400, 100, 200]); } catch {}
+                  setAlertType('exit');
+                  setAlertMsg(`다음역은 "${exitStation}"입니다.\n하차 준비를 하세요.`);
+                } else {
+                  try { navigator.vibrate?.([200, 100, 200]); } catch {}
+                  setAlertType('transfer');
+                  setAlertMsg(`다음역 "${exitStation}"에서 환승하세요.`);
+                }
                 setTimeout(() => setAlertMsg(null), 8000);
               }
             }
+          } else if (cur) {
+            // ── 경로 없음: 역 진입마다 가벼운 진동 ──
+            const prevSt = prevStationRef.current;
+            if (prevSt !== null && normStation(cur) !== normStation(prevSt)) {
+              try { navigator.vibrate?.([100, 50, 100]); } catch {}
+              setAlertType('info');
+              setAlertMsg(`현재역: ${cur}`);
+              setTimeout(() => setAlertMsg(null), 5000);
+            }
+            prevStationRef.current = cur;
           }
         }
       }
@@ -443,6 +467,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
                   setBoardedPos(selectedPos);
                   boardedIdRef.current = selectedId;
                   alertedStationRef.current = null;
+                  prevStationRef.current = null;
                   setSelectedId(null); setSelectedInfo(null); setSelectedPos(null);
                 }}
                 className="w-full py-2.5 text-[12px] font-black text-white transition-opacity hover:opacity-90 active:opacity-70"
@@ -482,17 +507,25 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
         </Popup>
       )}
 
-      {/* ── 도착 알림 토스트 ── */}
-      {alertMsg && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none w-[280px]">
-          <div
-            className="px-5 py-4 rounded-2xl shadow-2xl text-white text-[12px] font-bold text-center whitespace-pre-line leading-relaxed"
-            style={{ background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(16px)', border: `2px solid #${boardedInfo?.lineColor ?? 'ffffff'}` }}
-          >
-            🚉 {alertMsg}
+      {/* ── 탑승 알림 토스트 ── */}
+      {alertMsg && (() => {
+        const icon  = alertType === 'exit' ? '🚉' : alertType === 'transfer' ? '🔄' : '📍';
+        const color = alertType === 'exit'
+          ? `#${boardedInfo?.lineColor ?? 'ffffff'}`
+          : alertType === 'transfer'
+          ? '#f59e0b'
+          : 'rgba(255,255,255,0.3)';
+        return (
+          <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[9999] pointer-events-none w-[280px]">
+            <div
+              className="px-5 py-4 rounded-2xl shadow-2xl text-white text-[12px] font-bold text-center whitespace-pre-line leading-relaxed"
+              style={{ background: 'rgba(10,10,15,0.95)', backdropFilter: 'blur(16px)', border: `2px solid ${color}` }}
+            >
+              {icon} {alertMsg}
+            </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </>
   );
 };
