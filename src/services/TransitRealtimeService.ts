@@ -77,19 +77,64 @@ const SUBWAY_POLLING_NAMES = [
 ];
 
 // 도착 API 프로브 스테이션 — 위치 API 누락 열차(역 정차·대기) 보완
-// 각 역은 양방향 접근 열차를 모두 반환하므로 노선당 1개 중심역으로 커버
+// 선택 기준: ① 노선 중심부 ② 긴 노선은 양끝 추가 ③ 환승역으로 다노선 동시 커버
 const ARRIVAL_PROBE_STATIONS = [
-  '서울역',    // 1호선, 공항철도
-  '강남',      // 2호선, 신분당선
-  '을지로3가', // 3호선
-  '사당',      // 4호선
-  '여의도',    // 5호선, 9호선
-  '합정',      // 6호선
-  '이수',      // 7호선
-  '잠실',      // 8호선
-  '용산',      // 경의중앙선
-  '선릉',      // 수인분당선
-  '청량리',    // 경춘선
+  // ── 1호선 (경부·경인·장항·경원 4지선 — 매우 긴 노선)
+  '서울역',    // 중심 + 공항철도 동시
+  '구로',      // 경인선·신창지선 남부 분기
+  '수원',      // 경부 남단 + 수인분당선 남단 동시
+
+  // ── 2호선 (순환 + 성수·신정 지선)
+  '강남',      // 동부 + 신분당선 동시
+  '홍대입구',  // 서부
+  '신도림',    // 신정지선 분기
+
+  // ── 3호선
+  '을지로3가', // 중심
+
+  // ── 4호선 (진접-오이도, 긴 노선)
+  '사당',      // 중심
+  '노원',      // 북부 (7호선 동시)
+
+  // ── 5호선 (방화/김포-하남/마천 2지선)
+  '여의도',    // 중심 + 9호선 동시
+  '강동',      // 하남·마천 동부 분기
+
+  // ── 6호선 (응암순환-신내)
+  '합정',      // 서부
+  '태릉입구',  // 동부 (7호선 북부 동시)
+
+  // ── 7호선 (장암-부천종합운동장, 최장 노선)
+  '이수',      // 중심
+  '온수',      // 서부 부천 구간
+
+  // ── 8호선 (암사-모란)
+  '잠실',      // 중심
+  '둔촌오륜',  // 남부 (9호선 동단 동시)
+
+  // ── 경의중앙선 (문산-지평, 최장 노선)
+  '용산',      // 중심
+  '능곡',      // 문산 방향 서단
+  '양평',      // 지평 방향 동단
+
+  // ── 수인분당선 (수원-청량리, 긴 노선)
+  '선릉',      // 강남 중심
+  '왕십리',    // 북단 (경의중앙선·5호선 동시)
+
+  // ── 신분당선 (신사-광교)
+  '정자',      // 남부
+
+  // ── 공항철도 (서울역-인천공항2터미널)
+  '계양',      // 중간
+
+  // ── 경춘선 (청량리-춘천)
+  '청량리',    // 서단
+  '평내호평',  // 중간 (외곽 열차 포착)
+
+  // ── 서해선·경강선·GTX-A·경전철
+  '소사',      // 서해선
+  '판교',      // 경강선 + 신분당선 남부
+  '수서',      // GTX-A
   '솔샘',      // 우이신설선
   '신림',      // 신림선
 ];
@@ -607,12 +652,15 @@ class TransitRealtimeService extends EventEmitter {
     }
 
     // 도착 API 프로브 — 위치 API 누락 열차(역 정차·대기) 보완
-    // 스태거 완료 + 여유 500ms 후 실행해 위치 API와 API 키 경쟁 최소화
+    // 30개 역을 10개씩 3배치로 나눠 200ms 간격 발사 → API rate limit 방지
+    const PROBE_BATCH = 10;
+    const PROBE_BATCH_GAP = 200; // ms
     const probeDelay = SUBWAY_POLLING_NAMES.length * STAGGER_MS + 500;
-    setTimeout(() => {
+
+    const runProbeBatch = (stations: string[]) => {
       if (!this.isRunning) return;
       Promise.all(
-        ARRIVAL_PROBE_STATIONS.map(async (stationName) => {
+        stations.map(async (stationName) => {
           try {
             const positions = await fetchArrivalBasedPositions(stationName);
             if (!positions.length) return;
@@ -629,7 +677,13 @@ class TransitRealtimeService extends EventEmitter {
           } catch {}
         })
       );
-    }, probeDelay);
+    };
+
+    for (let b = 0; b < ARRIVAL_PROBE_STATIONS.length; b += PROBE_BATCH) {
+      const batch = ARRIVAL_PROBE_STATIONS.slice(b, b + PROBE_BATCH);
+      const batchIdx = Math.floor(b / PROBE_BATCH);
+      setTimeout(() => runProbeBatch(batch), probeDelay + batchIdx * PROBE_BATCH_GAP);
+    }
 
     // 다음 폴링 예약
     this.pollTimer = setTimeout(() => {
