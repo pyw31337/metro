@@ -172,9 +172,9 @@ body {
     z-index: 3000 !important;
 }
 
-/* 열차 팝업: 화살표(tip) 숨김, 높은 z-index */
+/* 열차 팝업: 화살표(tip) 숨김 — z-index는 역사 마커 버블(2000) 아래 */
 .transit-train-popup {
-    z-index: 3500 !important;
+    z-index: 1500 !important;
 }
 .transit-train-popup .maplibregl-popup-tip {
     display: none !important;

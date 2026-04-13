@@ -397,8 +397,8 @@ function MapLibreBackground(props: MapLibreProps) {
                 timeDisplayMode={timeDisplayMode} onToggleTimeDisplay={onToggleTimeDisplay} verifiedPlats={verifiedPlats}
                 onStationTap={handleStationTap}
             />
-            <TransitRealtimeLayers activeTab={activeTab} activeLine={activeLine} activePath={pathResult} />
             <UserLocationLayer />
+            <TransitRealtimeLayers activeTab={activeTab} activeLine={activeLine} activePath={pathResult} />
             <MapPopups
                 popupCoords={popupCoords}
                 selectedStationName={selectedStationName}
