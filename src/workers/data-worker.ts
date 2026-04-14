@@ -498,7 +498,11 @@ function buildSegments(
     } else {
       if (curLine) segments.push(makeSegment(curLine, curStations));
       curLine = line;
-      curStations = [path[i], nextStation];
+      // path[i] is the transfer station and should exist on the new line.
+      // Defensive: if it only belongs to the old line (name disambiguation edge-case),
+      // start the new segment from path[i+1] which is definitively on the new line.
+      const onNewLine = SUBWAY_LINES.some(l => l.name === line && l.stations.some(s => s.name === path[i]));
+      curStations = onNewLine ? [path[i], nextStation] : [nextStation];
     }
   }
   if (curLine && curStations.length > 1) {

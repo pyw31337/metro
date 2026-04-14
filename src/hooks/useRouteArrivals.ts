@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { fetchStationArrivals } from '@/services/arrivalApi';
+import { normStation } from '@/data/stationRegistry';
 import type { PathResult, StationArrival } from '@/types/metro';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -75,7 +76,9 @@ function checkServiceStatus(
 async function getServiceStatus(station: string, line: string): Promise<ServiceStatus> {
   try {
     const index = await loadScheduleIndex();
-    const entry = index[`${station}__${line}`];
+    // Schedule index uses bare station name (no line disambiguation like "(5호선)")
+    const bareStation = normStation(station);
+    const entry = index[`${bareStation}__${line}`] ?? index[`${station}__${line}`];
     if (!entry) return 'no-data';
 
     const now = new Date();
@@ -127,8 +130,8 @@ export function useRouteArrivals(activePath: PathResult | null): RouteSegmentArr
   const buildInitial = useCallback((path: PathResult): RouteSegmentArrival[] => {
     const segs = path.segments ?? [];
     return segs.map(seg => ({
-      boardStation:  seg.stations[0],
-      alightStation: seg.stations[seg.stations.length - 1],
+      boardStation:  normStation(seg.stations[0]),
+      alightStation: normStation(seg.stations[seg.stations.length - 1]),
       line:          seg.line,
       direction:     seg.direction,
       trains:        [],
@@ -143,7 +146,7 @@ export function useRouteArrivals(activePath: PathResult | null): RouteSegmentArr
     if (segs.length === 0) return;
 
     const fetched = await Promise.allSettled(
-      segs.map(seg => fetchStationArrivals(seg.stations[0]))
+      segs.map(seg => fetchStationArrivals(normStation(seg.stations[0])))
     );
 
     if (!mountedRef.current) return;
