@@ -565,8 +565,8 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 </button>
                             </div>
 
-                            {/* ── 탑승 열차 현황 패널 ── */}
-                            <RouteArrivalPanel activePath={activePath} />
+                            {/* ── 탑승 열차 현황 패널 (상세 모드에서만 표시) ── */}
+                            {showAllRouteBubbles && <RouteArrivalPanel activePath={activePath} />}
                         </div>
                     )}
 
