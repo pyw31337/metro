@@ -129,16 +129,23 @@ export function useRouteArrivals(activePath: PathResult | null): RouteSegmentArr
 
   const buildInitial = useCallback((path: PathResult): RouteSegmentArrival[] => {
     const segs = path.segments ?? [];
-    return segs.map(seg => ({
-      boardStation:  normStation(seg.stations[0]),
-      alightStation: normStation(seg.stations[seg.stations.length - 1]),
-      line:          seg.line,
-      direction:     seg.direction,
-      trains:        [],
-      loading:       true,
-      fetchedAt:     null,
-      serviceStatus: 'no-data' as ServiceStatus,
-    }));
+    return segs.map((seg, i) => {
+      const nextSeg = segs[i + 1];
+      // 환승역 = 다음 구간의 탑승역. 마지막 구간은 최종 목적지 사용.
+      const alightStation = nextSeg
+        ? normStation(nextSeg.stations[0])
+        : normStation(seg.stations[seg.stations.length - 1]);
+      return {
+        boardStation:  normStation(seg.stations[0]),
+        alightStation,
+        line:          seg.line,
+        direction:     seg.direction,
+        trains:        [],
+        loading:       true,
+        fetchedAt:     null,
+        serviceStatus: 'no-data' as ServiceStatus,
+      };
+    });
   }, []);
 
   const fetchAll = useCallback(async (path: PathResult) => {
