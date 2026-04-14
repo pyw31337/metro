@@ -459,10 +459,23 @@ function findSegmentWaypoints(
     ? chain.slice(fi, ti + 1)
     : chain.slice(ti, fi + 1).reverse();
 
-  // 비정상 구간 필터: crow-fly 거리가 10km 초과이면 폴백
+  // 비정상 구간 필터 1: crow-fly 거리가 10km 초과이면 폴백
   const dx = pts[pts.length-1][0] - pts[0][0];
   const dy = pts[pts.length-1][1] - pts[0][1];
-  if (Math.sqrt(dx*dx + dy*dy) > 0.09) return undefined; // ~10km
+  const straightLen = Math.sqrt(dx*dx + dy*dy);
+  if (straightLen > 0.09) return undefined; // ~10km
+
+  // 비정상 구간 필터 2: 경로 누적 길이가 직선 거리의 4배 초과이면 폴백
+  // (순환선/지선 geometry가 잘못된 방향으로 슬라이싱될 때 발생하는 과속 방지)
+  if (straightLen > 0) {
+    let pathLen = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const ddx = pts[i][0] - pts[i-1][0];
+      const ddy = pts[i][1] - pts[i-1][1];
+      pathLen += Math.sqrt(ddx*ddx + ddy*ddy);
+    }
+    if (pathLen / straightLen > 4) return undefined;
+  }
 
   return pts.length >= 2 ? pts : undefined;
 }
