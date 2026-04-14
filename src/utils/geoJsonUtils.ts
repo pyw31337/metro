@@ -15,11 +15,16 @@ export const convertSubwayToGeoJSON = (
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
   const stationMap = new Map<string, any>();
+  // OSM 체인은 노선명별로 하나만 그림 — 같은 name을 공유하는 지선(1호선 경부/경인 등)이
+  // 동일한 14,000pt 체인을 중복 렌더링하여 구로역 같은 분기 구간이 n배로 그려지는 문제 방지
+  const drawnOsmNames = new Set<string>();
 
   SUBWAY_LINES.forEach((line: SubwayLine) => {
     // 1. LineString Feature — OSM 선로 geometry 우선, 없으면 직선 폴백
     const osmPath = trackGeometry?.get(line.name);
-    const coordinates = osmPath && osmPath.length >= 2
+    const alreadyDrawn = osmPath && drawnOsmNames.has(line.name);
+    if (osmPath) drawnOsmNames.add(line.name);
+    const coordinates = (osmPath && !alreadyDrawn && osmPath.length >= 2)
       ? osmPath
       : line.stations.map(s => [s.lng, s.lat]);
     lineFeatures.push({
