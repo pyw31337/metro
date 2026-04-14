@@ -488,7 +488,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
         }
     };
 
-    const cleanName = stationName.replace(/역+$/, '');
+    const cleanName = normStation(stationName);
     const variants = [stationName, cleanName];
     if (cleanName === "서울") variants.unshift("서울역");
     if (cleanName === "남부터미널") variants.push("남부터미널(예술의전당)");
@@ -546,7 +546,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
  */
 export const getScheduledArrivalsFromDB = async (stationName: string): Promise<StationArrival[]> => {
     try {
-        const cleanName = stationName.replace(/역+$/, '').trim();
+        const cleanName = normStation(stationName);
         const now = new Date();
         const hour = now.getHours();
         const min = now.getMinutes();
