@@ -1,4 +1,4 @@
-import { SUBWAY_LINES, Station as SubwayStation, SubwayLine, getStationByName } from "@/data/subway-lines";
+import { SUBWAY_LINES, SubwayLine, getStationByName } from "@/data/subway-lines";
 import { WCItem, BusStop, PathResult, WCFilters } from "@/types/metro";
 
 // Module-level O(1) line-name→color lookup
@@ -10,32 +10,39 @@ export interface GeoJsonFeatureCollection {
 }
 
 export const convertSubwayToGeoJSON = (
-  trackGeometry?: Map<string, [number,number][]>
+  trackGeometry?: Map<string, [number,number][][]>
 ): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
   const stationMap = new Map<string, any>();
-  // OSM 체인은 노선명별로 하나만 그림 — 같은 name을 공유하는 지선(1호선 경부/경인 등)이
-  // 동일한 14,000pt 체인을 중복 렌더링하여 구로역 같은 분기 구간이 n배로 그려지는 문제 방지
+  // 노선명별로 한 번만 렌더 (SUBWAY_LINES에 같은 name을 공유하는 지선이 있을 수 있음)
   const drawnOsmNames = new Set<string>();
 
   SUBWAY_LINES.forEach((line: SubwayLine) => {
-    // 1. LineString Feature — OSM 선로 geometry 우선, 없으면 직선 폴백
-    const osmPath = trackGeometry?.get(line.name);
-    const alreadyDrawn = osmPath && drawnOsmNames.has(line.name);
-    if (osmPath) drawnOsmNames.add(line.name);
-    const coordinates = (osmPath && !alreadyDrawn && osmPath.length >= 2)
-      ? osmPath
-      : line.stations.map(s => [s.lng, s.lat]);
-    lineFeatures.push({
-      type: "Feature" as const,
-      geometry: { type: "LineString" as const, coordinates },
-      properties: {
-        id: line.id,
-        name: line.name,
-        color: line.color
-      }
-    });
+    // 1. LineString/MultiLineString Feature — OSM 선로 geometry 우선, 없으면 직선 폴백
+    const osmSegments = trackGeometry?.get(line.name);
+    const alreadyDrawn = osmSegments && drawnOsmNames.has(line.name);
+    if (osmSegments) drawnOsmNames.add(line.name);
+
+    if (osmSegments && !alreadyDrawn && osmSegments.some(seg => seg.length >= 2)) {
+      const validSegs = osmSegments.filter(seg => seg.length >= 2);
+      // 단일 세그먼트면 LineString, 복수면 MultiLineString
+      const geometry = validSegs.length === 1
+        ? { type: "LineString" as const, coordinates: validSegs[0] }
+        : { type: "MultiLineString" as const, coordinates: validSegs };
+      lineFeatures.push({
+        type: "Feature" as const,
+        geometry,
+        properties: { id: line.id, name: line.name, color: line.color }
+      });
+    } else if (!alreadyDrawn) {
+      // 폴백: 역 좌표 직선
+      lineFeatures.push({
+        type: "Feature" as const,
+        geometry: { type: "LineString" as const, coordinates: line.stations.map(s => [s.lng, s.lat]) },
+        properties: { id: line.id, name: line.name, color: line.color }
+      });
+    }
 
     // 2. Point Features (Stations)
     line.stations.forEach((s: any) => {
@@ -182,33 +189,31 @@ function routeSegmentWaypoints(
   lineName: string,
   from: [number,number],
   to: [number,number],
-  geo: Map<string,[number,number][]>,
+  geo: Map<string,[number,number][][]>,
 ): [number,number][] | undefined {
-  const chain = geo.get(lineName);
-  if (!chain || chain.length < 2) return undefined;
+  const segments = geo.get(lineName);
+  if (!segments || segments.length === 0) return undefined;
 
   const dx = to[0] - from[0], dy = to[1] - from[1];
   const straightLen = Math.sqrt(dx*dx + dy*dy);
   if (straightLen > 0.09) return undefined;
 
-  const fi = nearestIdx(chain, from);
+  // MultiLineString: 모든 세그먼트에서 가장 좋은 구간 탐색
+  for (const chain of segments) {
+    if (chain.length < 2) continue;
+    const fi = nearestIdx(chain, from);
+    const ti_global = nearestIdx(chain, to);
+    const r1 = evalSegment(chain, fi, ti_global, straightLen);
+    if (r1) return r1;
 
-  // 1) Try global nearest for TO
-  const ti_global = nearestIdx(chain, to);
-  const r1 = evalSegment(chain, fi, ti_global, straightLen);
-  if (r1) return r1;
-
-  // 2) Fallback: search for TO within ±200 points of FROM's index.
-  //    Handles parallel bidirectional tracks (7호선) and chains with
-  //    branch detours that shift a station's global-nearest index far
-  //    from its true adjacent position (2호선 신정지선).
-  const WINDOW = 200;
-  const lo = Math.max(0, fi - WINDOW);
-  const hi = Math.min(chain.length - 1, fi + WINDOW);
-  const ti_local = nearestIdxInRange(chain, to, lo, hi);
-  if (ti_local !== ti_global) {
-    const r2 = evalSegment(chain, fi, ti_local, straightLen);
-    if (r2) return r2;
+    const WINDOW = 200;
+    const lo = Math.max(0, fi - WINDOW);
+    const hi = Math.min(chain.length - 1, fi + WINDOW);
+    const ti_local = nearestIdxInRange(chain, to, lo, hi);
+    if (ti_local !== ti_global) {
+      const r2 = evalSegment(chain, fi, ti_local, straightLen);
+      if (r2) return r2;
+    }
   }
 
   return undefined;
@@ -217,7 +222,7 @@ function routeSegmentWaypoints(
 export const convertPathToGeoJSON = (
   pathResult: PathResult | null,
   startTime: number = Date.now(),
-  trackGeometry?: Map<string,[number,number][]>,
+  trackGeometry?: Map<string,[number,number][][]>,
 ): {
     lines: GeoJsonFeatureCollection,
     stations: GeoJsonFeatureCollection

@@ -406,7 +406,7 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
 // ─────────────────────────────────────────────────────────────────────────────
 // OSM 선로 Geometry — 비동기 로드, buildUnit 에서 waypoints 계산에 사용
 // ─────────────────────────────────────────────────────────────────────────────
-let TRACK_GEOMETRY: Map<string, [number,number][]> | null = null;
+let TRACK_GEOMETRY: Map<string, [number,number][][]> | null = null;
 let geometryLoadPromise: Promise<void> | null = null;
 
 function loadTrackGeometry(): Promise<void> {
@@ -418,7 +418,7 @@ function loadTrackGeometry(): Promise<void> {
   }
   geometryLoadPromise = fetch('/data/subway-track-geometry.json')
     .then(r => r.json())
-    .then((json: Record<string, [number,number][]>) => {
+    .then((json: Record<string, [number,number][][]>) => {
       TRACK_GEOMETRY = new Map(Object.entries(json));
     })
     .catch(e => {
@@ -448,36 +448,40 @@ function findSegmentWaypoints(
   toCoord: [number,number],
 ): [number,number][] | undefined {
   if (!TRACK_GEOMETRY) return undefined;
-  const chain = TRACK_GEOMETRY.get(lineName);
-  if (!chain || chain.length < 2) return undefined;
+  const segments = TRACK_GEOMETRY.get(lineName);
+  if (!segments || segments.length === 0) return undefined;
 
-  const fi = nearestChainIdx(chain, fromCoord);
-  const ti = nearestChainIdx(chain, toCoord);
-  if (fi === ti) return undefined;
+  // MultiLineString: 모든 세그먼트를 순서대로 탐색
+  for (const chain of segments) {
+    if (chain.length < 2) continue;
 
-  const pts: [number,number][] = fi < ti
-    ? chain.slice(fi, ti + 1)
-    : chain.slice(ti, fi + 1).reverse();
+    const fi = nearestChainIdx(chain, fromCoord);
+    const ti = nearestChainIdx(chain, toCoord);
+    if (fi === ti) continue;
 
-  // 비정상 구간 필터 1: crow-fly 거리가 10km 초과이면 폴백
-  const dx = pts[pts.length-1][0] - pts[0][0];
-  const dy = pts[pts.length-1][1] - pts[0][1];
-  const straightLen = Math.sqrt(dx*dx + dy*dy);
-  if (straightLen > 0.09) return undefined; // ~10km
+    const pts: [number,number][] = fi < ti
+      ? chain.slice(fi, ti + 1)
+      : chain.slice(ti, fi + 1).reverse();
 
-  // 비정상 구간 필터 2: 경로 누적 길이가 직선 거리의 4배 초과이면 폴백
-  // (순환선/지선 geometry가 잘못된 방향으로 슬라이싱될 때 발생하는 과속 방지)
-  if (straightLen > 0) {
-    let pathLen = 0;
-    for (let i = 1; i < pts.length; i++) {
-      const ddx = pts[i][0] - pts[i-1][0];
-      const ddy = pts[i][1] - pts[i-1][1];
-      pathLen += Math.sqrt(ddx*ddx + ddy*ddy);
+    const dx = pts[pts.length-1][0] - pts[0][0];
+    const dy = pts[pts.length-1][1] - pts[0][1];
+    const straightLen = Math.sqrt(dx*dx + dy*dy);
+    if (straightLen > 0.09) continue; // ~10km 초과이면 다음 세그먼트 시도
+
+    if (straightLen > 0) {
+      let pathLen = 0;
+      for (let i = 1; i < pts.length; i++) {
+        const ddx = pts[i][0] - pts[i-1][0];
+        const ddy = pts[i][1] - pts[i-1][1];
+        pathLen += Math.sqrt(ddx*ddx + ddy*ddy);
+      }
+      if (pathLen / straightLen > 4) continue; // 경로 길이 4배 초과이면 다음 시도
     }
-    if (pathLen / straightLen > 4) return undefined;
+
+    if (pts.length >= 2) return pts;
   }
 
-  return pts.length >= 2 ? pts : undefined;
+  return undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

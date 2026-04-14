@@ -302,12 +302,12 @@ function MapLibreBackground(props: MapLibreProps) {
     }, [selectedBusRoute, selectedBusStop]);
 
     const [subwayData, setSubwayData] = useState(SUBWAY_GEOJSON);
-    const trackGeoRef = useRef<Map<string,[number,number][]> | undefined>(undefined);
+    const trackGeoRef = useRef<Map<string,[number,number][][]> | undefined>(undefined);
     useEffect(() => {
         fetch('/data/subway-track-geometry.json')
             .then(r => r.json())
-            .then((json: Record<string, [number,number][]>) => {
-                const geo = new Map<string, [number,number][]>(Object.entries(json));
+            .then((json: Record<string, [number,number][][]>) => {
+                const geo = new Map<string, [number,number][][]>(Object.entries(json));
                 trackGeoRef.current = geo;
                 setSubwayData(convertSubwayToGeoJSON(geo));
             })

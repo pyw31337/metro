@@ -8,7 +8,8 @@
  * per-line full-path geometry for waypoint-based train interpolation.
  *
  * Output: public/data/subway-track-geometry.json
- *   { "2호선": [[lng, lat], ...], "경의중앙선": [[lng, lat], ...], ... }
+ *   { "2호선": [[[lng, lat], ...], [[lng, lat], ...]], ... }
+ *   MultiLineString 형식: 노선명 → 세그먼트 배열 (본선 + 지선 각각 독립 폴리라인)
  *   (GeoJSON coordinate order: [longitude, latitude])
  *
  * Usage:
@@ -148,96 +149,6 @@ function selectRepresentativeChains(chains) {
   return selected;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Merge multiple chains for the same line into one best representative path.
-// Strategy: keep the longest chain; attempt to attach shorter chains at either end.
-// ─────────────────────────────────────────────────────────────────────────────
-function mergeChains(chains) {
-  if (chains.length === 0) return null;
-  if (chains.length === 1) return chains[0];
-
-  // Sort by length descending, start with the longest
-  const sorted = [...chains].sort((a, b) => b.length - a.length);
-  let merged = sorted[0];
-
-  for (let i = 1; i < sorted.length; i++) {
-    const c = sorted[i];
-    const mFirst = merged[0], mLast = merged[merged.length - 1];
-    const cFirst = c[0],      cLast = c[c.length - 1];
-
-    const d_mLast_cFirst  = distM(mLast,  cFirst);
-    const d_mLast_cLast   = distM(mLast,  cLast);
-    const d_mFirst_cFirst = distM(mFirst, cFirst);
-    const d_mFirst_cLast  = distM(mFirst, cLast);
-
-    const minDist = Math.min(d_mLast_cFirst, d_mLast_cLast,
-                             d_mFirst_cFirst, d_mFirst_cLast);
-
-    if (minDist > 500) continue; // too far away — likely a mid-branch, handled by attachBranches
-
-    if (minDist === d_mLast_cFirst) {
-      // append c to end of merged
-      const skip = samePoint(mLast, cFirst) ? 1 : 0;
-      merged = [...merged, ...c.slice(skip)];
-    } else if (minDist === d_mLast_cLast) {
-      const cRev = [...c].reverse();
-      const skip = samePoint(mLast, cRev[0]) ? 1 : 0;
-      merged = [...merged, ...cRev.slice(skip)];
-    } else if (minDist === d_mFirst_cLast) {
-      const skip = samePoint(mFirst, cLast) ? 1 : 0;
-      merged = [...c.slice(0, c.length - skip), ...merged];
-    } else {
-      const cRev = [...c].reverse();
-      const skip = samePoint(mFirst, cRev[cRev.length-1]) ? 1 : 0;
-      merged = [...cRev.slice(0, cRev.length - skip), ...merged];
-    }
-  }
-
-  return merged;
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Branch attachment — 메인 체인 중간에서 분기하는 지선(성수지선·신정지선 등)을
-// mergeChains가 놓친 경우, 체인 전체에서 가장 가까운 접속점을 찾아 붙인다.
-// 결과: 메인체인 → 지선 왕복 구간 (시각적으로 살짝 꺾이지만 역 좌표 커버 가능)
-// ─────────────────────────────────────────────────────────────────────────────
-function attachBranches(mainChain, branchChains) {
-  if (branchChains.length === 0) return mainChain;
-  let result = mainChain;
-
-  for (const branch of branchChains) {
-    if (branch.length < 2) continue;
-
-    // 브랜치 양 끝이 메인 체인에서 얼마나 가까운지
-    const bFirst = branch[0], bLast = branch[branch.length - 1];
-    let minD = Infinity, closestMainIdx = 0, attachEnd = bFirst;
-
-    for (let i = 0; i < result.length; i++) {
-      const dF = distM(result[i], bFirst);
-      if (dF < minD) { minD = dF; closestMainIdx = i; attachEnd = bFirst; }
-      const dL = distM(result[i], bLast);
-      if (dL < minD) { minD = dL; closestMainIdx = i; attachEnd = bLast; }
-    }
-
-    if (minD > 3000) continue; // 3km 넘으면 다른 노선으로 간주
-
-    // 접속점부터 브랜치를 붙임: 접속점 → 브랜치 반대 끝 → 접속점 복귀 (왕복)
-    const oriented = samePoint(attachEnd, bFirst) ? branch : [...branch].reverse();
-    const junction = result[closestMainIdx];
-    const skip = samePoint(junction, oriented[0]) ? 1 : 0;
-    const branchTrip = [...oriented.slice(skip), ...oriented.slice(0, oriented.length - skip).reverse()];
-
-    // 메인 체인 접속점 이후에 삽입
-    result = [
-      ...result.slice(0, closestMainIdx + 1),
-      ...branchTrip,
-      ...result.slice(closestMainIdx + 1),
-    ];
-    process.stdout.write(`     ↳ 지선 부착: ${branch.length}pt at idx=${closestMainIdx} (접속 거리 ${minD.toFixed(0)}m)\n`);
-  }
-
-  return result;
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OSM Overpass — single bulk request (large bbox covers all Seoul metro lines)
@@ -386,40 +297,20 @@ async function main() {
 
     const chains = selectRepresentativeChains(allChains);
 
-    const merged  = mergeChains(chains);
-    if (!merged) { console.log(`  ⚠️  ${lineName}: chain 병합 실패`); continue; }
+    // MultiLineString: 각 대표 체인을 독립 세그먼트로 출력.
+    // out-and-back(왕복) 방식의 attachBranches 제거 → 지선이 별도 폴리라인으로 렌더됨.
+    // 이로써 2호선 신정지선 직선+곡선 겹침, 1호선 구로역 중복선 문제 근본 해결.
+    const segments = chains
+      .map(c => deduplicateLoop(c, lineName))
+      .map(c => simplify(c, 15))
+      .filter(c => c.length >= 2)
+      .map(c => c.map(([lat, lon]) => [lon, lat]));
 
-    // 브랜치 지선 부착: mergeChains가 끝점 거리 초과로 건너뛴 지선들
-    // 조건: 양 끝점 모두 메인 체인에서 100m 이상 떨어져 있어야 진짜 새 구간
-    const rejected = chains.filter(c => {
-      const mF = merged[0], mL = merged[merged.length - 1];
-      const cF = c[0],      cL = c[c.length - 1];
-      if (Math.min(distM(mF,cF), distM(mF,cL), distM(mL,cF), distM(mL,cL)) <= 500) return false;
-      // 메인 체인 전체에서 양 끝점 중 하나라도 100m 이상인 경우만 포함
-      const minToChain = (pt) => {
-        let best = Infinity;
-        for (const p of merged) { const d = distM(p, pt); if (d < best) best = d; }
-        return best;
-      };
-      const dF = minToChain(cF), dL = minToChain(cL);
-      // 한쪽 끝만 새 구간(100m 이상)이면 진짜 지선 — 단, 두 끝 모두 커버되면 이미 포함됨
-      return Math.max(dF, dL) > 100;
-    });
-    // 방향 중복 제거: 두 체인이 서로 역방향이면 하나만 유지 (더 짧은 것 제거)
-    const uniqueBranches = rejected.filter((c, i) =>
-      !rejected.slice(0, i).some(prev =>
-        distM(prev[0], c[c.length-1]) < 200 && distM(prev[prev.length-1], c[0]) < 200
-      )
-    );
-    const withBranches = attachBranches(merged, uniqueBranches);
+    if (segments.length === 0) { console.log(`  ⚠️  ${lineName}: 유효한 세그먼트 없음`); continue; }
 
-    // 왕복 루프 제거 (선형 노선만)
-    const deduped = deduplicateLoop(withBranches, lineName);
-    const simple  = simplify(deduped, 15);
-    // Convert from [lat, lon] to [lng, lat] (GeoJSON order)
-    output[lineName] = simple.map(([lat, lon]) => [lon, lat]);
-
-    console.log(`  ✅ ${lineName.padEnd(8)}: ${rels.length}개 relation → ${chains.length}개 선택 → ${simple.length}pts`);
+    output[lineName] = segments;
+    const totalPts = segments.reduce((s, seg) => s + seg.length, 0);
+    console.log(`  ✅ ${lineName.padEnd(8)}: ${rels.length}개 relation → ${chains.length}개 세그먼트 → 총 ${totalPts}pts`);
   }
 
   fs.writeFileSync(OUT_FILE, JSON.stringify(output));
