@@ -143,24 +143,25 @@ function nearestIdx(chain: [number,number][], coord: [number,number]): number {
   return best;
 }
 
-function routeSegmentWaypoints(
-  lineName: string,
-  from: [number,number],
-  to: [number,number],
-  geo: Map<string,[number,number][]>,
+function nearestIdxInRange(chain: [number,number][], coord: [number,number], lo: number, hi: number): number {
+  let best = lo, bestD = Infinity;
+  for (let i = lo; i <= hi; i++) {
+    const d = (chain[i][0]-coord[0])**2 + (chain[i][1]-coord[1])**2;
+    if (d < bestD) { best = i; bestD = d; }
+  }
+  return best;
+}
+
+function evalSegment(
+  chain: [number,number][],
+  fi: number, ti: number,
+  straightLen: number,
 ): [number,number][] | undefined {
-  const chain = geo.get(lineName);
-  if (!chain || chain.length < 2) return undefined;
-  const fi = nearestIdx(chain, from);
-  const ti = nearestIdx(chain, to);
   if (fi === ti) return undefined;
   const pts: [number,number][] = fi < ti
     ? chain.slice(fi, ti + 1)
     : chain.slice(ti, fi + 1).reverse();
-  const dx = pts[pts.length-1][0] - pts[0][0];
-  const dy = pts[pts.length-1][1] - pts[0][1];
-  const straightLen = Math.sqrt(dx*dx + dy*dy);
-  if (straightLen > 0.09) return undefined;
+  if (pts.length < 2) return undefined;
   if (straightLen > 0) {
     let pathLen = 0;
     for (let i = 1; i < pts.length; i++) {
@@ -169,7 +170,43 @@ function routeSegmentWaypoints(
     }
     if (pathLen / straightLen > 4) return undefined;
   }
-  return pts.length >= 2 ? pts : undefined;
+  return pts;
+}
+
+function routeSegmentWaypoints(
+  lineName: string,
+  from: [number,number],
+  to: [number,number],
+  geo: Map<string,[number,number][]>,
+): [number,number][] | undefined {
+  const chain = geo.get(lineName);
+  if (!chain || chain.length < 2) return undefined;
+
+  const dx = to[0] - from[0], dy = to[1] - from[1];
+  const straightLen = Math.sqrt(dx*dx + dy*dy);
+  if (straightLen > 0.09) return undefined;
+
+  const fi = nearestIdx(chain, from);
+
+  // 1) Try global nearest for TO
+  const ti_global = nearestIdx(chain, to);
+  const r1 = evalSegment(chain, fi, ti_global, straightLen);
+  if (r1) return r1;
+
+  // 2) Fallback: search for TO within ±200 points of FROM's index.
+  //    Handles parallel bidirectional tracks (7호선) and chains with
+  //    branch detours that shift a station's global-nearest index far
+  //    from its true adjacent position (2호선 신정지선).
+  const WINDOW = 200;
+  const lo = Math.max(0, fi - WINDOW);
+  const hi = Math.min(chain.length - 1, fi + WINDOW);
+  const ti_local = nearestIdxInRange(chain, to, lo, hi);
+  if (ti_local !== ti_global) {
+    const r2 = evalSegment(chain, fi, ti_local, straightLen);
+    if (r2) return r2;
+  }
+
+  return undefined;
 }
 
 export const convertPathToGeoJSON = (
