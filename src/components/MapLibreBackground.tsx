@@ -192,19 +192,6 @@ const MapIconRegister = memo(() => {
                     if (dwellData) map.addImage(dwellId, dwellData);
                 }
             });
-
-            if (!map.hasImage('rocket')) {
-                const canvas = document.createElement('canvas');
-                canvas.width = 64; canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.fillStyle = '#3b82f6';
-                    ctx.beginPath();
-                    ctx.moveTo(32, 0); ctx.lineTo(64, 64); ctx.lineTo(32, 48); ctx.lineTo(0, 64);
-                    ctx.closePath(); ctx.fill();
-                    map.addImage('rocket', ctx.getImageData(0, 0, 64, 64));
-                }
-            }
         };
 
         // styleimagemissing: 레이어가 아이콘을 찾지 못할 때 즉시 생성
@@ -220,17 +207,6 @@ const MapIconRegister = memo(() => {
                 const color = `#${cleanColor}`;
                 const data = drawTrainCard(color);
                 if (data && !map.hasImage(e.id)) map.addImage(e.id, data);
-            } else if (e.id === 'rocket') {
-                const canvas = document.createElement('canvas');
-                canvas.width = 64; canvas.height = 64;
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.fillStyle = '#3b82f6';
-                    ctx.beginPath();
-                    ctx.moveTo(32, 0); ctx.lineTo(64, 64); ctx.lineTo(32, 48); ctx.lineTo(0, 64);
-                    ctx.closePath(); ctx.fill();
-                    if (!map.hasImage('rocket')) map.addImage('rocket', ctx.getImageData(0, 0, 64, 64));
-                }
             }
         };
 

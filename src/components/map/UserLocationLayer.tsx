@@ -75,21 +75,6 @@ const UserLocationLayer = () => {
           "circle-stroke-color": "#3b82f6"
         }}
       />
-
-      {/* Heading Arrow — heading > 0 일 때만 표시 */}
-      <Layer
-        id="user-heading"
-        type="symbol"
-        layout={{
-            "icon-image": "rocket",
-            "icon-size": 0.5,
-            "icon-rotate": ["get", "heading"],
-            "icon-allow-overlap": true,
-            "icon-ignore-placement": true,
-            "icon-rotation-alignment": "map",
-        }}
-        filter={[">", ["get", "heading"], 0]}
-      />
     </Source>
   );
 };
