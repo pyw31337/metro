@@ -104,6 +104,51 @@ function distM(a, b) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Chain deduplication helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Returns true if chains a and b represent the same physical route
+// (start/end endpoints within D metres of each other in either orientation)
+function sameRoute(a, b, D = 5000) {
+  const dFwd = distM(a[0], b[0]) + distM(a[a.length - 1], b[b.length - 1]);
+  const dRev = distM(a[0], b[b.length - 1]) + distM(a[a.length - 1], b[0]);
+  return Math.min(dFwd, dRev) < D;
+}
+
+// Returns true if every sampled point of `cand` falls within `thM` metres
+// of some point in `existing`.  Uses a stride to stay O(samples × n/stride).
+function isSubsumed(cand, existing, thM = 500) {
+  const samples = [0, 0.25, 0.5, 0.75, 1.0].map(
+    t => cand[Math.floor(t * (cand.length - 1))]
+  );
+  for (const pt of samples) {
+    let minD = Infinity;
+    for (let i = 0; i < existing.length; i += 5) {
+      const d = distM(pt, existing[i]);
+      if (d < minD) minD = d;
+    }
+    if (minD > thM) return false;
+  }
+  return true;
+}
+
+// Given all chains for a line (sorted longest-first), select only:
+//   1. Non-duplicate same-route chains (keep the longest per route)
+//   2. Non-spatially-subsumed chains (don't add a chain fully covered by a longer one)
+// This reduces 96 1호선 relations → 5 representative chains,
+// and prevents parallel reverse-direction tracks from being double-rendered.
+function selectRepresentativeChains(chains) {
+  const sorted = [...chains].sort((a, b) => b.length - a.length);
+  const selected = [];
+  for (const c of sorted) {
+    if (selected.some(s => sameRoute(s, c))) continue;   // same route, different direction
+    if (selected.some(s => isSubsumed(c, s)))  continue; // fully covered by a longer chain
+    selected.push(c);
+  }
+  return selected;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Merge multiple chains for the same line into one best representative path.
 // Strategy: keep the longest chain; attempt to attach shorter chains at either end.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -302,21 +347,16 @@ async function main() {
 
   const osmRelations = await fetchOSMRelations(force);
 
-  // Group chains by canonical line name
-  // Multiple relations per line (directions, branches) → merge into one chain
-  const lineChains = new Map(); // lineName → [chain, ...]
+  // Group ALL relations by canonical line name first
+  const lineRelations = new Map(); // lineName → [relation, ...]
 
   let matched = 0, unmatched = 0;
   for (const rel of osmRelations) {
     const lineName = osmNameToLine(rel.tags ?? {});
     if (!lineName) { unmatched++; continue; }
     matched++;
-
-    const chain = buildChain(rel.members ?? []);
-    if (!chain) continue;
-
-    if (!lineChains.has(lineName)) lineChains.set(lineName, []);
-    lineChains.get(lineName).push(chain);
+    if (!lineRelations.has(lineName)) lineRelations.set(lineName, []);
+    lineRelations.get(lineName).push(rel);
   }
 
   console.log(`\n매칭: ${matched}개 / 미매칭: ${unmatched}개`);
@@ -324,11 +364,27 @@ async function main() {
   // Build final output: { lineName: [[lng, lat], ...] }
   const output = {};
   for (const lineName of LINE_NAMES) {
-    const chains = lineChains.get(lineName);
-    if (!chains || chains.length === 0) {
+    const rels = lineRelations.get(lineName);
+    if (!rels || rels.length === 0) {
       console.log(`  ⚠️  ${lineName}: OSM 데이터 없음`);
       continue;
     }
+
+    // Build chain for every relation, then deduplicate:
+    //   - Remove same-route duplicates (same physical route, different direction or service variant)
+    //   - Remove chains spatially subsumed by a longer chain
+    // This prevents 96 1호선 relations from creating a 48,000-point mess of
+    // overlapping forward/reverse parallel tracks.
+    const allChains = rels
+      .map(r => buildChain(r.members ?? []))
+      .filter(Boolean);
+
+    if (allChains.length === 0) {
+      console.log(`  ⚠️  ${lineName}: 유효한 체인 없음`);
+      continue;
+    }
+
+    const chains = selectRepresentativeChains(allChains);
 
     const merged  = mergeChains(chains);
     if (!merged) { console.log(`  ⚠️  ${lineName}: chain 병합 실패`); continue; }
@@ -363,7 +419,7 @@ async function main() {
     // Convert from [lat, lon] to [lng, lat] (GeoJSON order)
     output[lineName] = simple.map(([lat, lon]) => [lon, lat]);
 
-    console.log(`  ✅ ${lineName.padEnd(8)}: ${chains.length}개 relation → ${simple.length}pts`);
+    console.log(`  ✅ ${lineName.padEnd(8)}: ${rels.length}개 relation → ${chains.length}개 선택 → ${simple.length}pts`);
   }
 
   fs.writeFileSync(OUT_FILE, JSON.stringify(output));
