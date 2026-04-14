@@ -177,7 +177,20 @@ const SegmentCard = memo(({ seg, isLast }: { seg: RouteSegmentArrival; isLast: b
             <div className="flex-1 h-4 rounded bg-zinc-200 dark:bg-white/10 animate-pulse" />
           </div>
         ) : seg.trains.length === 0 ? (
-          <div className="px-3 py-2 text-[11px] text-zinc-400 font-bold">운행 정보 없음</div>
+          <div className="px-3 py-2 text-[11px] font-bold">
+            {seg.serviceStatus === 'running' && (
+              <span className="text-amber-500">운행 중 (실시간 정보 없음)</span>
+            )}
+            {seg.serviceStatus === 'not-started' && (
+              <span className="text-sky-400">아직 첫차 전</span>
+            )}
+            {seg.serviceStatus === 'ended' && (
+              <span className="text-zinc-400">오늘 운행 종료</span>
+            )}
+            {(seg.serviceStatus === 'no-data' || !seg.serviceStatus) && (
+              <span className="text-zinc-400">실시간 정보 없음</span>
+            )}
+          </div>
         ) : (
           seg.trains.map((t, i) => (
             <TrainCard key={`${t.btrainNo || i}-${t.barvlDt}`} arr={t} lineColor={lineColor} isFirst={i === 0} />
