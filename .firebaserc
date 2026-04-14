@@ -1,6 +1,7 @@
 {
   "projects": {
-    "production": "metro-live-2918e"
+    "production": "metro-live-2918e",
+    "default": "metro-live-2918e"
   },
   "targets": {},
   "etags": {}

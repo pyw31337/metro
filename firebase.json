@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "metro-live-kr",
     "public": "out",
     "ignore": [
       "firebase.json",

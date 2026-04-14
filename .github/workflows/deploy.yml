@@ -1,21 +1,16 @@
-name: Deploy to GitHub Pages
+name: Deploy to Firebase Hosting
 
 on:
   push:
     branches: ["main"]
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: "firebase-deploy"
+  cancel-in-progress: true
 
 jobs:
-  build:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -27,34 +22,19 @@ jobs:
           node-version: "20"
           cache: "npm"
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
       - name: Install dependencies
         run: npm ci
 
-      - name: Build with Next.js
+      - name: Build with Next.js (Firebase target)
         run: npx --no-install next build
         env:
-          # 서울교통공사 역사공중화장실 API (data.go.kr)
+          NEXT_PUBLIC_DEPLOY_TARGET: firebase
           NEXT_PUBLIC_WC_API_KEY: ${{ secrets.NEXT_PUBLIC_WC_API_KEY }}
-          # 서울 열린데이터광장 (data.seoul.go.kr) 기본키
           NEXT_PUBLIC_SEOUL_API_KEY: ${{ secrets.NEXT_PUBLIC_SEOUL_API_KEY }}
-          # 버스 실시간 API (추후 추가)
           NEXT_PUBLIC_BUS_API_KEY: ${{ secrets.NEXT_PUBLIC_BUS_API_KEY }}
+          NEXT_PUBLIC_KAKAO_API_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_API_KEY }}
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./out
-
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Deploy to Firebase Hosting
+        run: firebase deploy --only hosting --project metro-live-2918e --token "$FIREBASE_TOKEN"
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
