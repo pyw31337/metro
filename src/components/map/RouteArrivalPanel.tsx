@@ -177,20 +177,12 @@ const SegmentCard = memo(({ seg, isLast }: { seg: RouteSegmentArrival; isLast: b
             <div className="flex-1 h-4 rounded bg-zinc-200 dark:bg-white/10 animate-pulse" />
           </div>
         ) : seg.trains.length === 0 ? (
-          <div className="px-3 py-2 text-[11px] font-bold">
-            {seg.serviceStatus === 'running' && (
-              <span className="text-amber-500">운행 중 (실시간 정보 없음)</span>
-            )}
-            {seg.serviceStatus === 'not-started' && (
-              <span className="text-sky-400">아직 첫차 전</span>
-            )}
-            {seg.serviceStatus === 'ended' && (
-              <span className="text-zinc-400">오늘 운행 종료</span>
-            )}
-            {(seg.serviceStatus === 'no-data' || !seg.serviceStatus) && (
-              <span className="text-zinc-400">실시간 정보 없음</span>
-            )}
-          </div>
+          // 의미 있는 상태만 표시, 나머지는 섹션 자체를 숨김
+          seg.serviceStatus === 'not-started' ? (
+            <div className="px-3 py-2 text-[11px] font-bold text-sky-400">아직 첫차 전</div>
+          ) : seg.serviceStatus === 'ended' ? (
+            <div className="px-3 py-2 text-[11px] font-bold text-zinc-400">오늘 운행 종료</div>
+          ) : null
         ) : (
           seg.trains.map((t, i) => (
             <TrainCard key={`${t.btrainNo || i}-${t.barvlDt}`} arr={t} lineColor={lineColor} isFirst={i === 0} />
