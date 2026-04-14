@@ -706,7 +706,7 @@ class TransitRealtimeService extends EventEmitter {
     // 36개 종착역을 12개씩 3배치, 250ms 간격 발사 → API rate limit 방지
     const PROBE_BATCH = 12;
     const PROBE_BATCH_GAP = 250; // ms
-    const probeDelay = SUBWAY_POLLING_NAMES.length * STAGGER_MS + 500;
+    const probeDelay = 0; // 위치 API와 동시 시작 — 초기 로딩부터 종착역 열차 포함
 
     const runProbeBatch = (stations: string[]) => {
       if (!this.isRunning) return;

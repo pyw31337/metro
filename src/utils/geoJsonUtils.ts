@@ -133,9 +133,52 @@ export const convertBusPositionsToGeoJSON = (buses: any[]): GeoJsonFeatureCollec
   };
 };
 
-export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: number = Date.now()): { 
-    lines: GeoJsonFeatureCollection, 
-    stations: GeoJsonFeatureCollection 
+// ── OSM 선로 waypoints (경로 선 렌더링용) ──────────────────────────────────
+function nearestIdx(chain: [number,number][], coord: [number,number]): number {
+  let best = 0, bestD = Infinity;
+  for (let i = 0; i < chain.length; i++) {
+    const d = (chain[i][0]-coord[0])**2 + (chain[i][1]-coord[1])**2;
+    if (d < bestD) { best = i; bestD = d; }
+  }
+  return best;
+}
+
+function routeSegmentWaypoints(
+  lineName: string,
+  from: [number,number],
+  to: [number,number],
+  geo: Map<string,[number,number][]>,
+): [number,number][] | undefined {
+  const chain = geo.get(lineName);
+  if (!chain || chain.length < 2) return undefined;
+  const fi = nearestIdx(chain, from);
+  const ti = nearestIdx(chain, to);
+  if (fi === ti) return undefined;
+  const pts: [number,number][] = fi < ti
+    ? chain.slice(fi, ti + 1)
+    : chain.slice(ti, fi + 1).reverse();
+  const dx = pts[pts.length-1][0] - pts[0][0];
+  const dy = pts[pts.length-1][1] - pts[0][1];
+  const straightLen = Math.sqrt(dx*dx + dy*dy);
+  if (straightLen > 0.09) return undefined;
+  if (straightLen > 0) {
+    let pathLen = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const ddx = pts[i][0]-pts[i-1][0], ddy = pts[i][1]-pts[i-1][1];
+      pathLen += Math.sqrt(ddx*ddx + ddy*ddy);
+    }
+    if (pathLen / straightLen > 4) return undefined;
+  }
+  return pts.length >= 2 ? pts : undefined;
+}
+
+export const convertPathToGeoJSON = (
+  pathResult: PathResult | null,
+  startTime: number = Date.now(),
+  trackGeometry?: Map<string,[number,number][]>,
+): {
+    lines: GeoJsonFeatureCollection,
+    stations: GeoJsonFeatureCollection
 } => {
     if (!pathResult) return { lines: { type: "FeatureCollection", features: [] }, stations: { type: "FeatureCollection", features: [] } };
     
@@ -159,6 +202,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
         // segmentColor = 이 역에서 다음 역까지 그릴 선 색 (이 역 이후 탑승할 노선)
         let bubbleColor = "#3b82f6";
         let segmentColor = "#3b82f6";
+        let segmentLineName: string | null = null; // OSM waypoints 조회용 노선명
         let transferDetails: { fromLine: string; toLine: string } | null = null;
 
         if (i > 0 && i < path.length - 1) {
@@ -184,8 +228,10 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 if (outgoingLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(outgoingLines[0]);
                     if (color) segmentColor = color;
+                    segmentLineName = outgoingLines[0];
                 } else {
                     segmentColor = bubbleColor;
+                    segmentLineName = incomingLines[0] ?? null;
                 }
 
                 if (isActualTransfer) {
@@ -203,6 +249,7 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
                 if (commonLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(commonLines[0]);
                     if (color) { bubbleColor = color; segmentColor = color; }
+                    segmentLineName = commonLines[0];
                 }
             }
         } else if (i === path.length - 1 && i > 0) {
@@ -240,16 +287,19 @@ export const convertPathToGeoJSON = (pathResult: PathResult | null, startTime: n
             const nextName = path[i+1];
             const nextS = getStationByName(nextName);
             if (nextS) {
+                // OSM 선로 waypoints 우선 사용 — 없으면 직선 폴백
+                const from: [number,number] = [s.lng, s.lat];
+                const to: [number,number]   = [nextS.lng, nextS.lat];
+                let coords: [number,number][];
+                if (trackGeometry && segmentLineName) {
+                    coords = routeSegmentWaypoints(segmentLineName, from, to, trackGeometry) ?? [from, to];
+                } else {
+                    coords = [from, to];
+                }
                 lineFeatures.push({
                     type: "Feature" as const,
-                    geometry: {
-                        type: "LineString" as const,
-                        coordinates: [[s.lng, s.lat], [nextS.lng, nextS.lat]]
-                    },
-                    properties: {
-                        type: "path_segment",
-                        color: segmentColor
-                    }
+                    geometry: { type: "LineString" as const, coordinates: coords },
+                    properties: { type: "path_segment", color: segmentColor }
                 });
             }
         }
