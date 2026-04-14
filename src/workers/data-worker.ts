@@ -519,15 +519,17 @@ function makeSegment(
   let direction: '0' | '1' = '1';
   if (stations.length >= 2) {
     const s0 = stations[0];
-    const sN = stations[stations.length - 1];
+    // Use the second station (not the last) for direction — robust against off-by-one
+    // bugs in curStations that can make stations[last] equal stations[0].
+    const s1 = stations[1];
     // Try all branches with this line name until both endpoints are found in the same branch.
     // Needed for multi-branch lines like 5호선 (5-Hanam covers 방화~하남, 5-Macheon covers 강동~마천).
     for (const line of SUBWAY_LINES) {
       if (line.name !== lineName) continue;
       const idxMap = LINE_IDX_BY_ID.get(line.id)!;
-      const i1 = idxMap.get(s0) ?? -1;
-      const i2 = idxMap.get(sN) ?? -1;
-      if (i1 !== -1 && i2 !== -1) { direction = i2 > i1 ? '1' : '0'; break; }
+      const i0 = idxMap.get(s0) ?? -1;
+      const i1 = idxMap.get(s1) ?? -1;
+      if (i0 !== -1 && i1 !== -1) { direction = i1 > i0 ? '1' : '0'; break; }
     }
   }
   return { line: lineName, direction, stations };
