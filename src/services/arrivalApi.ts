@@ -732,54 +732,75 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     return null;
 };
 
-export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
-    // 🛡️ API Key Fallback Logic (User provided approved keys)
-    const USER_APPROVED_KEYS = [
-        "634179436a7079773730786f4d5445",  // 지하철인증키 (2026/03/30) ✅
-        "53517344677079773531694a786f6a",  // 지하철인증키 (2026/03/27) ✅
-        "434f7275707079773537687a507658",  // 지하철인증키 (2026/03/27) ✅
-    ];
-    
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
+// ── API 키 관리 — 성공한 키 캐시, 순차 폴백으로 quota 낭비 방지 ────────────
+const POSITION_API_KEYS = [
+    process.env.NEXT_PUBLIC_SEOUL_API_KEY,
+    "634179436a7079773730786f4d5445",
+    "53517344677079773531694a786f6a",
+    "434f7275707079773537687a507658",
+    "sample",
+].filter(Boolean) as string[];
 
-    const tryFetchWithKeys = async () => {
-        // 중복 키 제거 후 병렬 시도 — 가장 먼저 성공한 키 결과 사용
-        const keysToTry = [...new Set([apiKey, ...USER_APPROVED_KEYS, "sample"].filter(Boolean))];
-        try {
-            return await Promise.any(
-                keysToTry.map(async (key) => {
-                    const url = API_ENDPOINTS.SUBWAY_POSITION(key!, lineName);
-                    const json = await fetchWithFallbacks(url);
-                    if (!json?.realtimePositionList) throw new Error('no data');
-                    return json;
-                })
-            );
-        } catch {
+// 현재 작동 중인 키 인덱스 (모듈 레벨 — 전체 노선이 공유)
+let _activeKeyIdx = 0;
+// 키별 quota 소진 시각 (ERROR-337/ERROR-500 수신 시 기록, 자정 초기화)
+const _keyExhaustedUntil: Record<string, number> = {};
+
+function isKeyExhausted(key: string): boolean {
+    const until = _keyExhaustedUntil[key];
+    if (!until) return false;
+    if (Date.now() > until) { delete _keyExhaustedUntil[key]; return false; }
+    return true;
+}
+
+async function fetchPositionWithKey(key: string, lineName: string): Promise<any | null> {
+    const url = API_ENDPOINTS.SUBWAY_POSITION(key, lineName);
+    try {
+        const json = await fetchWithFallbacks(url);
+        // quota 초과 에러
+        if (json?.code === 'ERROR-337' || json?.code === 'ERROR-500' ||
+            json?.status === 500) {
+            // 자정까지 이 키 사용 금지
+            const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
+            _keyExhaustedUntil[key] = midnight.getTime();
             return null;
         }
-    };
-
-    try {
-        const json = await tryFetchWithKeys();
-        return (json?.realtimePositionList || []).map((item: any) => ({
-            subwayId: item.subwayId,
-            subwayNm: item.subwayNm,
-            statnId: item.statnId,
-            statnNm: item.statnNm,
-            trainNo: item.trainNo,
-            lastRecptnDt: item.lastRecptnDt,
-            updnLine: item.updnLine,
-            directAt: item.directAt,
-            trainSttus: item.trainSttus || "99",
-            lstnyNm: item.lstnyNm || item.statnTnm || "",  // realtimePosition에서는 statnTnm
-            statnTnm: item.statnTnm || "",                 // 종착역명 (realtimePosition API 전용)
-            arrivalNm: item.arrivalNm,
-            arvlCd: item.arvlCd
-        }));
-    } catch (err) {
-        return [];
+        if (!json?.realtimePositionList) return null;
+        if (json.realtimePositionList.length === 0) return null; // sample 빈 응답
+        return json;
+    } catch {
+        return null;
     }
+}
+
+export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
+    // 현재 활성 키부터 순차 시도 — 성공하면 해당 키를 계속 사용 (quota 낭비 방지)
+    const keys = [...new Set(POSITION_API_KEYS)];
+    for (let offset = 0; offset < keys.length; offset++) {
+        const idx = (_activeKeyIdx + offset) % keys.length;
+        const key = keys[idx];
+        if (isKeyExhausted(key)) continue;
+        const json = await fetchPositionWithKey(key, lineName);
+        if (json) {
+            _activeKeyIdx = idx; // 성공한 키로 고정
+            return (json.realtimePositionList || []).map((item: any) => ({
+                subwayId:     item.subwayId,
+                subwayNm:     item.subwayNm,
+                statnId:      item.statnId,
+                statnNm:      item.statnNm,
+                trainNo:      item.trainNo,
+                lastRecptnDt: item.lastRecptnDt,
+                updnLine:     item.updnLine,
+                directAt:     item.directAt,
+                trainSttus:   item.trainSttus || "99",
+                lstnyNm:      item.lstnyNm || item.statnTnm || "",
+                statnTnm:     item.statnTnm || "",
+                arrivalNm:    item.arrivalNm,
+                arvlCd:       item.arvlCd,
+            }));
+        }
+    }
+    return [];
 };
 
 export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {
