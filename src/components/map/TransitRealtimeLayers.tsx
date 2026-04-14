@@ -564,8 +564,17 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   const segs = activePath.segments;
   if (!segs?.length) return true;
 
-  const seg = segs.find(s => s.line === unit.lineName);
-  if (!seg) return false;
+  const segIdx = segs.findIndex(s => s.line === unit.lineName);
+  if (segIdx < 0) return false;
+
+  const seg     = segs[segIdx];
+  const nextSeg = segs[segIdx + 1];
+
+  // 비마지막 구간: 하차역 = 다음 구간의 탑승역 (buildInitial과 동일 로직)
+  // 마지막 구간: seg.stations 마지막 원소 사용
+  const exitStation = nextSeg
+    ? nextSeg.stations[0]
+    : seg.stations[seg.stations.length - 1];
 
   const updn = unit.updnLine ?? '';
   const unitDir: '0' | '1' =
@@ -577,7 +586,7 @@ function filterByPath(unit: RealtimeUnit, activePath: PathResult): boolean {
   const ln = unit.lineName;
   const currIdx  = stationIdx(ln, unit.currentStationName);
   const entryIdx = stationIdx(ln, seg.stations[0]);
-  const exitIdx  = stationIdx(ln, seg.stations[seg.stations.length - 1]);
+  const exitIdx  = stationIdx(ln, exitStation);
 
   if (entryIdx < 0 || exitIdx < 0) return false;
   if (currIdx < 0) return true;
