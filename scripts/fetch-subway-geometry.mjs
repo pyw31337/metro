@@ -128,7 +128,7 @@ function mergeChains(chains) {
     const minDist = Math.min(d_mLast_cFirst, d_mLast_cLast,
                              d_mFirst_cFirst, d_mFirst_cLast);
 
-    if (minDist > 500) continue; // too far away — likely a branch, skip for now
+    if (minDist > 500) continue; // too far away — likely a mid-branch, handled by attachBranches
 
     if (minDist === d_mLast_cFirst) {
       // append c to end of merged
@@ -152,11 +152,54 @@ function mergeChains(chains) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Branch attachment — 메인 체인 중간에서 분기하는 지선(성수지선·신정지선 등)을
+// mergeChains가 놓친 경우, 체인 전체에서 가장 가까운 접속점을 찾아 붙인다.
+// 결과: 메인체인 → 지선 왕복 구간 (시각적으로 살짝 꺾이지만 역 좌표 커버 가능)
+// ─────────────────────────────────────────────────────────────────────────────
+function attachBranches(mainChain, branchChains) {
+  if (branchChains.length === 0) return mainChain;
+  let result = mainChain;
+
+  for (const branch of branchChains) {
+    if (branch.length < 2) continue;
+
+    // 브랜치 양 끝이 메인 체인에서 얼마나 가까운지
+    const bFirst = branch[0], bLast = branch[branch.length - 1];
+    let minD = Infinity, closestMainIdx = 0, attachEnd = bFirst;
+
+    for (let i = 0; i < result.length; i++) {
+      const dF = distM(result[i], bFirst);
+      if (dF < minD) { minD = dF; closestMainIdx = i; attachEnd = bFirst; }
+      const dL = distM(result[i], bLast);
+      if (dL < minD) { minD = dL; closestMainIdx = i; attachEnd = bLast; }
+    }
+
+    if (minD > 3000) continue; // 3km 넘으면 다른 노선으로 간주
+
+    // 접속점부터 브랜치를 붙임: 접속점 → 브랜치 반대 끝 → 접속점 복귀 (왕복)
+    const oriented = samePoint(attachEnd, bFirst) ? branch : [...branch].reverse();
+    const junction = result[closestMainIdx];
+    const skip = samePoint(junction, oriented[0]) ? 1 : 0;
+    const branchTrip = [...oriented.slice(skip), ...oriented.slice(0, oriented.length - skip).reverse()];
+
+    // 메인 체인 접속점 이후에 삽입
+    result = [
+      ...result.slice(0, closestMainIdx + 1),
+      ...branchTrip,
+      ...result.slice(closestMainIdx + 1),
+    ];
+    process.stdout.write(`     ↳ 지선 부착: ${branch.length}pt at idx=${closestMainIdx} (접속 거리 ${minD.toFixed(0)}m)\n`);
+  }
+
+  return result;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // OSM Overpass — single bulk request (large bbox covers all Seoul metro lines)
 // ─────────────────────────────────────────────────────────────────────────────
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter';
-// Wide bbox: Incheon ↔ Yangpyeong, Uijeongbu ↔ Osan — covers all lines
-const BBOX = '[bbox:36.9,126.3,38.1,127.8]';
+// 넓은 bbox: 신창(36.77) 포함하도록 남쪽 36.7까지 확장, 지평(127.63) 동쪽까지 포함
+const BBOX = '[bbox:36.7,126.3,38.1,127.85]';
 
 async function fetchOSMRelations(force = false) {
   if (!force && fs.existsSync(CACHE_FILE)) {
@@ -191,6 +234,46 @@ out geom;`;
 
   fs.writeFileSync(CACHE_FILE, JSON.stringify(relations));
   return relations;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Loop deduplication — OSM relation이 왕복(outbound+inbound)을 하나의 체인으로
+// 수집하면 start ≈ end가 되고, 종착역에서 U턴이 생긴다.
+// 실제 순환 노선(2호선·6호선)은 제외하고 선형 노선만 절반으로 자른다.
+// ─────────────────────────────────────────────────────────────────────────────
+// 실제 순환 노선 이름 목록 (start ≈ end가 정상인 노선)
+const CIRCULAR_LINES = new Set(['2호선', '6호선']);
+
+function deduplicateLoop(chain, lineName) {
+  if (CIRCULAR_LINES.has(lineName)) return chain; // 순환선은 건드리지 않음
+  if (chain.length < 10) return chain;
+
+  const [s0, s1] = chain[0];
+  const [e0, e1] = chain[chain.length - 1];
+  const startEndDist = distM([s0, s1], [e0, e1]);
+
+  // start-end 거리가 500m 이상이면 루프가 아닌 선형 노선으로 간주
+  if (startEndDist > 500) return chain;
+
+  // 루프 확인됨 — 출발점에서 가장 먼 인덱스(종착역)를 찾아 절반으로 자름
+  let maxD = 0, turnIdx = 0;
+  for (let i = 1; i < chain.length; i++) {
+    const d = distM(chain[0], chain[i]);
+    if (d > maxD) { maxD = d; turnIdx = i; }
+  }
+
+  // turnIdx 기준 두 절반: 첫 절반이 더 긴 경우(~50%) 첫 절반, 아니면 둘 다 검토
+  // 비율이 40~60%이면 대칭 루프 → 첫 절반 사용
+  // 그 외(경춘선처럼 25% 등)는 더 긴 절반이 실제 운행 구간
+  const firstHalf  = chain.slice(0, turnIdx + 1);
+  const secondHalf = chain.slice(turnIdx);
+  const ratio = turnIdx / chain.length;
+  const chosen = (ratio >= 0.4 && ratio <= 0.6) ? firstHalf
+               : (firstHalf.length >= secondHalf.length ? firstHalf : secondHalf);
+  process.stdout.write(
+    `     ↳ 루프 감지(${(startEndDist/1000).toFixed(1)}km) → ${chain.length}pt → ${chosen.length}pt 절반 유지\n`
+  );
+  return chosen;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -250,7 +333,33 @@ async function main() {
     const merged  = mergeChains(chains);
     if (!merged) { console.log(`  ⚠️  ${lineName}: chain 병합 실패`); continue; }
 
-    const simple  = simplify(merged, 15);
+    // 브랜치 지선 부착: mergeChains가 끝점 거리 초과로 건너뛴 지선들
+    // 조건: 양 끝점 모두 메인 체인에서 100m 이상 떨어져 있어야 진짜 새 구간
+    const rejected = chains.filter(c => {
+      const mF = merged[0], mL = merged[merged.length - 1];
+      const cF = c[0],      cL = c[c.length - 1];
+      if (Math.min(distM(mF,cF), distM(mF,cL), distM(mL,cF), distM(mL,cL)) <= 500) return false;
+      // 메인 체인 전체에서 양 끝점 중 하나라도 100m 이상인 경우만 포함
+      const minToChain = (pt) => {
+        let best = Infinity;
+        for (const p of merged) { const d = distM(p, pt); if (d < best) best = d; }
+        return best;
+      };
+      const dF = minToChain(cF), dL = minToChain(cL);
+      // 한쪽 끝만 새 구간(100m 이상)이면 진짜 지선 — 단, 두 끝 모두 커버되면 이미 포함됨
+      return Math.max(dF, dL) > 100;
+    });
+    // 방향 중복 제거: 두 체인이 서로 역방향이면 하나만 유지 (더 짧은 것 제거)
+    const uniqueBranches = rejected.filter((c, i) =>
+      !rejected.slice(0, i).some(prev =>
+        distM(prev[0], c[c.length-1]) < 200 && distM(prev[prev.length-1], c[0]) < 200
+      )
+    );
+    const withBranches = attachBranches(merged, uniqueBranches);
+
+    // 왕복 루프 제거 (선형 노선만)
+    const deduped = deduplicateLoop(withBranches, lineName);
+    const simple  = simplify(deduped, 15);
     // Convert from [lat, lon] to [lng, lat] (GeoJSON order)
     output[lineName] = simple.map(([lat, lon]) => [lon, lat]);
 
