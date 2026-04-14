@@ -212,6 +212,8 @@ function processUpdates(units: any[]) {
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
         existing.nextWaypoints  = unit.nextWaypoints;
+        // geometry가 늦게 로드된 경우 waypoints 복원 (초기 undefined → 다음 poll에서 채움)
+        if (!existing.waypoints && unit.waypoints) existing.waypoints = unit.waypoints;
 
       } else if (pastArrival) {
         // ── 다음 역으로 이동, dwell 또는 출발 구간에서 전환 ──
@@ -231,6 +233,8 @@ function processUpdates(units: any[]) {
 
       } else {
         // ── 주행 중(ratio<1.0)에 새 목적지로 변경 ──
+        // API가 다음 역 도착을 보고했지만 애니메이션이 아직 도착 전.
+        // 현재 시각적 위치를 계산해 거기서 새 목적지까지 이동.
         const visualPos: [number, number] = existing.waypoints && existing.waypoints.length >= 2
           ? interpolateAlongPath(existing.waypoints, easeInOut(ratio))
           : lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
@@ -246,8 +250,10 @@ function processUpdates(units: any[]) {
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
         existing.lastUpdateTime = now;
-        // 중간 변경 시 waypoints는 undefined (fallback to lerp), 다음 구간은 수신값 사용
-        existing.waypoints      = undefined;
+        // unit.nextWaypoints = 새 현재역 → 다음역 OSM 경로.
+        // visualPos는 구 현재역 근처이므로 이 waypoints의 시작점(≈ 새 현재역)과 가까워
+        // 직선 lerp보다 훨씬 정확하게 선로를 따름.
+        existing.waypoints      = unit.nextWaypoints;
         existing.nextWaypoints  = unit.nextWaypoints;
       }
     }
