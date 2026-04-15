@@ -33,10 +33,11 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [selectedInfo, setSelectedInfo] = useState<TrainInfo | null>(null);
   const [selectedPos,  setSelectedPos]  = useState<[number, number] | null>(null);
 
-  // ── 탑승 상태 ──
+  // ── 탑승/추적 상태 ──
   const [boardedId,   setBoardedId]   = useState<string | null>(null);
   const [boardedInfo, setBoardedInfo] = useState<TrainInfo | null>(null);
   const [boardedPos,  setBoardedPos]  = useState<[number, number] | null>(null);
+  const [boardedType, setBoardedType] = useState<'subway' | 'bus' | null>(null);
   const [alertMsg,    setAlertMsg]    = useState<string | null>(null);
   const [alertType,   setAlertType]   = useState<'info' | 'transfer' | 'exit'>('info');
 
@@ -49,11 +50,12 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   useEffect(() => { boardedIdRef.current  = boardedId;  }, [boardedId]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
 
-  // ─── 탑승 해제 ───
+  // ─── 탑승/추적 해제 ───
   const deBoard = useCallback(() => {
     setBoardedId(null);
     setBoardedInfo(null);
     setBoardedPos(null);
+    setBoardedType(null);
     boardedIdRef.current = null;
     alertedStationRef.current = null;
     prevStationRef.current = null;
@@ -102,9 +104,9 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     if (activeLine) transitRealtimeService.refreshLine(activeLine);
   }, [activeLine]);
 
-  // ─── 탑승 열차 펄스 애니메이션 — 3중 링 리플 ───
+  // ─── 탑승 열차 펄스 애니메이션 — 3중 링 리플 (지하철 탑승 시만) ───
   useEffect(() => {
-    if (!map || !boardedId) {
+    if (!map || !boardedId || boardedType === 'bus') {
       if (pulseRafRef.current) { cancelAnimationFrame(pulseRafRef.current); pulseRafRef.current = null; }
       return;
     }
@@ -124,16 +126,16 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
     };
     pulseRafRef.current = requestAnimationFrame(animate);
     return () => { if (pulseRafRef.current) { cancelAnimationFrame(pulseRafRef.current); pulseRafRef.current = null; } };
-  }, [map, boardedId]);
+  }, [map, boardedId, boardedType]);
 
-  // ─── 탑승 열차 펄스 색상 동기화 ───
+  // ─── 탑승 열차 펄스 색상 동기화 (지하철만) ───
   useEffect(() => {
-    if (!map || !boardedInfo) return;
+    if (!map || !boardedInfo || boardedType === 'bus') return;
     const color = `#${boardedInfo.lineColor}`;
     for (let i = 0; i < 3; i++) {
       try { map.setPaintProperty(`transit-boarded-pulse-${i}`, 'circle-stroke-color', color); } catch {}
     }
-  }, [map, boardedInfo]);
+  }, [map, boardedInfo, boardedType]);
 
   // ─── 실시간 업데이트 구독 ───
   useEffect(() => {
@@ -172,9 +174,10 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           }
           setBoardedPos([...boardedUnit.pos] as [number, number]);
 
-          // ── 탑승 진동 알림 ──
+          // ── 탑승 진동 알림 (지하철만) ──
           const cur = boardedUnit.currentStationName;
-          if (ap?.segments?.length && cur) {
+          if (boardedUnit.type === 'bus') { /* 버스 추적: 알림 없음 */ }
+          else if (ap?.segments?.length && cur) {
             // ── 경로 있음: 환승역 또는 목적지 1정거장 전 알림 ──
             const curNorm = normStation(cur);
             const seg = ap.segments.find(s => s.line === boardedUnit.lineName);
@@ -340,8 +343,9 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const busVis:   "visible" | "none" = isBusVisible   ? "visible" : "none";
 
   const selectedIsBus     = !!(selectedId?.startsWith('bus-'));
+  const boardedIsBus      = boardedType === 'bus';
   const showSelectedPopup = !!(selectedId && selectedInfo && selectedPos && (selectedIsBus ? isBusVisible : isTrainVisible) && !boardedId);
-  const showBoardedPopup  = !!(boardedId && boardedInfo && boardedPos && isTrainVisible);
+  const showBoardedPopup  = !!(boardedId && boardedInfo && boardedPos && (boardedIsBus ? isBusVisible : isTrainVisible));
 
   return (
     <>
@@ -352,7 +356,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             key={i}
             id={`transit-boarded-pulse-${i}`}
             type="circle"
-            layout={{ visibility: (boardedId && isTrainVisible) ? 'visible' : 'none' }}
+            layout={{ visibility: (boardedId && !boardedIsBus && isTrainVisible) ? 'visible' : 'none' }}
             paint={{
               'circle-radius':          12,
               'circle-color':           'transparent',
@@ -472,24 +476,23 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             <div className="px-3 pb-2.5 text-[14px] font-black text-white leading-snug">
               {selectedInfo!.label}
             </div>
-            {/* 탑승 버튼 — 지하철만 */}
-            {!selectedIsBus && (
-              <button
-                onClick={() => {
-                  setBoardedId(selectedId);
-                  setBoardedInfo(selectedInfo);
-                  setBoardedPos(selectedPos);
-                  boardedIdRef.current = selectedId;
-                  alertedStationRef.current = null;
-                  prevStationRef.current = null;
-                  setSelectedId(null); setSelectedInfo(null); setSelectedPos(null);
-                }}
-                className="w-full py-2.5 text-[12px] font-black text-white transition-opacity hover:opacity-90 active:opacity-70"
-                style={{ background: `#${selectedInfo!.lineColor}` }}
-              >
-                열차 탑승
-              </button>
-            )}
+            {/* 탑승/추적 버튼 */}
+            <button
+              onClick={() => {
+                setBoardedId(selectedId);
+                setBoardedInfo(selectedInfo);
+                setBoardedPos(selectedPos);
+                setBoardedType(selectedIsBus ? 'bus' : 'subway');
+                boardedIdRef.current = selectedId;
+                alertedStationRef.current = null;
+                prevStationRef.current = null;
+                setSelectedId(null); setSelectedInfo(null); setSelectedPos(null);
+              }}
+              className="w-full py-2.5 text-[12px] font-black text-white transition-opacity hover:opacity-90 active:opacity-70"
+              style={{ background: `#${selectedInfo!.lineColor}` }}
+            >
+              {selectedIsBus ? '버스 추적' : '열차 탑승'}
+            </button>
           </div>
         </Popup>
       )}
@@ -512,7 +515,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             onPointerDown={(e) => e.stopPropagation()}
           >
             <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
-            <span className="text-white text-[11px] font-black whitespace-nowrap">탑승중</span>
+            <span className="text-white text-[11px] font-black whitespace-nowrap">{boardedIsBus ? '추적중' : '탑승중'}</span>
             <button
               onClick={deBoard}
               className="ml-1 text-white/60 hover:text-white text-[13px] leading-none"
