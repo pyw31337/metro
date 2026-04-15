@@ -368,22 +368,10 @@ export class MetropolitanBusService {
     const features: any[] = [];
 
     // ── Path geometry ──────────────────────────────────────────────────────
-    const segments = this.validatePathSegments(rawPathCoords);
-
-    if (segments.length === 1) {
-      features.push({
-        type: "Feature",
-        geometry: { type: "LineString", coordinates: segments[0] },
-        properties: { featureType: "route" },
-      });
-    } else if (segments.length > 1) {
-      features.push({
-        type: "Feature",
-        geometry: { type: "MultiLineString", coordinates: segments },
-        properties: { featureType: "route" },
-      });
-    } else if (stops.length >= 2) {
-      // No valid path — draw straight lines between stops as fallback
+    // When stop data is available, connect stops in sequence so the line
+    // always passes exactly through each stop dot. Fall back to the raw
+    // road-centerline polyline only when no stop data exists.
+    if (stops.length >= 2) {
       features.push({
         type: "Feature",
         geometry: {
@@ -392,6 +380,21 @@ export class MetropolitanBusService {
         },
         properties: { featureType: "route" },
       });
+    } else {
+      const segments = this.validatePathSegments(rawPathCoords);
+      if (segments.length === 1) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "LineString", coordinates: segments[0] },
+          properties: { featureType: "route" },
+        });
+      } else if (segments.length > 1) {
+        features.push({
+          type: "Feature",
+          geometry: { type: "MultiLineString", coordinates: segments },
+          properties: { featureType: "route" },
+        });
+      }
     }
 
     // ── Stop points ────────────────────────────────────────────────────────
