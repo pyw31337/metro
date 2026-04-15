@@ -9,34 +9,16 @@ export interface GeoJsonFeatureCollection {
   features: any[];
 }
 
-export const convertSubwayToGeoJSON = (
-  trackGeometry?: Map<string, [number,number][][]>
-): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
+export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, stations: GeoJsonFeatureCollection } => {
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
   const stationMap = new Map<string, any>();
-  // 노선명별로 한 번만 렌더 (SUBWAY_LINES에 같은 name을 공유하는 지선이 있을 수 있음)
-  const drawnOsmNames = new Set<string>();
+  const drawnNames = new Set<string>();
 
   SUBWAY_LINES.forEach((line: SubwayLine) => {
-    // 1. LineString/MultiLineString Feature — OSM 선로 geometry 우선, 없으면 직선 폴백
-    const osmSegments = trackGeometry?.get(line.name);
-    const alreadyDrawn = osmSegments && drawnOsmNames.has(line.name);
-    if (osmSegments) drawnOsmNames.add(line.name);
-
-    if (osmSegments && !alreadyDrawn && osmSegments.some(seg => seg.length >= 2)) {
-      const validSegs = osmSegments.filter(seg => seg.length >= 2);
-      // 단일 세그먼트면 LineString, 복수면 MultiLineString
-      const geometry = validSegs.length === 1
-        ? { type: "LineString" as const, coordinates: validSegs[0] }
-        : { type: "MultiLineString" as const, coordinates: validSegs };
-      lineFeatures.push({
-        type: "Feature" as const,
-        geometry,
-        properties: { id: line.id, name: line.name, color: line.color }
-      });
-    } else if (!alreadyDrawn) {
-      // 폴백: 역 좌표 직선
+    // 1. LineString Feature — 역과 역 사이 직선
+    if (!drawnNames.has(line.name)) {
+      drawnNames.add(line.name);
       lineFeatures.push({
         type: "Feature" as const,
         geometry: { type: "LineString" as const, coordinates: line.stations.map(s => [s.lng, s.lat]) },
@@ -145,84 +127,9 @@ export const convertBusPositionsToGeoJSON = (buses: any[]): GeoJsonFeatureCollec
   };
 };
 
-// ── OSM 선로 waypoints (경로 선 렌더링용) ──────────────────────────────────
-function nearestIdx(chain: [number,number][], coord: [number,number]): number {
-  let best = 0, bestD = Infinity;
-  for (let i = 0; i < chain.length; i++) {
-    const d = (chain[i][0]-coord[0])**2 + (chain[i][1]-coord[1])**2;
-    if (d < bestD) { best = i; bestD = d; }
-  }
-  return best;
-}
-
-function nearestIdxInRange(chain: [number,number][], coord: [number,number], lo: number, hi: number): number {
-  let best = lo, bestD = Infinity;
-  for (let i = lo; i <= hi; i++) {
-    const d = (chain[i][0]-coord[0])**2 + (chain[i][1]-coord[1])**2;
-    if (d < bestD) { best = i; bestD = d; }
-  }
-  return best;
-}
-
-function evalSegment(
-  chain: [number,number][],
-  fi: number, ti: number,
-  straightLen: number,
-): [number,number][] | undefined {
-  if (fi === ti) return undefined;
-  const pts: [number,number][] = fi < ti
-    ? chain.slice(fi, ti + 1)
-    : chain.slice(ti, fi + 1).reverse();
-  if (pts.length < 2) return undefined;
-  if (straightLen > 0) {
-    let pathLen = 0;
-    for (let i = 1; i < pts.length; i++) {
-      const ddx = pts[i][0]-pts[i-1][0], ddy = pts[i][1]-pts[i-1][1];
-      pathLen += Math.sqrt(ddx*ddx + ddy*ddy);
-    }
-    if (pathLen / straightLen > 4) return undefined;
-  }
-  return pts;
-}
-
-function routeSegmentWaypoints(
-  lineName: string,
-  from: [number,number],
-  to: [number,number],
-  geo: Map<string,[number,number][][]>,
-): [number,number][] | undefined {
-  const segments = geo.get(lineName);
-  if (!segments || segments.length === 0) return undefined;
-
-  const dx = to[0] - from[0], dy = to[1] - from[1];
-  const straightLen = Math.sqrt(dx*dx + dy*dy);
-  if (straightLen > 0.09) return undefined;
-
-  // MultiLineString: 모든 세그먼트에서 가장 좋은 구간 탐색
-  for (const chain of segments) {
-    if (chain.length < 2) continue;
-    const fi = nearestIdx(chain, from);
-    const ti_global = nearestIdx(chain, to);
-    const r1 = evalSegment(chain, fi, ti_global, straightLen);
-    if (r1) return r1;
-
-    const WINDOW = 200;
-    const lo = Math.max(0, fi - WINDOW);
-    const hi = Math.min(chain.length - 1, fi + WINDOW);
-    const ti_local = nearestIdxInRange(chain, to, lo, hi);
-    if (ti_local !== ti_global) {
-      const r2 = evalSegment(chain, fi, ti_local, straightLen);
-      if (r2) return r2;
-    }
-  }
-
-  return undefined;
-}
-
 export const convertPathToGeoJSON = (
   pathResult: PathResult | null,
   startTime: number = Date.now(),
-  trackGeometry?: Map<string,[number,number][][]>,
 ): {
     lines: GeoJsonFeatureCollection,
     stations: GeoJsonFeatureCollection
@@ -249,7 +156,6 @@ export const convertPathToGeoJSON = (
         // segmentColor = 이 역에서 다음 역까지 그릴 선 색 (이 역 이후 탑승할 노선)
         let bubbleColor = "#3b82f6";
         let segmentColor = "#3b82f6";
-        let segmentLineName: string | null = null; // OSM waypoints 조회용 노선명
         let transferDetails: { fromLine: string; toLine: string } | null = null;
 
         if (i > 0 && i < path.length - 1) {
@@ -275,10 +181,8 @@ export const convertPathToGeoJSON = (
                 if (outgoingLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(outgoingLines[0]);
                     if (color) segmentColor = color;
-                    segmentLineName = outgoingLines[0];
                 } else {
                     segmentColor = bubbleColor;
-                    segmentLineName = incomingLines[0] ?? null;
                 }
 
                 if (isActualTransfer) {
@@ -296,7 +200,6 @@ export const convertPathToGeoJSON = (
                 if (commonLines.length > 0) {
                     const color = LINE_COLOR_MAP.get(commonLines[0]);
                     if (color) { bubbleColor = color; segmentColor = color; }
-                    segmentLineName = commonLines[0];
                 }
             }
         } else if (i === path.length - 1 && i > 0) {
@@ -334,15 +237,9 @@ export const convertPathToGeoJSON = (
             const nextName = path[i+1];
             const nextS = getStationByName(nextName);
             if (nextS) {
-                // OSM 선로 waypoints 우선 사용 — 없으면 직선 폴백
                 const from: [number,number] = [s.lng, s.lat];
                 const to: [number,number]   = [nextS.lng, nextS.lat];
-                let coords: [number,number][];
-                if (trackGeometry && segmentLineName) {
-                    coords = routeSegmentWaypoints(segmentLineName, from, to, trackGeometry) ?? [from, to];
-                } else {
-                    coords = [from, to];
-                }
+                const coords: [number,number][] = [from, to];
                 lineFeatures.push({
                     type: "Feature" as const,
                     geometry: { type: "LineString" as const, coordinates: coords },

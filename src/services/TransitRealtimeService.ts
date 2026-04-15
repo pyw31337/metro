@@ -397,91 +397,7 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
     lineStationIdx: stationIdx,
     lineDir,
     directionBearing,
-    // OSM 선로 waypoints: geometry 로드 완료 시 비-undefined
-    waypoints:     prevAdj ? findSegmentWaypoints(lineName, prevAdj, coord)   : undefined,
-    nextWaypoints: nextAdj ? findSegmentWaypoints(lineName, coord, nextAdj)   : undefined,
   };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// OSM 선로 Geometry — 비동기 로드, buildUnit 에서 waypoints 계산에 사용
-// ─────────────────────────────────────────────────────────────────────────────
-let TRACK_GEOMETRY: Map<string, [number,number][][]> | null = null;
-let geometryLoadPromise: Promise<void> | null = null;
-
-function loadTrackGeometry(): Promise<void> {
-  if (TRACK_GEOMETRY) return Promise.resolve();
-  if (geometryLoadPromise) return geometryLoadPromise;
-  if (typeof window === 'undefined') {
-    TRACK_GEOMETRY = new Map();
-    return Promise.resolve();
-  }
-  geometryLoadPromise = fetch('/data/subway-track-geometry.json')
-    .then(r => r.json())
-    .then((json: Record<string, [number,number][][]>) => {
-      TRACK_GEOMETRY = new Map(Object.entries(json));
-    })
-    .catch(e => {
-      console.warn('[transit] geometry 로드 실패:', e);
-      TRACK_GEOMETRY = new Map();
-    });
-  return geometryLoadPromise;
-}
-
-// 선로 체인에서 좌표에 가장 가까운 인덱스 반환
-function nearestChainIdx(chain: [number,number][], coord: [number,number]): number {
-  let best = 0, bestD = Infinity;
-  for (let i = 0; i < chain.length; i++) {
-    const d = (chain[i][0]-coord[0])**2 + (chain[i][1]-coord[1])**2;
-    if (d < bestD) { best = i; bestD = d; }
-  }
-  return best;
-}
-
-/**
- * fromCoord → toCoord 구간의 OSM 선로 waypoints를 반환.
- * 체인을 못 찾거나 구간이 비정상(너무 길거나 같은 인덱스)이면 undefined.
- */
-function findSegmentWaypoints(
-  lineName: string,
-  fromCoord: [number,number],
-  toCoord: [number,number],
-): [number,number][] | undefined {
-  if (!TRACK_GEOMETRY) return undefined;
-  const segments = TRACK_GEOMETRY.get(lineName);
-  if (!segments || segments.length === 0) return undefined;
-
-  // MultiLineString: 모든 세그먼트를 순서대로 탐색
-  for (const chain of segments) {
-    if (chain.length < 2) continue;
-
-    const fi = nearestChainIdx(chain, fromCoord);
-    const ti = nearestChainIdx(chain, toCoord);
-    if (fi === ti) continue;
-
-    const pts: [number,number][] = fi < ti
-      ? chain.slice(fi, ti + 1)
-      : chain.slice(ti, fi + 1).reverse();
-
-    const dx = pts[pts.length-1][0] - pts[0][0];
-    const dy = pts[pts.length-1][1] - pts[0][1];
-    const straightLen = Math.sqrt(dx*dx + dy*dy);
-    if (straightLen > 0.09) continue; // ~10km 초과이면 다음 세그먼트 시도
-
-    if (straightLen > 0) {
-      let pathLen = 0;
-      for (let i = 1; i < pts.length; i++) {
-        const ddx = pts[i][0] - pts[i-1][0];
-        const ddy = pts[i][1] - pts[i-1][1];
-        pathLen += Math.sqrt(ddx*ddx + ddy*ddy);
-      }
-      if (pathLen / straightLen > 4) continue; // 경로 길이 4배 초과이면 다음 시도
-    }
-
-    if (pts.length >= 2) return pts;
-  }
-
-  return undefined;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -509,7 +425,6 @@ class TransitRealtimeService extends EventEmitter {
     super();
     if (typeof window !== 'undefined') {
       this._initWorker();
-      loadTrackGeometry(); // 선로 geometry 비동기 선제 로드
     }
   }
 

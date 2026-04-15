@@ -316,21 +316,9 @@ function MapLibreBackground(props: MapLibreProps) {
         setLongPressMenu({ point: e.point, stationName: best.name });
     }, [stations]);
 
-    const [subwayData, setSubwayData] = useState(SUBWAY_GEOJSON);
-    const trackGeoRef = useRef<Map<string,[number,number][][]> | undefined>(undefined);
-    useEffect(() => {
-        fetch('/data/subway-track-geometry.json')
-            .then(r => r.json())
-            .then((json: Record<string, [number,number][][]>) => {
-                const geo = new Map<string, [number,number][][]>(Object.entries(json));
-                trackGeoRef.current = geo;
-                setSubwayData(convertSubwayToGeoJSON(geo));
-            })
-            .catch(() => { /* geometry 없으면 직선 유지 */ });
-    }, []);
     const filteredWCs = useMemo(() => convertWCToGeoJSON(wcItems, wcFilters), [wcItems, wcFilters]);
     const busGeoJSON = useMemo(() => convertBusStopsToGeoJSON(busStops), [busStops]);
-    const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult, Date.now(), trackGeoRef.current), [pathResult, subwayData]);
+    const pathGeoJSON = useMemo(() => convertPathToGeoJSON(pathResult, Date.now()), [pathResult]);
     // O(1) bus stop lookup for click handler (busStops can be 50K+ items)
     const busStopById = useMemo(() => new Map(busStops.map(s => [s.id, s])), [busStops]);
 
@@ -476,7 +464,7 @@ function MapLibreBackground(props: MapLibreProps) {
             interactiveLayerIds={INTERACTIVE_LAYER_IDS}
         >
             <MapIconRegister />
-            <SubwayLayers subwayData={subwayData} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} selectedStationName={selectedStationName} />
+            <SubwayLayers subwayData={SUBWAY_GEOJSON} activeTab={activeTab} isDarkMode={isDarkMode} pathResult={pathResult} focusedLine={activeLine} selectedStationName={selectedStationName} />
             <BusLayers busData={busGeoJSON} routePathData={routePathData} activeTab={activeTab} isDarkMode={isDarkMode} />
             <WCLayers wcData={filteredWCs} activeTab={activeTab} selectedWCId={selectedWC?.id ?? null} />
             <RouteLayers

@@ -29,9 +29,6 @@ interface TransitUnit {
   segmentMs: number;        // lastPos → nextPos 구간 소요시간 (ms)
   nextSegmentMs: number;    // nextPos → futurePos 구간 소요시간 (ms)
   dwellMs: number;          // nextPos 역에서 정차 시간 (ms)
-  // ── OSM 선로 waypoints ──
-  waypoints?: [number,number][];      // lastPos → nextPos 실제 선로 경유점 (Phase 1)
-  nextWaypoints?: [number,number][];  // nextPos → futurePos 실제 선로 경유점 (Phase 3)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -83,7 +80,7 @@ self.onmessage = (e: MessageEvent) => {
 
     case 'CLEAR_LINE_SIM': {
       const now = Date.now();
-      for (const [id, unit] of state) {
+      for (const [, unit] of state) {
         if (unit.isSimulated && unit.lineName === lineName && !unit.deathTime) {
           unit.deathTime = now;
         }
@@ -93,7 +90,7 @@ self.onmessage = (e: MessageEvent) => {
 
     case 'CLEAR_SIMULATED': {
       const now = Date.now();
-      for (const [id, unit] of state) {
+      for (const [, unit] of state) {
         if (unit.isSimulated && !unit.deathTime) unit.deathTime = now;
       }
       break;
@@ -163,10 +160,9 @@ function processUpdates(units: any[]) {
         ...unit,
         lastPos:              startPos,
         lastUpdateTime:       now - backwardMs,
-        lastSeenTime:         now,              // 만료 판정: 항상 실제 수신 시각
+        lastSeenTime:         now,
         currentBearing:       initBearing,
         bearingInitialized:   initBearingOk,
-        // 베어링 미확인 열차도 300ms 후 컬러(||)로 전환 — 영구 회색 방지
         colorFadeStart:       now,
         birthTime:            now,
         deathTime:       null,
@@ -175,8 +171,6 @@ function processUpdates(units: any[]) {
         segmentMs:       segMs,
         nextSegmentMs:   nxMs,
         dwellMs:         dwMs,
-        waypoints:       unit.waypoints,
-        nextWaypoints:   unit.nextWaypoints,
       });
 
     } else {
@@ -206,17 +200,13 @@ function processUpdates(units: any[]) {
       const pastArrival = elapsed >= existing.segmentMs;
 
       if (sameTarget) {
-        // ── 같은 역 보고 ──
-        // futurePos와 다음 구간 소요시간·waypoints만 갱신, 타이머 유지
+        // ── 같은 역 보고 — futurePos·소요시간만 갱신, 타이머 유지 ──
         existing.futurePos      = unit.futurePos ?? unit.nextPos;
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
-        existing.nextWaypoints  = unit.nextWaypoints;
-        // geometry가 늦게 로드된 경우 waypoints 복원 (초기 undefined → 다음 poll에서 채움)
-        if (!existing.waypoints && unit.waypoints) existing.waypoints = unit.waypoints;
 
       } else if (pastArrival) {
-        // ── 다음 역으로 이동, dwell 또는 출발 구간에서 전환 ──
+        // ── 다음 역으로 이동 (dwell 또는 출발 구간에서 전환) ──
         const afterDwell = Math.max(0, elapsed - existing.segmentMs - existing.dwellMs);
         const overT      = Math.min(1.0, afterDwell / existing.nextSegmentMs);
 
@@ -227,17 +217,10 @@ function processUpdates(units: any[]) {
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
         existing.lastUpdateTime = now - overT * segMs;
-        // nextWaypoints가 현재 구간의 waypoints로 승격
-        existing.waypoints      = existing.nextWaypoints;
-        existing.nextWaypoints  = unit.nextWaypoints;
 
       } else {
         // ── 주행 중(ratio<1.0)에 새 목적지로 변경 ──
-        // API가 다음 역 도착을 보고했지만 애니메이션이 아직 도착 전.
-        // 현재 시각적 위치를 계산해 거기서 새 목적지까지 이동.
-        const visualPos: [number, number] = existing.waypoints && existing.waypoints.length >= 2
-          ? interpolateAlongPath(existing.waypoints, easeInOut(ratio))
-          : lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
+        const visualPos: [number, number] = lerp(existing.lastPos, existing.nextPos, easeInOut(ratio));
         const stdDist  = coordDist(existing.lastPos, existing.nextPos);
         const jumpDist = coordDist(visualPos, newNextPos);
         const scaledSegMs = stdDist > 0
@@ -250,11 +233,6 @@ function processUpdates(units: any[]) {
         existing.nextSegmentMs  = nxMs;
         existing.dwellMs        = dwMs;
         existing.lastUpdateTime = now;
-        // unit.nextWaypoints = 새 현재역 → 다음역 OSM 경로.
-        // visualPos는 구 현재역 근처이므로 이 waypoints의 시작점(≈ 새 현재역)과 가까워
-        // 직선 lerp보다 훨씬 정확하게 선로를 따름.
-        existing.waypoints      = unit.nextWaypoints;
-        existing.nextWaypoints  = unit.nextWaypoints;
       }
     }
   }
@@ -323,28 +301,15 @@ function startTick() {
       const isDwelling = elapsed2 >= unit.segmentMs && elapsed2 < unit.segmentMs + unit.dwellMs;
 
       if (isDwelling) {
-        // 역사 정차 중 — pos는 nextPos 고정, bearing은 마지막 값 그대로
         pos           = unit.nextPos;
-        bearingTarget = null; // 동결 — 베어링 업데이트 안 함
+        bearingTarget = null;
       } else if (ratio <= 1.0) {
-        const t = easeInOut(ratio);
-        if (unit.waypoints && unit.waypoints.length >= 2) {
-          pos           = interpolateAlongPath(unit.waypoints, t);
-          bearingTarget = pathLookAhead(unit.waypoints, t);
-        } else {
-          pos           = lerp(unit.lastPos, unit.nextPos, t);
-          bearingTarget = unit.nextPos;
-        }
+        pos           = lerp(unit.lastPos, unit.nextPos, easeInOut(ratio));
+        bearingTarget = unit.nextPos;
       } else {
-        const overT = Math.min(1.0, ratio - 1.0);
-        const t     = easeInOut(overT);
-        if (unit.nextWaypoints && unit.nextWaypoints.length >= 2) {
-          pos           = interpolateAlongPath(unit.nextWaypoints, t);
-          bearingTarget = pathLookAhead(unit.nextWaypoints, t);
-        } else {
-          pos           = lerp(unit.nextPos, unit.futurePos ?? unit.nextPos, t);
-          bearingTarget = unit.futurePos ?? unit.nextPos;
-        }
+        const t = easeInOut(Math.min(1.0, ratio - 1.0));
+        pos           = lerp(unit.nextPos, unit.futurePos ?? unit.nextPos, t);
+        bearingTarget = unit.futurePos ?? unit.nextPos;
       }
 
       // 베어링 스무딩 — 정차 중(isDwelling)이면 업데이트 건너뜀
@@ -482,48 +447,6 @@ function computeMaxRatio(stationIdx: number, maxProgress: number, lineDir: numbe
 // sine은 시작·끝 25%에서도 ~30%의 이동량을 확보해 항상 움직임이 시각적으로 보임.
 function easeInOut(t: number): number {
   return -(Math.cos(Math.PI * t) - 1) / 2;
-}
-
-/**
- * OSM 선로 waypoints를 따라 매개변수 t(0→1)에서의 위치를 반환.
- * 직선 lerp보다 실제 선로 곡선을 따름.
- */
-function interpolateAlongPath(pts: [number,number][], t: number): [number,number] {
-  if (pts.length < 2) return pts[0] ?? [0, 0];
-  if (t <= 0) return pts[0];
-  if (t >= 1) return pts[pts.length - 1];
-
-  // 누적 거리 계산
-  const d: number[] = [0];
-  for (let i = 1; i < pts.length; i++) {
-    const dx = pts[i][0] - pts[i-1][0];
-    const dy = pts[i][1] - pts[i-1][1];
-    d.push(d[i-1] + Math.sqrt(dx*dx + dy*dy));
-  }
-  const total  = d[d.length - 1];
-  if (total === 0) return pts[0];
-  const target = t * total;
-
-  // 이진 탐색으로 해당 세그먼트 찾기
-  let lo = 0, hi = d.length - 2;
-  while (lo < hi) {
-    const mid = (lo + hi) >> 1;
-    d[mid + 1] < target ? (lo = mid + 1) : (hi = mid);
-  }
-  const segLen = d[lo + 1] - d[lo];
-  const segT   = segLen > 0 ? (target - d[lo]) / segLen : 0;
-  return [
-    pts[lo][0] + (pts[lo+1][0] - pts[lo][0]) * segT,
-    pts[lo][1] + (pts[lo+1][1] - pts[lo][1]) * segT,
-  ];
-}
-
-/**
- * waypoints 위의 t 위치에서 약간 앞(5%)을 보는 방향 벡터의 끝점.
- * 열차 방향 화살표가 선로 곡선을 따르게 함.
- */
-function pathLookAhead(pts: [number,number][], t: number): [number,number] {
-  return interpolateAlongPath(pts, Math.min(1.0, t + 0.06));
 }
 
 function lerp(a: [number, number], b: [number, number], t: number): [number, number] {
