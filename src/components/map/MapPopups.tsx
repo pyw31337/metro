@@ -21,6 +21,7 @@ import { useStationExits } from "@/hooks/useStationExits";
 import { useSubwayRestrooms } from "@/hooks/useSubwayRestrooms";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
+import { transitRealtimeService } from "@/services/TransitRealtimeService";
 
 interface MapPopupsProps {
   popupCoords: [number, number] | null;
@@ -89,6 +90,18 @@ const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, addr
 // ── 선택된 노선의 운행 정보 카드 ───────────────────────────────────
 const RouteScheduleCard = ({ routeId, cityCode, arsId }: { routeId: string; cityCode: string; arsId?: string }) => {
   const { info, loading } = useBusRouteInfo(routeId, cityCode, arsId);
+
+  // 해당 routeId의 실시간 운행 버스 수 구독
+  const [activeBusCount, setActiveBusCount] = useState(0);
+  useEffect(() => {
+    const handler = (units: any[]) => {
+      const count = units.filter(u => u.type === 'bus' && u.id.includes(routeId)).length;
+      setActiveBusCount(count);
+    };
+    transitRealtimeService.on('update', handler);
+    return () => { transitRealtimeService.off('update', handler); };
+  }, [routeId]);
+
   if (loading) return null;
   if (!info) return null;
   return (
@@ -101,7 +114,7 @@ const RouteScheduleCard = ({ routeId, cityCode, arsId }: { routeId: string; city
           <span className="truncate">{info.endName}</span>
         </div>
       )}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         {info.firstBus && (
           <div className="flex items-center gap-1">
             <Clock size={9} className="text-emerald-500 shrink-0" />
@@ -116,6 +129,12 @@ const RouteScheduleCard = ({ routeId, cityCode, arsId }: { routeId: string; city
         )}
         {info.headwayPeak > 0 && (
           <span className="text-[10px] text-zinc-400">배차 {info.headwayPeak}분</span>
+        )}
+        {activeBusCount > 0 && (
+          <div className="flex items-center gap-1 ml-auto">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+            <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">{activeBusCount}대 운행중</span>
+          </div>
         )}
       </div>
     </div>

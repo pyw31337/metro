@@ -295,8 +295,8 @@ function normalizeForGraph(name: string, graphKeys: Set<string>): string {
   // 1. 직접 매칭
   if (graphKeys.has(name)) return name;
 
-  // 2. "역" 접미사 제거
-  const noSuffix = name.replace(/역$/, '').trim();
+  // 2. "역" 접미사 + 괄호 제거 (normStation)
+  const noSuffix = normStation(name);
   if (graphKeys.has(noSuffix)) return noSuffix;
 
   // 3. 괄호 제거

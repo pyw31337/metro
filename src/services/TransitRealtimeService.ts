@@ -492,6 +492,8 @@ class TransitRealtimeService extends EventEmitter {
   private isRunning = false;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private trackedBusRoutes = new Set<string>();
+  // 버스 이전 위치 캐시 — 인터폴레이션용
+  private busLastPos = new Map<string, [number, number]>();
 
   // 노선별 실제 데이터 수신 여부 추적
   private linesWithRealData = new Set<string>();
@@ -698,17 +700,34 @@ class TransitRealtimeService extends EventEmitter {
           ]).then(([positions, routeInfo]) => {
             const routeNo = routeInfo?.no ?? routeId;
             const busColor = getBusRouteStyle(routeNo).bg.replace('#', '').toUpperCase();
-            const busUnits = positions.map(pos => ({
-              id: `bus-${routeId}-${pos.id}`,
-              type: 'bus' as const,
-              prevPos:   [pos.lng, pos.lat] as [number, number],
-              nextPos:   [pos.lng, pos.lat] as [number, number],
-              futurePos: [pos.lng, pos.lat] as [number, number],
-              lineName:  routeNo,
-              lineColor: busColor,
-              label:     routeNo,
-              isSimulated: false,
-            }));
+            const busUnits = positions.map(pos => {
+              const unitId = `bus-${routeId}-${pos.id}`;
+              const curPos: [number, number] = [pos.lng, pos.lat];
+              const prev = this.busLastPos.get(unitId) ?? curPos;
+              this.busLastPos.set(unitId, curPos);
+              return {
+                id: unitId,
+                type: 'bus' as const,
+                prevPos:   prev,
+                nextPos:   curPos,
+                futurePos: curPos,
+                lineName:  routeNo,
+                lineColor: busColor,
+                label:     routeNo,
+                isSimulated: false,
+                // 폴링 주기 동안 prev→cur를 부드럽게 이동
+                segmentMs:     POLLING_INTERVAL_MS,
+                nextSegmentMs: POLLING_INTERVAL_MS,
+                dwellMs:       0,
+              };
+            });
+            // 이번 폴링에 없는 버스는 캐시에서 제거
+            const currentIds = new Set(busUnits.map(u => u.id));
+            for (const key of this.busLastPos.keys()) {
+              if (key.startsWith(`bus-${routeId}-`) && !currentIds.has(key)) {
+                this.busLastPos.delete(key);
+              }
+            }
             if (busUnits.length > 0) {
               this.worker?.postMessage({ type: 'UPDATE_UNITS', data: busUnits });
             }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown, Share2, Star, Check } from "lucide-react";
+import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, Share2, Star, Check, GripVertical } from "lucide-react";
 import { Station } from "@/data/subway-lines";
 import { normStation, stationLines } from "@/data/stationRegistry";
 import { getLineShortName } from "@/utils/stationUtils";
@@ -351,6 +351,59 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
     const [shareCopied, setShareCopied] = useState(false);
+
+    // ── 웨이포인트 드래그 정렬 ─────────────────────────────────────
+    const dragIndexRef = useRef<number | null>(null);
+    const dragOverIndexRef = useRef<number | null>(null);
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+    const handleDragStart = useCallback((idx: number) => {
+        dragIndexRef.current = idx;
+        setDragIndex(idx);
+    }, []);
+
+    const handleDragEnter = useCallback((idx: number) => {
+        dragOverIndexRef.current = idx;
+        setDragOverIndex(idx);
+    }, []);
+
+    const handleDragEnd = useCallback(() => {
+        const from = dragIndexRef.current;
+        const to = dragOverIndexRef.current;
+        if (from !== null && to !== null && from !== to) {
+            moveWaypoint(from, to);
+        }
+        dragIndexRef.current = null;
+        dragOverIndexRef.current = null;
+        setDragIndex(null);
+        setDragOverIndex(null);
+    }, [moveWaypoint]);
+
+    // 터치 드래그 지원 (모바일)
+    const waypointListRef = useRef<HTMLDivElement>(null);
+
+    const handleTouchMove = useCallback((e: React.TouchEvent, fromIdx: number) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const list = waypointListRef.current;
+        if (!list) return;
+        const items = Array.from(list.children) as HTMLElement[];
+        for (let i = 0; i < items.length; i++) {
+            const rect = items[i].getBoundingClientRect();
+            if (touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                dragOverIndexRef.current = i;
+                setDragOverIndex(i);
+                break;
+            }
+        }
+        dragIndexRef.current = fromIdx;
+        setDragIndex(fromIdx);
+    }, []);
+
+    const handleTouchEnd = useCallback(() => {
+        handleDragEnd();
+    }, [handleDragEnd]);
 
     const [noRouteStale, setNoRouteStale] = useState(false); // persists until input changes or route found
     const [now, setNow] = useState(() => Date.now());
@@ -774,27 +827,35 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                             </div>
                             {/* Waypoints */}
                             {waypoints.length > 0 && (
-                                <div className="flex flex-col gap-1">
+                                <div ref={waypointListRef} className="flex flex-col gap-1">
                                     {waypoints.map((wp, idx) => (
-                                        <div key={idx} className="flex items-center px-2 h-9 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-200/50 dark:border-violet-700/30">
+                                        <div
+                                            key={idx}
+                                            draggable
+                                            onDragStart={() => handleDragStart(idx)}
+                                            onDragEnter={() => handleDragEnter(idx)}
+                                            onDragEnd={handleDragEnd}
+                                            onDragOver={(e) => e.preventDefault()}
+                                            onTouchMove={(e) => handleTouchMove(e, idx)}
+                                            onTouchEnd={handleTouchEnd}
+                                            className={`flex items-center px-2 h-9 rounded-xl border transition-all select-none cursor-grab active:cursor-grabbing touch-none ${
+                                                dragIndex === idx
+                                                    ? "opacity-40 scale-95 bg-violet-100 dark:bg-violet-900/40 border-violet-300 dark:border-violet-600"
+                                                    : dragOverIndex === idx
+                                                    ? "bg-violet-100 dark:bg-violet-900/30 border-violet-400 dark:border-violet-500 ring-1 ring-violet-400/30"
+                                                    : "bg-violet-50 dark:bg-violet-950/30 border-violet-200/50 dark:border-violet-700/30"
+                                            }`}
+                                        >
+                                            <GripVertical size={13} className="text-violet-300 dark:text-violet-600 shrink-0 mr-1" />
                                             <span className="text-[11px] font-black text-violet-500 shrink-0 mr-1">경유</span>
                                             <span className="flex-1 text-[13px] font-bold text-zinc-900 dark:text-white truncate px-1">
                                                 {wp.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, '')}
                                             </span>
-                                            {/* 순서 이동 버튼 */}
-                                            <div className="flex shrink-0">
-                                                <button
-                                                    disabled={idx === 0}
-                                                    onClick={() => { hapticLight(); moveWaypoint(idx, idx - 1); }}
-                                                    className="p-1 text-violet-400 disabled:opacity-20 active:scale-90 transition-all"
-                                                ><ChevronUp size={13} /></button>
-                                                <button
-                                                    disabled={idx === waypoints.length - 1}
-                                                    onClick={() => { hapticLight(); moveWaypoint(idx, idx + 1); }}
-                                                    className="p-1 text-violet-400 disabled:opacity-20 active:scale-90 transition-all"
-                                                ><ChevronDown size={13} /></button>
-                                            </div>
-                                            <button onClick={() => { hapticLight(); removeWaypoint(idx); }} className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"><X size={14} /></button>
+                                            <button
+                                                aria-label="경유지 삭제"
+                                                onClick={() => { hapticLight(); removeWaypoint(idx); }}
+                                                className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"
+                                            ><X size={14} /></button>
                                         </div>
                                     ))}
                                 </div>
