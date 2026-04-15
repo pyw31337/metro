@@ -35,7 +35,8 @@ import DirectionCompass  from "@/components/ui/DirectionCompass";
 let busRoutesCache: any[] | null = null;
 const getBusRoutes = async () => {
   if (busRoutesCache) return busRoutesCache;
-  const res = await fetch('/metro/data/master-bus-routes.json');
+  const base = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
+  const res = await fetch(`${base}/data/master-bus-routes.json`);
   busRoutesCache = await res.json();
   return busRoutesCache!;
 };

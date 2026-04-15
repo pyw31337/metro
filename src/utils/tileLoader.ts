@@ -8,6 +8,7 @@
 
 import type { BusStop, WCItem } from '@/types/metro';
 
+const BASE = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
 const TILE = 0.1;
 
 // Session-level in-memory cache — never re-fetches the same tile
@@ -41,7 +42,7 @@ async function fetchOneTile<T>(
     if (cache.has(key)) return cache.get(key)!;
     if (inflight.has(key)) return inflight.get(key)!;
 
-    const p = fetch(`/metro/data/${dir}/${key}.json`)
+    const p = fetch(`${BASE}/data/${dir}/${key}.json`)
         .then(r => r.ok ? r.json() as Promise<T[]> : [] as T[])
         .catch(() => [] as T[])
         .then(items => { cache.set(key, items); inflight.delete(key); return items; });

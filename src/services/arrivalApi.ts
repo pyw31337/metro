@@ -254,7 +254,7 @@ let _transferDataCache: any[] | null = null;
 async function getTransferData(): Promise<any[]> {
   if (_transferDataCache) return _transferDataCache;
   try {
-    const res = await fetch('/metro/data/transfer-info.json');
+    const res = await fetch(`${_schedBase}/data/transfer-info.json`);
     _transferDataCache = res.ok ? await res.json() : [];
   } catch {
     _transferDataCache = [];
