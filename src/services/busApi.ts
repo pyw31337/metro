@@ -1,6 +1,8 @@
 "use client";
 import { decodePolyline } from "@/utils/polyline";
 
+const _BASE = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
+
 /**
  * TAGO City Codes for metropolitan & regional areas
  */
@@ -181,13 +183,38 @@ export class MetropolitanBusService {
     }
   }
 
+  // Module-level cache for route-stops shards (loaded once per city code)
+  private static _routeStopsCache: Record<string, Record<string, { name: string; lat: number; lng: number; order: number }[]> | null> = {};
+  private static _routeStopsLoading: Record<string, Promise<any> | null> = {};
+
+  /**
+   * Load ordered stop list for a route from the local route-stops shard.
+   * Covers Seoul (cityCode=11) from route-stops-11.json.
+   */
+  static async fetchLocalRouteStops(
+    cityCode: string,
+    routeId: string
+  ): Promise<{ name: string; lat: number; lng: number; order: number }[]> {
+    const shardFile = `${_BASE}/data/route-stops-${cityCode}.json`;
+    if (!(cityCode in this._routeStopsCache)) {
+      if (!(cityCode in this._routeStopsLoading) || !this._routeStopsLoading[cityCode]) {
+        this._routeStopsLoading[cityCode] = fetch(shardFile)
+          .then(r => r.ok ? r.json() : {})
+          .then(data => { this._routeStopsCache[cityCode] = data; return data; })
+          .catch(() => { this._routeStopsCache[cityCode] = null; return {}; });
+      }
+      await this._routeStopsLoading[cityCode];
+    }
+    return this._routeStopsCache[cityCode]?.[routeId] ?? [];
+  }
+
   /**
    * [NEW] Load route path from local sharded shards (High-fidelity, stable fallback)
    */
   static async fetchLocalRoutePath(cityCode: string, routeId: string): Promise<any | null> {
     try {
       // Load by shard (e.g. ./data/paths/bus-paths-11.json)
-      const res = await fetch(`./data/paths/bus-paths-${cityCode}.json`);
+      const res = await fetch(`${_BASE}/data/paths/bus-paths-${cityCode}.json`);
       if (!res.ok) return null;
       const shard = await res.json();
       const encoded = shard[routeId];
@@ -411,10 +438,15 @@ export class MetropolitanBusService {
     stops: { name: string; lat: number; lng: number; order: number }[];
     bounds: [[number, number], [number, number]] | null;
   } | null> {
-    const [rawGeoJSON, stops] = await Promise.all([
+    const [rawGeoJSON, apiStops] = await Promise.all([
       this.fetchRoutePath(cityCode, routeId),
       this.fetchRouteStopsOrdered(cityCode, routeId).catch(() => [] as { name: string; lat: number; lng: number; order: number }[]),
     ]);
+
+    // Fall back to local shard when live API returns nothing (no API key, CORS, etc.)
+    const stops = apiStops.length > 0
+      ? apiStops
+      : await this.fetchLocalRouteStops(cityCode, routeId);
 
     // Extract raw [lng, lat] coordinates from the fetched path
     let rawCoords: [number, number][] = [];
