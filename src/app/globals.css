@@ -217,4 +217,59 @@ body {
         opacity: 0;
         border-width: 1px;
     }
+}}
+
+/* ─── High Contrast Mode ──────────────────────────────────────────────────── */
+.high-contrast {
+    --background: #000000;
+    --foreground: #ffffff;
+    --surface: #000000;
+    --surface-border: #ffffff;
+    --accent: #ffff00;
+}
+
+/* Text: crisp white on black */
+.high-contrast .text-zinc-400,
+.high-contrast .text-zinc-500,
+.high-contrast .text-zinc-600 {
+    color: #cccccc !important;
+}
+
+.high-contrast .text-zinc-800,
+.high-contrast .text-zinc-900 {
+    color: #ffffff !important;
+}
+
+/* Backgrounds: opaque black */
+.high-contrast .bg-zinc-50,
+.high-contrast .bg-white {
+    background-color: #111111 !important;
+}
+
+.high-contrast .bg-zinc-100 {
+    background-color: #000000 !important;
+}
+
+/* Borders: always visible */
+.high-contrast .border-zinc-200\/60,
+.high-contrast .border-zinc-100,
+.high-contrast .border-white\/8 {
+    border-color: #ffffff !important;
+    opacity: 1 !important;
+}
+
+/* Buttons: strong focus rings */
+.high-contrast button:focus-visible,
+.high-contrast a:focus-visible,
+.high-contrast [tabindex]:focus-visible {
+    outline: 3px solid #ffff00 !important;
+    outline-offset: 2px !important;
+}
+
+/* Glass panels: opaque */
+.high-contrast .glass-premium {
+    background: #000000 !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: 2px solid #ffffff !important;
 }

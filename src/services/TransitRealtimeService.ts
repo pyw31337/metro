@@ -497,6 +497,8 @@ class TransitRealtimeService extends EventEmitter {
   private linesWithRealData = new Set<string>();
   // 전체 시뮬레이션 상태
   private _simStatus: SimStatus = 'starting';
+  // viewport에 보이는 노선 목록 (null = 전체 폴링)
+  private visibleLines: Set<string> | null = null;
 
   // 시뮬레이션 열차 상태 (재사용)
   private simTrains: any[] | null = null;
@@ -542,6 +544,11 @@ class TransitRealtimeService extends EventEmitter {
     this.isRunning = false;
     if (this.pollTimer) clearTimeout(this.pollTimer);
     this.worker?.postMessage({ type: 'STOP' });
+  }
+
+  /** viewport에 보이는 노선 목록 설정 — null이면 전체 폴링, 빈 Set이면 시뮬레이션만 */
+  setVisibleLines(lines: string[] | null) {
+    this.visibleLines = lines ? new Set(lines) : null;
   }
 
   /** 특정 노선을 즉시 재폴링 — 역/열차 클릭 시 해당 노선 데이터 우선 갱신 */
@@ -650,8 +657,12 @@ class TransitRealtimeService extends EventEmitter {
   private _poll() {
     if (!this.isRunning) return;
 
-    // 지하철 노선 순차 폴링 (STAGGER_MS 간격)
-    SUBWAY_POLLING_NAMES.forEach((lineName, i) => {
+    // 지하철 노선 순차 폴링 — viewport 필터 적용 (보이는 노선만, null이면 전체)
+    const linesToPoll = this.visibleLines
+      ? SUBWAY_POLLING_NAMES.filter(l => this.visibleLines!.has(l))
+      : SUBWAY_POLLING_NAMES;
+
+    linesToPoll.forEach((lineName, i) => {
       setTimeout(() => {
         if (!this.isRunning) return;
 

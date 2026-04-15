@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown } from "lucide-react";
-import { Station, SUBWAY_LINES } from "@/data/subway-lines";
+import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, ChevronUp, ChevronDown, Share2, Star, Check } from "lucide-react";
+import { Station } from "@/data/subway-lines";
 import { normStation, stationLines } from "@/data/stationRegistry";
-import { formatStationDisplay, getLineShortName, normalizeStationName, getLineLongName } from "@/utils/stationUtils";
+import { getLineShortName } from "@/utils/stationUtils";
 import type { PathResult } from "@/types/metro";
 import type { PathStrategy } from "@/store/useRouteStore";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
@@ -14,9 +14,10 @@ import { useUIStore } from "@/store/useUIStore";
 import { useSubwayStore } from "@/store/useSubwayStore";
 import { useRouteStore } from "@/store/useRouteStore";
 import { useMapStore } from "@/store/useMapStore";
-import { hapticLight, hapticMedium, hapticSuccess } from "@/utils/haptic";
+import { hapticLight, hapticMedium } from "@/utils/haptic";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { RouteArrivalPanel } from "@/components/map/RouteArrivalPanel";
+import { NearestStationWidget } from "@/components/NearestStationWidget";
 
 interface UnifiedBottomPanelProps {
     activeTab: string;
@@ -339,8 +340,8 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
 }: UnifiedBottomPanelProps) {
     const { keyboardOffset } = useViewportHeight();
     const { waypoints, addWaypoint, removeWaypoint, moveWaypoint } = useRouteStore();
-    const setSelectedBusStop = useSubwayStore(s => s.setSelectedBusStop);
-    const { history, addToHistory, clearHistory } = useSearchHistory();
+    const nearestStation = useMapStore(s => s.nearestStation);
+    const { history, favorites, addToHistory, toggleFavorite, isFavorite, clearHistory } = useSearchHistory();
     const [destination, setDestination] = useState("");
     const [source, setSource] = useState("");
     const [searchResults, setSearchResults] = useState<any[]>([]);
@@ -349,6 +350,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     const [waypointInput, setWaypointInput] = useState("");
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [shareCopied, setShareCopied] = useState(false);
 
     const [noRouteStale, setNoRouteStale] = useState(false); // persists until input changes or route found
     const [now, setNow] = useState(() => Date.now());
@@ -410,6 +412,24 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     useEffect(() => {
         if (externalValidationError === 'no_route') setNoRouteStale(true);
     }, [externalValidationError]);
+
+    const handleShareRoute = useCallback(() => {
+        if (!source && !destination) return;
+        const base = window.location.origin + window.location.pathname;
+        const params = new URLSearchParams();
+        if (source) params.set('from', source.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, ''));
+        if (destination) params.set('to', destination.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, ''));
+        const url = `${base}?${params.toString()}`;
+        hapticLight();
+        if (typeof navigator.share === 'function') {
+            navigator.share({ title: 'Metro Live KR 경로', text: `${source || ''} → ${destination || ''}`, url }).catch(() => {});
+        } else {
+            navigator.clipboard.writeText(url).then(() => {
+                setShareCopied(true);
+                setTimeout(() => setShareCopied(false), 2000);
+            }).catch(() => {});
+        }
+    }, [source, destination]);
 
     const handleSearch = (val: string, type: "source" | "dest" | "waypoint") => {
         setNoRouteStale(false);
@@ -538,6 +558,14 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                 </div>
 
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
+                    {/* 다음 열차 위젯 — 경로 미설정 & subway 탭일 때 즉각 정보 표시 */}
+                    {activeTab === "subway" && !pathResults && !isCalculating && !source && !destination && nearestStation && (
+                        <NearestStationWidget
+                            nearestStation={nearestStation}
+                            onSelectStation={(name) => { onSelectStation?.(name); }}
+                        />
+                    )}
+
                     {activeTab === "subway" && noRouteStale && !pathResults && !isCalculating && (
                         <div className="animate-fade-in-up flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-rose-500/8 dark:bg-rose-500/12 border border-rose-500/20 mb-1">
                             <span className="text-[12px] font-black text-rose-500">경로를 찾을 수 없습니다</span>
@@ -562,6 +590,17 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 <button onClick={() => { hapticLight(); onToggleShowAll(); }} className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${showAllRouteBubbles ? "bg-zinc-800 dark:bg-white text-white dark:text-black shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${showAllRouteBubbles ? "opacity-80" : "opacity-60"}`}>{showAllRouteBubbles ? "축소" : "상세"}</span>
                                     <Navigation size={12} className={showAllRouteBubbles ? "animate-pulse" : ""} />
+                                </button>
+                                <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
+                                <button
+                                    onClick={handleShareRoute}
+                                    title="경로 공유"
+                                    className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-xl text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5 transition-all"
+                                >
+                                    {shareCopied
+                                        ? <><Check size={12} className="text-emerald-500" /><span className="text-[10px] font-black text-emerald-500">복사됨</span></>
+                                        : <><Share2 size={12} /><span className="text-[10px] font-black opacity-60">공유</span></>
+                                    }
                                 </button>
                             </div>
 
@@ -593,24 +632,69 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 &apos;{query}&apos; 검색 결과가 없습니다
                             </div>
                         );
-                        if (history.length > 0) return (
+                        if (favorites.length > 0 || history.length > 0) return (
                             <div className="animate-fade-in-up overflow-hidden border-b border-black/5 dark:border-white/5 mb-2">
-                                <div className="flex items-center justify-between px-3 py-1.5">
-                                    <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">최근 검색</span>
-                                    <button onClick={clearHistory} className="text-[9px] font-bold text-zinc-400 hover:text-rose-500 transition-colors">지우기</button>
-                                </div>
-                                <div className="py-0.5">
-                                    {history.map((h, i) => (
-                                        <SuggestionItem
-                                            key={`hist-${h.name}-${i}`}
-                                            item={h}
-                                            isActive={false}
-                                            onClick={() => selectLocation(h)}
-                                            onMouseEnter={() => {}}
-                                            getLineBadge={getLineBadge}
-                                        />
-                                    ))}
-                                </div>
+                                {favorites.length > 0 && (
+                                    <>
+                                        <div className="flex items-center px-3 py-1.5">
+                                            <span className="text-[9px] font-black text-amber-500 uppercase tracking-widest">즐겨찾기</span>
+                                        </div>
+                                        <div className="py-0.5">
+                                            {favorites.map((f, i) => (
+                                                <div key={`fav-${f.name}-${i}`} className="flex items-center">
+                                                    <div className="flex-1 min-w-0">
+                                                        <SuggestionItem
+                                                            item={f}
+                                                            isActive={false}
+                                                            onClick={() => selectLocation(f)}
+                                                            onMouseEnter={() => {}}
+                                                            getLineBadge={getLineBadge}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onMouseDown={e => e.preventDefault()}
+                                                        onClick={() => toggleFavorite(f)}
+                                                        className="p-2 text-amber-400 hover:text-zinc-400 transition-colors shrink-0"
+                                                        title="즐겨찾기 해제"
+                                                    >
+                                                        <Star size={12} fill="currentColor" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
+                                {history.length > 0 && (
+                                    <>
+                                        <div className="flex items-center justify-between px-3 py-1.5">
+                                            <span className="text-[9px] font-black text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">최근 검색</span>
+                                            <button onClick={clearHistory} className="text-[9px] font-bold text-zinc-400 hover:text-rose-500 transition-colors">지우기</button>
+                                        </div>
+                                        <div className="py-0.5">
+                                            {history.map((h, i) => (
+                                                <div key={`hist-${h.name}-${i}`} className="flex items-center">
+                                                    <div className="flex-1 min-w-0">
+                                                        <SuggestionItem
+                                                            item={h}
+                                                            isActive={false}
+                                                            onClick={() => selectLocation(h)}
+                                                            onMouseEnter={() => {}}
+                                                            getLineBadge={getLineBadge}
+                                                        />
+                                                    </div>
+                                                    <button
+                                                        onMouseDown={e => e.preventDefault()}
+                                                        onClick={() => toggleFavorite(h)}
+                                                        className={`p-2 transition-colors shrink-0 ${isFavorite(h) ? 'text-amber-400' : 'text-zinc-300 dark:text-zinc-600 hover:text-amber-400'}`}
+                                                        title={isFavorite(h) ? '즐겨찾기 해제' : '즐겨찾기 추가'}
+                                                    >
+                                                        <Star size={12} fill={isFavorite(h) ? 'currentColor' : 'none'} />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         );
                         return null;
@@ -647,11 +731,11 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
                                     <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                         {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(destination, true)}</div>)}
-                                        <input ref={destInputRef} type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
+                                        <input ref={destInputRef} aria-label="도착역 검색" type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
-                                        {destination && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                        <button disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                        {destination && (<button aria-label="도착지 지우기" onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
+                                        <button aria-label="현재 위치를 도착지로" disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                     </div>
                                 </div>
                                 {/* + 경유지 버튼 (정사각형) */}
@@ -663,6 +747,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                         setSearchResults([]);
                                     }}
                                     className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
+                                    aria-label="경유지 추가"
                                     title="경유지 추가"
                                 >
                                     <Plus size={16} />
@@ -681,6 +766,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                         setActiveField(null);
                                     }}
                                     className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90"
+                                    aria-label="출발·도착 바꾸기"
                                     title="출발/도착 바꾸기"
                                 >
                                     <ArrowUpDown size={16} />
@@ -740,11 +826,11 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                     {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(source)}</div>)}
-                                    <input ref={sourceInputRef} type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
+                                    <input ref={sourceInputRef} aria-label="출발역 검색" type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
-                                    {source && (<button onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                    <button disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                    {source && (<button aria-label="출발지 지우기" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
+                                    <button aria-label="현재 위치를 출발지로" disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                 </div>
                             </div>
                         </div>
@@ -753,7 +839,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                     <div className="flex items-center gap-2">
                         <div className="flex-1 flex items-center gap-1 p-0.5 bg-black/5 dark:bg-white/5 rounded-xl relative">
                             {TABS.map((tab) => (
-                                <button key={tab.id} onClick={() => { hapticLight(); onTabChange(tab.id); }} className={`flex-1 relative flex flex-col items-center justify-center py-1 rounded-lg transition-colors ${activeTab === tab.id ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
+                                <button key={tab.id} onClick={() => { hapticLight(); onTabChange(tab.id); }} aria-label={tab.label} aria-pressed={activeTab === tab.id} className={`flex-1 relative flex flex-col items-center justify-center py-1 rounded-lg transition-colors ${activeTab === tab.id ? "text-zinc-900 dark:text-white" : "text-zinc-400"}`}>
                                     <div className={`absolute inset-0 bg-white dark:bg-zinc-800 rounded-lg shadow-sm transition-opacity duration-200 ${activeTab === tab.id ? 'opacity-100' : 'opacity-0'}`} />
                                     <span className="relative z-10">{tab.icon}</span>
                                     <span className="relative z-10 text-[9px] font-black mt-0.5">{tab.label}</span>
@@ -763,7 +849,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                         {activeTab !== "wc" && (
                             <>
                                 <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { hapticLight(); setValidationError("source"); return; } if (!destination) { hapticLight(); setValidationError("dest"); return; } hapticMedium(); onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
-                                <button onClick={() => { hapticLight(); onReset?.(); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
+                                <button aria-label="경로 초기화" onClick={() => { hapticLight(); onReset?.(); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
                             </>
                         )}
                     </div>

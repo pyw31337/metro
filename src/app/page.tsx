@@ -8,6 +8,9 @@ import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 
 import { useDataWorker }      from "@/hooks/useDataWorker";
 import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
+import { useSimStatus }       from "@/hooks/useSimStatus";
+import { useLastTrainWarning } from "@/hooks/useLastTrainWarning";
+import { useViewportLines }   from "@/hooks/useViewportLines";
 import { normalizeStationName } from "@/utils/stationUtils";
 import { setMapCenter }         from "@/utils/mapCenter";
 import { findBusPath }         from "@/utils/busRouting";
@@ -40,6 +43,7 @@ const getBusRoutes = async () => {
 // ─────────────────────────────────────────────────────────────────────────────
 export default function Home() {
   const { findPath, findNearestStation, sortWCs } = useDataWorker();
+  const simStatus = useSimStatus();
   const mapRef = useRef<any>(null);
   const initLocRef = useRef(false);
 
@@ -92,6 +96,7 @@ export default function Home() {
   // useUIStore
   const activeTab         = useUIStore(s => s.activeTab);
   const isDarkMode        = useUIStore(s => s.isDarkMode);
+  const isHighContrast    = useUIStore(s => s.isHighContrast);
   const weatherOpen       = useUIStore(s => s.weatherOpen);
   const wcFilters         = useUIStore(s => s.wcFilters);
   const timeDisplayMode   = useUIStore(s => s.timeDisplayMode);
@@ -129,11 +134,18 @@ export default function Home() {
   const ui      = { activeTab, isDarkMode, weatherOpen, wcFilters, timeDisplayMode, ...uiActions };
   const subway  = { selectedStationName, selectedBusStop, selectedWC, selectedBusRoute, routePathData, busStops, wcItems, ...subwayActions };
 
-  // ── 온라인/오프라인 상태 ──
-  const [isOffline, setIsOffline] = useState(false);
+  // ── 뷰포트 bounds (viewport-aware 폴링용) ──
+  const [viewportBounds, setViewportBounds] = useState<{ minLat: number; minLng: number; maxLat: number; maxLng: number } | null>(null);
+  useViewportLines(viewportBounds);
+
+  // ── 온라인/오프라인 상태 (초기 상태 + 이벤트 모두 반영) ──
+  const [isOffline, setIsOffline] = useState(() =>
+    typeof navigator !== 'undefined' ? !navigator.onLine : false
+  );
   useEffect(() => {
     const onOffline = () => setIsOffline(true);
     const onOnline  = () => setIsOffline(false);
+    setIsOffline(!navigator.onLine);
     window.addEventListener('offline', onOffline);
     window.addEventListener('online',  onOnline);
     return () => { window.removeEventListener('offline', onOffline); window.removeEventListener('online', onOnline); };
@@ -153,6 +165,7 @@ export default function Home() {
 
   // ── activePath computed ──
   const activePath = route.getActivePath();
+  const lastTrainWarning = useLastTrainWarning(activePath?.path ?? []);
 
   // ── 도착 정보 훅 ──
   const arrivalInfo = useArrivalInfo(subway.selectedStationName);
@@ -297,10 +310,14 @@ export default function Home() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ui.activeTab, mapSt.userLocation]);
 
-  // isDarkMode → <html class="dark"> 동기화
+  // isDarkMode / isHighContrast → <html> class 동기화
   useEffect(() => {
     document.documentElement.classList.toggle('dark', ui.isDarkMode);
   }, [ui.isDarkMode]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('high-contrast', isHighContrast);
+  }, [isHighContrast]);
 
   // PWA shortcuts via query params: ?tab=, ?from=, ?to=
   useEffect(() => {
@@ -524,6 +541,7 @@ export default function Home() {
   }, []);
 
   const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
+    setViewportBounds(bounds);
     // Always fetch tiles for the current viewport — display only what's on screen
     const [busStops, wcItems] = await Promise.all([
       fetchBusTiles(bounds),
@@ -663,6 +681,8 @@ export default function Home() {
           onWeatherToggle={ui.toggleWeather}
           isDarkMode={ui.isDarkMode}
           onDarkModeToggle={ui.toggleDarkMode}
+          isHighContrast={isHighContrast}
+          onHighContrastToggle={useUIStore.getState().toggleHighContrast}
         />
       </div>
 
@@ -675,6 +695,38 @@ export default function Home() {
       {isOffline && (
         <div className="animate-popup fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none">
           오프라인 · 캐시 데이터 사용 중
+        </div>
+      )}
+
+      {/* 막차 임박 경고 배너 */}
+      {lastTrainWarning && (
+        <div className="animate-popup fixed top-4 left-1/2 -translate-x-1/2 z-[9998] px-4 py-2 rounded-full bg-rose-500/90 text-white text-[11px] font-black backdrop-blur-xl shadow-lg pointer-events-none flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
+          {lastTrainWarning.station} 막차 {lastTrainWarning.minutesLeft === 0 ? '곧 출발' : `${lastTrainWarning.minutesLeft}분 후`} ({lastTrainWarning.lastTimeStr} {lastTrainWarning.dest}행)
+        </div>
+      )}
+
+      {/* 실시간 신뢰도 배지 */}
+      {!isOffline && simStatus !== 'starting' && (
+        <div className="fixed top-4 left-4 z-[2000] pointer-events-none">
+          {simStatus === 'live' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">실시간</span>
+            </div>
+          )}
+          {simStatus === 'mixed' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">혼합</span>
+            </div>
+          )}
+          {simStatus === 'simulated' && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-500/10 border border-zinc-400/20 backdrop-blur-md">
+              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+              <span className="text-[10px] font-black text-zinc-500">시뮬레이션</span>
+            </div>
+          )}
         </div>
       )}
 

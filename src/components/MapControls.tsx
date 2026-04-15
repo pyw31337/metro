@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Plus, Minus, Crosshair, Menu, X, Sun, Moon, CloudSun } from "lucide-react";
+import { Plus, Minus, Crosshair, Menu, X, Sun, Moon, CloudSun, Contrast } from "lucide-react";
 import { hapticLight } from "@/utils/haptic";
 
 interface MapControlsProps {
@@ -11,6 +11,8 @@ interface MapControlsProps {
     onWeatherToggle: () => void;
     isDarkMode: boolean;
     onDarkModeToggle: () => void;
+    isHighContrast: boolean;
+    onHighContrastToggle: () => void;
 }
 
 export default function MapControls({
@@ -19,17 +21,20 @@ export default function MapControls({
     onLocate,
     onWeatherToggle,
     isDarkMode,
-    onDarkModeToggle
+    onDarkModeToggle,
+    isHighContrast,
+    onHighContrastToggle
 }: MapControlsProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const menuItems = useMemo(() => [
-        { id: "dark",    icon: isDarkMode ? <Sun size={20} /> : <Moon size={20} />, onClick: onDarkModeToggle, label: "테마" },
-        { id: "weather", icon: <CloudSun size={20} />,                              onClick: onWeatherToggle,  label: "날씨" },
-        { id: "locate",  icon: <Crosshair size={20} />,                             onClick: onLocate,         label: "위치" },
-        { id: "zoomIn",  icon: <Plus size={20} />,                                  onClick: onZoomIn,         label: "확대" },
-        { id: "zoomOut", icon: <Minus size={20} />,                                 onClick: onZoomOut,        label: "축소" },
-    ], [isDarkMode, onDarkModeToggle, onWeatherToggle, onLocate, onZoomIn, onZoomOut]);
+        { id: "dark",         icon: isDarkMode ? <Sun size={20} /> : <Moon size={20} />,            onClick: onDarkModeToggle,    label: "테마" },
+        { id: "contrast",     icon: <Contrast size={20} className={isHighContrast ? "text-yellow-400" : ""} />, onClick: onHighContrastToggle, label: "고대비" },
+        { id: "weather",      icon: <CloudSun size={20} />,                                          onClick: onWeatherToggle,     label: "날씨" },
+        { id: "locate",       icon: <Crosshair size={20} />,                                         onClick: onLocate,            label: "위치" },
+        { id: "zoomIn",       icon: <Plus size={20} />,                                              onClick: onZoomIn,            label: "확대" },
+        { id: "zoomOut",      icon: <Minus size={20} />,                                             onClick: onZoomOut,           label: "축소" },
+    ], [isDarkMode, onDarkModeToggle, isHighContrast, onHighContrastToggle, onWeatherToggle, onLocate, onZoomIn, onZoomOut]);
 
     return (
         <div className="flex flex-col items-center gap-3">
@@ -37,7 +42,8 @@ export default function MapControls({
             <button
                 onClick={() => { hapticLight(); setIsOpen(!isOpen); }}
                 className={`w-14 h-14 rounded-3xl flex items-center justify-center transition-all ${isOpen ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 shadow-2xl scale-[1.05]' : 'glass-premium text-zinc-600 dark:text-zinc-200 border border-zinc-200 dark:border-white/10 shadow-xl'}`}
-                aria-label="Toggle Menu"
+                aria-label={isOpen ? "메뉴 닫기" : "메뉴 열기"}
+                aria-expanded={isOpen}
             >
                 <div style={{
                     transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)',
@@ -56,6 +62,7 @@ export default function MapControls({
                             onClick={() => { hapticLight(); item.onClick(); }}
                             style={{ animationDelay: `${i * 45}ms` }}
                             className="w-12 h-12 rounded-2xl flex items-center justify-center text-zinc-600 dark:text-zinc-200 bg-white/95 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-200 dark:border-white/10 shadow-lg hover:scale-105 active:scale-95 transition-all animate-fade-in-up"
+                            aria-label={item.label}
                             title={item.label}
                         >
                             {item.icon}

@@ -152,10 +152,11 @@ const SubwayLayers = ({
       </Source>
 
       <Source id="subway-stations" type="geojson" data={subwayData.stations}>
-        {/* 투명 히트 영역 */}
+        {/* 투명 히트 영역 — zoom 9 미만에서는 클릭 대상 없음 */}
         <Layer
           id="subway-station-hit"
           type="circle"
+          minzoom={9}
           layout={{ "visibility": vis }}
           paint={{
             "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 12, 12, 16, 15, 20],
@@ -164,10 +165,11 @@ const SubwayLayers = ({
           }}
         />
 
-        {/* 선택된 역 강조 링 (원본의 50%) */}
+        {/* 선택된 역 강조 링 */}
         <Layer
           id="subway-station-selected-ring"
           type="circle"
+          minzoom={9}
           filter={['==', ['get', 'name'], selectedStationName ?? '']}
           layout={{ "visibility": vis }}
           paint={{
@@ -180,10 +182,11 @@ const SubwayLayers = ({
           }}
         />
 
-        {/* 역 점 — 노선색 채움 + 흰 테두리 (환승역은 조금 크게) */}
+        {/* 역 점 — zoom 7부터, 노선색 채움 + 흰 테두리 (환승역은 조금 크게) */}
         <Layer
           id="subway-station-circle"
           type="circle"
+          minzoom={7}
           layout={{ "visibility": vis }}
           paint={{
             "circle-radius": baseRadius,

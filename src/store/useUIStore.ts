@@ -10,6 +10,7 @@ const systemPrefersDark = typeof window !== 'undefined'
 interface UIStore {
   activeTab: ActiveTab;
   isDarkMode: boolean;
+  isHighContrast: boolean;
   weatherOpen: boolean;
   timeDisplayMode: 'duration' | 'arrival';
   wcFilters: WCFilters;
@@ -17,6 +18,7 @@ interface UIStore {
   setActiveTab: (tab: ActiveTab) => void;
   setIsDarkMode: (v: boolean) => void;
   toggleDarkMode: () => void;
+  toggleHighContrast: () => void;
   setWeatherOpen: (v: boolean) => void;
   toggleWeather: () => void;
   setTimeDisplayMode: (m: 'duration' | 'arrival') => void;
@@ -30,6 +32,7 @@ export const useUIStore = create<UIStore>()(
     (set) => ({
       activeTab: 'subway',
       isDarkMode: systemPrefersDark,
+      isHighContrast: false,
       weatherOpen: false,
       timeDisplayMode: 'duration',
       wcFilters: { accessible: false, diapers: false, emergencyBell: false },
@@ -37,6 +40,7 @@ export const useUIStore = create<UIStore>()(
       setActiveTab: (tab) => set({ activeTab: tab }),
       setIsDarkMode: (v) => set({ isDarkMode: v }),
       toggleDarkMode: () => set(s => ({ isDarkMode: !s.isDarkMode })),
+      toggleHighContrast: () => set(s => ({ isHighContrast: !s.isHighContrast })),
       setWeatherOpen: (v) => set({ weatherOpen: v }),
       toggleWeather: () => set(s => ({ weatherOpen: !s.weatherOpen })),
       setTimeDisplayMode: (m) => set({ timeDisplayMode: m }),
@@ -53,6 +57,7 @@ export const useUIStore = create<UIStore>()(
       // Only persist user preference fields, not transient UI state
       partialize: (s) => ({
         isDarkMode: s.isDarkMode,
+        isHighContrast: s.isHighContrast,
         timeDisplayMode: s.timeDisplayMode,
         wcFilters: s.wcFilters,
       }),

@@ -10,7 +10,8 @@ import {
     convertPathToGeoJSON
 } from "@/utils/geoJsonUtils";
 
-import MapBase from "./map/MapBase";
+import MapBase, { LongPressEvent } from "./map/MapBase";
+import LongPressMenu from "./map/LongPressMenu";
 import SubwayLayers from "./map/SubwayLayers";
 import BusLayers from "./map/BusLayers";
 import WCLayers from "./map/WCLayers";
@@ -301,6 +302,20 @@ function MapLibreBackground(props: MapLibreProps) {
         return () => transitRealtimeService.untrackBusRoute(cityCode, selectedBusRoute);
     }, [selectedBusRoute, selectedBusStop]);
 
+    const [longPressMenu, setLongPressMenu] = useState<{ point: { x: number; y: number }; stationName: string } | null>(null);
+
+    const handleLongPress = useCallback((e: LongPressEvent) => {
+        if (!stations.length) return;
+        const [lng, lat] = e.lngLat;
+        let best = stations[0];
+        let bestDist = Infinity;
+        for (const s of stations) {
+            const d = (s.lat - lat) ** 2 + (s.lng - lng) ** 2;
+            if (d < bestDist) { bestDist = d; best = s; }
+        }
+        setLongPressMenu({ point: e.point, stationName: best.name });
+    }, [stations]);
+
     const [subwayData, setSubwayData] = useState(SUBWAY_GEOJSON);
     const trackGeoRef = useRef<Map<string,[number,number][][]> | undefined>(undefined);
     useEffect(() => {
@@ -440,10 +455,22 @@ function MapLibreBackground(props: MapLibreProps) {
     }, [onStationClick, onBusStopClick, onWCClick, onActiveLineChange]);
 
     return (
+        <>
+        {longPressMenu && (
+            <LongPressMenu
+                point={longPressMenu.point}
+                stationName={longPressMenu.stationName}
+                onSetStart={onSetStart}
+                onSetEnd={onSetEnd}
+                onSetWaypoint={onSetWaypoint}
+                onClose={() => setLongPressMenu(null)}
+            />
+        )}
         <MapBase
             isDarkMode={isDarkMode}
             onMapReady={handleMapReady}
             onClick={handleMapClick}
+            onLongPress={handleLongPress}
             onCenterChange={onCenterChange}
             onBoundsChange={onBoundsChange}
             interactiveLayerIds={INTERACTIVE_LAYER_IDS}
@@ -491,6 +518,7 @@ function MapLibreBackground(props: MapLibreProps) {
             />
             <NearbyPulseMarkers nearestStation={nearestStation} nearestBusStop={nearestBusStop} nearestWC={nearestWC} isDarkMode={isDarkMode} activeTab={activeTab} />
         </MapBase>
+        </>
     );
 }
 

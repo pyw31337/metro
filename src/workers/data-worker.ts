@@ -355,6 +355,35 @@ function calcPathDistanceKm(path: string[], graph: Map<string, GraphNode>): numb
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// 경로 LRU 캐시 (세션 내 반복 탐색 즉각 응답)
+// ─────────────────────────────────────────────────────────────────────────────
+const PATH_CACHE_MAX = 30;
+const pathCache = new Map<string, Record<string, any>>();
+
+function pathCacheKey(points: string[]): string {
+  return points.join('→');
+}
+
+function pathCacheGet(points: string[]): Record<string, any> | undefined {
+  const key = pathCacheKey(points);
+  const val = pathCache.get(key);
+  if (val) {
+    // LRU: 접근 시 맨 뒤로 이동
+    pathCache.delete(key);
+    pathCache.set(key, val);
+  }
+  return val;
+}
+
+function pathCacheSet(points: string[], result: Record<string, any>) {
+  const key = pathCacheKey(points);
+  if (pathCache.size >= PATH_CACHE_MAX) {
+    pathCache.delete(pathCache.keys().next().value!);
+  }
+  pathCache.set(key, result);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Worker 메시지 핸들러
 // ─────────────────────────────────────────────────────────────────────────────
 self.onmessage = async (e: MessageEvent) => {
@@ -363,6 +392,13 @@ self.onmessage = async (e: MessageEvent) => {
   switch (type) {
     case 'FIND_PATH': {
       const { points } = payload as { points: string[] };
+
+      // ── LRU 캐시 히트 ──
+      const cached = pathCacheGet(points);
+      if (cached) {
+        self.postMessage({ msgId, type: 'FIND_PATH_RESULT', payload: cached });
+        break;
+      }
 
       if (!cachedGraph) { cachedGraph = buildGraph(); cachedGraphKeys = new Set(cachedGraph.keys()); }
       const graph = cachedGraph;
@@ -443,6 +479,7 @@ self.onmessage = async (e: MessageEvent) => {
         };
       }
 
+      if (Object.keys(results).length > 0) pathCacheSet(points, results);
       self.postMessage({ type: 'PATH_RESULT', msgId, payload: results });
       break;
     }
