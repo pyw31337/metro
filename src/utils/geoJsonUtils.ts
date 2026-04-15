@@ -13,12 +13,13 @@ export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, sta
   const lineFeatures: any[] = [];
   const stationFeatures: any[] = [];
   const stationMap = new Map<string, any>();
-  const drawnNames = new Set<string>();
+  const drawnIds = new Set<string>();
 
   SUBWAY_LINES.forEach((line: SubwayLine) => {
     // 1. LineString Feature — 역과 역 사이 직선
-    if (!drawnNames.has(line.name)) {
-      drawnNames.add(line.name);
+    // Deduplicate by id (not name) so branch lines sharing a name are all drawn
+    if (!drawnIds.has(line.id)) {
+      drawnIds.add(line.id);
       lineFeatures.push({
         type: "Feature" as const,
         geometry: { type: "LineString" as const, coordinates: line.stations.map(s => [s.lng, s.lat]) },
