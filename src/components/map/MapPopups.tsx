@@ -168,7 +168,7 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
 
   // ── 도착 정보 ────────────────────────────────────────────────────
   const arrivalSection = (() => {
-    if (arrLoading) return <div className="py-3 text-center text-[11px] text-zinc-400 animate-pulse">도착 정보 로딩중...</div>;
+    if (arrLoading) return null;
     if (enrichedArrivals.length === 0) return null;
     return (
       <div className="space-y-1.5">
@@ -219,11 +219,10 @@ const BusStopPanel = ({ stopId, cityCode, onSelectBusRoute }: {
               <div key={i}>
                 <button
                   onClick={(e) => handleRouteClick(r.no, r.cityCode, r.id, e)}
-                  className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all active:scale-[0.98] ${isSelected ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' : 'bg-zinc-50 dark:bg-white/5 border-zinc-100 dark:border-white/5'}`}
+                  className={`w-full flex items-center p-2 rounded-xl border transition-all active:scale-[0.98] ${isSelected ? 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-emerald-500/30' : 'bg-zinc-50 dark:bg-white/5 border-zinc-100 dark:border-white/5'}`}
                 >
                   <span className="px-2 py-0.5 rounded-md text-[11px] font-black shadow-sm"
                     style={{ backgroundColor: style.bg, color: style.text }}>{r.no}</span>
-                  <span className="text-[10px] text-zinc-400">노선 보기 →</span>
                 </button>
                 {isSelected && selectedRoute && <RouteScheduleCard routeId={selectedRoute.id} cityCode={selectedRoute.cityCode} arsId={stopId} />}
               </div>
