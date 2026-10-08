@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV === 'development';
+// Use '/metro' for GitHub Pages (https://pyw31337.github.io/metro), but empty for Firebase root-level hosting
+const basePath = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
 
 const nextConfig: NextConfig = {
   compiler: {
@@ -8,8 +10,11 @@ const nextConfig: NextConfig = {
   },
   output: 'export',
   distDir: 'out',
-  // Use '/metro' for GitHub Pages, but empty for Firebase root-level hosting
-  basePath: process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro',
+  basePath,
+  // 클라이언트 코드에서 정적 자산/데이터 경로를 만들 때 사용 (fetch 는 basePath 를 자동으로 붙이지 않음)
+  env: {
+    NEXT_PUBLIC_BASE_PATH: basePath,
+  },
   images: {
     unoptimized: true,
   },

@@ -238,7 +238,7 @@ const WCPanel = memo(() => {
                             <button
                                 key={key}
                                 onClick={() => { hapticLight(); updateWcFilter(key, !wcFilters[key]); }}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border transition-all active:scale-95 ${
+                                className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-black border transition-all active:scale-[0.97] ${
                                     active
                                         ? 'bg-blue-500 border-blue-500 text-white shadow-sm'
                                         : 'bg-zinc-100 dark:bg-white/5 border-transparent text-zinc-500 dark:text-zinc-400'
@@ -598,17 +598,26 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
 
     return (
         <div className="fixed inset-x-0 bottom-0 z-[5000] pointer-events-none flex flex-col items-center transition-all duration-300" style={{ bottom: `${keyboardOffset}px` }}>
-            <div
-                className="animate-panel-in max-w-lg w-full bg-white/75 dark:bg-zinc-900/75 backdrop-blur-2xl border-t border-white/20 shadow-[0_-10px_40px_rgba(0,0,0,0.15)] pointer-events-auto rounded-t-[28px] overflow-visible"
+            <section
+                id="app-panel"
+                tabIndex={-1}
+                aria-label="경로 검색 및 정보"
+                className="animate-panel-in max-w-lg w-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-2xl border-t border-x border-zinc-900/[0.06] dark:border-white/[0.08] shadow-[0_-1px_2px_rgba(24,24,27,0.04),0_-12px_32px_-8px_rgba(24,24,27,0.16)] pointer-events-auto rounded-t-3xl overflow-visible outline-none"
                 style={{
                     paddingBottom: keyboardOffset > 0 ? "8px" : "calc(env(safe-area-inset-bottom) + 8px)",
                     transform: isCollapsed ? 'translateY(calc(100% - 44px))' : 'translateY(0)',
-                    transition: 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                    transition: 'transform 0.32s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}
             >
-                <div onClick={() => { hapticLight(); setIsCollapsed(!isCollapsed); }} className="w-full py-2.5 flex items-center justify-center cursor-pointer hover:bg-black/5 dark:hover:bg-white/5 transition-colors group">
-                    <div className="w-12 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 transition-colors" />
-                </div>
+                <button
+                    type="button"
+                    onClick={() => { hapticLight(); setIsCollapsed(!isCollapsed); }}
+                    aria-expanded={!isCollapsed}
+                    aria-label={isCollapsed ? "패널 펼치기" : "패널 접기"}
+                    className="w-full py-2.5 flex items-center justify-center cursor-pointer rounded-t-3xl hover:bg-zinc-900/[0.03] dark:hover:bg-white/[0.04] transition-colors group"
+                >
+                    <span className="w-10 h-1 bg-zinc-300 dark:bg-zinc-700 rounded-full group-hover:bg-zinc-400 dark:group-hover:bg-zinc-600 transition-colors" aria-hidden="true" />
+                </button>
 
                 <div className={`flex flex-col p-3 pt-0 gap-2 transition-opacity duration-300 ${isCollapsed ? 'opacity-0 h-0 pointer-events-none' : 'opacity-100'}`}>
                     {/* 다음 열차 위젯 — 경로 미설정 & subway 탭일 때 즉각 정보 표시 */}
@@ -631,12 +640,12 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                             <div className="flex items-center justify-between gap-1.5 bg-zinc-100 dark:bg-white/5 rounded-2xl p-0.5 border border-black/5 dark:border-white/5 relative">
                                 <button onClick={() => { hapticLight(); if (selectedStrategy === "time") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("time"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "time" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "time" ? "text-white/80" : "opacity-60"}`}>최단시간</span>
-                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(now + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                    <span className="text-[13px] font-black tabular-nums">{timeDisplayMode === "duration" ? `${Math.round(pathResults.time.totalWeight || 0)}분` : new Date(now + (pathResults.time.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                                     <span className={`text-[9px] font-semibold ${selectedStrategy === "time" ? "text-white/70" : "text-zinc-400 dark:text-zinc-500"}`}>{pathResults.time.transferCount === 0 ? "직통" : `${pathResults.time.transferCount}환승`}</span>
                                 </button>
                                 <button onClick={() => { hapticLight(); if (selectedStrategy === "transfer") setTimeDisplayMode(timeDisplayMode === "duration" ? "arrival" : "duration"); else { onStrategyChange("transfer"); setTimeDisplayMode("duration"); } }} className={`flex-[1.5] flex items-center justify-center gap-1.5 py-1.5 rounded-xl transition-all ${selectedStrategy === "transfer" ? "bg-blue-500 text-white shadow-lg" : "text-zinc-500 dark:text-zinc-400 hover:bg-black/5 dark:hover:bg-white/5"}`}>
                                     <span className={`text-[10px] font-black uppercase tracking-tight ${selectedStrategy === "transfer" ? "text-white/80" : "opacity-60"}`}>최소환승</span>
-                                    <span className="text-[13px] font-black">{timeDisplayMode === "duration" ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` : new Date(now + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
+                                    <span className="text-[13px] font-black tabular-nums">{timeDisplayMode === "duration" ? `${Math.round(pathResults.transfer.totalWeight || 0)}분` : new Date(now + (pathResults.transfer.totalWeight || 0) * 60000).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                                     <span className={`text-[9px] font-semibold ${selectedStrategy === "transfer" ? "text-white/70" : "text-zinc-400 dark:text-zinc-500"}`}>{pathResults.transfer.transferCount === 0 ? "직통" : `${pathResults.transfer.transferCount}환승`}</span>
                                 </button>
                                 <div className="w-px h-3 bg-zinc-300 dark:bg-zinc-700 mx-0.5" />
@@ -788,7 +797,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                         {destination && (<button aria-label="도착지 지우기" onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                        <button aria-label="현재 위치를 도착지로" disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                        <button aria-label="현재 위치를 도착지로" disabled={isLocating} onClick={() => onLocate?.("dest")} className={`p-1 transition-all active:scale-[0.97] ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                     </div>
                                 </div>
                                 {/* + 경유지 버튼 (정사각형) */}
@@ -799,7 +808,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                         setActiveField(activeField === "waypoint" ? null : "waypoint");
                                         setSearchResults([]);
                                     }}
-                                    className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-90 ${activeField === "waypoint" ? 'bg-violet-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
+                                    className={`w-9 h-9 flex items-center justify-center rounded-xl shrink-0 transition-all active:scale-[0.97] ${activeField === "waypoint" ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/10'}`}
                                     aria-label="경유지 추가"
                                     title="경유지 추가"
                                 >
@@ -818,7 +827,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                         setSearchResults([]);
                                         setActiveField(null);
                                     }}
-                                    className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:bg-blue-100 hover:text-blue-500 dark:hover:bg-blue-500/20 dark:hover:text-blue-400 transition-all active:scale-90"
+                                    className="w-9 h-9 flex items-center justify-center rounded-xl shrink-0 bg-zinc-100 dark:bg-white/5 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 hover:text-zinc-500 dark:hover:bg-zinc-500/20 dark:hover:text-zinc-400 transition-all active:scale-[0.97]"
                                     aria-label="출발·도착 바꾸기"
                                     title="출발/도착 바꾸기"
                                 >
@@ -840,21 +849,21 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                             onTouchEnd={handleTouchEnd}
                                             className={`flex items-center px-2 h-9 rounded-xl border transition-all select-none cursor-grab active:cursor-grabbing touch-none ${
                                                 dragIndex === idx
-                                                    ? "opacity-40 scale-95 bg-violet-100 dark:bg-violet-900/40 border-violet-300 dark:border-violet-600"
+                                                    ? "opacity-40 scale-95 bg-zinc-100 dark:bg-zinc-900/40 border-zinc-300 dark:border-zinc-600"
                                                     : dragOverIndex === idx
-                                                    ? "bg-violet-100 dark:bg-violet-900/30 border-violet-400 dark:border-violet-500 ring-1 ring-violet-400/30"
-                                                    : "bg-violet-50 dark:bg-violet-950/30 border-violet-200/50 dark:border-violet-700/30"
+                                                    ? "bg-zinc-100 dark:bg-zinc-900/30 border-zinc-400 dark:border-zinc-500 ring-1 ring-zinc-400/30"
+                                                    : "bg-zinc-50 dark:bg-zinc-950/30 border-zinc-200/50 dark:border-zinc-700/30"
                                             }`}
                                         >
-                                            <GripVertical size={13} className="text-violet-300 dark:text-violet-600 shrink-0 mr-1" />
-                                            <span className="text-[11px] font-black text-violet-500 shrink-0 mr-1">경유</span>
+                                            <GripVertical size={13} className="text-zinc-300 dark:text-zinc-600 shrink-0 mr-1" />
+                                            <span className="text-[11px] font-black text-zinc-500 shrink-0 mr-1">경유</span>
                                             <span className="flex-1 text-[13px] font-bold text-zinc-900 dark:text-white truncate px-1">
                                                 {wp.replace(/ \((내 위치|출발|도착|경유)\)/g, '').replace(/^.*? : /, '')}
                                             </span>
                                             <button
                                                 aria-label="경유지 삭제"
                                                 onClick={() => { hapticLight(); removeWaypoint(idx); }}
-                                                className="p-1 text-violet-400 hover:text-violet-600 transition-all shrink-0"
+                                                className="p-1 text-zinc-400 hover:text-zinc-600 transition-all shrink-0"
                                             ><X size={14} /></button>
                                         </div>
                                     ))}
@@ -862,8 +871,8 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                             )}
                             {/* Waypoint Input Row */}
                             {activeField === "waypoint" && (
-                                <div className="flex items-center px-3 h-9 bg-violet-50 dark:bg-violet-950/30 rounded-xl border border-violet-400/50 ring-1 ring-violet-400/20">
-                                    <span className="text-[11px] font-black text-violet-500 shrink-0 mr-1">경유</span>
+                                <div className="flex items-center px-3 h-9 bg-zinc-50 dark:bg-zinc-950/30 rounded-xl border border-zinc-400/50 ring-1 ring-zinc-400/20">
+                                    <span className="text-[11px] font-black text-zinc-500 shrink-0 mr-1">경유</span>
                                     <input
                                         autoFocus
                                         type="text"
@@ -877,9 +886,9 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                             else if (e.key === 'Escape') { setActiveField(null); setWaypointInput(""); setSearchResults([]); }
                                         }}
                                         onBlur={() => setTimeout(() => { if (activeField === "waypoint") { setActiveField(null); setWaypointInput(""); setSearchResults([]); } }, 250)}
-                                        className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-violet-300 text-zinc-900 dark:text-white px-2"
+                                        className="flex-1 bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-300 text-zinc-900 dark:text-white px-2"
                                     />
-                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => { setActiveField(null); setWaypointInput(""); setSearchResults([]); }} className="p-1 text-violet-400 hover:text-violet-600 transition-all"><X size={14} /></button>
+                                    <button onMouseDown={(e) => e.preventDefault()} onClick={() => { setActiveField(null); setWaypointInput(""); setSearchResults([]); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>
                                 </div>
                             )}
                             {/* Row 2: 출발지 입력 (전체 너비) */}
@@ -891,7 +900,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                     {source && (<button aria-label="출발지 지우기" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
-                                    <button aria-label="현재 위치를 출발지로" disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
+                                    <button aria-label="현재 위치를 출발지로" disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-[0.97] ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                 </div>
                             </div>
                         </div>
@@ -909,7 +918,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                         </div>
                         {activeTab !== "wc" && (
                             <>
-                                <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { hapticLight(); setValidationError("source"); return; } if (!destination) { hapticLight(); setValidationError("dest"); return; } hapticMedium(); onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-95'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
+                                <button disabled={isLocating || isCalculating} onClick={() => { if (!source) { hapticLight(); setValidationError("source"); return; } if (!destination) { hapticLight(); setValidationError("dest"); return; } hapticMedium(); onSearch(source, destination); }} className={`h-9 px-5 rounded-xl font-black text-[13px] transition-all ${isLocating || isCalculating ? 'bg-zinc-200 text-zinc-400 cursor-not-allowed' : 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 active:scale-[0.97]'}`}>{isCalculating ? '조회중...' : '길찾기'}</button>
                                 <button aria-label="경로 초기화" onClick={() => { hapticLight(); onReset?.(); }} className="w-9 h-9 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-white/5 text-zinc-400"><RotateCcw size={16} /></button>
                             </>
                         )}
@@ -974,7 +983,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                         </div>
                     )}
                 </div>
-            </div>
+            </section>
         </div>
     );
 });

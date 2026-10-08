@@ -113,7 +113,7 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
                 </div>
                 <button
                     onClick={() => { hapticLight(); onClose(); }}
-                    className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 active:scale-90 transition-all"
+                    className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 active:scale-[0.97] transition-all"
                 >
                     <X size={14} />
                 </button>
@@ -161,7 +161,7 @@ export default function DirectionCompass({ userLocation, targetLocation, targetN
             {needsIOSPermission && sensorState === 'idle' && (
                 <button
                     onClick={requestIOSPermission}
-                    className="mt-3 w-full py-2 bg-blue-500 hover:bg-blue-600 active:scale-95 text-white text-[11px] font-black rounded-xl transition-all"
+                    className="mt-3 w-full py-2 bg-blue-500 hover:bg-blue-600 active:scale-[0.97] text-white text-[11px] font-black rounded-xl transition-all"
                 >
                     나침반 활성화
                 </button>

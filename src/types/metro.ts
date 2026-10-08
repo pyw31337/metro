@@ -20,6 +20,8 @@ export interface StationArrival {
     barvlDt: string;
     btrainNo: string;
     isScheduled?: boolean;
+    /** 실시간 데이터 생성 시각 (KST, "YYYY-MM-DD HH:mm:ss") */
+    recptnDt?: string;
 }
 
 export interface Station {

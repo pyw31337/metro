@@ -366,6 +366,9 @@ export class MetropolitanBusService {
     stops: { name: string; lat: number; lng: number; order: number }[]
   ): any {
     const features: any[] = [];
+    // 정류장 데이터가 없을 때만 원본 경로를 검증해 사용 (아래 종점 합성에서도 재사용)
+    const segments: [number, number][][] =
+      stops.length >= 2 ? [] : this.validatePathSegments(rawPathCoords);
 
     // ── Path geometry ──────────────────────────────────────────────────────
     // When stop data is available, connect stops in sequence so the line
@@ -381,7 +384,6 @@ export class MetropolitanBusService {
         properties: { featureType: "route" },
       });
     } else {
-      const segments = this.validatePathSegments(rawPathCoords);
       if (segments.length === 1) {
         features.push({
           type: "Feature",

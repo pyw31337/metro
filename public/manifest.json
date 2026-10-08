@@ -1,64 +1,86 @@
 {
-  "id": "/metro/",
+  "id": "./",
   "name": "Metro Live",
   "short_name": "Metro Live",
-  "description": "수도권 실시간 지하철·버스·화장실 네비게이션",
-  "start_url": "/metro/",
-  "scope": "/metro/",
+  "description": "수도권 실시간 지하철 위치·경로·버스·화장실",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "display_override": ["standalone", "minimal-ui"],
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#f6f6f4",
   "theme_color": "#0052A4",
   "icons": [
     {
-      "src": "/metro/train-icon.png",
+      "src": "train-icon.png",
       "sizes": "150x150",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/metro/icon-192.png",
+      "src": "icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/metro/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/metro/icon-512.png",
+      "src": "icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "categories": ["navigation", "travel", "utilities"],
+  "categories": [
+    "navigation",
+    "travel",
+    "utilities"
+  ],
   "lang": "ko",
   "shortcuts": [
     {
       "name": "지하철 길찾기",
       "short_name": "지하철",
       "description": "지하철 경로 탐색",
-      "url": "/metro/?tab=subway",
-      "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
+      "url": "./?tab=subway",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "버스 길찾기",
       "short_name": "버스",
       "description": "주변 버스정류장 및 노선 안내",
-      "url": "/metro/?tab=bus",
-      "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
+      "url": "./?tab=bus",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     },
     {
       "name": "주변 화장실",
       "short_name": "화장실",
       "description": "내 주변 공중화장실 찾기",
-      "url": "/metro/?tab=wc",
-      "icons": [{ "src": "/metro/icon-192.png", "sizes": "192x192" }]
+      "url": "./?tab=wc",
+      "icons": [
+        {
+          "src": "icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
     }
   ]
 }

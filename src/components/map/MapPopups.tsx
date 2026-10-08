@@ -76,11 +76,11 @@ const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, addr
   return (
     <div className="flex gap-2 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
       <a href={naverPanoApp} onClick={openNaver}
-        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95">
+        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-[0.97]">
         네이버 거리뷰
       </a>
       <a href={kakao} target="_blank" rel="noopener noreferrer"
-        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95">
+        className="flex-1 flex items-center justify-center gap-1 py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-[0.97]">
         카카오 로드뷰
       </a>
     </div>
@@ -406,7 +406,7 @@ const MapPopups = ({
                         {activeTab === 'subway' && !showInfo && onRefreshArrival && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); hapticLight(); onRefreshArrival(); }}
-                                className={`p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500 transition-all active:scale-90 ${arrivalLoading ? 'animate-spin' : ''}`}
+                                className={`p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500 transition-all active:scale-[0.97] ${arrivalLoading ? 'animate-spin' : ''}`}
                             >
                                 <RefreshCw size={12} />
                             </button>
@@ -414,7 +414,7 @@ const MapPopups = ({
                         {activeTab === 'subway' && (
                             <button
                                 onClick={(e) => { e.stopPropagation(); hapticLight(); setShowInfo(v => !v); }}
-                                className={`p-1.5 rounded-full transition-all active:scale-90 ${showInfo ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500'}`}
+                                className={`p-1.5 rounded-full transition-all active:scale-[0.97] ${showInfo ? 'bg-blue-500 text-white' : 'bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-blue-500'}`}
                             >
                                 {showInfo ? <ArrowLeft size={14} /> : <Info size={14} />}
                             </button>
@@ -426,7 +426,7 @@ const MapPopups = ({
                                 setPopupCoords(null);
                                 onActiveLineChange(null);
                             }}
-                            className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-90"
+                            className="p-1.5 rounded-full bg-zinc-100 dark:bg-white/5 text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-all active:scale-[0.97]"
                         >
                             <X size={16} />
                         </button>
@@ -453,7 +453,7 @@ const MapPopups = ({
                                       hapticLight();
                                       onActiveLineChange(badge.lineName);
                                     }}
-                                    className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-90 ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
+                                    className={`inline-flex items-center justify-center h-[28px] px-3.5 rounded-full text-[11px] font-black shadow-sm shrink-0 transition-all active:scale-[0.97] ${isActive ? 'text-white scale-105' : 'bg-white border opacity-80'}`}
                                     style={{
                                       touchAction: 'pan-x',
                                       backgroundColor: isActive ? badge.color : 'transparent',
@@ -698,19 +698,19 @@ const MapPopups = ({
                         <div className="grid grid-cols-3 gap-1.5 mt-3 pt-3 border-t border-zinc-100 dark:border-white/5">
                             <button
                                 onClick={(e) => { e.stopPropagation(); hapticLight(); onSetStart(stationName); setPopupCoords(null); }}
-                                className={`py-2.5 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                className={`py-2.5 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-[0.97] ${!isStartSet ? 'bg-blue-500 hover:bg-blue-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                             >
                                 출발지
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); hapticLight(); onSetWaypoint(stationName); setPopupCoords(null); }}
-                                className="py-2.5 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-95"
+                                className="py-2.5 rounded-xl bg-zinc-100 dark:bg-white/10 hover:bg-zinc-200 dark:hover:bg-white/20 text-zinc-800 dark:text-white text-[11px] font-black transition-all active:scale-[0.97]"
                             >
                                 경유지
                             </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); hapticLight(); onSetEnd(stationName); setPopupCoords(null); }}
-                                className={`py-2.5 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-95 ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
+                                className={`py-2.5 rounded-xl text-[11px] font-black shadow-sm transition-all active:scale-[0.97] ${isStartSet ? 'bg-rose-500 hover:bg-rose-600 text-white' : 'bg-zinc-100 dark:bg-white/10 text-zinc-800 dark:text-white hover:bg-zinc-200 dark:hover:bg-white/20'}`}
                             >
                                 도착지
                             </button>
@@ -789,7 +789,7 @@ const MapPopups = ({
                                     switch(selectedTrain.trainSttus) {
                                         case '0': return '진입';
                                         case '1': return '정차';
-                                        case '2': return '이동중';
+                                        case '2': return '출발';
                                         case '3': return '전역출발';
                                         case '4': return '전역진입';
                                         case '5': return '전역도착';
@@ -803,9 +803,9 @@ const MapPopups = ({
                         </div>
                         <span className="text-[10px] font-black text-zinc-900 dark:text-white">
                             {(() => {
-                                const diff = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
+                                const diff = Math.floor((Date.now() - parseSeoulDate(selectedTrain.recptnDt || selectedTrain.lastRecptnDt)) / 60000);
                                 if (timeDisplayMode === 'duration') return diff <= 0 ? '방금전' : `${diff}분전`;
-                                return new Date(parseSeoulDate(selectedTrain.lastRecptnDt)).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                return new Date(parseSeoulDate(selectedTrain.recptnDt || selectedTrain.lastRecptnDt)).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                             })()}
                         </span>
                     </div>
@@ -831,20 +831,8 @@ const MapPopups = ({
                                     }
                                 })()
                             ) : (
-                                (() => {
-                                    // Intelligent Estimate Fallback
-                                    const diffMins = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
-                                    let estimate = 5; // Default 5 mins
-                                    if (selectedTrain.trainSttus === '1' || selectedTrain.trainSttus === '0') {
-                                        estimate = Math.max(3, 5 - diffMins); // If stopped/entering, estimate 3-5 mins
-                                    } else if (selectedTrain.trainSttus === '2') {
-                                        estimate = Math.max(2, 4 - diffMins); // If departed, estimate 2-4 mins
-                                    }
-                                    
-                                    if (timeDisplayMode === 'duration') return `${estimate}분후`;
-                                    const d = new Date(Date.now() + estimate * 60000);
-                                    return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
-                                })()
+                                // 도착예정 시각은 도착정보 API(barvlDt)가 있을 때만 표시. 임의 추정치는 보여주지 않는다.
+                                <span className="text-[10px] font-medium text-zinc-500 dark:text-zinc-400">정보 없음</span>
                             )}
                         </span>
                     </div>
@@ -901,7 +889,7 @@ const MapPopups = ({
                         <div className="flex items-center gap-1 mb-1 flex-wrap">
                             <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-500 text-white uppercase tracking-tighter">화장실</span>
                             {selectedWC.isInsideGate && (
-                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-violet-500/15 text-violet-500">개찰구 내</span>
+                                <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-blue-500/15 text-blue-500">개찰구 내</span>
                             )}
                             {selectedWC.station && (
                                 <span className="text-[10px] font-bold text-zinc-400 truncate">{selectedWC.station}</span>
@@ -971,12 +959,12 @@ const MapPopups = ({
                         return (<>
                             <a href={navApp}
                                 onClick={e => { e.preventDefault(); hapticLight(); window.location.href = navApp; setTimeout(() => { window.open(navWeb, '_blank'); }, 300); }}
-                                className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-95">
+                                className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#03C75A] text-white text-[10px] font-bold transition-transform active:scale-[0.97]">
                                 네이버 길안내
                             </a>
                             <a href={panoApp}
                                 onClick={e => { e.preventDefault(); hapticLight(); window.location.href = panoApp; setTimeout(() => { window.open(panoWeb, '_blank'); }, 300); }}
-                                className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#1ec75a]/80 text-white text-[10px] font-bold transition-transform active:scale-95">
+                                className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#1ec75a]/80 text-white text-[10px] font-bold transition-transform active:scale-[0.97]">
                                 거리뷰
                             </a>
                         </>);
@@ -986,7 +974,7 @@ const MapPopups = ({
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => hapticLight()}
-                        className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-95"
+                        className="flex-1 flex items-center justify-center py-1.5 rounded-lg bg-[#FEE500] text-[#3c1e1e] text-[10px] font-bold transition-transform active:scale-[0.97]"
                     >
                         카카오
                     </a>

@@ -13,8 +13,9 @@
     "start": "next start",
     "lint": "eslint",
     "build-tiles": "node scripts/build-tiles.js",
-    "deploy": "node scripts/ingest-all.js && node scripts/ingest-station-mappings.js && node scripts/ingest-route-paths.js && node scripts/consolidate-data.js && node scripts/ingest-schedules.js && node scripts/build-tiles.js && npx next build && touch out/.nojekyll && npx gh-pages -d out"
-
+    "deploy": "node scripts/ingest-all.js && node scripts/ingest-station-mappings.js && node scripts/ingest-route-paths.js && node scripts/consolidate-data.js && node scripts/ingest-schedules.js && node scripts/build-tiles.js && npx next build && touch out/.nojekyll && npx gh-pages -d out",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "dexie": "^4.4.1",
@@ -34,6 +35,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

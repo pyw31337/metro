@@ -122,7 +122,7 @@ const RouteLayers = ({
                   onToggleTimeDisplay?.();
                   onStationTap?.(name, [lng, lat]);
                 }}
-                className={`flex flex-col gap-0.5 p-1 px-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-95 w-fit items-center justify-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
+                className={`flex flex-col gap-0.5 p-1 px-2.5 rounded-xl bg-white/85 dark:bg-zinc-900/85 backdrop-blur-md border border-white/20 shadow-lg transition-all active:scale-[0.97] w-fit items-center justify-center ${isFocused ? 'scale-[1.1] shadow-2xl border-blue-500 bg-white/95 dark:bg-zinc-800' : ''}`}
             >
               <div className="flex items-center gap-1">
                 {i === 0 && <MapPin size={10} className="text-blue-500 fill-blue-500" />}

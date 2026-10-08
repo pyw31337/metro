@@ -74,42 +74,5 @@ export const API_ENDPOINTS = {
         `https://apis.data.go.kr/1613000/ArvlInfoInqireService/getSttnAcctoArvlPrearnBusList?serviceKey=${key}&cityCode=${cityCode}&nodeId=${nodeId}&_type=json`
 };
 
-const USER_APPROVED_KEYS = [
-    "634179436a7079773730786f4d5445",  // 지하철인증키 (2026/03/30) ✅
-    "53517344677079773531694a786f6a",  // 지하철인증키 (2026/03/27) ✅
-    "434f7275707079773537687a507658",  // 지하철인증키 (2026/03/27) ✅
-];
-
-/**
- * High-level API Handlers
- */
-export const subwayApi = {
-    getPositions: async (lineName: string) => {
-        let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
-        const keysToTry = Array.from(new Set([apiKey, ...USER_APPROVED_KEYS, 'sample']));
-        
-        for (const key of keysToTry) {
-            const result = await fetchWithCache<any>(API_ENDPOINTS.SUBWAY_POSITION(key, lineName), 15000);
-            if (result && (result.realtimeSubwayPositionList || result.realtimePositionList)) return result;
-            // If error-338 or similar, try next key
-        }
-        return null;
-    },
-    getArrivals: async (stationName: string) => {
-        let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
-        const keysToTry = Array.from(new Set([apiKey, ...USER_APPROVED_KEYS, 'sample']));
-        for (const key of keysToTry) {
-            const result = await fetchWithCache<any>(API_ENDPOINTS.SUBWAY_ARRIVAL(key, stationName), 15000);
-            if (result && result.realtimeArrivalList) return result;
-        }
-        return null;
-    },
-    getCongestion: async (subwayId: string, trainNo: string) => {
-        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
-        return fetchWithCache<any>(API_ENDPOINTS.SUBWAY_CONGESTION(key, subwayId, trainNo), 60000);
-    },
-    getTransferPlatform: async (station: string, from: string, to: string) => {
-        const key = process.env.NEXT_PUBLIC_SEOUL_API_KEY || USER_APPROVED_KEYS[0];
-        return fetchWithCache<any>(API_ENDPOINTS.TRANSFER_PLATFORM(key, station, from, to), 3600000);
-    }
-};
+// 실시간 지하철 API 호출은 키 풀·오류 분류·프록시 체인을 갖춘
+// '@/services/seoulApi' 의 callSeoulSubway 를 사용한다. (인증키는 소스에 두지 않음)

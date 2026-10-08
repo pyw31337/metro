@@ -26,7 +26,7 @@ const getWeatherIcon = (code: number) => {
     if (code <= 65) return <CloudRain className="text-blue-400" size={24} />;
     if (code <= 77) return <CloudSnow className="text-blue-200" size={24} />;
     if (code <= 82) return <CloudRain className="text-blue-500" size={24} />;
-    if (code >= 95) return <CloudLightning className="text-purple-400" size={24} />;
+    if (code >= 95) return <CloudLightning className="text-amber-500" size={24} />;
     return <Sun className="text-yellow-400" size={24} />;
 };
 

@@ -205,13 +205,17 @@ window.fetchBusLocation = fetchBusLocation;
  */
 async function fetchTrainPositions(lineName) {
     const key = CONFIG.SEOUL_API_KEY || API_CONFIG.SEOUL_API_KEY;
-    const url = `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimeTrainPosition/0/50/${lineName}`;
+    // [레거시 Vanilla JS 버전] 현재 서비스는 src/(Next.js)를 사용한다.
+    // 'realtimeTrainPosition' 서비스명은 더 이상 존재하지 않아 ERROR-404 를 반환하므로
+    // 현행 서비스명 'realtimePosition' (응답 키 realtimePositionList) 으로 교체했다.
+    // 주의: http 엔드포인트라 https 페이지에서는 mixed-content 로 차단된다.
+    const url = `http://swopenapi.seoul.go.kr/api/subway/${key}/json/realtimePosition/0/50/${lineName}`;
 
     try {
         const response = await fetch(url);
         if (!response.ok) throw new Error('Train API Failed');
         const data = await response.json();
-        const list = data.realtimeTrainPositionList || [];
+        const list = data.realtimePositionList || [];
         
         return list.map(item => ({
             id: item.trainNo,
@@ -219,7 +223,8 @@ async function fetchTrainPositions(lineName) {
             stName: item.statnNm,
             stId: item.statnId,
             destination: item.statnTnm,
-            status: item.trainSttus, // 0:진입, 1:도착, 2:출발
+            status: item.trainSttus, // 0:진입, 1:도착, 2:출발, 3:전역출발
+            recptnDt: item.recptnDt, // 이벤트 발생 시각 (lastRecptnDt 는 날짜만 있음)
             updnLine: item.updnLine, // 0:상행/내선, 1:하행/외선
             directAt: item.directAt,
             lastStName: item.statnTnm

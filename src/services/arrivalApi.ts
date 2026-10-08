@@ -4,6 +4,7 @@ import { getStaticTimetable, getEstimatedArrivalsFromStatic } from '@/data/stati
 import { API_ENDPOINTS } from '@/utils/api-client';
 import { normalizeLineName } from '@/utils/stationUtils';
 import { normStation } from '@/data/stationRegistry';
+import { callSeoulSubway, parseSeoulTime, lagMsFrom } from './seoulApi';
 
 // ── 지하철 시간표 인덱스 (subway-schedule-index.json) ────────────────────────
 // 서울시 openapi.seoul.go.kr에서 수집한 799개 역-노선 첫차/막차/행선지 데이터
@@ -274,15 +275,22 @@ export interface TrainPosition {
     subwayId: string;
     subwayNm: string;
     statnId: string;
-    statnNm: string;
+    statnNm: string;        // 이벤트가 발생한 역 (trainSttus 기준 역)
     trainNo: string;
+    /** 마지막 이벤트 수신 시각 "YYYY-MM-DD HH:mm:ss" (KST) — 지연 보정 기준 */
+    recptnDt: string;
+    /** 원본 lastRecptnDt (realtimePosition 에서는 "YYYYMMDD" 날짜만 들어옴, 시각 계산에 쓰지 말 것) */
     lastRecptnDt: string;
     updnLine: string;
     directAt: string;
-    trainSttus: string; 
+    /** 0:진입 1:도착 2:출발 3:전역출발 (99: 알 수 없음) */
+    trainSttus: string;
     lstnyNm: string;
+    statnTnm?: string;
     arrivalNm: string;
-    arvlCd: string;
+    /** 도착 API에서 온 경우: statnNm 역까지 남은 시간(초, recptnDt 기준) */
+    barvlDt?: number;
+    source: 'position' | 'arrival';
 }
 
 export interface SubwayAlert {
@@ -291,43 +299,36 @@ export interface SubwayAlert {
     date: string;
 }
 
+/**
+ * 서울시 API 시각 → epoch ms. 해석 불가하면 Date.now() (UI 표시 호환용).
+ * 계산 로직에서는 seoulApi.parseSeoulTime (NaN 반환)을 사용할 것.
+ */
 export const parseSeoulDate = (dateStr: string): number => {
-    if (!dateStr) return Date.now();
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d.getTime();
-    const match = dateStr.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
-    if (match) {
-        return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`).getTime();
-    }
-    return Date.now();
+    const t = parseSeoulTime(dateStr);
+    return Number.isFinite(t) ? t : Date.now();
 };
 
+/**
+ * 범용 CORS 우회 fetch (서울 열린데이터 일반 API 등, 실시간 지하철 외 용도).
+ * 실시간 지하철 API는 키 풀/오류 분류가 있는 seoulApi.callSeoulSubway 를 사용한다.
+ */
 export const fetchWithFallbacks = async (targetUrl: string) => {
-    // 1. Direct Fetch (로컬 개발 환경에서만 성공, 프로덕션은 CORS로 차단됨)
+    // 1. 직접 호출 (CORS 허용 API 또는 로컬 개발 환경)
     try {
-        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(1000) });
+        const directRes = await fetch(targetUrl, { signal: AbortSignal.timeout(2500) });
         if (directRes.ok) return await directRes.json();
-    } catch (e) {}
+    } catch { /* fall through */ }
 
-    // 2. Proxy Fetching
     const salt = Math.random().toString(36).substring(7);
     const targetWithSalt = targetUrl.includes('?') ? `${targetUrl}&_s=${salt}` : `${targetUrl}?_s=${salt}`;
-    
-    // HTTP 강제로 서울 OpenAPI 리다이렉트 문제 방지
-    const urlHttp = targetWithSalt.replace('https://swopenapi.seoul.go.kr', 'http://swopenapi.seoul.go.kr');
-    const encodedUrl = encodeURIComponent(urlHttp);
+    const encodedUrl = encodeURIComponent(targetWithSalt);
 
-    const isFirebase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase';
-    const base = isFirebase ? '' : '/metro';
-
-    const fetchFromProxy = async (proxyUrl: string, isWrapped: boolean = false) => {
-        const res = await fetch(proxyUrl, { 
-            signal: AbortSignal.timeout(3000),  // 3초로 단축
+    const fetchFromProxy = async (proxyUrl: string, isWrapped = false) => {
+        const res = await fetch(proxyUrl, {
+            signal: AbortSignal.timeout(12000),
             headers: { 'Accept': 'application/json' }
         });
-        
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        
         let data: any;
         if (isWrapped) {
             const wrapper = await res.json();
@@ -335,108 +336,96 @@ export const fetchWithFallbacks = async (targetUrl: string) => {
             data = typeof wrapper.contents === 'string' ? JSON.parse(wrapper.contents) : wrapper.contents;
         } else {
             const rawText = await res.text();
-            try { data = JSON.parse(rawText); }
-            catch (e) { throw new Error('non-JSON response'); }
+            try { data = JSON.parse(rawText); } catch { throw new Error('non-JSON response'); }
         }
-
-        if (data?.realtimePositionList || data?.realtimeArrivalList || 
-            data?.RESULT?.CODE === "INFO-000" || data?.errorMessage?.code === "INFO-000" ||
-            data?.errorMessage?.status === 200) {
-            return data;
-        }
-        throw new Error('invalid data structure');
+        if (!data || typeof data !== 'object') throw new Error('invalid data structure');
+        return data;
     };
 
-    // 로컬 Next.js 리라이트 프록시 우선 시도 (가장 빠름, 서버사이드라 CORS 없음)
-    const localProxyPath = urlHttp.replace('http://swopenapi.seoul.go.kr/api/subway/', '');
-    const localProxyUrl = `${base}/api/proxy/subway/${localProxyPath}`;
-    
-    try {
-        const data = await fetchFromProxy(localProxyUrl);
-        return data;
-    } catch (e) {}
-
-    // 외부 프록시 병렬 시도 (Promise.any로 첫 성공 결과 사용)
+    // 공개 프록시 병렬 시도 (corsproxy.io 는 2026년 현재 API 키 필요 → 제외)
     const externalProxies = [
-        { url: `https://corsproxy.io/?${encodedUrl}`, wrapped: false },
+        { url: `https://cors.eu.org/${targetWithSalt}`, wrapped: false },
         { url: `https://api.allorigins.win/raw?url=${encodedUrl}`, wrapped: false },
         { url: `https://api.allorigins.win/get?url=${encodedUrl}`, wrapped: true },
+        { url: `https://api.codetabs.com/v1/proxy?quest=${encodedUrl}`, wrapped: false },
     ];
-
     try {
         return await Promise.any(externalProxies.map(p => fetchFromProxy(p.url, p.wrapped)));
-    } catch (e) {
-        throw new Error(`Realtime data unavailable (all proxies failed)`);
+    } catch {
+        throw new Error('Realtime data unavailable (all proxies failed)');
     }
 };
 
-/**
- * Fallback: Get train positions by analyzing station arrival data
- * Useful when the main position API is blocked.
- */
-export const getSubwayPositionsFromArrivals = async (lineName: string): Promise<TrainPosition[]> => {
-    // This is a high-level fallback that could be implemented to poll
-    // key stations and estimate train positions.
-    // For now, we focus on making the primary API work.
-    return [];
-};
+// ─────────────────────────────────────────────────────────────────────────────
+// 도착 API → 열차 위치 변환
+//
+// 필드 의미 (서울시 실시간 도착정보 명세):
+//   statnNm  : 조회한 역
+//   arvlCd   : 조회역 기준 상태 (0:당역진입 1:당역도착 2:당역출발 3:전역출발 4:전역진입 5:전역도착 99:운행중)
+//   arvlMsg3 : 열차의 현재 위치 역명  ← 위치는 이 값으로 잡는다
+//   barvlDt  : 조회역 도착까지 남은 초 (recptnDt 기준)
+//   bstatnNm : 종착역명  ← 현재 위치가 아님! (이전 구현은 이 값으로 열차를 종착역에 찍었음)
+// ─────────────────────────────────────────────────────────────────────────────
+export function arrivalItemToPosition(item: any): TrainPosition | null {
+    const trainNo = String(item.btrainNo ?? '').trim();
+    if (!trainNo || trainNo === '0000') return null;
+    const queried = String(item.statnNm ?? '').trim();
+    const current = String(item.arvlMsg3 ?? '').trim();
+    const code = String(item.arvlCd ?? '99');
+
+    let statnNm: string;
+    let trainSttus: string;
+    switch (code) {
+        case '0': statnNm = queried; trainSttus = '0'; break;   // 당역 진입
+        case '1': statnNm = queried; trainSttus = '1'; break;   // 당역 도착
+        case '2': statnNm = queried; trainSttus = '2'; break;   // 당역 출발
+        case '3': statnNm = queried; trainSttus = '3'; break;   // 전역 출발 → 당역으로 이동 중
+        case '4': statnNm = current; trainSttus = '0'; break;   // 전역 진입
+        case '5': statnNm = current; trainSttus = '1'; break;   // 전역 도착
+        default:  statnNm = current; trainSttus = '1'; break;   // 운행중: arvlMsg3 역 부근
+    }
+    // arvlMsg3 가 "[3]번째 전역" 같은 안내문이면 위치로 쓸 수 없다
+    if (!statnNm || /[\[\]]|전역|번째/.test(statnNm)) return null;
+
+    const barvl = parseInt(item.barvlDt ?? '', 10);
+    const dest = String(item.bstatnNm ?? '') || String(item.trainLineNm ?? '').split(/행|\s-\s/)[0];
+
+    return {
+        subwayId:     String(item.subwayId ?? ''),
+        subwayNm:     String(item.subwayNm ?? ''),
+        statnId:      '',
+        statnNm,
+        trainNo,
+        recptnDt:     String(item.recptnDt ?? ''),
+        lastRecptnDt: String(item.recptnDt ?? ''),
+        updnLine:     String(item.updnLine ?? ''),
+        directAt:     item.btrainSttus === '급행' ? '1' : '0',
+        trainSttus,
+        lstnyNm:      dest,
+        arrivalNm:    queried,
+        barvlDt:      (code === '0' || code === '3') && Number.isFinite(barvl) && barvl > 0 ? barvl : undefined,
+        source:       'arrival',
+    };
+}
 
 /**
- * 도착 API의 bstatnNm(현재열차위치역명)으로 열차 위치를 추정합니다.
- * realtimePositionList에서 누락된 역사 정차·대기 열차를 보완하는 목적.
- * 반환된 TrainPosition 배열은 buildUnit()과 완전 호환됩니다.
+ * 도착 API로 열차 위치를 보완한다 (위치 API에 잡히지 않는 종착역 대기 열차 등).
+ * 위치는 arvlMsg3/arvlCd 로 계산하며 bstatnNm(종착역)은 사용하지 않는다.
  */
 export const fetchArrivalBasedPositions = async (stationName: string): Promise<TrainPosition[]> => {
-    const USER_APPROVED_KEYS = [
-        "634179436a7079773730786f4d5445",
-        "53517344677079773531694a786f6a",
-        "434f7275707079773537687a507658",
-    ];
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
-
-    const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(stationName)}`;
-
-    try {
-        const json = await fetchWithFallbacks(url);
-        const rawList: any[] = json?.realtimeArrivalList || [];
-        if (rawList.length === 0) return [];
-
-        const results: TrainPosition[] = [];
-        const seen = new Set<string>();
-
-        for (const item of rawList) {
-            const trainNo = item.btrainNo;
-            if (!trainNo || trainNo === '0000') continue;
-            if (!item.bstatnNm) continue;  // 현재위치 없으면 스킵
-            if (seen.has(trainNo)) continue;
-            seen.add(trainNo);
-
-            const barvlDt = parseInt(item.barvlDt || '9999');
-            // 도착 예정 시간 기반으로 arvlCd 추정:
-            // 30초 미만 → '0' 진입, 90초 미만 → '3' 전역출발, 그 이상 → '2' 출발
-            const arvlCd = barvlDt < 30 ? '0' : barvlDt < 90 ? '3' : '2';
-            const dest = (item.trainLineNm || '').replace(/행$/, '');
-
-            results.push({
-                subwayId:     item.subwayId || '',
-                subwayNm:     item.subwayNm || '',
-                statnId:      '',
-                statnNm:      item.bstatnNm,  // 현재열차위치역 → buildUnit statnNm
-                trainNo,
-                lastRecptnDt: '',
-                updnLine:     item.updnLine || '',
-                directAt:     '0',
-                trainSttus:   '1',
-                lstnyNm:      dest,
-                arrivalNm:    '',
-                arvlCd,
-            });
-        }
-        return results;
-    } catch {
-        return [];
+    const res = await callSeoulSubway(`json/realtimeStationArrival/0/40/${stationName}`);
+    const rawList: any[] = res.data?.realtimeArrivalList || [];
+    const results: TrainPosition[] = [];
+    const seen = new Set<string>();
+    for (const item of rawList) {
+        const pos = arrivalItemToPosition(item);
+        if (!pos) continue;
+        const key = `${pos.subwayId}-${pos.trainNo}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        results.push(pos);
     }
+    return results;
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
@@ -444,25 +433,23 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
     if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
     const fetchUniqueArrivals = async (name: string): Promise<StationArrival[]> => {
-        const baseUrl = `https://swopenapi.seoul.go.kr/api/subway`;
-        const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(name)}`;
-        
         try {
-            let json = await fetchWithFallbacks(primaryUrl);
-            if (json?.status === 500 && json?.code === "ERROR-338") {
-                const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/10/${encodeURIComponent(name)}`;
-                json = await fetchWithFallbacks(fallbackUrl);
-            }
-
-            const rawList: any[] = json?.realtimeArrivalList || [];
+            const res = await callSeoulSubway(`json/realtimeStationArrival/0/40/${name}`);
+            const rawList: any[] = res.data?.realtimeArrivalList || [];
             const trainMap = new Map<string, StationArrival>();
-            
+            const now = Date.now();
+
             rawList.forEach(item => {
                 const isReliableNo = item.btrainNo && item.btrainNo !== "0000";
-                const trainId = isReliableNo 
-                    ? `${item.subwayId}-${item.btrainNo}` 
+                const trainId = isReliableNo
+                    ? `${item.subwayId}-${item.btrainNo}`
                     : `${item.subwayId}-${item.updnLine}-${item.trainLineNm}-${item.arvlMsg2}`;
-                
+
+                // recptnDt 이후 흐른 시간만큼 남은 시간을 당긴다 (서울시 공식 보정 가이드)
+                const rawSec = parseInt(item.barvlDt ?? '', 10);
+                const lagSec = Math.floor((lagMsFrom(item.recptnDt, now) || 0) / 1000);
+                const adjSec = Number.isFinite(rawSec) && rawSec > 0 ? Math.max(0, rawSec - lagSec) : rawSec;
+
                 const arrival: StationArrival = {
                     lineName: item.subwayNm || "",
                     subwayId: item.subwayId || "",
@@ -473,8 +460,9 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                     arvlMsg3: item.arvlMsg3 || "",
                     arvlCd: item.arvlCd || "",
                     bstatnNm: item.bstatnNm || "",
-                    barvlDt: item.barvlDt || "9999",
-                    btrainNo: item.btrainNo || ""
+                    barvlDt: Number.isFinite(adjSec) ? String(adjSec) : "9999",
+                    btrainNo: item.btrainNo || "",
+                    recptnDt: item.recptnDt || "",
                 };
 
                 const existing = trainMap.get(trainId);
@@ -483,7 +471,7 @@ export const fetchStationArrivals = async (stationName: string): Promise<Station
                 }
             });
             return Array.from(trainMap.values());
-        } catch (e) {
+        } catch {
             return [];
         }
     };
@@ -649,19 +637,10 @@ export const fetchTrainCongestion = async (subwayNm: string, trainNo: string) =>
     const subwayId = lineMap[normalizedNm];
     if (!subwayId) return null;
 
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = "sample";
-
-    const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`;
-    
     try {
-        const json = await fetchWithFallbacks(url);
-        const isSuccess = json?.status === 200 || json?.errorMessage?.status === 200 || json?.RESULT?.CODE === "INFO-000";
-        if (isSuccess) {
-            return json?.realtimeTrainCongestionList?.[0] || null;
-        }
-        return null;
-    } catch (err) {
+        const res = await callSeoulSubway(`json/realtimeTrainCongestion/0/5/${subwayId}/${trainNo}`);
+        return res.data?.realtimeTrainCongestionList?.[0] || null;
+    } catch {
         return null;
     }
 };
@@ -732,75 +711,29 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     return null;
 };
 
-// ── API 키 관리 — 성공한 키 캐시, 순차 폴백으로 quota 낭비 방지 ────────────
-const POSITION_API_KEYS = [
-    process.env.NEXT_PUBLIC_SEOUL_API_KEY,
-    "634179436a7079773730786f4d5445",
-    "53517344677079773531694a786f6a",
-    "434f7275707079773537687a507658",
-    "sample",
-].filter(Boolean) as string[];
-
-// 현재 작동 중인 키 인덱스 (모듈 레벨 — 전체 노선이 공유)
-let _activeKeyIdx = 0;
-// 키별 quota 소진 시각 (ERROR-337/ERROR-500 수신 시 기록, 자정 초기화)
-const _keyExhaustedUntil: Record<string, number> = {};
-
-function isKeyExhausted(key: string): boolean {
-    const until = _keyExhaustedUntil[key];
-    if (!until) return false;
-    if (Date.now() > until) { delete _keyExhaustedUntil[key]; return false; }
-    return true;
-}
-
-async function fetchPositionWithKey(key: string, lineName: string): Promise<any | null> {
-    const url = API_ENDPOINTS.SUBWAY_POSITION(key, lineName);
-    try {
-        const json = await fetchWithFallbacks(url);
-        // quota 초과 에러
-        if (json?.code === 'ERROR-337' || json?.code === 'ERROR-500' ||
-            json?.status === 500) {
-            // 자정까지 이 키 사용 금지
-            const midnight = new Date(); midnight.setHours(24, 0, 0, 0);
-            _keyExhaustedUntil[key] = midnight.getTime();
-            return null;
-        }
-        if (!json?.realtimePositionList) return null;
-        if (json.realtimePositionList.length === 0) return null; // sample 빈 응답
-        return json;
-    } catch {
-        return null;
-    }
-}
-
+// ── 실시간 열차 위치 (realtimePosition) ─────────────────────────────────────
+// 응답 필드: statnNm(이벤트 역), trainSttus(0진입/1도착/2출발/3전역출발),
+//           recptnDt(이벤트 시각, KST), lastRecptnDt(날짜만), statnTnm(종착역), updnLine(0상행/내선 1하행/외선)
+// realtimePosition 응답에는 arvlCd 가 없다 (도착 API 전용 필드).
 export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
-    // 현재 활성 키부터 순차 시도 — 성공하면 해당 키를 계속 사용 (quota 낭비 방지)
-    const keys = [...new Set(POSITION_API_KEYS)];
-    for (let offset = 0; offset < keys.length; offset++) {
-        const idx = (_activeKeyIdx + offset) % keys.length;
-        const key = keys[idx];
-        if (isKeyExhausted(key)) continue;
-        const json = await fetchPositionWithKey(key, lineName);
-        if (json) {
-            _activeKeyIdx = idx; // 성공한 키로 고정
-            return (json.realtimePositionList || []).map((item: any) => ({
-                subwayId:     item.subwayId,
-                subwayNm:     item.subwayNm,
-                statnId:      item.statnId,
-                statnNm:      item.statnNm,
-                trainNo:      item.trainNo,
-                lastRecptnDt: item.lastRecptnDt,
-                updnLine:     item.updnLine,
-                directAt:     item.directAt,
-                trainSttus:   item.trainSttus || "99",
-                lstnyNm:      item.lstnyNm || item.statnTnm || "",
-                statnTnm:     item.statnTnm || "",
-                arrivalNm:    item.arrivalNm,
-                arvlCd:       item.arvlCd,
-            }));
-        }
-    }
-    return [];
+    const res = await callSeoulSubway(`json/realtimePosition/0/150/${lineName}`);
+    const list: any[] = res.data?.realtimePositionList || [];
+    return list.map((item: any) => ({
+        subwayId:     String(item.subwayId ?? ''),
+        subwayNm:     String(item.subwayNm ?? ''),
+        statnId:      String(item.statnId ?? ''),
+        statnNm:      String(item.statnNm ?? ''),
+        trainNo:      String(item.trainNo ?? ''),
+        recptnDt:     String(item.recptnDt ?? ''),
+        lastRecptnDt: String(item.lastRecptnDt ?? ''),
+        updnLine:     String(item.updnLine ?? ''),
+        directAt:     String(item.directAt ?? '0'),
+        trainSttus:   String(item.trainSttus ?? '99'),
+        lstnyNm:      String(item.statnTnm ?? '').replace(/종착$/, ''),
+        statnTnm:     String(item.statnTnm ?? ''),
+        arrivalNm:    String(item.statnNm ?? ''),
+        source:       'position' as const,
+    }));
 };
 
 export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {

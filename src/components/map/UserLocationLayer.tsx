@@ -8,15 +8,12 @@ import { memo } from "react";
 //   z10 → 0.00654,  z12 → 0.02617,  z14 → 0.10471,  z16 → 0.41884,  z18 → 1.67537
 //
 // MapLibre interpolate: exponential base=2 이면 zoom 1 증가 = 계수 ×2 (지구 크기 2배)
+// "zoom" 은 최상위 interpolate/step 의 입력으로만 쓸 수 있으므로 max(6px)는 각 stop 출력 안에 둔다.
 const ACCURACY_RADIUS_EXPR: any = [
-  "max",
-  6,   // 최소 6px (GPS 정확도가 매우 좋거나 줌이 낮을 때도 원이 보이도록)
-  [
-    "interpolate", ["exponential", 2], ["zoom"],
-    10, ["*", ["get", "accuracy"], 0.00654],
-    14, ["*", ["get", "accuracy"], 0.10471],
-    18, ["*", ["get", "accuracy"], 1.67537],
-  ]
+  "interpolate", ["exponential", 2], ["zoom"],
+  10, ["max", 6, ["*", ["get", "accuracy"], 0.00654]],
+  14, ["max", 6, ["*", ["get", "accuracy"], 0.10471]],
+  18, ["max", 6, ["*", ["get", "accuracy"], 1.67537]],
 ];
 
 const UserLocationLayer = () => {

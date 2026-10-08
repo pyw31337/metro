@@ -1,6 +1,6 @@
 export const THEME = {
     fonts: {
-        primary: "'Pretendard', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        primary: "'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     },
     colors: {
         textPrimary: "#222222",

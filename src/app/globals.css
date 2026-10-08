@@ -3,31 +3,82 @@
 /* Enable class-based dark mode for Tailwind v4 */
 @custom-variant dark (&:is(.dark *));
 
+/*
+ * Design tokens (tasteskill.dev redesign 원칙 적용)
+ *  - 순수 #000 / #fff 금지: 오프블랙(zinc-950) / 오프화이트
+ *  - 포인트 컬러는 하나(차분한 블루, 채도 < 80%). 노선 고유색은 브랜드/정보이므로 그대로 둔다.
+ *  - 굵기: 900 대신 600~700 (font-black → 700, font-bold → 600)
+ *  - 모서리: 하나의 반경 체계 (컨트롤 16px, 시트 20px, 칩 999px)
+ */
+@theme {
+    --color-white: #fafaf9;
+    --color-black: #09090b;
+
+    /* 단일 포인트 컬러: 기존 blue 사용처 전체를 채도 낮춘 블루로 통일 */
+    --color-blue-50:  oklch(97.2% 0.012 255);
+    --color-blue-100: oklch(93.6% 0.028 255);
+    --color-blue-200: oklch(88.4% 0.050 255);
+    --color-blue-300: oklch(80.8% 0.085 255);
+    --color-blue-400: oklch(70.5% 0.125 256);
+    --color-blue-500: oklch(61.5% 0.150 258);
+    --color-blue-600: oklch(54.5% 0.155 260);
+    --color-blue-700: oklch(48.5% 0.145 261);
+    --color-blue-800: oklch(42.0% 0.120 262);
+    --color-blue-900: oklch(37.5% 0.095 263);
+    --color-blue-950: oklch(28.0% 0.065 264);
+
+    --font-weight-semibold: 560;
+    --font-weight-bold: 600;
+    --font-weight-extrabold: 650;
+    --font-weight-black: 700;
+
+    --radius-3xl: 1.25rem;
+
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
 @layer theme {
     :root {
-        --background: #ffffff;
-        --foreground: #09090b;
-        --surface: rgba(255, 255, 255, 0.82);
-        --surface-border: rgba(255, 255, 255, 0.2);
-        --edge-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        --primary: #000000;
-        --accent: #007AFF; /* Apple Blue */
-        
-        /* Transit Brand Colors - High Saturation */
+        --background: #f6f6f4;
+        --foreground: #18181b;
+        --surface: rgba(250, 250, 249, 0.86);
+        --surface-border: rgba(24, 24, 27, 0.08);
+        /* 그림자는 배경 색조(zinc)로 틴트 */
+        --edge-shadow: 0 1px 2px rgba(24, 24, 27, 0.06), 0 8px 24px -6px rgba(24, 24, 27, 0.14);
+        --primary: #18181b;
+        --accent: oklch(54.5% 0.155 260);
+        --accent-contrast: #fafaf9;
+
+        /* Transit category colors (기존 IA 유지) */
         --subway-blue: #0052A4;
         --bus-orange: #f59e0b;
-        --maas-purple: #7c3aed;
         --wc-emerald: #10b981;
 
         --glass-blur: 16px;
+
+        /* z-index scale: map < panel < controls < popover < toast */
+        --z-map: 10;
+        --z-panel: 1000;
+        --z-controls: 2000;
+        --z-popover: 3000;
+        --z-toast: 9000;
+
+        --dur-fast: 180ms;
+        --dur-base: 260ms;
+        --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+        color-scheme: light;
     }
 
     .dark {
-        --background: #000000;
-        --foreground: #ffffff;
-        --surface: rgba(28, 28, 30, 0.85); /* Apple Dark Gray */
-        --surface-border: rgba(255, 255, 255, 0.1);
-        --edge-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        --background: #09090b;
+        --foreground: #f4f4f5;
+        --surface: rgba(24, 24, 27, 0.86);
+        --surface-border: rgba(244, 244, 245, 0.08);
+        --edge-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px -8px rgba(0, 0, 0, 0.55);
+        --accent: oklch(70.5% 0.125 256);
+        --accent-contrast: #09090b;
+        color-scheme: dark;
     }
 }
 
@@ -55,21 +106,47 @@ body {
     background: var(--surface);
     backdrop-filter: blur(var(--glass-blur)) saturate(180%);
     -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(180%);
-    border: 1.5px solid var(--surface-border);
+    border: 1px solid var(--surface-border);
     box-shadow: var(--edge-shadow);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.dark .glass-premium {
-    background: rgba(44, 44, 46, 0.7);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: transform var(--dur-base) var(--ease-out), opacity var(--dur-base) var(--ease-out), background-color var(--dur-base) var(--ease-out);
 }
 
 .pill-active {
     background: var(--foreground);
     color: var(--background);
-    transform: scale(1.05);
-    font-weight: 700;
+    font-weight: 600;
+}
+
+/* 눌림 피드백: 살짝 눌리는 느낌 (transform 만 애니메이션) */
+.press {
+    transition: transform var(--dur-fast) var(--ease-out), opacity var(--dur-fast) var(--ease-out), background-color var(--dur-fast) var(--ease-out);
+}
+.press:active:not(:disabled) {
+    transform: scale(0.97);
+}
+
+/* ─── Focus / Skip link (키보드 접근성) ───────────────────────────────────── */
+:where(button, a, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.skip-link {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: var(--z-toast);
+    padding: 0.625rem 1rem;
+    border-radius: 999px;
+    background: var(--foreground);
+    color: var(--background);
+    font-size: 13px;
+    font-weight: 600;
+    transform: translateY(-200%);
+    transition: transform var(--dur-base) var(--ease-out);
+}
+.skip-link:focus-visible {
+    transform: translateY(0);
 }
 
 /* ─── Scrollbar ─────────────────────────────────────────────────────────────── */
@@ -131,7 +208,16 @@ body {
 /* ─── Typography Reset ─────────────────────────────────────────────────────── */
 * {
     font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.012em;
+}
+
+/* 숫자(시간, 분, 정거장 수)는 고정폭으로 흔들림 방지 */
+time, .tabular-nums, [data-numeric] {
+    font-variant-numeric: tabular-nums;
+}
+
+h1, h2, h3, h4 {
+    text-wrap: balance;
 }
 
 /* ─── Custom Marker Styling ────────────────────────────────────────────────── */
@@ -156,11 +242,11 @@ body {
 }
 
 .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-    border-top-color: rgba(255, 255, 255, 0.95) !important;
+    border-top-color: rgba(250, 250, 249, 0.95) !important;
 }
 
 .dark .maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
-    border-top-color: rgba(44, 44, 46, 0.95) !important;
+    border-top-color: rgba(24, 24, 27, 0.95) !important;
 }
 
 /* Hide default close button */
@@ -182,11 +268,11 @@ body {
 
 /* ─── CSS Replacement Animations (framer-motion 대체) ─────────────────────── */
 @keyframes popup {
-    from { opacity: 0; transform: scale(0.9) translateY(20px); }
-    to   { opacity: 1; transform: scale(1)   translateY(0); }
+    from { opacity: 0; transform: scale(0.96) translateY(8px); }
+    to   { opacity: 1; transform: scale(1)    translateY(0); }
 }
 .animate-popup {
-    animation: popup 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: popup var(--dur-base) var(--ease-out) both;
 }
 
 @keyframes fade-in-up {
@@ -194,15 +280,15 @@ body {
     to   { opacity: 1; transform: translateY(0); }
 }
 .animate-fade-in-up {
-    animation: fade-in-up 0.18s ease both;
+    animation: fade-in-up var(--dur-fast) var(--ease-out) both;
 }
 
 @keyframes panel-in {
-    from { transform: translateY(200px); }
-    to   { transform: translateY(0); }
+    from { transform: translateY(48px); opacity: 0; }
+    to   { transform: translateY(0);    opacity: 1; }
 }
 .animate-panel-in {
-    animation: panel-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    animation: panel-in 0.4s var(--ease-out) both;
 }
 
 /* ─── Pulsing Wave Animation ──────────────────────────────────────────────── */
@@ -220,6 +306,7 @@ body {
 }
 
 /* ─── High Contrast Mode ──────────────────────────────────────────────────── */
+/* 고대비 모드는 접근성 목적이므로 의도적으로 순수 흑백을 사용한다 */
 .high-contrast {
     --background: #000000;
     --foreground: #ffffff;
@@ -272,4 +359,14 @@ body {
     backdrop-filter: none !important;
     -webkit-backdrop-filter: none !important;
     border: 2px solid #ffffff !important;
+}
+
+/* ─── Reduced motion ──────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
