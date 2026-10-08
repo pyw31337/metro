@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # deploy-all.sh
-# Nationwide Data Ingestion -> Build -> Firebase Deployment Automation
+# Nationwide Data Ingestion -> Build -> Deploy (npm run deploy: gh-pages)
+# 참고: 운영 배포는 main push 시 .github/workflows/pages.yml 이 자동으로 수행한다.
 
 # Set current directory
 cd /Users/pyw31337/Developer/subway
@@ -26,12 +27,12 @@ else
     exit 1
 fi
 
-echo "🌐 [3/3] Deploying to Firebase Hosting..."
+echo "🌐 [3/3] Deploying (npm run deploy)..."
 npm run deploy
 
 if [ $? -eq 0 ]; then
     echo "🎉 ALL DONE! Your nationwide transit database is LIVE."
 else
-    echo "❌ Deployment Failed. Please check if you have run 'npx -y firebase-tools login' and 'npx -y firebase-tools use --add'."
+    echo "❌ Deployment Failed."
     exit 1
 fi
