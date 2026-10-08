@@ -1,7 +1,11 @@
 name = "seoul-subway-proxy"
 main = "worker.js"
 compatibility_date = "2026-10-01"
+workers_dev = true
 
 [vars]
-ALLOWED_ORIGINS = "https://pyw31337.github.io,http://localhost:3000"
-CACHE_TTL_SECONDS = "15"
+ALLOWED_ORIGINS = "https://pyw31337.github.io"
+CACHE_TTL_SECONDS = "12"
+RATE_LIMIT_PER_MIN = "240"
+
+# secret (wrangler secret put): SEOUL_API_KEY (필수), SEOUL_API_KEYS (선택, 예비 키 쉼표 구분)

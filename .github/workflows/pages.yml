@@ -38,13 +38,16 @@ jobs:
       - name: Unit tests
         run: npm test
 
+      - name: Require subway proxy URL
+        run: test -n "${{ vars.NEXT_PUBLIC_SUBWAY_PROXY_URL }}" || (echo "::warning::NEXT_PUBLIC_SUBWAY_PROXY_URL 미설정 → 공개 프록시 + sample 키로 동작" )
+
       - name: Build static export (basePath /metro)
         run: npx --no-install next build
         env:
           # NEXT_PUBLIC_DEPLOY_TARGET 을 비워 두면 basePath 가 '/metro' 로 설정된다.
           NEXT_PUBLIC_WC_API_KEY: ${{ secrets.NEXT_PUBLIC_WC_API_KEY }}
-          NEXT_PUBLIC_SEOUL_API_KEY: ${{ secrets.NEXT_PUBLIC_SEOUL_API_KEY }}
-          NEXT_PUBLIC_SEOUL_API_KEYS: ${{ secrets.NEXT_PUBLIC_SEOUL_API_KEYS }}
+          # 서울 실시간 지하철 키는 번들에 넣지 않는다. 전용 Cloudflare Worker(workers/seoul-subway-proxy)가
+          # secret 으로 키를 주입하고, 앱은 아래 프록시 주소만 안다. (Worker 장애 시 공개 프록시 + sample 키로 대체)
           NEXT_PUBLIC_SUBWAY_PROXY_URL: ${{ vars.NEXT_PUBLIC_SUBWAY_PROXY_URL }}
           NEXT_PUBLIC_BUS_API_KEY: ${{ secrets.NEXT_PUBLIC_BUS_API_KEY }}
           NEXT_PUBLIC_KAKAO_API_KEY: ${{ secrets.NEXT_PUBLIC_KAKAO_API_KEY }}
