@@ -429,8 +429,6 @@ export const fetchArrivalBasedPositions = async (stationName: string): Promise<T
 };
 
 export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = "sample";
 
     const fetchUniqueArrivals = async (name: string): Promise<StationArrival[]> => {
         try {
@@ -671,11 +669,12 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
         if (staticMatch) return staticMatch.platform;
     }
 
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = "sample";
-    
+    // 일반 열린데이터 API (실시간 지하철 키와 다른 키). 키가 없으면 sample (최대 5건)
+    const apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
+    const rows = apiKey === "sample" ? 5 : 50;
+
     const tryFetch = async (queryName: string) => {
-        const url = `https://openapi.seoul.go.kr:443/${apiKey}/json/CardSubwayTransferPos/1/50/${encodeURIComponent(queryName)}`;
+        const url = `https://openapi.seoul.go.kr:443/${apiKey}/json/CardSubwayTransferPos/1/${rows}/${encodeURIComponent(queryName)}`;
         try {
             const json = await fetchWithFallbacks(url);
             const list = json?.CardSubwayTransferPos?.row || [];

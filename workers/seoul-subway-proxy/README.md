@@ -1,28 +1,39 @@
-# seoul-subway-proxy (선택)
+# seoul-subway-proxy (metro 전용 Cloudflare Worker)
 
-GitHub Pages 판(https://pyw31337.github.io/metro)은 정적 사이트라서 서울 실시간 지하철 API를 브라우저가 직접 호출할 수 없습니다.
+운영 주소: `https://seoul-subway-proxy.pyw213.workers.dev`
 
-- `swopenapi.seoul.go.kr`는 **http 전용**이고 **CORS 헤더가 없습니다**. https 페이지에서 직접 호출하면 mixed content로 차단됩니다.
-- 그래서 앱은 기본으로 공개 CORS 프록시(allorigins → codetabs)를 거칩니다. 무료 서비스라 **가용성 보장이 없고**, 키가 들어간 URL이 제3자 서버를 지나갑니다.
-- 이 Worker를 배포해 `NEXT_PUBLIC_SUBWAY_PROXY_URL`에 주소를 넣으면 다음이 해결됩니다.
-  - 키는 Worker secret에만 있고 번들에는 들어가지 않습니다.
-  - 15초 edge 캐시 덕분에 여러 사용자가 접속해도 일일 호출 한도(실시간 API 기본 1,000회/일)를 덜 씁니다.
-  - 제3자 프록시에 의존하지 않습니다.
+GitHub Pages 판(https://pyw31337.github.io/metro)은 정적 사이트라서 서울 실시간 지하철 API를 브라우저가 직접 부를 수 없습니다. `swopenapi.seoul.go.kr`가 http 전용이고 CORS 헤더도 없기 때문입니다. 이 Worker가 그 사이를 맡습니다.
 
-## 배포
+| 항목 | 동작 |
+|---|---|
+| 인증키 | Worker secret(`SEOUL_API_KEY`, 예비 `SEOUL_API_KEYS`)에만 둡니다. 앱 번들에는 없습니다. 한도 초과(ERROR-337)나 키 오류가 나면 예비 키로 넘어갑니다. |
+| 허용 경로 | `/{아무값}/json/realtimePosition/{시작}/{끝}/{노선}`, `/{아무값}/json/realtimeStationArrival/{시작}/{끝}/{역}`만 받습니다. 그 외는 400을 돌려줍니다(열린 프록시가 아님). |
+| CORS | `https://pyw31337.github.io`와 개발용 `http://localhost:*`, `http://127.0.0.1:*`만 허용합니다. 다른 Origin은 403입니다. |
+| 캐시 | 같은 URL은 12초 동안 공유합니다(isolate 메모리 + Cache API). 정상(INFO-000)과 데이터 없음(INFO-200)만 캐시합니다. |
+| 오류 | 서울시 오류 코드(한도 초과 등)를 그대로 전달합니다. Worker 자체 오류는 `PROXY-*` 코드로 돌려줍니다. |
+| 제한 | IP당 분당 240회(isolate 단위, 느슨함)를 넘으면 429입니다. |
+| 확인 | `GET /health`가 colo와 키 설정 여부를 알려 줍니다(키 값은 노출하지 않음). |
+
+앱은 `NEXT_PUBLIC_SUBWAY_PROXY_URL`(저장소 Actions 변수)로 이 주소를 받습니다. Worker가 실패하면 공개 CORS 프록시와 sample 키로 대체합니다.
+
+## 배포와 키 교체
+
+Wrangler 4는 Node 22 이상이 필요합니다.
 
 ```bash
 cd workers/seoul-subway-proxy
 npx wrangler deploy
-npx wrangler secret put SEOUL_API_KEY   # 서울 열린데이터광장 실시간 지하철 인증키
+npx wrangler secret put SEOUL_API_KEY     # 실시간 지하철 인증키 (프롬프트에 붙여넣기)
+npx wrangler secret put SEOUL_API_KEYS    # (선택) 예비 키, 쉼표로 구분
 ```
 
-그다음 GitHub 저장소 **Settings → Secrets and variables → Actions → Variables**에 `NEXT_PUBLIC_SUBWAY_PROXY_URL=https://seoul-subway-proxy.<계정>.workers.dev`를 추가하고 Pages 워크플로를 다시 실행합니다.
+키를 교체할 때는 `secret put`만 다시 실행하면 됩니다. 앱을 다시 배포할 필요는 없습니다.
 
 ## 동작 확인
 
 ```bash
-curl "https://seoul-subway-proxy.<계정>.workers.dev/KEY/json/realtimePosition/0/5/2호선"
+curl https://seoul-subway-proxy.pyw213.workers.dev/health
+curl "https://seoul-subway-proxy.pyw213.workers.dev/KEY/json/realtimeStationArrival/0/5/강남"
 ```
 
-`errorMessage.code`가 `INFO-000`이면 정상입니다. `ERROR-337`이면 일일 한도 초과, `INFO-100`이면 키 오류입니다.
+`errorMessage.code`가 `INFO-000`이면 정상입니다. `ERROR-337`은 일일 한도 초과, `INFO-100`은 키 오류입니다. 응답 헤더의 `X-Proxy-Cache`(MISS/HIT)와 `X-Proxy-Colo`도 함께 확인하세요.

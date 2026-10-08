@@ -171,13 +171,12 @@ export default function Home() {
   useViewportLines(viewportBounds);
 
   // ── 온라인/오프라인 상태 (초기 상태 + 이벤트 모두 반영) ──
-  const [isOffline, setIsOffline] = useState(() =>
-    typeof navigator !== 'undefined' ? !navigator.onLine : false
-  );
+  // 초기값은 서버 렌더와 같게 false (Node 21+ 는 빌드 시에도 navigator 가 있지만 onLine 이 없어 '오프라인'으로 잘못 렌더됨)
+  const [isOffline, setIsOffline] = useState(false);
   useEffect(() => {
     const onOffline = () => setIsOffline(true);
     const onOnline  = () => setIsOffline(false);
-    setIsOffline(!navigator.onLine);
+    setIsOffline(navigator.onLine === false);
     window.addEventListener('offline', onOffline);
     window.addEventListener('online',  onOnline);
     return () => { window.removeEventListener('offline', onOffline); window.removeEventListener('online', onOnline); };

@@ -5,6 +5,8 @@
  *     NEXT_PUBLIC_SEOUL_API_KEY   : 기본 키
  *     NEXT_PUBLIC_SEOUL_API_KEYS  : (선택) 쉼표로 구분한 예비 키 목록
  *   키가 없으면 'sample' 키로 동작한다 (노선당 최대 5건, 도착 API는 '서울'역만).
+ *   운영(GitHub Pages)에서는 키를 번들에 넣지 않고 NEXT_PUBLIC_SUBWAY_PROXY_URL(전용 Worker)만 설정한다.
+ *   Worker 가 실패하면 공개 CORS 프록시 + sample 키로 대체한다.
  *   주의: GitHub Pages 같은 정적 호스팅에서는 NEXT_PUBLIC_* 값이 번들에 그대로 포함되므로
  *   키는 공개된 것으로 간주해야 한다. 키를 숨기려면 NEXT_PUBLIC_SUBWAY_PROXY_URL 로
  *   서버측 프록시(예: workers/seoul-subway-proxy)를 지정하고 키는 프록시에만 둔다.
@@ -49,6 +51,11 @@ const PROXY_URL = (process.env.NEXT_PUBLIC_SUBWAY_PROXY_URL || '').trim().replac
 /** 프록시가 키를 주입하는 경우 클라이언트에서는 이 자리표시자를 보낸다 */
 const PROXY_KEY_PLACEHOLDER = 'KEY';
 
+/** 전용 프록시 연결 실패 시 잠시(60초) 건너뛴다 (매 요청마다 타임아웃을 기다리지 않도록) */
+let _proxyDownUntil = 0;
+function isProxyDown(): boolean { return Date.now() < _proxyDownUntil; }
+function markProxyDown() { _proxyDownUntil = Date.now() + 60_000; }
+
 const KEYS = readKeys();
 const _exhaustedUntil: Record<string, number> = {};
 let _activeIdx = 0;
@@ -70,7 +77,8 @@ function isExhausted(key: string): boolean {
 
 /** 사용 가능한 키 순서 (현재 활성 키 우선). 키가 모두 소진되면 'sample'만 남는다. */
 export function candidateKeys(): string[] {
-  if (PROXY_URL) return [PROXY_KEY_PLACEHOLDER];
+  // 전용 프록시가 있으면 키는 프록시가 주입한다. 프록시가 실패하면 공개 프록시 + sample 키로 대체
+  if (PROXY_URL) return isProxyDown() ? ['sample'] : [PROXY_KEY_PLACEHOLDER, 'sample'];
   const ordered: string[] = [];
   for (let i = 0; i < KEYS.length; i++) {
     const k = KEYS[(_activeIdx + i) % KEYS.length];
@@ -81,12 +89,17 @@ export function candidateKeys(): string[] {
 }
 
 export function hasRealKey(): boolean {
-  return Boolean(PROXY_URL) || KEYS.length > 0;
+  return (Boolean(PROXY_URL) && !isProxyDown()) || KEYS.length > 0;
 }
 
 /** 직접 운영하는 프록시 없이 공개 CORS 프록시를 써야 하는 환경인지 (정적 배포 + 프록시 미설정) */
 export function usingPublicProxy(): boolean {
-  return !PROXY_URL && process.env.NODE_ENV !== 'development';
+  return (!PROXY_URL || isProxyDown()) && process.env.NODE_ENV !== 'development';
+}
+
+/** 지금 전용 프록시(Worker)를 쓰고 있는지 */
+export function usingDedicatedProxy(): boolean {
+  return Boolean(PROXY_URL) && !isProxyDown();
 }
 
 function markKey(key: string, kind: SeoulResultKind) {
@@ -220,9 +233,9 @@ function publicProxies(target: string): { name: string; url: string; wrapped: bo
 async function transport(key: string, pathAfterKey: string): Promise<any> {
   const encodedPath = pathAfterKey.split('/').map(encodeURIComponent).join('/');
 
-  // 1) 직접 운영하는 프록시
-  if (PROXY_URL) {
-    return fetchJson(`${PROXY_URL}/${key}/${encodedPath}`, 6000);
+  // 1) 직접 운영하는 프록시 (키는 프록시가 주입, 응답은 프록시가 짧게 캐시하므로 캐시 무효화 파라미터를 붙이지 않는다)
+  if (PROXY_URL && key === PROXY_KEY_PLACEHOLDER) {
+    return fetchJson(`${PROXY_URL}/${key}/${encodedPath}`, 8000);
   }
 
   // 캐시 무효화 파라미터 (공개 프록시의 응답 캐시 회피)
@@ -308,6 +321,8 @@ export async function callSeoulSubway<T = any>(pathAfterKey: string): Promise<Se
       const path = key === 'sample' ? limitForSampleKey(pathAfterKey) : pathAfterKey;
       json = await transport(key, path);
     } catch {
+      // 전용 프록시 실패 → 공개 프록시 + sample 키로 한 번 더 시도
+      if (key === PROXY_KEY_PLACEHOLDER) { markProxyDown(); continue; }
       // 네트워크/프록시 실패는 키 문제와 무관하므로 다음 키로 넘기지 않는다
       _consecutiveNetFails++;
       if (_consecutiveNetFails >= UNREACHABLE_AFTER_FAILS && Date.now() - _lastNetSuccessAt > UNREACHABLE_NO_SUCCESS_MS) {
