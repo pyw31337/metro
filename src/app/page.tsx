@@ -8,7 +8,9 @@ import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 
 import { useDataWorker }      from "@/hooks/useDataWorker";
 import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
-import { useSimStatus }       from "@/hooks/useSimStatus";
+import { useSimStatus, useSeoulApiIssue } from "@/hooks/useSimStatus";
+import type { SimStatus } from "@/services/TransitRealtimeService";
+import type { SeoulApiIssue } from "@/services/seoulApi";
 import { useLastTrainWarning } from "@/hooks/useLastTrainWarning";
 import { useViewportLines }   from "@/hooks/useViewportLines";
 import { normalizeStationName } from "@/utils/stationUtils";
@@ -45,6 +47,7 @@ const getBusRoutes = async () => {
 export default function Home() {
   const { findPath, findNearestStation, sortWCs } = useDataWorker();
   const simStatus = useSimStatus();
+  const apiIssue = useSeoulApiIssue();
   const mapRef = useRef<any>(null);
   const initLocRef = useRef(false);
 
@@ -588,7 +591,9 @@ export default function Home() {
   // 렌더
   // ─────────────────────────────────────────────────────────────────────────
   return (
-    <main className="relative w-full h-[100dvh] overflow-hidden bg-white dark:bg-black font-sans">
+    <main className="relative w-full h-[100dvh] overflow-hidden bg-[var(--background)] font-sans">
+      <a href="#app-panel" className="skip-link">경로 검색으로 건너뛰기</a>
+      <h1 className="sr-only">Metro Live 수도권 실시간 지하철 지도</h1>
 
       {/* 지도 */}
       <div className="absolute inset-0 z-10">
@@ -674,7 +679,7 @@ export default function Home() {
       />
 
       {/* 지도 컨트롤 */}
-      <div className="fixed top-6 right-6 z-[2001] flex flex-col gap-4 items-center">
+      <div className="fixed top-[max(1rem,env(safe-area-inset-top))] right-4 z-[2001] flex flex-col gap-4 items-end">
         <MapControls
           onZoomIn={() => mapRef.current?.zoomIn()}
           onZoomOut={() => mapRef.current?.zoomOut()}
@@ -692,44 +697,26 @@ export default function Home() {
         <WeatherPopup onClose={() => ui.setWeatherOpen(false)} />
       )}
 
-      {/* 오프라인 알림 배지 */}
-      {isOffline && (
-        <div className="animate-popup fixed top-4 left-1/2 -translate-x-1/2 z-[9999] px-4 py-2 rounded-full bg-zinc-900/90 dark:bg-white/90 text-white dark:text-zinc-900 text-[11px] font-black backdrop-blur-xl border border-white/10 dark:border-black/10 shadow-lg pointer-events-none">
-          오프라인 · 캐시 데이터 사용 중
-        </div>
-      )}
+      {/* 상단 상태 영역: 오프라인 / 막차 / 실시간 신뢰도 */}
+      <div
+        className="fixed top-[max(1rem,env(safe-area-inset-top))] left-4 right-20 z-[2000] flex flex-col items-start gap-2 pointer-events-none"
+        role="status"
+        aria-live="polite"
+      >
+        {isOffline ? (
+          <StatusPill tone="neutral" dot={false}>오프라인. 저장된 데이터로 보여주는 중</StatusPill>
+        ) : (
+          <RealtimeStatusPill simStatus={simStatus} apiIssue={apiIssue} />
+        )}
 
-      {/* 막차 임박 경고 배너 */}
-      {lastTrainWarning && (
-        <div className="animate-popup fixed top-4 left-1/2 -translate-x-1/2 z-[9998] px-4 py-2 rounded-full bg-rose-500/90 text-white text-[11px] font-black backdrop-blur-xl shadow-lg pointer-events-none flex items-center gap-2">
-          <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
-          {lastTrainWarning.station} 막차 {lastTrainWarning.minutesLeft === 0 ? '곧 출발' : `${lastTrainWarning.minutesLeft}분 후`} ({lastTrainWarning.lastTimeStr} {lastTrainWarning.dest}행)
-        </div>
-      )}
-
-      {/* 실시간 신뢰도 배지 */}
-      {!isOffline && simStatus !== 'starting' && (
-        <div className="fixed top-4 left-4 z-[2000] pointer-events-none">
-          {simStatus === 'live' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">실시간</span>
-            </div>
-          )}
-          {simStatus === 'mixed' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">혼합</span>
-            </div>
-          )}
-          {simStatus === 'simulated' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-500/10 border border-zinc-400/20 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-              <span className="text-[10px] font-black text-zinc-500">시뮬레이션</span>
-            </div>
-          )}
-        </div>
-      )}
+        {lastTrainWarning && (
+          <StatusPill tone="danger">
+            <span className="tabular-nums">
+              {lastTrainWarning.station} 막차 {lastTrainWarning.minutesLeft === 0 ? '곧 출발' : `${lastTrainWarning.minutesLeft}분 후`} ({lastTrainWarning.lastTimeStr} {lastTrainWarning.dest}행)
+            </span>
+          </StatusPill>
+        )}
+      </div>
 
       {/* 화장실 나침반 - 탭 무관하게 화장실 선택 시 표시 */}
       {subway.selectedWC && mapSt.userLocation && (
@@ -743,4 +730,42 @@ export default function Home() {
       )}
     </main>
   );
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 상태 표시
+// ─────────────────────────────────────────────────────────────────────────────
+type PillTone = 'live' | 'warn' | 'neutral' | 'danger';
+
+const PILL_TONE: Record<PillTone, { wrap: string; dot: string }> = {
+  live:    { wrap: 'text-emerald-700 dark:text-emerald-300', dot: 'bg-emerald-500' },
+  warn:    { wrap: 'text-amber-700 dark:text-amber-300',     dot: 'bg-amber-500' },
+  neutral: { wrap: 'text-zinc-600 dark:text-zinc-300',       dot: 'bg-zinc-400' },
+  danger:  { wrap: 'text-rose-700 dark:text-rose-300',       dot: 'bg-rose-500' },
+};
+
+function StatusPill({ tone, dot = true, children }: { tone: PillTone; dot?: boolean; children: React.ReactNode }) {
+  const t = PILL_TONE[tone];
+  return (
+    <div className={`animate-popup inline-flex max-w-full items-center gap-2 rounded-full bg-white/90 dark:bg-zinc-900/90 backdrop-blur-xl border border-zinc-900/[0.06] dark:border-white/[0.08] px-3 py-1.5 text-[12px] font-medium leading-tight shadow-[0_1px_2px_rgba(24,24,27,0.06),0_6px_16px_-6px_rgba(24,24,27,0.18)] ${t.wrap}`}>
+      {dot && <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${t.dot}`} aria-hidden="true" />}
+      <span className="truncate">{children}</span>
+    </div>
+  );
+}
+
+/**
+ * 열차 위치가 어디서 왔는지 정직하게 보여준다.
+ * API 오류(한도 초과, 키 오류, 연결 실패)는 숨기지 않고 그대로 알린다.
+ */
+function RealtimeStatusPill({ simStatus, apiIssue }: { simStatus: SimStatus; apiIssue: SeoulApiIssue }) {
+  if (apiIssue === 'quota')       return <StatusPill tone="danger">오늘 실시간 API 호출 한도 초과. 시간표 기반 위치</StatusPill>;
+  if (apiIssue === 'invalid-key') return <StatusPill tone="danger">실시간 API 키 오류. 시간표 기반 위치</StatusPill>;
+  if (apiIssue === 'unreachable') return <StatusPill tone="warn">실시간 서버에 연결하지 못함. 시간표 기반 위치</StatusPill>;
+  if (simStatus === 'starting')   return <StatusPill tone="neutral">실시간 위치 불러오는 중</StatusPill>;
+  if (apiIssue === 'sample-key')  return <StatusPill tone="warn">샘플 키 사용 중. 일부 열차만 실시간</StatusPill>;
+  if (simStatus === 'live')       return <StatusPill tone="live">실시간 위치</StatusPill>;
+  if (simStatus === 'mixed')      return <StatusPill tone="warn">일부 노선만 실시간</StatusPill>;
+  return <StatusPill tone="neutral">시간표 기반 위치</StatusPill>;
 }

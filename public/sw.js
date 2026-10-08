@@ -1,30 +1,33 @@
 // Metro Live Service Worker
 // Caches the app shell and static assets for offline use
 
-const CACHE_NAME = 'metro-live-v7';
+const CACHE_NAME = 'metro-live-v8';
 const STATIC_CACHE = 'metro-static-v5';
 const TILE_CACHE = 'metro-tiles-v1';
 const FONT_CACHE = 'metro-fonts-v1';
 
+// 배포 경로(GitHub Pages: '/metro', Firebase: '')를 등록 scope 에서 계산한다.
+const BASE = new URL(self.registration.scope).pathname.replace(/\/$/, '');
+
 // App shell files to cache on install
 const APP_SHELL = [
-    '/metro/manifest.json',
-    '/metro/icon-192.png',
-    '/metro/icon-512.png',
-    '/metro/train-icon.png',
+    BASE + '/manifest.json',
+    BASE + '/icon-192.png',
+    BASE + '/icon-512.png',
+    BASE + '/train-icon.png',
 ];
 
 // Static data files to cache (large, rarely change)
 const DATA_FILES = [
-    '/metro/data/master-bus-stops.json',
-    '/metro/data/master-bus-routes.json',
-    '/metro/data/capitalStations.json',
-    '/metro/data/master-toilets.json',
-    '/metro/data/station-arrivals-index.json',
-    '/metro/data/subway-schedule-index.json',
-    '/metro/data/stop-routes-11.json',
-    '/metro/data/stop-routes-23.json',
-    '/metro/data/stop-routes-gg.json',
+    BASE + '/data/master-bus-stops.json',
+    BASE + '/data/master-bus-routes.json',
+    BASE + '/data/capitalStations.json',
+    BASE + '/data/master-toilets.json',
+    BASE + '/data/station-arrivals-index.json',
+    BASE + '/data/subway-schedule-index.json',
+    BASE + '/data/stop-routes-11.json',
+    BASE + '/data/stop-routes-23.json',
+    BASE + '/data/stop-routes-gg.json',
 ];
 
 self.addEventListener('install', (event) => {
@@ -66,7 +69,10 @@ self.addEventListener('fetch', (event) => {
         url.hostname.includes('open-meteo.com') ||
         url.hostname.includes('nominatim') ||
         url.hostname.includes('corsproxy.io') ||
-        url.hostname.includes('allorigins.win')
+        url.hostname.includes('allorigins.win') ||
+        url.hostname.includes('codetabs.com') ||
+        url.hostname.includes('cors.eu.org') ||
+        url.hostname.includes('workers.dev')
     ) {
         return; // Let browser handle external requests normally
     }
@@ -108,7 +114,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     // Static data files: cache-first
-    if (url.pathname.startsWith('/metro/data/')) {
+    if (url.pathname.startsWith(BASE + '/data/')) {
         event.respondWith(
             caches.open(STATIC_CACHE).then(async cache => {
                 const cached = await cache.match(event.request);
@@ -126,7 +132,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     // _next/static/ chunks: cache-first (immutable — filenames include content hash)
-    if (url.pathname.startsWith('/metro/_next/static/')) {
+    if (url.pathname.startsWith(BASE + '/_next/static/')) {
         event.respondWith(
             caches.open(CACHE_NAME).then(async cache => {
                 const cached = await cache.match(event.request);
@@ -140,7 +146,7 @@ self.addEventListener('fetch', (event) => {
     }
 
     // HTML pages (index, 404, etc.): network-first so deployments take effect immediately
-    if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === '/metro/' || url.pathname === '/metro') {
+    if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname === BASE + '/' || url.pathname === BASE) {
         event.respondWith(
             fetch(event.request).then(response => {
                 if (response.ok) {
@@ -154,6 +160,9 @@ self.addEventListener('fetch', (event) => {
         );
         return;
     }
+
+    // 그 밖의 외부 요청(예: 사용자 지정 실시간 프록시)은 캐시하지 않는다.
+    if (url.origin !== self.location.origin) return;
 
     // Other app shell assets: stale-while-revalidate
     event.respondWith(

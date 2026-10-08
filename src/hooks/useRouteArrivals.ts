@@ -34,7 +34,7 @@ let _scheduleIndexPromise: Promise<Record<string, any>> | null = null;
 
 function loadScheduleIndex(): Promise<Record<string, any>> {
   if (!_scheduleIndexPromise) {
-    _scheduleIndexPromise = fetch('/data/subway-schedule-index.json')
+    _scheduleIndexPromise = fetch(`${process.env.NEXT_PUBLIC_BASE_PATH ?? ''}/data/subway-schedule-index.json`)
       .then(r => r.json())
       .catch(() => ({}));
   }

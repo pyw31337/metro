@@ -1,4 +1,3 @@
-/* eslint-disable no-restricted-globals */
 export {};
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -29,6 +28,15 @@ interface TransitUnit {
   segmentMs: number;        // lastPos → nextPos 구간 소요시간 (ms)
   nextSegmentMs: number;    // nextPos → futurePos 구간 소요시간 (ms)
   dwellMs: number;          // nextPos 역에서 정차 시간 (ms)
+  // ── 실측 이벤트 재기준 ──
+  eventKey?: string;        // 마지막으로 반영한 실측 이벤트 (역|상태|recptnDt)
+  blendFrom: [number, number] | null; // 재기준 직후 시각적 점프를 줄이기 위한 시작 좌표
+  blendStart: number;
+  // ── 표시용 메타 ──
+  updnLine?: string;
+  currentStationName?: string;
+  eventText?: string;       // 예: '강남 도착'
+  eventTs?: number;         // 이벤트 발생 시각 (epoch ms)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,11 +46,14 @@ const ANIM_DURATION  = 90_000;  // 기본 구간 소요시간 fallback (ms) — 
 const DWELL_DEFAULT  = 15_000;  // 기본 정차 시간 (ms) — 15초 (30→15 단축, 시각적 이동성 개선)
 const FADE_IN_MS     = 1_500;
 const FADE_OUT_MS    = 1_500;
-const EXPIRE_MS      = 90_000;
+const EXPIRE_MS      = 120_000; // 공개 프록시 사용 시 폴링 1~2회 누락까지 허용
 const TICK_INTERVAL  = 1000 / 30; // 30fps
 
 // 같은 방향 열차 간 최소 간격 (역 구간 단위)
 const MIN_TRAIN_GAP  = 0.35;
+
+// 실측 이벤트로 위치를 재기준할 때 화면상 이동을 부드럽게 잇는 시간
+const BLEND_MS       = 900;
 
 const state = new Map<string, TransitUnit>();
 let isTicking = false;
@@ -125,6 +136,8 @@ function processUpdates(units: any[]) {
 
       const initR = unit.initialRatio ?? 0;
       let backwardMs: number;
+      // 실측 열차: 서비스가 지연 보정까지 마친 타임라인 시작 시각을 그대로 사용
+      const hasTimeline = typeof unit.timelineStartMs === 'number';
       if (initR <= 1.0) {
         // Phase 1/2: 주행 중이거나 막 도착 (dwell 시작점)
         backwardMs = initR * segMs;
@@ -159,7 +172,10 @@ function processUpdates(units: any[]) {
       state.set(unit.id, {
         ...unit,
         lastPos:              startPos,
-        lastUpdateTime:       now - backwardMs,
+        lastUpdateTime:       hasTimeline ? unit.timelineStartMs : now - backwardMs,
+        eventKey:             unit.eventKey,
+        blendFrom:            null,
+        blendStart:           0,
         lastSeenTime:         now,
         currentBearing:       initBearing,
         bearingInitialized:   initBearingOk,
@@ -185,11 +201,31 @@ function processUpdates(units: any[]) {
       existing.lineStationIdx = unit.lineStationIdx ?? existing.lineStationIdx;
       existing.lineDir        = unit.lineDir        ?? existing.lineDir;
       existing.lastSeenTime   = now;   // 만료 판정: 항상 실제 수신 시각으로 갱신
-      (existing as any).updnLine           = (unit as any).updnLine;
-      (existing as any).currentStationName = (unit as any).currentStationName;
+      existing.updnLine           = unit.updnLine;
+      existing.currentStationName = unit.currentStationName;
       if (!unit.isSimulated && existing.deathTime !== null) {
         existing.deathTime = null;
         existing.birthTime = now;
+      }
+
+      // ── 실측 이벤트 재기준 ──
+      // 같은 이벤트(역·상태·수신시각)가 반복 보고되면 타이머를 유지하고,
+      // 새 이벤트(도착→출발 등 상태 변화 포함)가 오면 서비스가 계산한 타임라인으로 다시 맞춘다.
+      if (typeof unit.timelineStartMs === 'number') {
+        existing.eventText = unit.eventText;
+        existing.eventTs   = unit.eventTs;
+        if (unit.eventKey && unit.eventKey === existing.eventKey) continue;
+        existing.blendFrom      = currentVisualPos(existing, now);
+        existing.blendStart     = now;
+        existing.lastPos        = unit.prevPos ?? unit.nextPos;
+        existing.nextPos        = unit.nextPos;
+        existing.futurePos      = unit.futurePos ?? unit.nextPos;
+        existing.segmentMs      = segMs;
+        existing.nextSegmentMs  = nxMs;
+        existing.dwellMs        = dwMs;
+        existing.lastUpdateTime = unit.timelineStartMs;
+        existing.eventKey       = unit.eventKey;
+        continue;
       }
 
       const elapsed    = now - existing.lastUpdateTime;
@@ -247,6 +283,30 @@ function processUpdates(units: any[]) {
   }
 }
 
+// 현재 프레임 기준 화면 좌표 (블렌딩 포함)
+function currentVisualPos(unit: TransitUnit, now: number): [number, number] {
+  const elapsed = now - unit.lastUpdateTime;
+  const ratio = computeRatio(unit, elapsed);
+  const raw = positionAt(unit, ratio, elapsed).pos;
+  return applyBlend(unit, raw, now);
+}
+
+function positionAt(unit: TransitUnit, ratio: number, elapsed: number): { pos: [number, number]; target: [number, number] | null; dwelling: boolean } {
+  const isDwelling = elapsed >= unit.segmentMs && elapsed < unit.segmentMs + unit.dwellMs;
+  if (isDwelling) return { pos: unit.nextPos, target: null, dwelling: true };
+  if (ratio <= 1.0) return { pos: lerp(unit.lastPos, unit.nextPos, easeInOut(ratio)), target: unit.nextPos, dwelling: false };
+  const t = easeInOut(Math.min(1.0, ratio - 1.0));
+  const fut = unit.futurePos ?? unit.nextPos;
+  return { pos: lerp(unit.nextPos, fut, t), target: fut, dwelling: false };
+}
+
+function applyBlend(unit: TransitUnit, pos: [number, number], now: number): [number, number] {
+  if (!unit.blendFrom) return pos;
+  const t = (now - unit.blendStart) / BLEND_MS;
+  if (t >= 1) { unit.blendFrom = null; return pos; }
+  return lerp(unit.blendFrom, pos, easeInOut(Math.max(0, t)));
+}
+
 // 두 좌표가 ~100m 이내인지 (동일 역 판별)
 function coordsClose(a: [number, number], b: [number, number]): boolean {
   const dx = a[0] - b[0];
@@ -293,24 +353,12 @@ function startTick() {
       const ratio = unitRatios.get(id);
       if (ratio === undefined) continue;
 
-      let pos: [number, number];
-      let bearingTarget: [number, number] | null = null;
-
       // Phase 2(정차): pos 고정, 베어링 동결
       const elapsed2 = now - unit.lastUpdateTime;
-      const isDwelling = elapsed2 >= unit.segmentMs && elapsed2 < unit.segmentMs + unit.dwellMs;
-
-      if (isDwelling) {
-        pos           = unit.nextPos;
-        bearingTarget = null;
-      } else if (ratio <= 1.0) {
-        pos           = lerp(unit.lastPos, unit.nextPos, easeInOut(ratio));
-        bearingTarget = unit.nextPos;
-      } else {
-        const t = easeInOut(Math.min(1.0, ratio - 1.0));
-        pos           = lerp(unit.nextPos, unit.futurePos ?? unit.nextPos, t);
-        bearingTarget = unit.futurePos ?? unit.nextPos;
-      }
+      const at = positionAt(unit, ratio, elapsed2);
+      const isDwelling = at.dwelling;
+      const pos = applyBlend(unit, at.pos, now);
+      const bearingTarget = at.target;
 
       // 베어링 스무딩 — 정차 중(isDwelling)이면 업데이트 건너뜀
       if (bearingTarget !== null) {
@@ -355,8 +403,10 @@ function startTick() {
         colorProgress:   Math.round(colorProgress * 100) / 100,
         // 방향 미확인(베어링 0) 열차도 || 아이콘 사용 — 북향 화살표 방지
         isDwelling:      isDwelling || !unit.bearingInitialized,
-        updnLine:        (unit as any).updnLine,
-        currentStationName: (unit as any).currentStationName,
+        updnLine:        unit.updnLine,
+        currentStationName: unit.currentStationName,
+        eventText:       unit.eventText,
+        eventTs:         unit.eventTs,
       });
     }
 

@@ -1,0 +1,7 @@
+name = "seoul-subway-proxy"
+main = "worker.js"
+compatibility_date = "2026-10-01"
+
+[vars]
+ALLOWED_ORIGINS = "https://pyw31337.github.io,http://localhost:3000"
+CACHE_TTL_SECONDS = "15"

@@ -18,6 +18,13 @@ interface TrainInfo {
   lineColor: string;
 }
 
+function formatAge(ts?: number): string {
+  if (!ts) return '수신 시각 미상';
+  const sec = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (sec < 60) return `${sec}초 전`;
+  return `${Math.floor(sec / 60)}분 전`;
+}
+
 const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => {
@@ -32,6 +39,8 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
   const [selectedInfo, setSelectedInfo] = useState<TrainInfo | null>(null);
   const [selectedPos,  setSelectedPos]  = useState<[number, number] | null>(null);
+  // 마지막 실시간 이벤트(예: '강남 출발')와 그 수신 시각. 위치가 어떤 데이터에서 왔는지 보여준다.
+  const [selectedEvent, setSelectedEvent] = useState<{ text?: string; ts?: number; simulated: boolean } | null>(null);
 
   // ── 탑승/추적 상태 ──
   const [boardedId,   setBoardedId]   = useState<string | null>(null);
@@ -156,7 +165,13 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
       const sId = selectedIdRef.current;
       if (sId) {
         const selUnit = units.find(u => u.id === sId);
-        if (selUnit) setSelectedPos([...selUnit.pos] as [number, number]);
+        if (selUnit) {
+          setSelectedPos([...selUnit.pos] as [number, number]);
+          setSelectedEvent(prev => {
+            const next = { text: selUnit.eventText, ts: selUnit.eventTs, simulated: !!selUnit.isSimulated };
+            return prev && prev.text === next.text && prev.ts === next.ts && prev.simulated === next.simulated ? prev : next;
+          });
+        }
       }
 
       // ── 탑승 열차 위치 추적 + 1정거장전 알림 (필터링 전 전체 units에서) ──
@@ -473,8 +488,16 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
               >×</button>
             </div>
             {/* 행선지 / 노선번호 */}
-            <div className="px-3 pb-2.5 text-[14px] font-black text-white leading-snug">
+            <div className="px-3 pb-1 text-[14px] font-semibold text-white leading-snug">
               {selectedInfo!.label}
+            </div>
+            {/* 위치 근거: 마지막 실시간 이벤트 + 경과 시간 */}
+            <div className="px-3 pb-2.5 text-[11px] text-zinc-400 tabular-nums">
+              {selectedEvent?.simulated
+                ? '시간표 기반 추정 위치'
+                : selectedEvent?.text
+                  ? `${selectedEvent.text} · ${formatAge(selectedEvent.ts)}`
+                  : '실시간 위치'}
             </div>
             {/* 탑승/추적 버튼 */}
             <button
