@@ -78,28 +78,34 @@ describe('timeline from realtimePosition events', () => {
   it('uses trainSttus: departed train starts past the reported station', () => {
     const tl = resolveTimeline('2호선', '강남', '성수', '1', '2', 0)!;
     expect(tl.stationName).toBe('강남');
-    expect(tl.elapsedMs).toBe(tl.segmentMs + DWELL_MS);     // 출발 = 정차 종료 시점
+    expect(tl.elapsedMs).toBe(tl.motion.segInMs + DWELL_MS);     // 출발 = 정차 종료 시점
     const arrived = resolveTimeline('2호선', '강남', '성수', '1', '1', 0)!;
-    expect(arrived.elapsedMs).toBe(arrived.segmentMs);       // 도착 = 정차 시작
+    expect(arrived.elapsedMs).toBe(arrived.motion.segInMs);       // 도착 = 정차 시작
     const leftPrev = resolveTimeline('2호선', '강남', '성수', '1', '3', 0)!;
-    expect(leftPrev.elapsedMs).toBe(0);                      // 전역출발 = 이전역 출발 직후
+    expect(leftPrev.elapsedMs).toBe(0);                           // 전역출발 = 이전역 출발 직후
   });
 
-  it('advances by now - recptnDt and moves on to later stations', () => {
-    const tl0 = resolveTimeline('2호선', '강남', '성수', '1', '2', 0)!;
-    const tl = resolveTimeline('2호선', '강남', '성수', '1', '2', 4 * 60_000)!;
-    expect(tl.stationName).not.toBe(tl0.stationName);
-    // 2호선 외선(1)은 반시계방향: 강남 → 역삼 → 선릉
-    expect(['역삼', '선릉']).toContain(tl.stationName);
-    // 내선(0)은 시계방향: 강남 → 교대 → 서초
-    const inner = resolveTimeline('2호선', '강남', '성수', '0', '2', 4 * 60_000)!;
-    expect(['교대', '서초']).toContain(inner.stationName);
+  it('loop line 2: 외선(1) goes 강남→역삼, 내선(0) goes 강남→교대', () => {
+    const outer = resolveTimeline('2호선', '강남', '성수', '1', '2', 0)!;
+    expect(outer.prevName).toBe('교대');
+    expect(outer.nextName).toBe('역삼');
+    const inner = resolveTimeline('2호선', '강남', '성수', '0', '2', 0)!;
+    expect(inner.prevName).toBe('역삼');
+    expect(inner.nextName).toBe('교대');
   });
 
-  it('derives direction from the destination when updnLine disagrees', () => {
-    // GTX-A 구성 → 수서 (북행). updnLine 을 일부러 반대로 줘도 종착역 기준으로 판단
+  it('never runs past the next station, however stale the report is', () => {
+    const tl = resolveTimeline('2호선', '강남', '성수', '1', '2', 9 * 60_000)!;
+    expect(tl.stationName).toBe('강남');
+    expect(tl.elapsedMs).toBe(tl.motion.maxElapsedMs);
+    // '진입/전역출발' 보고는 보고된 역에서 멈춘다
+    const ap = resolveTimeline('2호선', '강남', '성수', '1', '0', 9 * 60_000)!;
+    expect(ap.motion.maxElapsedMs).toBe(ap.motion.segInMs + DWELL_MS);
+  });
+
+  it('derives direction from the destination even when updnLine disagrees', () => {
     const tl = resolveTimeline('GTX-A', '구성', '수서', '1', '2', 0)!;
-    expect(tl.dir).toBe(-1);
+    expect(tl.nextName).toBe('성남'); // 구성 → 성남 → 수서
   });
 
   it('drops ghost trains with very old events and clamps future timestamps', () => {
@@ -108,8 +114,13 @@ describe('timeline from realtimePosition events', () => {
     expect(buildLiveUnit(train, now + 11 * 60_000)).toBeNull();
     const future = buildLiveUnit({ ...train, recptnDt: '2026-10-08 09:30:00' }, now)!;
     expect(future).not.toBeNull();
-    expect(now - future.timelineStartMs).toBe(future.segmentMs + DWELL_MS); // 미래 시각 → 지연 0
+    expect(now - future.motion.startMs).toBe(future.motion.segInMs + DWELL_MS); // 미래 시각 → 지연 0
     expect(future.eventKey).toContain('강남|2|');
+    expect(future.nextStationName).toBe('역삼');
+  });
+
+  it('does not place a train when the station is not on its line (no cross-line fallback)', () => {
+    expect(resolveTimeline('2호선', '서울', '성수', '1', '2', 0)).toBeNull();
   });
 });
 

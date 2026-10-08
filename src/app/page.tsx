@@ -31,6 +31,11 @@ const MapLibreBackground = dynamic(() => import("@/components/MapLibreBackground
 const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel"),  { ssr: false });
 const MapControls        = dynamic(() => import("@/components/MapControls"),         { ssr: false });
 const WeatherPopup       = dynamic(() => import("@/components/WeatherPopup"),        { ssr: false });
+const StationArrivalPanel = dynamic(() => import("@/components/arrival/StationArrivalPanel"), { ssr: false });
+import { getStationByName } from "@/data/subway-lines";
+
+type MainView = 'arrival' | 'map';
+const VIEW_KEY = 'metro-main-view';
 import DirectionCompass  from "@/components/ui/DirectionCompass";
 
 // Module-level cache so the 3MB routes JSON is only fetched once per session
@@ -49,6 +54,29 @@ export default function Home() {
   const simStatus = useSimStatus();
   const apiIssue = useSeoulApiIssue();
   const mapRef = useRef<any>(null);
+
+  // 메인 화면: 도착 안내(기본) ↔ 지도
+  const [view, setView] = useState<MainView>('arrival');
+  useEffect(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get('view');
+    let saved: string | null = null;
+    try { saved = localStorage.getItem(VIEW_KEY); } catch { /* ignore */ }
+    const v = fromUrl || saved;
+    if (v === 'map' || v === 'arrival') setView(v);
+  }, []);
+  const changeView = useCallback((v: MainView) => {
+    setView(v);
+    try { localStorage.setItem(VIEW_KEY, v); } catch { /* ignore */ }
+  }, []);
+  // 지도가 안 보일 때는 열차 위치 폴링을 멈춰 API 호출 한도를 아낀다
+  useEffect(() => {
+    import("@/services/TransitRealtimeService").then(m => m.transitRealtimeService.setPaused(view !== 'map'));
+  }, [view]);
+  const showStationOnMap = useCallback((name: string | null) => {
+    changeView('map');
+    const st = name ? (getStationByName(name) ?? getStationByName(`${name}역`)) : null;
+    if (st) setTimeout(() => mapRef.current?.flyTo({ center: [st.lng, st.lat], zoom: 15, duration: 900 }), 60);
+  }, [changeView]);
   const initLocRef = useRef(false);
 
   // ── stores (selectors로 필요한 슬라이스만 구독 → 불필요한 re-render 방지) ──
@@ -568,7 +596,11 @@ export default function Home() {
     else st.setActiveLine(null);
   }, []);
 
-  const handleMapReady = useCallback((m: any) => { mapRef.current = m; }, []);
+  const handleMapReady = useCallback((m: any) => {
+    mapRef.current = m;
+    // ?debug 로 열면 점검 스크립트(헤드리스 크롬)가 지도 상태를 읽을 수 있게 노출
+    if (new URLSearchParams(window.location.search).has('debug')) (window as any).__metroMap = m;
+  }, []);
 
   const handleToggleShowAll = useCallback(() => {
     const s = useRouteStore.getState();
@@ -592,8 +624,8 @@ export default function Home() {
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <main className="relative w-full h-[100dvh] overflow-hidden bg-[var(--background)] font-sans">
-      <a href="#app-panel" className="skip-link">경로 검색으로 건너뛰기</a>
-      <h1 className="sr-only">Metro Live 수도권 실시간 지하철 지도</h1>
+      <a href={view === 'arrival' ? '#arrival-search' : '#app-panel'} className="skip-link">{view === 'arrival' ? '역 검색으로 건너뛰기' : '경로 검색으로 건너뛰기'}</a>
+      <h1 className="sr-only">Metro Live 수도권 지하철 실시간 도착 안내</h1>
 
       {/* 지도 */}
       <div className="absolute inset-0 z-10">
@@ -641,8 +673,8 @@ export default function Home() {
         />
       </div>
 
-      {/* 하단 패널 */}
-      <UnifiedBottomPanel
+      {/* 하단 패널 (지도 화면에서만) */}
+      {view === 'map' && <UnifiedBottomPanel
         activeTab={ui.activeTab}
         onTabChange={handleTabChange}
         onSearch={handleSearch}
@@ -676,7 +708,7 @@ export default function Home() {
         onActiveLineChange={handleActiveLineChange}
         selectedBusStop={subway.selectedBusStop}
         onSelectBusRoute={handleSelectBusRoute}
-      />
+      />}
 
       {/* 지도 컨트롤 */}
       <div className="fixed top-[max(1rem,env(safe-area-inset-top))] right-4 z-[2001] flex flex-col gap-4 items-end">
@@ -699,7 +731,7 @@ export default function Home() {
 
       {/* 상단 상태 영역: 오프라인 / 막차 / 실시간 신뢰도 */}
       <div
-        className="fixed top-[max(1rem,env(safe-area-inset-top))] left-4 right-20 z-[2000] flex flex-col items-start gap-2 pointer-events-none"
+        className="fixed top-[calc(max(1rem,env(safe-area-inset-top))+3.25rem)] left-4 right-20 z-[2000] flex flex-col items-start gap-2 pointer-events-none"
         role="status"
         aria-live="polite"
       >
@@ -716,6 +748,32 @@ export default function Home() {
             </span>
           </StatusPill>
         )}
+      </div>
+
+      {/* 메인: 내 역 도착 안내 */}
+      {view === 'arrival' && (
+        <StationArrivalPanel
+          nearestStationName={mapSt.nearestStation?.name ?? null}
+          onShowMap={showStationOnMap}
+        />
+      )}
+
+      {/* 화면 전환: 도착 안내 | 지도 */}
+      <div className="fixed left-1/2 top-[max(1rem,env(safe-area-inset-top))] z-[2500] -translate-x-1/2">
+        <div role="tablist" aria-label="화면 전환" className="flex rounded-full border border-zinc-900/[0.06] bg-white/90 p-1 shadow-[0_1px_2px_rgba(24,24,27,0.06),0_6px_16px_-6px_rgba(24,24,27,0.18)] backdrop-blur-xl dark:border-white/[0.08] dark:bg-zinc-900/90">
+          {([['arrival', '도착 안내'], ['map', '지도']] as const).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              role="tab"
+              aria-selected={view === v}
+              onClick={() => changeView(v)}
+              className={`h-9 min-w-[84px] rounded-full px-4 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-900/30 dark:focus-visible:ring-white/30 ${view === v ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-600 dark:text-zinc-300'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* 화장실 나침반 - 탭 무관하게 화장실 선택 시 표시 */}
@@ -760,12 +818,12 @@ function StatusPill({ tone, dot = true, children }: { tone: PillTone; dot?: bool
  * API 오류(한도 초과, 키 오류, 연결 실패)는 숨기지 않고 그대로 알린다.
  */
 function RealtimeStatusPill({ simStatus, apiIssue }: { simStatus: SimStatus; apiIssue: SeoulApiIssue }) {
-  if (apiIssue === 'quota')       return <StatusPill tone="danger">오늘 실시간 API 호출 한도 초과. 시간표 기반 위치</StatusPill>;
-  if (apiIssue === 'invalid-key') return <StatusPill tone="danger">실시간 API 키 오류. 시간표 기반 위치</StatusPill>;
-  if (apiIssue === 'unreachable') return <StatusPill tone="warn">실시간 서버에 연결하지 못함. 시간표 기반 위치</StatusPill>;
+  if (apiIssue === 'quota')       return <StatusPill tone="danger">오늘 실시간 API 호출 한도 초과</StatusPill>;
+  if (apiIssue === 'invalid-key') return <StatusPill tone="danger">실시간 API 키 오류</StatusPill>;
+  if (apiIssue === 'unreachable') return <StatusPill tone="warn">실시간 서버에 연결하지 못함</StatusPill>;
   if (simStatus === 'starting')   return <StatusPill tone="neutral">실시간 위치 불러오는 중</StatusPill>;
   if (apiIssue === 'sample-key')  return <StatusPill tone="warn">샘플 키 사용 중. 일부 열차만 실시간</StatusPill>;
   if (simStatus === 'live')       return <StatusPill tone="live">실시간 위치</StatusPill>;
   if (simStatus === 'mixed')      return <StatusPill tone="warn">일부 노선만 실시간</StatusPill>;
-  return <StatusPill tone="neutral">시간표 기반 위치</StatusPill>;
+  return <StatusPill tone="neutral">실시간 열차 정보 없음</StatusPill>;
 }

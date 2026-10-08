@@ -40,7 +40,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [selectedInfo, setSelectedInfo] = useState<TrainInfo | null>(null);
   const [selectedPos,  setSelectedPos]  = useState<[number, number] | null>(null);
   // 마지막 실시간 이벤트(예: '강남 출발')와 그 수신 시각. 위치가 어떤 데이터에서 왔는지 보여준다.
-  const [selectedEvent, setSelectedEvent] = useState<{ text?: string; ts?: number; simulated: boolean } | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<{ text?: string; ts?: number; simulated: boolean; estimated: boolean; nextName: string | null } | null>(null);
 
   // ── 탑승/추적 상태 ──
   const [boardedId,   setBoardedId]   = useState<string | null>(null);
@@ -168,8 +168,8 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
         if (selUnit) {
           setSelectedPos([...selUnit.pos] as [number, number]);
           setSelectedEvent(prev => {
-            const next = { text: selUnit.eventText, ts: selUnit.eventTs, simulated: !!selUnit.isSimulated };
-            return prev && prev.text === next.text && prev.ts === next.ts && prev.simulated === next.simulated ? prev : next;
+            const next = { text: selUnit.eventText, ts: selUnit.eventTs, simulated: !!selUnit.isSimulated, estimated: !!selUnit.estimated, nextName: selUnit.nextStationName ?? null };
+            return prev && prev.text === next.text && prev.ts === next.ts && prev.estimated === next.estimated && prev.nextName === next.nextName ? prev : next;
           });
         }
       }
@@ -274,6 +274,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           lineColor:      u.lineColor,
           bearing:        u.bearing,
           isSimulated:    u.isSimulated,
+          estimated:      u.estimated ?? false,
           opacity:        u.opacity,
           colorProgress:  u.colorProgress ?? 1,
           isDwelling:     u.isDwelling ?? false,
@@ -492,12 +493,17 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
               {selectedInfo!.label}
             </div>
             {/* 위치 근거: 마지막 실시간 이벤트 + 경과 시간 */}
-            <div className="px-3 pb-2.5 text-[11px] text-zinc-400 tabular-nums">
-              {selectedEvent?.simulated
-                ? '시간표 기반 추정 위치'
-                : selectedEvent?.text
-                  ? `${selectedEvent.text} · ${formatAge(selectedEvent.ts)}`
+            <div className="px-3 pb-2.5 text-[11px] text-zinc-400 tabular-nums leading-relaxed">
+              <div>
+                {selectedEvent?.text
+                  ? `보고: ${selectedEvent.text} · ${formatAge(selectedEvent.ts)}`
                   : '실시간 위치'}
+              </div>
+              {selectedEvent?.estimated && (
+                <div className="text-zinc-500">
+                  {selectedEvent.nextName ? `지금 위치는 추정 (${selectedEvent.nextName}까지만 진행)` : '지금 위치는 추정'}
+                </div>
+              )}
             </div>
             {/* 탑승/추적 버튼 */}
             <button
@@ -636,8 +642,11 @@ function baseOpacityExpr(activeLine: string | null | undefined): any {
 }
 
 /** 노선색 레이어: opacity × colorProgress */
+// 추정 위치(보고 후 20초 이상 경과)는 살짝 흐리게 그려 실측과 구분한다
+const ESTIMATED_FACTOR: any = ['case', ['==', ['get', 'estimated'], true], 0.55, 1];
+
 function buildColorOpacityExpr(activeLine: string | null | undefined): any {
-  return ['*', baseOpacityExpr(activeLine), ['get', 'colorProgress']];
+  return ['*', baseOpacityExpr(activeLine), ['get', 'colorProgress'], ESTIMATED_FACTOR];
 }
 
 /** 회색 레이어: opacity × (1 - colorProgress) */
