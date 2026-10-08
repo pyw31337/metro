@@ -1,4 +1,5 @@
 import { SUBWAY_LINES, SubwayLine, getStationByName } from "@/data/subway-lines";
+import { branchPolylines } from "@/geo/lineNetwork";
 import { WCItem, BusStop, PathResult, WCFilters } from "@/types/metro";
 
 // Module-level O(1) line-name→color lookup
@@ -15,14 +16,17 @@ export const convertSubwayToGeoJSON = (): { lines: GeoJsonFeatureCollection, sta
   const stationMap = new Map<string, any>();
   const drawnIds = new Set<string>();
 
+  // 1. LineString — 열차 이동 경로와 같은 좌표(노선 내 통일 역 좌표)로 그린다.
+  //    열차는 이 선 위에서만 움직이므로 "선 밖으로 벗어난 열차"가 생기지 않는다.
+  const branchCoords = new Map(branchPolylines().map(b => [b.id, b.coords]));
+
   SUBWAY_LINES.forEach((line: SubwayLine) => {
-    // 1. LineString Feature — 역과 역 사이 직선
     // Deduplicate by id (not name) so branch lines sharing a name are all drawn
     if (!drawnIds.has(line.id)) {
       drawnIds.add(line.id);
       lineFeatures.push({
         type: "Feature" as const,
-        geometry: { type: "LineString" as const, coordinates: line.stations.map(s => [s.lng, s.lat]) },
+        geometry: { type: "LineString" as const, coordinates: branchCoords.get(line.id) ?? line.stations.map(s => [s.lng, s.lat]) },
         properties: { id: line.id, name: line.name, color: line.color }
       });
     }
