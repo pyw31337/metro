@@ -50,3 +50,5 @@ public/data/paths/bus-paths-*.json
 !public/data/paths/bus-paths-23.json
 !public/data/paths/bus-paths-11.json
 !public/data/paths/bus-paths-41.json
+functions/
+public/version.json
