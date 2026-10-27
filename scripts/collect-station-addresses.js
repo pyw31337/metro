@@ -17,9 +17,12 @@ const fs   = require('fs');
 const path = require('path');
 
 const DATA_DIR    = path.resolve(__dirname, '..', 'public', 'data');
+const RUNTIME_DIR = path.resolve(__dirname, '..', 'tmp', 'data-scripts');
 const SUBWAY_FILE = path.join(DATA_DIR, 'master-subway.json');
 const OUT_FILE    = path.join(DATA_DIR, 'station-addresses.json');
-const CKPT_FILE   = path.join(DATA_DIR, '_addr-checkpoint.json');
+const CKPT_FILE   = path.join(RUNTIME_DIR, 'addr-checkpoint.json');
+
+fs.mkdirSync(RUNTIME_DIR, { recursive: true });
 
 const DELAY_MS = 1100; // Nominatim rate limit: 1 req/sec max
 const doResume = process.argv.includes('--resume');

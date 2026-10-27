@@ -23,8 +23,11 @@ const fs   = require('fs');
 const path = require('path');
 
 const DATA_DIR   = path.resolve(__dirname, '..', 'public', 'data');
+const RUNTIME_DIR = path.resolve(__dirname, '..', 'tmp', 'data-scripts');
 const OUT_FILE   = path.join(DATA_DIR, 'station-exits.json');
-const CKPT_FILE  = path.join(DATA_DIR, '_exits-checkpoint.json');
+const CKPT_FILE  = path.join(RUNTIME_DIR, 'exits-checkpoint.json');
+
+fs.mkdirSync(RUNTIME_DIR, { recursive: true });
 
 const API_KEY  = '$2a$10$CJzy9jEK1IFSiM2uFs/.COKfucfbKnBNN.XYdpY5NkuoXI7wpXE.C';
 const BASE_URL = 'https://data.kric.go.kr/openapi/convenientInfo/stationGateInfo';

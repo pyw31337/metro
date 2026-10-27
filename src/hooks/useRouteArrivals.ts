@@ -31,10 +31,11 @@ export interface RouteSegmentArrival {
 // 시간표 인덱스 캐시 (subway-schedule-index.json)
 // ─────────────────────────────────────────────────────────────────────────────
 let _scheduleIndexPromise: Promise<Record<string, any>> | null = null;
+const scheduleIndexBase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
 
 function loadScheduleIndex(): Promise<Record<string, any>> {
   if (!_scheduleIndexPromise) {
-    _scheduleIndexPromise = fetch('/data/subway-schedule-index.json')
+    _scheduleIndexPromise = fetch(`${scheduleIndexBase}/data/subway-schedule-index.json`)
       .then(r => r.json())
       .catch(() => ({}));
   }

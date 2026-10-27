@@ -5,6 +5,7 @@ import { Source, Layer, Popup, useMap } from "react-map-gl/maplibre";
 import { transitRealtimeService, RealtimeUnit, SimStatus } from '@/services/TransitRealtimeService';
 import { PathResult } from "@/types/metro";
 import { normStation, stationIdx } from "@/data/stationRegistry";
+import { buildRealtimeCoverage, getRealtimeCoverageTone, type RealtimeCoverageSnapshot } from "@/utils/realtimeCoverage";
 
 interface Props {
   activeTab: string;
@@ -16,9 +17,13 @@ interface TrainInfo {
   label: string;
   lineName: string;
   lineColor: string;
+  sourceLabel: string;
+  sourceClassName: string;
+  freshnessLabel: string;
 }
 
 const EMPTY_GEOJSON: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
+const REALTIME_COVERAGE_EVENT = "metro:realtime-coverage";
 
 const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => {
   const { current: mapRef } = useMap();
@@ -27,6 +32,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
   const [geoData, setGeoData]   = useState<GeoJSON.FeatureCollection>(EMPTY_GEOJSON);
   const [, setSimStatus] = useState<SimStatus>('starting');
   const [trainStats, setTrainStats] = useState<{ total: number; dwelling: number; gray: number } | null>(null);
+  const [lineCoverage, setLineCoverage] = useState<RealtimeCoverageSnapshot | null>(null);
 
   // ── 선택 상태 ──
   const [selectedId,   setSelectedId]   = useState<string | null>(null);
@@ -146,11 +152,18 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
 
       // ── 열차 통계 (지하철만) ──
       const subwayUnits = units.filter(u => u.type === 'subway');
+      const liveSubwayUnits = subwayUnits.filter(u => !u.isSimulated && u.dataSource === 'live-position');
       setTrainStats({
-        total:    subwayUnits.length,
-        dwelling: subwayUnits.filter(u => u.isDwelling).length,
-        gray:     subwayUnits.filter(u => (u.colorProgress ?? 1) < 1).length,
+        total:    liveSubwayUnits.length,
+        dwelling: liveSubwayUnits.filter(u => u.isDwelling).length,
+        gray:     liveSubwayUnits.filter(u => (u.colorProgress ?? 1) < 1).length,
       });
+      const coverage = buildRealtimeCoverage(subwayUnits, activeLineRef.current);
+      setLineCoverage(coverage);
+      if (typeof window !== 'undefined') {
+        window.__METRO_REALTIME_COVERAGE__ = coverage;
+        window.dispatchEvent(new CustomEvent(REALTIME_COVERAGE_EVENT, { detail: coverage }));
+      }
 
       // ── 선택 열차 위치 실시간 추적 ──
       const sId = selectedIdRef.current;
@@ -225,6 +238,10 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
       const al = activeLineRef.current;
       if (al) filtered = filtered.filter(u => u.lineName === al);
 
+      filtered = filtered.filter(u =>
+        u.type === 'bus' || (!u.isSimulated && u.dataSource === 'live-position')
+      );
+
       // 3. 뷰포트 컬링 (25% 버퍼)
       try {
         const bounds = map.getBounds();
@@ -264,6 +281,11 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
           isDwelling:     u.isDwelling ?? false,
           updnLine:       u.updnLine ?? '',
           currentStation: u.currentStationName ?? '',
+          lastRecptnDt:   u.lastRecptnDt ?? '',
+          dataSource:     u.dataSource ?? '',
+          confidence:     u.confidence ?? '',
+          ageSeconds:     u.ageSeconds ?? '',
+          isEstimatedRealtime: u.isEstimatedRealtime ?? false,
         },
       }));
 
@@ -303,7 +325,14 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
       } else {
         setSelectedId(id);
         setSelectedPos(coords);
-        setSelectedInfo({ label: props.label, lineName: props.lineName, lineColor: props.lineColor });
+        setSelectedInfo({
+          label: props.label,
+          lineName: props.lineName,
+          lineColor: props.lineColor,
+          sourceLabel: getTrainSourceLabel(props),
+          sourceClassName: getTrainSourceClassName(props),
+          freshnessLabel: getTrainFreshnessLabel(props),
+        });
       }
     };
 
@@ -473,8 +502,16 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
               >×</button>
             </div>
             {/* 행선지 / 노선번호 */}
-            <div className="px-3 pb-2.5 text-[14px] font-black text-white leading-snug">
+            <div className="px-3 pb-2 text-[14px] font-black text-white leading-snug">
               {selectedInfo!.label}
+            </div>
+            <div className="px-3 pb-2.5 flex items-center gap-1.5 flex-wrap">
+              <span className={`px-2 py-0.5 rounded-full text-[9px] font-black ${selectedInfo!.sourceClassName}`}>
+                {selectedInfo!.sourceLabel}
+              </span>
+              <span className="text-[10px] font-bold text-zinc-400">
+                {selectedInfo!.freshnessLabel}
+              </span>
             </div>
             {/* 탑승/추적 버튼 */}
             <button
@@ -525,8 +562,58 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
       )}
 
       {/* ── 열차 통계 오버레이 ── */}
-      {trainStats && (
-        <div className="absolute bottom-8 right-2 z-[9998] pointer-events-none">
+      {(trainStats || lineCoverage) && (
+        <div className="absolute bottom-8 right-2 z-[9998] pointer-events-none flex flex-col gap-2">
+          {lineCoverage && (
+            <div
+              className="w-[176px] rounded-2xl px-3 py-2.5 text-[10px] font-bold leading-snug"
+              style={{ background: 'rgba(10,10,15,0.8)', backdropFilter: 'blur(10px)', color: 'rgba(255,255,255,0.78)' }}
+            >
+              <div className="text-[9px] uppercase tracking-[0.18em] text-white/55">실시간 조회 상태</div>
+              <div className="mt-2 grid grid-cols-3 gap-2">
+                <div className="rounded-xl bg-emerald-500/12 px-2 py-1.5">
+                  <div className="text-[9px] uppercase tracking-[0.12em] text-emerald-300">LIVE</div>
+                  <div className="mt-1 text-[15px] font-black text-white">{lineCoverage.liveLines}</div>
+                </div>
+                <div className="rounded-xl bg-white/6 px-2 py-1.5">
+                  <div className="text-[9px] uppercase tracking-[0.12em] text-zinc-300">숨김</div>
+                  <div className="mt-1 text-[15px] font-black text-white">{lineCoverage.totalLines - lineCoverage.liveLines}</div>
+                </div>
+                <div className="rounded-xl bg-white/8 px-2 py-1.5">
+                  <div className="text-[9px] uppercase tracking-[0.12em] text-zinc-300">총합</div>
+                  <div className="mt-1 text-[15px] font-black text-white">{lineCoverage.totalLines}</div>
+                </div>
+              </div>
+              {lineCoverage.activeLineSource && (() => {
+                const isLiveSource = lineCoverage.activeLineSource.state === 'live';
+                const tone = isLiveSource
+                  ? getRealtimeCoverageTone('live')
+                  : { shortLabel: '숨김', badgeClass: 'bg-white/8 text-zinc-200', dotClass: 'bg-zinc-400' };
+                return (
+                  <div className="mt-2 rounded-xl border border-white/10 bg-white/[0.04] p-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[9px] text-white/55">{lineCoverage.activeLineSource.lineName}</div>
+                      <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black ${tone.badgeClass}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${tone.dotClass}`} />
+                        {tone.shortLabel}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-white font-black">
+                      {isLiveSource ? lineCoverage.activeLineSource.label : '실시간 조회 열차가 없어 아이콘을 숨기고 있어요.'}
+                    </div>
+                    <div className="text-[9px] text-zinc-400">
+                      {isLiveSource
+                        ? lineCoverage.activeLineSource.freshness
+                        : lineCoverage.activeLineSource.state === 'estimated'
+                          ? '도착 정보 기반 보조 데이터만 있습니다.'
+                          : '실시간 조회 데이터가 없습니다.'}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+          {trainStats && (
           <div className="px-2.5 py-1.5 rounded-xl text-[10px] font-bold leading-snug space-y-0.5"
             style={{ background: 'rgba(10,10,15,0.75)', backdropFilter: 'blur(8px)', color: 'rgba(255,255,255,0.7)' }}>
             <div>열차 <span className="text-white font-black">{trainStats.total}</span></div>
@@ -534,6 +621,7 @@ const TransitRealtimeLayers = ({ activeTab, activeLine, activePath }: Props) => 
             <div>∥ 정차 <span className="text-amber-400 font-black">{trainStats.dwelling}</span></div>
             {trainStats.gray > 0 && <div>⬛ 로딩 <span className="text-zinc-400 font-black">{trainStats.gray}</span></div>}
           </div>
+          )}
         </div>
       )}
 
@@ -620,6 +708,42 @@ function buildColorOpacityExpr(activeLine: string | null | undefined): any {
 /** 회색 레이어: opacity × (1 - colorProgress) */
 function buildGrayOpacityExpr(activeLine: string | null | undefined): any {
   return ['*', baseOpacityExpr(activeLine), ['max', 0, ['-', 1, ['get', 'colorProgress']]]];
+}
+
+function getTrainSourceLabel(props: Record<string, any>): string {
+  if (toFeatureBool(props.isSimulated)) return '시뮬레이션';
+  if (props.dataSource === 'arrival-probe' || toFeatureBool(props.isEstimatedRealtime)) {
+    return '실시간 추정';
+  }
+  if (props.dataSource === 'live-position') return '실측 위치';
+  return '실시간';
+}
+
+function getTrainSourceClassName(props: Record<string, any>): string {
+  if (toFeatureBool(props.isSimulated)) return 'bg-zinc-500/15 text-zinc-300';
+  if (props.dataSource === 'arrival-probe' || toFeatureBool(props.isEstimatedRealtime)) {
+    return 'bg-sky-500/15 text-sky-300';
+  }
+  if (props.confidence === 'low') return 'bg-amber-500/15 text-amber-300';
+  return 'bg-emerald-500/15 text-emerald-300';
+}
+
+function getTrainFreshnessLabel(props: Record<string, any>): string {
+  const rawAge = typeof props.ageSeconds === 'number'
+    ? props.ageSeconds
+    : parseInt(String(props.ageSeconds ?? ''), 10);
+
+  if (Number.isFinite(rawAge)) {
+    if (rawAge <= 5) return '방금 수신';
+    if (rawAge < 60) return `${rawAge}초 전 수신`;
+    return `${Math.floor(rawAge / 60)}분 전 수신`;
+  }
+
+  return toFeatureBool(props.isSimulated) ? '정적 시뮬레이션' : '수신 시각 없음';
+}
+
+function toFeatureBool(value: unknown): boolean {
+  return value === true || value === 'true';
 }
 
 

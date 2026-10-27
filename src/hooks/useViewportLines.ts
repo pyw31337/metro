@@ -26,6 +26,6 @@ export function useViewportLines(bounds: Bounds | null) {
         }
       }
     }
-    transitRealtimeService.setVisibleLines(visible.size > 0 ? Array.from(visible) : null);
+    transitRealtimeService.setVisibleLines(visible.size > 0 ? Array.from(visible) : []);
   }, [bounds?.minLat, bounds?.minLng, bounds?.maxLat, bounds?.maxLng]); // eslint-disable-line react-hooks/exhaustive-deps
 }

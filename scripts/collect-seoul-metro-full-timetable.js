@@ -17,9 +17,12 @@ const fs   = require('fs');
 const path = require('path');
 
 const DATA_DIR    = path.resolve(__dirname, '..', 'public', 'data');
+const RUNTIME_DIR = path.resolve(__dirname, '..', 'tmp', 'data-scripts');
 const INDEX_FILE  = path.join(DATA_DIR, 'subway-schedule-index.json');
 const ARRIVALS_FILE = path.join(DATA_DIR, 'station-arrivals-index.json');
-const CKPT_FILE   = path.join(DATA_DIR, '_metro-full-tt-checkpoint.json');
+const CKPT_FILE   = path.join(RUNTIME_DIR, 'metro-full-tt-checkpoint.json');
+
+fs.mkdirSync(RUNTIME_DIR, { recursive: true });
 
 const API_KEY  = process.env.NEXT_PUBLIC_SEOUL_API_KEY || '634179436a7079773730786f4d5445';
 const BASE_URL = `http://openapi.seoul.go.kr:8088/${API_KEY}/json`;

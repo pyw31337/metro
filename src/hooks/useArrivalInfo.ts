@@ -3,6 +3,7 @@ import { StationArrival } from '@/types/metro';
 import { fetchStationArrivals, getScheduledArrivalsFromDB, getArrivalsFromScheduleIndex, getArrivalsFromFullTimetable } from '@/services/arrivalApi';
 import { getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { normalizeStationName } from '@/utils/stationUtils';
+import { isRealtimeArrival, scoreArrivalSet } from '@/utils/arrivalTrust';
 
 export interface ScheduleInfo {
   firstTrain: string;
@@ -31,75 +32,82 @@ export function useArrivalInfo(stationName: string | null): ArrivalState {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef  = useRef(true);
+  const requestSeqRef = useRef(0);
 
   const fetchData = useCallback(async (name: string) => {
     if (!mountedRef.current) return;
     const cleanName = normalizeStationName(name);
+    const requestId = ++requestSeqRef.current;
+    let bestScore = -1;
+
     setLoading(true);
     setError(null);
+    setSchedules({});
 
-    // 0. 즉각(동기) — 정적 추정치로 바로 표시 (API/DB 대기 없음)
-    //    SUBWAY_LINES 배차 주기 기반이므로 모든 역에서 동작
+    const applyCandidate = (candidate: StationArrival[]) => {
+      if (!mountedRef.current || requestSeqRef.current !== requestId || candidate.length === 0) return;
+
+      const candidateScore = scoreArrivalSet(candidate);
+      if (candidateScore < bestScore) return;
+      bestScore = candidateScore;
+
+      setArrivals(candidate);
+      const hasRealtime = candidate.some(isRealtimeArrival);
+      setIsLive(hasRealtime);
+      if (hasRealtime) setLastUpdated(Date.now());
+    };
+
     const staticArrivals = getEstimatedArrivalsFromStatic(cleanName);
-    if (staticArrivals.length > 0 && mountedRef.current) {
-      setArrivals(staticArrivals);
-      setIsLive(false);
-    }
+    applyCandidate(staticArrivals);
+
+    const livePromise = fetchStationArrivals(cleanName).catch(() => []);
+    const fullPromise = getArrivalsFromFullTimetable(cleanName).catch(() => []);
+    const indexedPromise = getArrivalsFromScheduleIndex(cleanName).catch(() => []);
+    const scheduledPromise = getScheduledArrivalsFromDB(cleanName).catch(() => []);
+
+    fullPromise.then(applyCandidate);
+    indexedPromise.then(applyCandidate);
+    livePromise.then(applyCandidate);
+    scheduledPromise.then((scheduled) => {
+      applyCandidate(scheduled.slice(0, 6));
+      if (!mountedRef.current || requestSeqRef.current !== requestId || scheduled.length === 0) return;
+      const lineScheds: Record<string, ScheduleInfo> = {};
+      scheduled.forEach((arrival) => {
+        if (arrival.lineName && !lineScheds[arrival.lineName]) {
+          lineScheds[arrival.lineName] = { firstTrain: '05:30', lastTrain: '23:50' };
+        }
+      });
+      setSchedules(lineScheds);
+    });
 
     try {
-      // 1. 수집된 시간표 인덱스 (subway-schedule-index.json, 1-9호선 458개 역)
-      const indexed = await getArrivalsFromScheduleIndex(cleanName);
-      if (indexed.length > 0 && mountedRef.current) {
-        setArrivals(indexed);
-        setIsLive(false);
-      }
+      const [live, fullTt, indexed, scheduled] = await Promise.all([
+        livePromise,
+        fullPromise,
+        indexedPromise,
+        scheduledPromise,
+      ]);
 
-      // 1.5 전체 열차 시각표 (station-arrivals-index.json, 코레일·인천 436개 역 — 정확한 열차별 시각)
-      const fullTt = await getArrivalsFromFullTimetable(cleanName);
-      if (fullTt.length > 0 && mountedRef.current) {
-        setArrivals(fullTt);
-        setIsLive(false);
-      }
+      if (!mountedRef.current || requestSeqRef.current !== requestId) return;
 
-      // 2. 로컬 DB 예정 데이터 (IndexedDB master-timetables, 9개 역)
-      const scheduled = await getScheduledArrivalsFromDB(cleanName);
-
-      if (scheduled.length > 0 && mountedRef.current) {
-        setArrivals(scheduled.slice(0, 6).map(a => ({ ...a, isScheduled: true })));
-        setIsLive(false); // IndexedDB가 indexed보다 정확하므로 덮어씀
-        const lineScheds: Record<string, ScheduleInfo> = {};
-        scheduled.forEach(s => {
-          if (s.lineName && !lineScheds[s.lineName]) {
-            lineScheds[s.lineName] = { firstTrain: '05:30', lastTrain: '23:50' };
-          }
-        });
-        setSchedules(lineScheds);
-      }
-
-      // 2. 실시간 API
-      const live = await fetchStationArrivals(cleanName);
-
-      if (!mountedRef.current) return;
-
-      if (live.length > 0) {
-        setArrivals(live);
-        setIsLive(true);
-        setLastUpdated(Date.now());
-      } else if (scheduled.length === 0 && indexed.length === 0 && staticArrivals.length === 0) {
-        // 정적/인덱스/DB/실시간 모두 실패한 경우에만 에러
+      if (
+        live.length === 0 &&
+        fullTt.length === 0 &&
+        indexed.length === 0 &&
+        scheduled.length === 0 &&
+        staticArrivals.length === 0
+      ) {
         setArrivals([]);
         setError('운행 정보가 없습니다.');
       }
-      // live 없고 scheduled/static 있으면 → 이미 설정된 데이터 유지
     } catch (err) {
-      if (!mountedRef.current) return;
-      // fetch 실패해도 staticArrivals가 있으면 에러 메시지 숨김
+      if (!mountedRef.current || requestSeqRef.current !== requestId) return;
       if (staticArrivals.length === 0) {
         setError('데이터를 불러오는 데 실패했습니다.');
       }
       console.error('[useArrivalInfo] fetch error:', err);
     } finally {
-      if (mountedRef.current) setLoading(false);
+      if (mountedRef.current && requestSeqRef.current === requestId) setLoading(false);
     }
   }, []);
 

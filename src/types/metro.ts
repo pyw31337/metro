@@ -7,6 +7,16 @@ export interface StationCode {
     stationCd: string;
 }
 
+export type DataConfidence = "high" | "medium" | "low";
+export type ArrivalDataSource =
+  | "live"
+  | "arrival-probe"
+  | "full-timetable"
+  | "db-schedule"
+  | "schedule-index"
+  | "static";
+export type TrainDataSource = "live-position" | "arrival-probe" | "simulation";
+
 export interface StationArrival {
     lineName: string;
     subwayId: string;
@@ -20,6 +30,11 @@ export interface StationArrival {
     barvlDt: string;
     btrainNo: string;
     isScheduled?: boolean;
+    source?: ArrivalDataSource;
+    confidence?: DataConfidence;
+    receiptAt?: string;
+    ageSeconds?: number;
+    isEstimatedRealtime?: boolean;
 }
 
 export interface Station {

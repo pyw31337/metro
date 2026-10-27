@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, memo, useState, useCallback, useRef } from "react";
 import { Popup } from "react-map-gl/maplibre";
-import { X, Accessibility, Bell, Baby, RefreshCw, ChevronRight, MapPin, Clock, ArrowRight, Info, ArrowLeft } from "lucide-react";
+import { X, Accessibility, Bell, Baby, RefreshCw, MapPin, Clock, ArrowRight, Info, ArrowLeft } from "lucide-react";
 import { StationArrival, ActiveTab } from "@/types/metro";
 import { parseSeoulDate } from "@/services/arrivalApi";
 import { getLineLongName } from "@/utils/stationUtils";
@@ -18,10 +18,13 @@ import { useBusRouteInfo } from "@/hooks/useBusRouteInfo";
 import { useStationFacilities } from "@/hooks/useStationFacilities";
 import { useStationAddress, formatShortAddress } from "@/hooks/useStationAddress";
 import { useStationExits } from "@/hooks/useStationExits";
+import { useRealtimeCoverage } from "@/hooks/useRealtimeCoverage";
 import { useSubwayRestrooms } from "@/hooks/useSubwayRestrooms";
 import { hapticLight } from "@/utils/haptic";
 import { getBusRouteStyle } from "@/utils/busRouting";
 import { transitRealtimeService } from "@/services/TransitRealtimeService";
+import { getArrivalBadge, getArrivalMetaText } from "@/utils/arrivalTrust";
+import { getRealtimeCoverageTone } from "@/utils/realtimeCoverage";
 
 interface MapPopupsProps {
   popupCoords: [number, number] | null;
@@ -64,7 +67,7 @@ const getLineInfo = (lineName: string) => {
     return { num, color };
 };
 
-const RoadViewButtons = ({ lat, lng, address }: { lat: number, lng: number, address?: string }) => {
+const RoadViewButtons = ({ lat, lng }: { lat: number, lng: number }) => {
   const naverPanoApp = `nmap://panorama?lat=${lat}&lng=${lng}&appname=metro.live`;
   const naverPanoWeb = `https://map.naver.com/v5/street?c=${lng},${lat},15,0,0,0,dh`;
   const kakao = `https://map.kakao.com/link/roadview/${lat},${lng}`;
@@ -348,11 +351,23 @@ const MapPopups = ({
     );
   }, [stationArrivals, activeLine]);
 
+  const arrivalTrust = useMemo(() => {
+    const primary = filteredArrivals[0];
+    if (!primary) return null;
+    return {
+      badge: getArrivalBadge(primary),
+      meta: getArrivalMetaText(primary),
+    };
+  }, [filteredArrivals]);
+
   // Default line selection on popup open
   const badges = useMemo(() => {
     if (activeTab !== 'subway' || !selectedStationName) return [];
     return stationLines(selectedStationName);
   }, [activeTab, selectedStationName]);
+  const realtimeCoverage = useRealtimeCoverage(activeLine);
+  const activeLineCoverage = activeLine ? realtimeCoverage.lines[activeLine] ?? null : null;
+  const activeLineTone = getRealtimeCoverageTone(activeLineCoverage?.state);
 
   useEffect(() => {
     if (popupCoords && activeTab === 'subway' && !activeLine && badges.length > 0) {
@@ -465,6 +480,23 @@ const MapPopups = ({
                                 </button>
                             );
                         })}
+                    </div>
+                )}
+
+                {activeTab === 'subway' && !showInfo && activeLineCoverage && (
+                    <div className="mb-3 flex items-start gap-2 rounded-xl border border-zinc-100 bg-zinc-50/80 px-2.5 py-2 dark:border-white/8 dark:bg-white/[0.04]">
+                        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-black ${activeLineTone.badgeClass}`}>
+                            <span className={`h-1.5 w-1.5 rounded-full ${activeLineTone.dotClass}`} />
+                            {activeLineTone.shortLabel}
+                        </span>
+                        <div className="min-w-0">
+                            <div className="text-[11px] font-black text-zinc-800 dark:text-white">
+                                {activeLineCoverage.lineName} · {activeLineCoverage.label}
+                            </div>
+                            <div className="text-[10px] font-bold text-zinc-500 dark:text-zinc-400">
+                                {activeLineCoverage.freshness}
+                            </div>
+                        </div>
                     </div>
                 )}
 
@@ -616,6 +648,27 @@ const MapPopups = ({
 
                 {/* Arrivals */}
                 {!showInfo && <div className="space-y-2">
+                    {(activeTab === 'subway' && selectedStationName && arrivalTrust) ? (
+                        <div className="flex items-center justify-between gap-2 px-2.5 py-2 rounded-xl bg-black/[0.03] dark:bg-white/5 border border-black/5 dark:border-white/5">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                                <span className={`shrink-0 text-[9px] px-1.5 py-0.5 rounded-full font-black ${arrivalTrust.badge.className}`}>
+                                    {arrivalTrust.badge.label}
+                                </span>
+                                <span className="text-[10px] text-zinc-500 dark:text-zinc-400 truncate">
+                                    {arrivalTrust.meta}
+                                </span>
+                            </div>
+                            {onRefreshArrival && (
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); onRefreshArrival(); }}
+                                    className="shrink-0 p-1 rounded-lg text-zinc-400 hover:text-zinc-600 dark:hover:text-white transition-colors"
+                                    aria-label="도착 정보 새로고침"
+                                >
+                                    <RefreshCw size={12} />
+                                </button>
+                            )}
+                        </div>
+                    ) : null}
                     {(activeTab === 'subway' && selectedStationName) ? (
                         arrivalLoading && stationArrivals.length === 0 ? (
                             <div className="py-5 flex items-center justify-center gap-2 text-zinc-400 dark:text-white/30 text-[11px] font-bold">
@@ -803,9 +856,11 @@ const MapPopups = ({
                         </div>
                         <span className="text-[10px] font-black text-zinc-900 dark:text-white">
                             {(() => {
-                                const diff = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
+                                const receiptTs = parseSeoulDate(selectedTrain.lastRecptnDt);
+                                if (!receiptTs) return '수신시각 없음';
+                                const diff = Math.floor((Date.now() - receiptTs) / 60000);
                                 if (timeDisplayMode === 'duration') return diff <= 0 ? '방금전' : `${diff}분전`;
-                                return new Date(parseSeoulDate(selectedTrain.lastRecptnDt)).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
+                                return new Date(receiptTs).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: false });
                             })()}
                         </span>
                     </div>
@@ -833,7 +888,8 @@ const MapPopups = ({
                             ) : (
                                 (() => {
                                     // Intelligent Estimate Fallback
-                                    const diffMins = Math.floor((Date.now() - parseSeoulDate(selectedTrain.lastRecptnDt)) / 60000);
+                                    const receiptTs = parseSeoulDate(selectedTrain.lastRecptnDt);
+                                    const diffMins = receiptTs ? Math.floor((Date.now() - receiptTs) / 60000) : 0;
                                     let estimate = 5; // Default 5 mins
                                     if (selectedTrain.trainSttus === '1' || selectedTrain.trainSttus === '0') {
                                         estimate = Math.max(3, 5 - diffMins); // If stopped/entering, estimate 3-5 mins

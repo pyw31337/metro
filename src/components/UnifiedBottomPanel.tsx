@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo, useRef, memo } from "react";
-import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, Share2, Star, Check, GripVertical } from "lucide-react";
+import { Train, Bus, Bath, Navigation, Locate, X, RotateCcw, Baby, Accessibility, Bell, ArrowUpDown, Plus, Share2, Star, Check, GripVertical, Clock3, MapPin, Search, Sparkles } from "lucide-react";
 import { Station } from "@/data/subway-lines";
 import { normStation, stationLines } from "@/data/stationRegistry";
 import { getLineShortName } from "@/utils/stationUtils";
@@ -164,6 +164,7 @@ const WCPanel = memo(() => {
     const { nearestWCs, selectedWC, wcItems } = useSubwayStore();
     const setSelectedWC = useSubwayStore(s => s.setSelectedWC);
     const userLocation = useMapStore(s => s.userLocation);
+    const nearestStation = useMapStore(s => s.nearestStation);
     const [wcQuery, setWcQuery] = useState("");
 
     const formatDist = useCallback((wc: typeof nearestWCs[0]) => {
@@ -211,6 +212,41 @@ const WCPanel = memo(() => {
 
     return (
         <div className="flex flex-col gap-2.5 py-1">
+            <div className="rounded-[22px] border border-blue-200/60 bg-gradient-to-br from-blue-500/10 via-white to-sky-50 px-3.5 py-3 shadow-sm dark:border-white/8 dark:from-blue-500/10 dark:via-zinc-900/90 dark:to-blue-950/25">
+                <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-[0.18em] text-blue-500">Station Comfort</div>
+                        <div className="mt-1 text-[15px] font-black text-zinc-950 dark:text-white">화장실과 편의 포인트 찾기</div>
+                        <p className="mt-1 text-[11px] font-bold leading-5 text-zinc-500 dark:text-zinc-400">
+                            역 내부 화장실을 우선 보여주고, 필요하면 역 주변 시설까지 함께 탐색할 수 있어요.
+                        </p>
+                    </div>
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-blue-500/12 text-blue-500 dark:bg-blue-500/15">
+                        <Bath size={18} />
+                    </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                    {nearestStation && (
+                        <button
+                            onClick={() => setWcQuery(nearestStation.name)}
+                            className="rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-zinc-700 shadow-sm transition hover:bg-white dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+                        >
+                            {nearestStation.name} 기준으로 보기
+                        </button>
+                    )}
+                    {userLocation ? (
+                        <span className="rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-black text-zinc-500 shadow-sm dark:bg-white/8 dark:text-zinc-300">
+                            주변 {nearestWCs.length}곳 정렬 중
+                        </span>
+                    ) : (
+                        <span className="rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-black text-zinc-500 shadow-sm dark:bg-white/8 dark:text-zinc-300">
+                            위치를 켜면 가까운 순으로 보여줘요
+                        </span>
+                    )}
+                </div>
+            </div>
+
             {/* 검색 입력 */}
             <div className="relative">
                 <Bath size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
@@ -413,6 +449,69 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
     const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const routeUpdateRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+    const sourcePlaceholder = activeTab === "bus" ? "출발 정류장·역" : "출발역";
+    const destinationPlaceholder = activeTab === "bus" ? "도착 정류장·역" : "도착역";
+
+    const panelGuide = useMemo(() => {
+        if (activeTab === "bus") {
+            return {
+                eyebrow: "Surface Bus",
+                title: "버스 경로와 정류장을 한 번에",
+                description: busStops.length > 0
+                    ? `지금 화면 주변 ${busStops.length}개 정류장을 기준으로 버스 후보를 찾고, 선택한 노선은 지도로 바로 따라가 볼 수 있어요.`
+                    : "정류장이나 역 이름을 입력하면 버스 후보를 찾고, 선택한 노선은 지도로 바로 따라가 볼 수 있어요.",
+                accentClass: "from-emerald-500/14 via-white/90 to-emerald-100/70 dark:from-emerald-500/12 dark:via-zinc-900/90 dark:to-emerald-950/25",
+                icon: <Bus size={18} />,
+                hint: "주변 정류장은 지도 이동에 맞춰 자동으로 갱신됩니다",
+            };
+        }
+
+        return {
+            eyebrow: "Metro Route",
+            title: "지하철 경로를 더 빨리 시작하기",
+            description: "출발과 도착만 넣어도 최단시간과 최소환승을 동시에 비교하고, 선택한 역의 도착 정보까지 바로 이어서 볼 수 있어요.",
+            accentClass: "from-blue-500/14 via-white/90 to-sky-100/70 dark:from-blue-500/12 dark:via-zinc-900/90 dark:to-sky-950/25",
+            icon: <Train size={18} />,
+            hint: "역 이름은 초성 검색과 최근 장소 재사용을 지원해요",
+        };
+    }, [activeTab, busStops.length]);
+
+    const quickAccessItems = useMemo(() => {
+        const seen = new Set<string>();
+        const merged = [...favorites, ...history];
+        return merged.filter((entry) => {
+            const key = `${entry.type}:${entry.name}`;
+            if (seen.has(key)) return false;
+            seen.add(key);
+            return true;
+        }).slice(0, 4);
+    }, [favorites, history]);
+
+    const getResolvedLocationName = useCallback((entry: any) => {
+        const line = entry.lines?.[0] || "";
+        if (line && !entry.name.includes(line.replace("호선", ""))) {
+            return `${entry.name} (${line.replace("호선", "")})`;
+        }
+        return entry.name;
+    }, []);
+
+    const applyQuickEntry = useCallback((entry: any) => {
+        const fullName = getResolvedLocationName(entry);
+        hapticLight();
+
+        if (!source) {
+            setSource(fullName);
+            onSetSource?.(fullName);
+        } else {
+            setDestination(fullName);
+            onSetDestination?.(fullName);
+        }
+
+        addToHistory({ name: entry.name, type: entry.type || "subway", lines: entry.lines, id: entry.id });
+        setSearchResults([]);
+        setActiveField(null);
+        setNoRouteStale(false);
+    }, [addToHistory, getResolvedLocationName, onSetDestination, onSetSource, source]);
 
     // O(1) station lookup by name (both "역명" and "역명역" variants)
     const stationByName = useMemo(() => {
@@ -539,11 +638,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
 
     const selectLocation = (s: any) => {
         hapticLight();
-        const line = s.lines?.[0] || '';
-        let fullName = s.name;
-        if (line && !s.name.includes(line.replace('호선', ''))) {
-            fullName = `${s.name} (${line.replace('호선', '')})`;
-        }
+        const fullName = getResolvedLocationName(s);
 
         // Cancel any pending debounced route update — we'll set immediately on selection
         if (routeUpdateRef.current) clearTimeout(routeUpdateRef.current);
@@ -623,6 +718,86 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                         <div className="animate-fade-in-up flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-rose-500/8 dark:bg-rose-500/12 border border-rose-500/20 mb-1">
                             <span className="text-[12px] font-black text-rose-500">경로를 찾을 수 없습니다</span>
                             <span className="text-[10px] font-bold text-rose-400/70">· 역명을 확인해주세요</span>
+                        </div>
+                    )}
+
+                    {activeTab !== "wc" && !pathResults && !busPathResult && !isCalculating && activeField === null && (
+                        <div className={`animate-fade-in-up rounded-[24px] border border-white/50 bg-gradient-to-br ${panelGuide.accentClass} px-4 py-3 shadow-sm dark:border-white/8`}>
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                    <div className="text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                                        {panelGuide.eyebrow}
+                                    </div>
+                                    <div className="mt-1 text-[16px] font-black text-zinc-950 dark:text-white">
+                                        {panelGuide.title}
+                                    </div>
+                                    <p className="mt-1 text-[11px] font-bold leading-5 text-zinc-500 dark:text-zinc-400">
+                                        {panelGuide.description}
+                                    </p>
+                                </div>
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white/80 text-zinc-700 shadow-sm dark:bg-white/10 dark:text-zinc-200">
+                                    {panelGuide.icon}
+                                </div>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap gap-2">
+                                <button
+                                    onClick={() => onLocate?.("source")}
+                                    className="rounded-full bg-zinc-900 px-3 py-1.5 text-[11px] font-black text-white transition hover:opacity-95 dark:bg-white dark:text-zinc-900"
+                                >
+                                    내 위치를 출발로
+                                </button>
+                                {nearestStation && onSelectStation && (
+                                    <button
+                                        onClick={() => {
+                                            hapticLight();
+                                            onSelectStation(nearestStation.name);
+                                        }}
+                                        className="rounded-full bg-white/90 px-3 py-1.5 text-[11px] font-black text-zinc-700 shadow-sm transition hover:bg-white dark:bg-white/10 dark:text-zinc-200 dark:hover:bg-white/15"
+                                    >
+                                        {nearestStation.name} 도착 정보
+                                    </button>
+                                )}
+                                {activeTab === "bus" && busStops.length > 0 && (
+                                    <span className="rounded-full bg-white/85 px-3 py-1.5 text-[11px] font-black text-zinc-500 shadow-sm dark:bg-white/8 dark:text-zinc-300">
+                                        주변 정류장 {busStops.length}개 로드됨
+                                    </span>
+                                )}
+                            </div>
+
+                            {quickAccessItems.length > 0 && (
+                                <div className="mt-3">
+                                    <div className="mb-2 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.18em] text-zinc-500 dark:text-zinc-400">
+                                        <Clock3 size={11} />
+                                        최근 자주 쓰는 장소
+                                    </div>
+                                    <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+                                        {quickAccessItems.map((entry, idx) => (
+                                            <button
+                                                key={`${entry.type}-${entry.name}-${idx}`}
+                                                onClick={() => applyQuickEntry(entry)}
+                                                className="shrink-0 rounded-2xl border border-white/60 bg-white/85 px-3 py-2 text-left shadow-sm transition hover:bg-white dark:border-white/8 dark:bg-white/8 dark:hover:bg-white/12"
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    {entry.type === "bus"
+                                                        ? <Bus size={13} className="text-emerald-500" />
+                                                        : <Train size={13} className="text-blue-500" />}
+                                                    <span className="text-[12px] font-black text-zinc-900 dark:text-white">{entry.name}</span>
+                                                </div>
+                                                <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500">
+                                                    {entry.lines?.[0] && getLineBadge(entry.lines[0])}
+                                                    <span>{!source ? "출발지로 넣기" : "도착지로 넣기"}</span>
+                                                </div>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className="mt-3 flex items-center gap-1.5 text-[10px] font-black text-zinc-400 dark:text-zinc-500">
+                                <Sparkles size={11} />
+                                <span>{panelGuide.hint}</span>
+                            </div>
                         </div>
                     )}
 
@@ -784,7 +959,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     <span className="text-[11px] font-black text-rose-500 shrink-0 mr-1">도착</span>
                                     <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                         {(!activeField || activeField !== "dest") && destination && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(destination, true)}</div>)}
-                                        <input ref={destInputRef} aria-label="도착역 검색" type="text" placeholder={!destination ? "도착역" : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
+                                        <input ref={destInputRef} aria-label="도착역 검색" type="text" placeholder={!destination ? destinationPlaceholder : ""} value={activeField === "dest" ? destination : ""} onFocus={() => { setActiveField("dest"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "dest") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (destination) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "dest")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "dest") && destination ? "opacity-0" : "opacity-100"}`} />
                                     </div>
                                     <div className="flex items-center gap-1 shrink-0">
                                         {destination && (<button aria-label="도착지 지우기" onMouseDown={(e) => e.preventDefault()} onClick={() => { setDestination(""); setSearchResults([]); destInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
@@ -867,7 +1042,7 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                     <input
                                         autoFocus
                                         type="text"
-                                        placeholder="경유역 검색"
+                                        placeholder={activeTab === "bus" ? "경유 정류장·역 검색" : "경유역 검색"}
                                         value={waypointInput}
                                         onChange={(e) => handleSearch(e.target.value, "waypoint")}
                                         onKeyDown={(e) => {
@@ -887,12 +1062,21 @@ const UnifiedBottomPanel = memo(function UnifiedBottomPanel({
                                 <span className="text-[11px] font-black text-blue-500 shrink-0 mr-1">출발</span>
                                 <div className="relative flex-1 h-full flex items-center px-2 overflow-hidden">
                                     {(!activeField || activeField !== "source") && source && (<div className="absolute inset-y-0 left-2 flex items-center pointer-events-none font-bold text-[13px] text-zinc-900 dark:text-white">{formatInputDisplay(source)}</div>)}
-                                    <input ref={sourceInputRef} aria-label="출발역 검색" type="text" placeholder={!source ? "출발역" : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
+                                    <input ref={sourceInputRef} aria-label="출발역 검색" type="text" placeholder={!source ? sourcePlaceholder : ""} value={activeField === "source" ? source : ""} onFocus={() => { setActiveField("source"); setActiveIndex(-1); }} onBlur={() => setTimeout(() => { if(activeField === "source") setActiveField(null); }, 250)} onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(p => (p + 1) % searchResults.length); } else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(p => (p - 1 + searchResults.length) % searchResults.length); } else if (e.key === 'Enter') { if (activeIndex >= 0 && searchResults[activeIndex]) { const s = searchResults[activeIndex]; selectLocation(s); } else if (source) { setActiveField(null); } } }} onChange={(e) => handleSearch(e.target.value, "source")} className={`w-full bg-transparent border-none outline-none font-bold text-[13px] placeholder:text-zinc-400 text-zinc-900 dark:text-white ${(!activeField || activeField !== "source") && source ? "opacity-0" : "opacity-100"}`} />
                                 </div>
                                 <div className="flex items-center gap-1 shrink-0">
                                     {source && (<button aria-label="출발지 지우기" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSource(""); setSearchResults([]); sourceInputRef.current?.focus(); }} className="p-1 text-zinc-400 hover:text-zinc-600 transition-all"><X size={14} /></button>)}
                                     <button aria-label="현재 위치를 출발지로" disabled={isLocating} onClick={() => onLocate?.("source")} className={`p-1 transition-all active:scale-90 ${isLocating ? 'text-zinc-200 cursor-not-allowed' : 'text-zinc-400 hover:text-blue-500'}`}><Locate size={14} /></button>
                                 </div>
+                            </div>
+
+                            <div className="flex items-center gap-1.5 px-1 text-[10px] font-black text-zinc-400 dark:text-zinc-500">
+                                {activeTab === "bus" ? <MapPin size={11} /> : <Search size={11} />}
+                                <span>
+                                    {activeTab === "bus"
+                                        ? "정류장 이름이나 역 이름으로 찾아보고, 선택한 노선은 정류장 순서대로 지도에 보여드려요"
+                                        : "출발·도착만 입력해도 최단시간과 최소환승을 함께 비교해드려요"}
+                                </span>
                             </div>
                         </div>
                     )}

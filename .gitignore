@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/functions/node_modules
 /.pnp
 .pnp.*
 .yarn/*
@@ -18,6 +19,7 @@
 /out/
 /out_firebase/
 /out_github/
+/public/version.json
 
 # production
 /build
@@ -25,6 +27,7 @@
 # misc
 .DS_Store
 *.pem
+/.firebase/
 
 # debug
 npm-debug.log*
@@ -45,6 +48,7 @@ next-env.d.ts
 # data
 /data/raw/
 /tmp/
+public/data/_*.json
 public/data/paths/bus-paths-*.json
 !public/data/paths/bus-paths-23.json
 !public/data/paths/bus-paths-11.json

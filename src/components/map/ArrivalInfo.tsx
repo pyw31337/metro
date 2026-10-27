@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { StationArrival } from "@/types/metro";
 import { SUBWAY_LINES } from "@/data/subway-lines";
 import { normStation, lineStationIdxMap } from "@/data/stationRegistry";
+import { getArrivalBadge, getArrivalMetaText } from "@/utils/arrivalTrust";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공유 1초 틱 (모듈 레벨 singleton) — N개 도착 아이템이 interval 1개만 사용
@@ -75,6 +76,8 @@ interface ArrivalItemProps {
 }
 
 export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay }: ArrivalItemProps) => {
+  const badge = getArrivalBadge(arr);
+  const metaText = getArrivalMetaText(arr);
   // ── 정거장 수 파싱 ──
   let stopsLeft = parseStopsLeft(arr);
 
@@ -144,12 +147,19 @@ export const ArrivalItemListItem = ({ arr, timeDisplayMode, onToggleTimeDisplay 
     >
       {/* 좌: LIVE 배지 + 시간 + 분기 배지 */}
       <div className="flex items-center gap-1.5 min-w-0 shrink">
-        {!arr.isScheduled && (
-          <span className="shrink-0 flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-black border border-emerald-500/30">
-            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-            LIVE
-          </span>
-        )}
+        <span
+          title={metaText}
+          className={`shrink-0 flex items-center gap-0.5 text-[9px] px-1 py-0.5 rounded font-black ${badge.className}`}
+        >
+          <span
+            className={`w-1 h-1 rounded-full ${
+              badge.label.startsWith("LIVE")
+                ? "bg-current animate-pulse"
+                : "bg-current"
+            }`}
+          />
+          {badge.label}
+        </span>
         <span
           className="text-[14px] font-bold leading-tight whitespace-nowrap"
           style={isHighlight ? { color: lineColor } : {}}

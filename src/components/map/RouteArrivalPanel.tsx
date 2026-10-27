@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect, useRef, memo } from "react";
-import { Train, ArrowRight, RefreshCw, ChevronRight } from "lucide-react";
+import { Train, RefreshCw, ChevronRight } from "lucide-react";
 import type { PathResult, StationArrival } from "@/types/metro";
 import { useRouteArrivals, type RouteSegmentArrival } from "@/hooks/useRouteArrivals";
+import { getArrivalBadge, getArrivalMetaText, getArrivalSource, isRealtimeArrival } from "@/utils/arrivalTrust";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 노선 색상
@@ -51,6 +52,8 @@ interface TrainCardProps {
   isFirst: boolean;
 }
 const TrainCard = memo(({ arr, lineColor, isFirst }: TrainCardProps) => {
+  const badge = getArrivalBadge(arr);
+  const metaText = getArrivalMetaText(arr);
   const mountedAt  = useRef(Date.now());
   const initialSec = useRef<number>(
     arr.arvlCd === '1' ? 0
@@ -118,18 +121,24 @@ const TrainCard = memo(({ arr, lineColor, isFirst }: TrainCardProps) => {
         <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400 leading-tight truncate">
           {arr.trainLineNm || arr.bstatnNm ? `${arr.bstatnNm ?? ""}행` : arr.updnLine}
         </span>
+        <span className="text-[9px] text-zinc-400 dark:text-zinc-500 leading-tight truncate">{metaText}</span>
       </div>
 
-      {/* LIVE 배지 or 예정 */}
+      {/* 신뢰도 배지 */}
       <div className="shrink-0">
-        {!arr.isScheduled ? (
-          <span className="flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-500 font-black border border-emerald-500/25">
-            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
-            LIVE
-          </span>
-        ) : (
-          <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-zinc-200/60 dark:bg-white/8 text-zinc-400 font-bold">예정</span>
-        )}
+        <span
+          title={metaText}
+          className={`flex items-center gap-0.5 text-[8px] px-1.5 py-0.5 rounded-full font-black ${badge.className}`}
+        >
+          <span
+            className={`w-1 h-1 rounded-full ${
+              badge.label.startsWith("LIVE")
+                ? "bg-current animate-pulse"
+                : "bg-current"
+            }`}
+          />
+          {badge.label}
+        </span>
       </div>
 
       {/* 탑승 가능성 점 (첫 열차만) */}
@@ -149,8 +158,6 @@ const SegmentCard = memo(({ seg, isLast }: { seg: RouteSegmentArrival; isLast: b
   const dirLabel = seg.direction === '1'
     ? (seg.line === '2호선' ? '외선' : '하행')
     : (seg.line === '2호선' ? '내선' : '상행');
-
-  const stationCount = 0; // 향후 환승 도보 시간 연동 가능
 
   return (
     <div className="flex flex-col gap-0">
@@ -223,7 +230,9 @@ export const RouteArrivalPanel = memo(({ activePath }: RouteArrivalPanelProps) =
   const latestFetch = segArrivals.reduce<number | null>((acc, s) =>
     s.fetchedAt ? Math.max(acc ?? 0, s.fetchedAt) : acc, null
   );
-  const hasLive = segArrivals.some(s => s.trains.some(t => !t.isScheduled));
+  const hasLive = segArrivals.some(s => s.trains.some(isRealtimeArrival));
+  const hasEstimatedRealtime = segArrivals.some(s => s.trains.some(t => getArrivalSource(t) === 'arrival-probe'));
+  const hasTimetableOnly = !hasLive && segArrivals.some(s => s.trains.some(t => getArrivalSource(t) !== 'arrival-probe'));
 
   return (
     <div className="flex flex-col gap-0 mt-2 mb-1 rounded-2xl overflow-hidden bg-zinc-50 dark:bg-white/5 border border-black/5 dark:border-white/8">
@@ -237,6 +246,12 @@ export const RouteArrivalPanel = memo(({ activePath }: RouteArrivalPanelProps) =
               <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
               LIVE
             </span>
+          )}
+          {!hasLive && hasEstimatedRealtime && (
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-sky-500/15 text-sky-500 font-black">실시간 추정</span>
+          )}
+          {!hasLive && !hasEstimatedRealtime && hasTimetableOnly && (
+            <span className="text-[8px] px-1.5 py-0.5 rounded-full bg-zinc-500/15 text-zinc-500 font-black">시각표</span>
           )}
         </div>
         {latestFetch && (

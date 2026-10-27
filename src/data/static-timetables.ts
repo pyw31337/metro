@@ -56,6 +56,8 @@ function generateFromSubwayLines(stationName: string): StationArrival[] {
           barvlDt: waitSec.toString(),
           btrainNo: '',
           isScheduled: true,
+          source: 'static' as const,
+          confidence: 'low' as const,
         });
       }
     }
@@ -179,7 +181,7 @@ function generatePattern(
     return [...entries, ...weekendEntries, ...sundayEntries];
 }
 
-export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?: string | null): StationArrival[] => {
+export const getEstimatedArrivalsFromStatic = (stationName: string): StationArrival[] => {
     const now = new Date();
     const currentH = now.getHours();
     const currentM = now.getMinutes();
@@ -208,7 +210,9 @@ export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?:
                 bstatnNm: e.destination,
                 barvlDt: waitTime.toString(),
                 btrainNo: e.trainNo,
-                isScheduled: true
+                isScheduled: true,
+                source: 'static' as const,
+                confidence: 'low' as const,
             };
         })
         .filter(a => parseInt(a.barvlDt) > 0)

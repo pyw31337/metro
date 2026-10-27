@@ -366,6 +366,7 @@ export class MetropolitanBusService {
     stops: { name: string; lat: number; lng: number; order: number }[]
   ): any {
     const features: any[] = [];
+    const segments = this.validatePathSegments(rawPathCoords);
 
     // ── Path geometry ──────────────────────────────────────────────────────
     // When stop data is available, connect stops in sequence so the line
@@ -381,7 +382,6 @@ export class MetropolitanBusService {
         properties: { featureType: "route" },
       });
     } else {
-      const segments = this.validatePathSegments(rawPathCoords);
       if (segments.length === 1) {
         features.push({
           type: "Feature",

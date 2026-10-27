@@ -1,7 +1,12 @@
-import { StationArrival, TimetableEntry } from '@/types/metro';
+import {
+  DataConfidence,
+  StationArrival,
+  TimetableEntry,
+  TrainDataSource,
+} from '@/types/metro';
 import { db } from './db';
-import { getStaticTimetable, getEstimatedArrivalsFromStatic } from '@/data/static-timetables';
 import { API_ENDPOINTS } from '@/utils/api-client';
+import { parseSeoulDate } from '@/utils/seoulDate';
 import { normalizeLineName } from '@/utils/stationUtils';
 import { normStation } from '@/data/stationRegistry';
 
@@ -25,10 +30,164 @@ type ScheduleIndex = Record<string, ScheduleIndexEntry>;
 type StationArrivalsIndex = Record<string, Record<string, Record<string, string[]>>>;
 
 const _schedBase = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase' ? '' : '/metro';
+const _isFirebaseDeploy = process.env.NEXT_PUBLIC_DEPLOY_TARGET === 'firebase';
+const _internalRealtimeBase = '/api/realtime/subway';
+const INTERNAL_REALTIME_LONG_BACKOFF_MS = 5 * 60 * 1000;
+const INTERNAL_REALTIME_SHORT_BACKOFF_MS = 30 * 1000;
 let _schedIndex: ScheduleIndex | null = null;
 let _schedLoading: Promise<ScheduleIndex> | null = null;
 let _arrIndex: StationArrivalsIndex | null = null;
 let _arrIndexLoading: Promise<StationArrivalsIndex> | null = null;
+
+type CacheEntry<T> = {
+  data: T;
+  timestamp: number;
+};
+
+const _realtimeCache = {
+  arrivals: new Map<string, CacheEntry<StationArrival[]>>(),
+  positions: new Map<string, CacheEntry<TrainPosition[]>>(),
+  probes: new Map<string, CacheEntry<TrainPosition[]>>(),
+  alerts: new Map<string, CacheEntry<SubwayAlert[]>>(),
+};
+
+const _inflightRequests = {
+  arrivals: new Map<string, Promise<StationArrival[]>>(),
+  positions: new Map<string, Promise<TrainPosition[]>>(),
+  probes: new Map<string, Promise<TrainPosition[]>>(),
+  alerts: new Map<string, Promise<SubwayAlert[]>>(),
+};
+
+const _internalRealtimeHealth = {
+  unavailableUntil: 0,
+  lastFailureStatus: 0,
+};
+
+function canUseInternalRealtime(): boolean {
+  return _isFirebaseDeploy && Date.now() >= _internalRealtimeHealth.unavailableUntil;
+}
+
+function markInternalRealtimeFailure(status?: number) {
+  _internalRealtimeHealth.lastFailureStatus = status ?? 0;
+  const backoffMs = status === 404
+    ? INTERNAL_REALTIME_LONG_BACKOFF_MS
+    : INTERNAL_REALTIME_SHORT_BACKOFF_MS;
+  _internalRealtimeHealth.unavailableUntil = Date.now() + backoffMs;
+}
+
+function markInternalRealtimeSuccess() {
+  _internalRealtimeHealth.lastFailureStatus = 0;
+  _internalRealtimeHealth.unavailableUntil = 0;
+}
+
+function readTimedCache<T>(cache: Map<string, CacheEntry<T>>, key: string, ttlMs: number): T | null {
+  const cached = cache.get(key);
+  if (!cached) return null;
+  if (Date.now() - cached.timestamp > ttlMs) {
+    cache.delete(key);
+    return null;
+  }
+  return cached.data;
+}
+
+function writeTimedCache<T>(cache: Map<string, CacheEntry<T>>, key: string, data: T): T {
+  cache.set(key, { data, timestamp: Date.now() });
+  return data;
+}
+
+async function withInflight<T>(
+  inflightMap: Map<string, Promise<T>>,
+  key: string,
+  loader: () => Promise<T>
+): Promise<T> {
+  const existing = inflightMap.get(key);
+  if (existing) return existing;
+  const promise = loader().finally(() => inflightMap.delete(key));
+  inflightMap.set(key, promise);
+  return promise;
+}
+
+async function fetchInternalRealtime(path: string, params: Record<string, string>, timeoutMs = 2500) {
+  if (!_isFirebaseDeploy) throw new Error('internal realtime api disabled');
+  if (!canUseInternalRealtime()) {
+    throw new Error(`internal realtime unavailable ${_internalRealtimeHealth.lastFailureStatus || 'cached'}`);
+  }
+  const qs = new URLSearchParams(params);
+  try {
+    const res = await fetch(`${_internalRealtimeBase}/${path}?${qs.toString()}`, {
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) {
+      markInternalRealtimeFailure(res.status);
+      throw new Error(`internal realtime ${res.status}`);
+    }
+    markInternalRealtimeSuccess();
+    return res.json();
+  } catch (error) {
+    if (canUseInternalRealtime()) {
+      markInternalRealtimeFailure();
+    }
+    throw error;
+  }
+}
+
+function computeRealtimeConfidence(ageSeconds?: number | null): DataConfidence {
+  if (typeof ageSeconds !== 'number' || !Number.isFinite(ageSeconds)) return 'medium';
+  if (ageSeconds <= 20) return 'high';
+  if (ageSeconds <= 60) return 'medium';
+  return 'low';
+}
+
+function parseArrivalSeconds(value: string | number | undefined): number {
+  const parsed = typeof value === 'number' ? value : parseInt(value || '0', 10);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function formatArrivalMessage(waitSeconds: number): string {
+  if (waitSeconds <= 0) return '곧 도착';
+  if (waitSeconds < 60) return `${waitSeconds}초 후`;
+  return `${Math.floor(waitSeconds / 60)}분 후`;
+}
+
+function getReceiptAt(item: any): string {
+  return item?.recptnDt || item?.lastRecptnDt || '';
+}
+
+function getAgeSeconds(receiptAt: string): number | undefined {
+  const receiptTs = parseSeoulDate(receiptAt);
+  if (!receiptTs) return undefined;
+  return Math.max(0, Math.floor((Date.now() - receiptTs) / 1000));
+}
+
+function annotateScheduledArrival(
+  arrival: StationArrival,
+  source: StationArrival['source'],
+  confidence: DataConfidence
+): StationArrival {
+  return {
+    ...arrival,
+    isScheduled: true,
+    source,
+    confidence,
+    isEstimatedRealtime: false,
+  };
+}
+
+function chooseBetterArrival(current: StationArrival | undefined, candidate: StationArrival): StationArrival {
+  if (!current) return candidate;
+
+  const currentEta = parseArrivalSeconds(current.barvlDt);
+  const candidateEta = parseArrivalSeconds(candidate.barvlDt);
+  const currentConfidenceRank = current.confidence === 'high' ? 3 : current.confidence === 'medium' ? 2 : 1;
+  const candidateConfidenceRank = candidate.confidence === 'high' ? 3 : candidate.confidence === 'medium' ? 2 : 1;
+
+  if (candidateConfidenceRank !== currentConfidenceRank) {
+    return candidateConfidenceRank > currentConfidenceRank ? candidate : current;
+  }
+
+  return candidateEta <= currentEta ? candidate : current;
+}
 
 async function getScheduleIndex(): Promise<ScheduleIndex> {
   if (_schedIndex) return _schedIndex;
@@ -90,7 +249,7 @@ export const getArrivalsFromScheduleIndex = async (
 
   const results: StationArrival[] = [];
 
-  for (const [key, entry] of Object.entries(index)) {
+  for (const [, entry] of Object.entries(index)) {
     const entryClean = normStation(entry.name);
     if (entryClean !== clean && entry.name !== stationName) continue;
 
@@ -147,6 +306,8 @@ export const getArrivalsFromScheduleIndex = async (
           barvlDt:     String(waitSec),
           btrainNo:    '',
           isScheduled: true,
+          source:      'schedule-index',
+          confidence:  isPreciseEst ? 'medium' : 'low',
         });
       }
     }
@@ -237,6 +398,8 @@ export const getArrivalsFromFullTimetable = async (
           barvlDt:     String(waitSec),
           btrainNo:    '',
           isScheduled: true,
+          source:      'full-timetable',
+          confidence:  'medium',
         });
         found++;
         if (found >= 3) break;
@@ -262,14 +425,6 @@ async function getTransferData(): Promise<any[]> {
   return _transferDataCache!;
 }
 
-const LINE_ID_MAP: { [key: string]: string } = {
-    "1": "1001", "2": "1002", "3": "1003", "4": "1004", "5": "1005",
-    "6": "1006", "7": "1007", "8": "1008", "9": "1009",
-    "1호선": "1001", "2호선": "1002", "3호선": "1003", "4호선": "1004", "5호선": "1005",
-    "6호선": "1006", "7호선": "1007", "8호선": "1008", "9호선": "1009",
-    "경의중앙": "1063", "경춘": "1067", "수인분당": "1075", "신분당": "1077", "공항철도": "1065", "GTX-A": "1032"
-};
-
 export interface TrainPosition {
     subwayId: string;
     subwayNm: string;
@@ -283,6 +438,11 @@ export interface TrainPosition {
     lstnyNm: string;
     arrivalNm: string;
     arvlCd: string;
+    statnTnm?: string;
+    confidence?: DataConfidence;
+    dataSource?: TrainDataSource;
+    ageSeconds?: number;
+    isEstimatedRealtime?: boolean;
 }
 
 export interface SubwayAlert {
@@ -291,16 +451,7 @@ export interface SubwayAlert {
     date: string;
 }
 
-export const parseSeoulDate = (dateStr: string): number => {
-    if (!dateStr) return Date.now();
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) return d.getTime();
-    const match = dateStr.match(/^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})/);
-    if (match) {
-        return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:${match[6]}`).getTime();
-    }
-    return Date.now();
-};
+export { parseSeoulDate } from '@/utils/seoulDate';
 
 export const fetchWithFallbacks = async (targetUrl: string) => {
     // 1. Direct Fetch (로컬 개발 환경에서만 성공, 프로덕션은 CORS로 차단됨)
@@ -387,158 +538,196 @@ export const getSubwayPositionsFromArrivals = async (lineName: string): Promise<
  * 반환된 TrainPosition 배열은 buildUnit()과 완전 호환됩니다.
  */
 export const fetchArrivalBasedPositions = async (stationName: string): Promise<TrainPosition[]> => {
-    const USER_APPROVED_KEYS = [
-        "634179436a7079773730786f4d5445",
-        "53517344677079773531694a786f6a",
-        "434f7275707079773537687a507658",
-    ];
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
+    const cleanStation = normStation(stationName);
+    const cacheKey = cleanStation || stationName;
+    const cached = readTimedCache(_realtimeCache.probes, cacheKey, 10_000);
+    if (cached) return cached;
 
-    const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(stationName)}`;
+    return withInflight(_inflightRequests.probes, cacheKey, async () => {
+        const USER_APPROVED_KEYS = [
+            "634179436a7079773730786f4d5445",
+            "53517344677079773531694a786f6a",
+            "434f7275707079773537687a507658",
+        ];
+        let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+        if (!apiKey || apiKey.length < 10) apiKey = USER_APPROVED_KEYS[0];
 
-    try {
-        const json = await fetchWithFallbacks(url);
-        const rawList: any[] = json?.realtimeArrivalList || [];
-        if (rawList.length === 0) return [];
+        const url = `https://swopenapi.seoul.go.kr/api/subway/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(stationName)}`;
 
-        const results: TrainPosition[] = [];
-        const seen = new Set<string>();
-
-        for (const item of rawList) {
-            const trainNo = item.btrainNo;
-            if (!trainNo || trainNo === '0000') continue;
-            if (!item.bstatnNm) continue;  // 현재위치 없으면 스킵
-            if (seen.has(trainNo)) continue;
-            seen.add(trainNo);
-
-            const barvlDt = parseInt(item.barvlDt || '9999');
-            // 도착 예정 시간 기반으로 arvlCd 추정:
-            // 30초 미만 → '0' 진입, 90초 미만 → '3' 전역출발, 그 이상 → '2' 출발
-            const arvlCd = barvlDt < 30 ? '0' : barvlDt < 90 ? '3' : '2';
-            const dest = (item.trainLineNm || '').replace(/행$/, '');
-
-            results.push({
-                subwayId:     item.subwayId || '',
-                subwayNm:     item.subwayNm || '',
-                statnId:      '',
-                statnNm:      item.bstatnNm,  // 현재열차위치역 → buildUnit statnNm
-                trainNo,
-                lastRecptnDt: '',
-                updnLine:     item.updnLine || '',
-                directAt:     '0',
-                trainSttus:   '1',
-                lstnyNm:      dest,
-                arrivalNm:    '',
-                arvlCd,
-            });
-        }
-        return results;
-    } catch {
-        return [];
-    }
-};
-
-export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
-    if (!apiKey || apiKey.length < 10) apiKey = "sample";
-
-    const fetchUniqueArrivals = async (name: string): Promise<StationArrival[]> => {
-        const baseUrl = `https://swopenapi.seoul.go.kr/api/subway`;
-        const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(name)}`;
-        
         try {
-            let json = await fetchWithFallbacks(primaryUrl);
-            if (json?.status === 500 && json?.code === "ERROR-338") {
-                const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/10/${encodeURIComponent(name)}`;
-                json = await fetchWithFallbacks(fallbackUrl);
+            let json: any;
+            try {
+                json = await fetchInternalRealtime('probe', { stationName }, 2200);
+            } catch {
+                json = await fetchWithFallbacks(url);
             }
 
             const rawList: any[] = json?.realtimeArrivalList || [];
-            const trainMap = new Map<string, StationArrival>();
-            
-            rawList.forEach(item => {
-                const isReliableNo = item.btrainNo && item.btrainNo !== "0000";
-                const trainId = isReliableNo 
-                    ? `${item.subwayId}-${item.btrainNo}` 
-                    : `${item.subwayId}-${item.updnLine}-${item.trainLineNm}-${item.arvlMsg2}`;
-                
-                const arrival: StationArrival = {
-                    lineName: item.subwayNm || "",
-                    subwayId: item.subwayId || "",
-                    updnLine: item.updnLine || "",
-                    trainLineNm: item.trainLineNm || "",
-                    statnNm: item.statnNm || "",
-                    arvlMsg2: item.arvlMsg2 || "",
-                    arvlMsg3: item.arvlMsg3 || "",
-                    arvlCd: item.arvlCd || "",
-                    bstatnNm: item.bstatnNm || "",
-                    barvlDt: item.barvlDt || "9999",
-                    btrainNo: item.btrainNo || ""
-                };
+            if (rawList.length === 0) return [];
 
-                const existing = trainMap.get(trainId);
-                if (!existing || parseInt(arrival.barvlDt) < parseInt(existing.barvlDt)) {
-                    trainMap.set(trainId, arrival);
-                }
-            });
-            return Array.from(trainMap.values());
-        } catch (e) {
+            const results: TrainPosition[] = [];
+            const seen = new Set<string>();
+
+            for (const item of rawList) {
+                const trainNo = item.btrainNo;
+                if (!trainNo || trainNo === '0000') continue;
+                if (!item.bstatnNm) continue;
+                if (seen.has(trainNo)) continue;
+                seen.add(trainNo);
+
+                const receiptAt = getReceiptAt(item);
+                const ageSeconds = getAgeSeconds(receiptAt);
+                const rawArrivalSeconds = parseArrivalSeconds(item.barvlDt || '9999');
+                const correctedArrivalSeconds = Math.max(0, rawArrivalSeconds - (ageSeconds ?? 0));
+                const arvlCd = correctedArrivalSeconds < 30 ? '0' : correctedArrivalSeconds < 90 ? '3' : '2';
+                const dest = (item.trainLineNm || '').replace(/행$/, '');
+
+                results.push({
+                    subwayId:     item.subwayId || '',
+                    subwayNm:     item.subwayNm || '',
+                    statnId:      '',
+                    statnNm:      item.bstatnNm,
+                    trainNo,
+                    lastRecptnDt: receiptAt,
+                    updnLine:     item.updnLine || '',
+                    directAt:     '0',
+                    trainSttus:   '1',
+                    lstnyNm:      dest,
+                    arrivalNm:    item.statnNm || stationName,
+                    arvlCd,
+                    confidence:   computeRealtimeConfidence(ageSeconds),
+                    dataSource:   'arrival-probe',
+                    ageSeconds,
+                    isEstimatedRealtime: true,
+                });
+            }
+            return writeTimedCache(_realtimeCache.probes, cacheKey, results);
+        } catch {
             return [];
         }
-    };
+    });
+};
 
+export const fetchStationArrivals = async (stationName: string): Promise<StationArrival[]> => {
     const cleanName = normStation(stationName);
-    const variants = [stationName, cleanName];
-    if (cleanName === "서울") variants.unshift("서울역");
-    if (cleanName === "남부터미널") variants.push("남부터미널(예술의전당)");
-    if (cleanName === "교대") variants.push("교대(법원.검찰청)");
-    if (cleanName === "독립문") variants.push("독립문역"); // Just in case
-    if (cleanName === "쌍용") variants.push("쌍용(나사렛대)");
-    if (cleanName === "신촌" && !stationName.includes("경의중앙선")) variants.push("신촌(지하)");
+    const cacheKey = cleanName || stationName;
+    const cached = readTimedCache(_realtimeCache.arrivals, cacheKey, 5_000);
+    if (cached) return cached;
 
-    const uniqueVariants = Array.from(new Set(variants));
-    
-    try {
-        let allArrivals: StationArrival[] = [];
-        const variantResults = await Promise.all(uniqueVariants.map(v => fetchUniqueArrivals(v).catch(() => [])));
-        const seenTrains = new Set<string>();
-        variantResults.forEach(data => {
-            data.forEach(arrival => {
-                const key = `${arrival.subwayId || arrival.lineName}-${arrival.updnLine}-${arrival.btrainNo || arrival.trainLineNm}`;
-                if (!seenTrains.has(key)) {
-                    allArrivals.push(arrival);
-                    seenTrains.add(key);
+    return withInflight(_inflightRequests.arrivals, cacheKey, async () => {
+        let apiKey = process.env.NEXT_PUBLIC_SEOUL_API_KEY;
+        if (!apiKey || apiKey.length < 10) apiKey = "sample";
+
+        const fetchUniqueArrivals = async (name: string): Promise<StationArrival[]> => {
+            const baseUrl = `https://swopenapi.seoul.go.kr/api/subway`;
+            const primaryUrl = `${baseUrl}/${apiKey}/json/realtimeStationArrival/1/50/${encodeURIComponent(name)}`;
+
+            try {
+                let json: any;
+                try {
+                    json = await fetchInternalRealtime('arrivals', { stationName: name }, 2200);
+                } catch {
+                    json = await fetchWithFallbacks(primaryUrl);
+                    if (json?.status === 500 && json?.code === "ERROR-338") {
+                        const fallbackUrl = `${baseUrl}/sample/json/realtimeStationArrival/1/10/${encodeURIComponent(name)}`;
+                        json = await fetchWithFallbacks(fallbackUrl);
+                    }
                 }
-            });
-        });
 
-        // 📅 FETCH SCHEDULED FALLBACK FROM DB
-        const scheduled = await getScheduledArrivalsFromDB(cleanName);
-        
-        // Merge them
-        const merged = mergeLiveAndScheduled(allArrivals, scheduled);
+                const rawList: any[] = json?.realtimeArrivalList || [];
+                const trainMap = new Map<string, StationArrival>();
 
-        const upArrivals: StationArrival[] = [];
-        const downArrivals: StationArrival[] = [];
+                rawList.forEach(item => {
+                    const isReliableNo = item.btrainNo && item.btrainNo !== "0000";
+                    const trainId = isReliableNo
+                        ? `${item.subwayId}-${item.btrainNo}`
+                        : `${item.subwayId}-${item.updnLine}-${item.trainLineNm}-${item.arvlMsg2}`;
+                    const receiptAt = getReceiptAt(item);
+                    const ageSeconds = getAgeSeconds(receiptAt);
+                    const correctedBarvlDt = Math.max(
+                        0,
+                        parseArrivalSeconds(item.barvlDt || '9999') - (ageSeconds ?? 0)
+                    );
 
-        merged.forEach(arrival => {
-            const isUp = arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선") || arrival.updnLine.includes("상선");
-            if (isUp) upArrivals.push(arrival);
-            else downArrivals.push(arrival);
-        });
+                    const arrival: StationArrival = {
+                        lineName: item.subwayNm || "",
+                        subwayId: item.subwayId || "",
+                        updnLine: item.updnLine || "",
+                        trainLineNm: item.trainLineNm || "",
+                        statnNm: item.statnNm || "",
+                        arvlMsg2: item.arvlMsg2 || formatArrivalMessage(correctedBarvlDt),
+                        arvlMsg3: item.arvlMsg3 || "",
+                        arvlCd: item.arvlCd || "",
+                        bstatnNm: item.bstatnNm || "",
+                        barvlDt: String(correctedBarvlDt),
+                        btrainNo: item.btrainNo || "",
+                        isScheduled: false,
+                        source: 'live',
+                        confidence: computeRealtimeConfidence(ageSeconds),
+                        receiptAt,
+                        ageSeconds,
+                        isEstimatedRealtime: false,
+                    };
 
-        const sortAndLimit = (list: StationArrival[]) => {
-            return list
-                .sort((a, b) => parseInt(a.barvlDt) - parseInt(b.barvlDt))
-                .slice(0, 3);
+                    const existing = trainMap.get(trainId);
+                    trainMap.set(trainId, chooseBetterArrival(existing, arrival));
+                });
+                return Array.from(trainMap.values());
+            } catch {
+                return [];
+            }
         };
 
-        return [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)];
-    } catch (err) {
-        const scheduled = await getScheduledArrivalsFromDB(cleanName);
-        return scheduled.slice(0, 6);
-    }
+        const variants = [stationName, cleanName];
+        if (cleanName === "서울") variants.unshift("서울역");
+        if (cleanName === "남부터미널") variants.push("남부터미널(예술의전당)");
+        if (cleanName === "교대") variants.push("교대(법원.검찰청)");
+        if (cleanName === "독립문") variants.push("독립문역");
+        if (cleanName === "쌍용") variants.push("쌍용(나사렛대)");
+        if (cleanName === "신촌" && !stationName.includes("경의중앙선")) variants.push("신촌(지하)");
+
+        const uniqueVariants = Array.from(new Set(variants));
+
+        try {
+            const [variantResults, scheduled] = await Promise.all([
+                Promise.all(uniqueVariants.map(v => fetchUniqueArrivals(v).catch(() => []))),
+                getScheduledArrivalsFromDB(cleanName),
+            ]);
+
+            const trainMap = new Map<string, StationArrival>();
+            variantResults.forEach(data => {
+                data.forEach(arrival => {
+                    const key = `${arrival.subwayId || arrival.lineName}-${arrival.updnLine}-${arrival.btrainNo || arrival.trainLineNm}`;
+                    trainMap.set(key, chooseBetterArrival(trainMap.get(key), arrival));
+                });
+            });
+
+            const merged = mergeLiveAndScheduled(Array.from(trainMap.values()), scheduled);
+            const upArrivals: StationArrival[] = [];
+            const downArrivals: StationArrival[] = [];
+
+            merged.forEach(arrival => {
+                const isUp = arrival.updnLine.includes("상행") || arrival.updnLine.includes("내선") || arrival.updnLine.includes("상선");
+                if (isUp) upArrivals.push(arrival);
+                else downArrivals.push(arrival);
+            });
+
+            const sortAndLimit = (list: StationArrival[]) => {
+                return list
+                    .sort((a, b) => parseArrivalSeconds(a.barvlDt) - parseArrivalSeconds(b.barvlDt))
+                    .slice(0, 3);
+            };
+
+            return writeTimedCache(
+                _realtimeCache.arrivals,
+                cacheKey,
+                [...sortAndLimit(upArrivals), ...sortAndLimit(downArrivals)]
+            );
+        } catch {
+            const scheduled = await getScheduledArrivalsFromDB(cleanName);
+            return writeTimedCache(_realtimeCache.arrivals, cacheKey, scheduled.slice(0, 6));
+        }
+    });
 };
 
 /**
@@ -579,7 +768,7 @@ export const getScheduledArrivalsFromDB = async (stationName: string): Promise<S
  * Converts a DB TimetableEntry into a StationArrival object for UI consistency
  */
 export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds: number): StationArrival => {
-    return {
+    return annotateScheduledArrival({
         lineName: entry.line,
         subwayId: "", 
         updnLine: (entry.direction === 'up' || entry.direction === 'inner') ? '상행' : '하행',
@@ -592,7 +781,7 @@ export const convertTimetableToArrival = (entry: TimetableEntry, waitTimeSeconds
         barvlDt: waitTimeSeconds.toString(),
         btrainNo: entry.trainNo,
         isScheduled: true
-    };
+    }, 'db-schedule', 'medium');
 };
 
 /**
@@ -774,22 +963,21 @@ async function fetchPositionWithKey(key: string, lineName: string): Promise<any 
 }
 
 export const fetchTrainPositions = async (lineName: string): Promise<TrainPosition[]> => {
-    // 현재 활성 키부터 순차 시도 — 성공하면 해당 키를 계속 사용 (quota 낭비 방지)
-    const keys = [...new Set(POSITION_API_KEYS)];
-    for (let offset = 0; offset < keys.length; offset++) {
-        const idx = (_activeKeyIdx + offset) % keys.length;
-        const key = keys[idx];
-        if (isKeyExhausted(key)) continue;
-        const json = await fetchPositionWithKey(key, lineName);
-        if (json) {
-            _activeKeyIdx = idx; // 성공한 키로 고정
-            return (json.realtimePositionList || []).map((item: any) => ({
+    const cacheKey = lineName;
+    const cached = readTimedCache(_realtimeCache.positions, cacheKey, 10_000);
+    if (cached) return cached;
+
+    return withInflight(_inflightRequests.positions, cacheKey, async () => {
+        const mapTrain = (item: any): TrainPosition => {
+            const receiptAt = getReceiptAt(item);
+            const ageSeconds = getAgeSeconds(receiptAt);
+            return {
                 subwayId:     item.subwayId,
                 subwayNm:     item.subwayNm,
                 statnId:      item.statnId,
                 statnNm:      item.statnNm,
                 trainNo:      item.trainNo,
-                lastRecptnDt: item.lastRecptnDt,
+                lastRecptnDt: receiptAt,
                 updnLine:     item.updnLine,
                 directAt:     item.directAt,
                 trainSttus:   item.trainSttus || "99",
@@ -797,23 +985,60 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
                 statnTnm:     item.statnTnm || "",
                 arrivalNm:    item.arrivalNm,
                 arvlCd:       item.arvlCd,
-            }));
+                confidence:   computeRealtimeConfidence(ageSeconds),
+                dataSource:   'live-position',
+                ageSeconds,
+                isEstimatedRealtime: false,
+            };
+        };
+
+        try {
+            if (_isFirebaseDeploy) {
+                const json = await fetchInternalRealtime('position', { lineName }, 2200);
+                const mapped = (json?.realtimePositionList || []).map(mapTrain);
+                return writeTimedCache(_realtimeCache.positions, cacheKey, mapped);
+            }
+        } catch {}
+
+        const keys = [...new Set(POSITION_API_KEYS)];
+        for (let offset = 0; offset < keys.length; offset++) {
+            const idx = (_activeKeyIdx + offset) % keys.length;
+            const key = keys[idx];
+            if (isKeyExhausted(key)) continue;
+            const json = await fetchPositionWithKey(key, lineName);
+            if (json) {
+                _activeKeyIdx = idx;
+                const mapped = (json.realtimePositionList || []).map(mapTrain);
+                return writeTimedCache(_realtimeCache.positions, cacheKey, mapped);
+            }
         }
-    }
-    return [];
+        return [];
+    });
 };
 
 export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
-    const url = API_ENDPOINTS.SUBWAY_ALERTS(apiKey);
-    try {
-        const json = await fetchWithFallbacks(url);
-        return (json?.CardSubwayAlertInfo?.row || []).map((item: any) => ({
-            title: item.TITLE,
-            content: item.CONTENT,
-            date: item.REG_DATE
-        }));
-    } catch (err) {
-        return [];
-    }
+    const cacheKey = 'alerts';
+    const cached = readTimedCache(_realtimeCache.alerts, cacheKey, 60_000);
+    if (cached) return cached;
+
+    return withInflight(_inflightRequests.alerts, cacheKey, async () => {
+        const apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
+        const url = API_ENDPOINTS.SUBWAY_ALERTS(apiKey);
+        try {
+            let json: any;
+            try {
+                json = await fetchInternalRealtime('alerts', {}, 2500);
+            } catch {
+                json = await fetchWithFallbacks(url);
+            }
+            const alerts = (json?.CardSubwayAlertInfo?.row || []).map((item: any) => ({
+                title: item.TITLE,
+                content: item.CONTENT,
+                date: item.REG_DATE
+            }));
+            return writeTimedCache(_realtimeCache.alerts, cacheKey, alerts);
+        } catch {
+            return [];
+        }
+    });
 };

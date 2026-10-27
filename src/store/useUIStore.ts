@@ -12,6 +12,7 @@ interface UIStore {
   isDarkMode: boolean;
   isHighContrast: boolean;
   weatherOpen: boolean;
+  realtimeDisplayMode: 'exact' | 'all';
   timeDisplayMode: 'duration' | 'arrival';
   wcFilters: WCFilters;
 
@@ -21,6 +22,7 @@ interface UIStore {
   toggleHighContrast: () => void;
   setWeatherOpen: (v: boolean) => void;
   toggleWeather: () => void;
+  setRealtimeDisplayMode: (m: 'exact' | 'all') => void;
   setTimeDisplayMode: (m: 'duration' | 'arrival') => void;
   toggleTimeDisplayMode: () => void;
   setWcFilters: (f: WCFilters) => void;
@@ -34,6 +36,7 @@ export const useUIStore = create<UIStore>()(
       isDarkMode: systemPrefersDark,
       isHighContrast: false,
       weatherOpen: false,
+      realtimeDisplayMode: 'exact',
       timeDisplayMode: 'duration',
       wcFilters: { accessible: false, diapers: false, emergencyBell: false },
 
@@ -43,6 +46,7 @@ export const useUIStore = create<UIStore>()(
       toggleHighContrast: () => set(s => ({ isHighContrast: !s.isHighContrast })),
       setWeatherOpen: (v) => set({ weatherOpen: v }),
       toggleWeather: () => set(s => ({ weatherOpen: !s.weatherOpen })),
+      setRealtimeDisplayMode: (m) => set({ realtimeDisplayMode: m }),
       setTimeDisplayMode: (m) => set({ timeDisplayMode: m }),
       toggleTimeDisplayMode: () => set(s => ({
         timeDisplayMode: s.timeDisplayMode === 'duration' ? 'arrival' : 'duration'
@@ -58,6 +62,7 @@ export const useUIStore = create<UIStore>()(
       partialize: (s) => ({
         isDarkMode: s.isDarkMode,
         isHighContrast: s.isHighContrast,
+        realtimeDisplayMode: s.realtimeDisplayMode,
         timeDisplayMode: s.timeDisplayMode,
         wcFilters: s.wcFilters,
       }),

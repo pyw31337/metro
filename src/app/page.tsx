@@ -30,6 +30,7 @@ const UnifiedBottomPanel = dynamic(() => import("@/components/UnifiedBottomPanel
 const MapControls        = dynamic(() => import("@/components/MapControls"),         { ssr: false });
 const WeatherPopup       = dynamic(() => import("@/components/WeatherPopup"),        { ssr: false });
 import DirectionCompass  from "@/components/ui/DirectionCompass";
+import ServiceOverviewCard from "@/components/ServiceOverviewCard";
 
 // Module-level cache so the 3MB routes JSON is only fetched once per session
 let busRoutesCache: any[] | null = null;
@@ -140,10 +141,9 @@ export default function Home() {
   useViewportLines(viewportBounds);
 
   // ── 온라인/오프라인 상태 (초기 상태 + 이벤트 모두 반영) ──
-  const [isOffline, setIsOffline] = useState(() =>
-    typeof navigator !== 'undefined' ? !navigator.onLine : false
-  );
+  const [isOffline, setIsOffline] = useState(false);
   useEffect(() => {
+    if (typeof window === 'undefined') return;
     const onOffline = () => setIsOffline(true);
     const onOnline  = () => setIsOffline(false);
     setIsOffline(!navigator.onLine);
@@ -509,6 +509,15 @@ export default function Home() {
     }
   }, [findNearestStation, stations]);
 
+  const handleUseCurrentLocationAsSource = useCallback(() => {
+    useUIStore.getState().setActiveTab("subway");
+    handleLocateStation("source");
+  }, [handleLocateStation]);
+
+  const handleSwitchDiscoveryTab = useCallback((tab: "subway" | "bus" | "wc" | "subway+bus") => {
+    useUIStore.getState().setActiveTab(tab);
+  }, []);
+
   const handleSelectBusRoute = useCallback(async (routeNo: string, cityCode?: string, routeId?: string) => {
     if (!cityCode) return;
     try {
@@ -687,6 +696,20 @@ export default function Home() {
         />
       </div>
 
+      {/* 서비스 요약 카드 */}
+      <div className="fixed left-4 top-4 z-[2001] pointer-events-auto">
+        <ServiceOverviewCard
+          activeTab={ui.activeTab}
+          isOffline={isOffline}
+          simStatus={simStatus}
+          nearestStation={mapSt.nearestStation}
+          isLocating={mapSt.isLocating}
+          onSwitchTab={handleSwitchDiscoveryTab}
+          onUseCurrentLocation={handleUseCurrentLocationAsSource}
+          onOpenNearestStation={handleStationClick}
+        />
+      </div>
+
       {/* 날씨 팝업 */}
       {ui.weatherOpen && (
         <WeatherPopup onClose={() => ui.setWeatherOpen(false)} />
@@ -704,30 +727,6 @@ export default function Home() {
         <div className="animate-popup fixed top-4 left-1/2 -translate-x-1/2 z-[9998] px-4 py-2 rounded-full bg-rose-500/90 text-white text-[11px] font-black backdrop-blur-xl shadow-lg pointer-events-none flex items-center gap-2">
           <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse shrink-0" />
           {lastTrainWarning.station} 막차 {lastTrainWarning.minutesLeft === 0 ? '곧 출발' : `${lastTrainWarning.minutesLeft}분 후`} ({lastTrainWarning.lastTimeStr} {lastTrainWarning.dest}행)
-        </div>
-      )}
-
-      {/* 실시간 신뢰도 배지 */}
-      {!isOffline && simStatus !== 'starting' && (
-        <div className="fixed top-4 left-4 z-[2000] pointer-events-none">
-          {simStatus === 'live' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400">실시간</span>
-            </div>
-          )}
-          {simStatus === 'mixed' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-              <span className="text-[10px] font-black text-amber-600 dark:text-amber-400">혼합</span>
-            </div>
-          )}
-          {simStatus === 'simulated' && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-500/10 border border-zinc-400/20 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
-              <span className="text-[10px] font-black text-zinc-500">시뮬레이션</span>
-            </div>
-          )}
         </div>
       )}
 

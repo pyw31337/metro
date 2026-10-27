@@ -1,0 +1,11 @@
+{
+  "name": "metro-live-functions",
+  "private": true,
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "firebase-functions": "^6.6.0"
+  }
+}

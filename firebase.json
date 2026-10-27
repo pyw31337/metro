@@ -1,4 +1,16 @@
 {
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
   "hosting": {
     "site": "metro-live-kr",
     "public": "out",
@@ -8,6 +20,13 @@
       "**/node_modules/**"
     ],
     "rewrites": [
+      {
+        "source": "/api/realtime/**",
+        "function": {
+          "functionId": "realtimeProxy",
+          "region": "asia-northeast3"
+        }
+      },
       {
         "source": "**",
         "destination": "/index.html"

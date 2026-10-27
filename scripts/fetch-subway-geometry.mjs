@@ -23,8 +23,11 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR   = path.resolve(__dirname, '..', 'public', 'data');
+const RUNTIME_DIR = path.resolve(__dirname, '..', 'tmp', 'data-scripts');
 const OUT_FILE   = path.join(DATA_DIR, 'subway-track-geometry.json');
-const CACHE_FILE = path.join(DATA_DIR, '_osm-subway-cache.json');
+const CACHE_FILE = path.join(RUNTIME_DIR, 'osm-subway-cache.json');
+
+fs.mkdirSync(RUNTIME_DIR, { recursive: true });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Line name normalisation — map any OSM name/ref tag → our canonical name

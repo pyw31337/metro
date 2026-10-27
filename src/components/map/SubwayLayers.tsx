@@ -58,6 +58,14 @@ const SubwayLayers = ({
         : 1)
     : ["interpolate", ["linear"], ["zoom"], 9, 1.5, 11, 2, 13, 3, 15, 5];
 
+  const lineOpacity: any = hasRoute
+    ? (routeLineNames.length > 0
+        ? ["case", ["in", ["get", "name"], ["literal", routeLineNames]], 0.95, 0.18]
+        : 0.22)
+    : focusedLine
+      ? ["case", ["==", ["get", "name"], focusedLine], 0.95, 0.22]
+      : ["interpolate", ["linear"], ["zoom"], 8, 0.45, 11, 0.58, 13, 0.72, 15, 0.85];
+
   // 환승역 여부: lines 배열 길이로 판단 (MapLibre 표현식)
   const isTransfer: any = [">=", ["length", ["get", "lines"]], 2];
 
@@ -147,7 +155,7 @@ const SubwayLayers = ({
           id="subway-line-layer"
           type="line"
           layout={{ "line-join": "round", "line-cap": "round", "visibility": vis }}
-          paint={{ "line-color": lineColorExpr, "line-width": lineWidth }}
+          paint={{ "line-color": lineColorExpr, "line-width": lineWidth, "line-opacity": lineOpacity }}
         />
       </Source>
 

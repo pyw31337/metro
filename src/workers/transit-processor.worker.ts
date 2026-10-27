@@ -29,6 +29,11 @@ interface TransitUnit {
   segmentMs: number;        // lastPos → nextPos 구간 소요시간 (ms)
   nextSegmentMs: number;    // nextPos → futurePos 구간 소요시간 (ms)
   dwellMs: number;          // nextPos 역에서 정차 시간 (ms)
+  lastRecptnDt?: string;
+  dataSource?: string;
+  confidence?: string;
+  ageSeconds?: number;
+  isEstimatedRealtime?: boolean;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,6 +192,11 @@ function processUpdates(units: any[]) {
       existing.lastSeenTime   = now;   // 만료 판정: 항상 실제 수신 시각으로 갱신
       (existing as any).updnLine           = (unit as any).updnLine;
       (existing as any).currentStationName = (unit as any).currentStationName;
+      (existing as any).lastRecptnDt       = (unit as any).lastRecptnDt;
+      (existing as any).dataSource         = (unit as any).dataSource;
+      (existing as any).confidence         = (unit as any).confidence;
+      (existing as any).ageSeconds         = (unit as any).ageSeconds;
+      (existing as any).isEstimatedRealtime = (unit as any).isEstimatedRealtime;
       if (!unit.isSimulated && existing.deathTime !== null) {
         existing.deathTime = null;
         existing.birthTime = now;
@@ -357,6 +367,11 @@ function startTick() {
         isDwelling:      isDwelling || !unit.bearingInitialized,
         updnLine:        (unit as any).updnLine,
         currentStationName: (unit as any).currentStationName,
+        lastRecptnDt:    (unit as any).lastRecptnDt,
+        dataSource:      (unit as any).dataSource,
+        confidence:      (unit as any).confidence,
+        ageSeconds:      (unit as any).ageSeconds,
+        isEstimatedRealtime: (unit as any).isEstimatedRealtime,
       });
     }
 

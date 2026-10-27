@@ -4,6 +4,7 @@ import { MetropolitanBusService } from './busApi';
 import { SUBWAY_LINES } from '@/data/subway-lines';
 import { normStation } from '@/data/stationRegistry';
 import { getBusRouteStyle } from '@/utils/busRouting';
+import type { DataConfidence, TrainDataSource } from '@/types/metro';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 공개 인터페이스
@@ -22,6 +23,11 @@ export interface RealtimeUnit {
   isDwelling: boolean;    // 역사 정차 중 (Phase 2) — 아이콘 ∧→|| 전환
   updnLine?: string;
   currentStationName?: string;
+  lastRecptnDt?: string;
+  dataSource?: TrainDataSource;
+  confidence?: DataConfidence;
+  ageSeconds?: number;
+  isEstimatedRealtime?: boolean;
 }
 
 // 서비스 전체 시뮬레이션 상태 (UI에서 구독 가능)
@@ -393,6 +399,11 @@ function buildUnit(train: any, isSimulated: boolean): any | null {
     dwellMs: DWELL_MS,
     updnLine: train.updnLine,
     currentStationName: train.statnNm,
+    lastRecptnDt: train.lastRecptnDt,
+    dataSource: train.dataSource,
+    confidence: train.confidence,
+    ageSeconds: train.ageSeconds,
+    isEstimatedRealtime: train.isEstimatedRealtime,
     isSimulated,
     lineStationIdx: stationIdx,
     lineDir,
@@ -415,8 +426,10 @@ class TransitRealtimeService extends EventEmitter {
   private linesWithRealData = new Set<string>();
   // 전체 시뮬레이션 상태
   private _simStatus: SimStatus = 'starting';
+  private _lastUnits: RealtimeUnit[] = [];
   // viewport에 보이는 노선 목록 (null = 전체 폴링)
   private visibleLines: Set<string> | null = null;
+  private pollCount = 0;
 
   // 시뮬레이션 열차 상태 (재사용)
   private simTrains: any[] | null = null;
@@ -435,7 +448,8 @@ class TransitRealtimeService extends EventEmitter {
     this.worker.onmessage = (e) => {
       const { type, data } = e.data;
       if (type === 'TICK_UPDATE') {
-        this.emit('update', data as RealtimeUnit[]);
+        this._lastUnits = data as RealtimeUnit[];
+        this.emit('update', this._lastUnits);
       } else if (type === 'SIM_STATUS') {
         this._simStatus = data as SimStatus;
         this.emit('simStatus', this._simStatus);
@@ -444,6 +458,7 @@ class TransitRealtimeService extends EventEmitter {
   }
 
   get simStatus(): SimStatus { return this._simStatus; }
+  get units(): RealtimeUnit[] { return this._lastUnits; }
 
   // ───── 공개 API ─────
   start() {
@@ -573,6 +588,7 @@ class TransitRealtimeService extends EventEmitter {
   // ───── 실시간 폴링 ─────
   private _poll() {
     if (!this.isRunning) return;
+    this.pollCount += 1;
 
     // 지하철 노선 순차 폴링 — viewport 필터 적용 (보이는 노선만, null이면 전체)
     const linesToPoll = this.visibleLines
@@ -651,38 +667,39 @@ class TransitRealtimeService extends EventEmitter {
       });
     }
 
-    // 도착 API 프로브 — 종착역 대기 열차 핀포인트 보완
-    // 36개 종착역을 12개씩 3배치, 250ms 간격 발사 → API rate limit 방지
-    const PROBE_BATCH = 12;
-    const PROBE_BATCH_GAP = 250; // ms
-    const probeDelay = 0; // 위치 API와 동시 시작 — 초기 로딩부터 종착역 열차 포함
+    // 도착 API 프로브는 보조 신호이므로 3회 중 1회만 실행해 호출량을 줄입니다.
+    const shouldRunProbes = (!this.visibleLines || this.visibleLines.size > 0) && this.pollCount % 3 === 0;
+    if (shouldRunProbes) {
+      const PROBE_BATCH = 12;
+      const PROBE_BATCH_GAP = 250;
 
-    const runProbeBatch = (stations: string[]) => {
-      if (!this.isRunning) return;
-      Promise.all(
-        stations.map(async (stationName) => {
-          try {
-            const positions = await fetchArrivalBasedPositions(stationName);
-            if (!positions.length) return;
-            const units = positions.map(t => buildUnit(t, false)).filter(Boolean);
-            if (!units.length) return;
-            for (const unit of units as any[]) {
-              if (!this.linesWithRealData.has(unit.lineName)) {
-                this.linesWithRealData.add(unit.lineName);
-                this.worker?.postMessage({ type: 'CLEAR_LINE_SIM', lineName: unit.lineName });
-                this._updateSimStatus();
+      const runProbeBatch = (stations: string[]) => {
+        if (!this.isRunning) return;
+        Promise.all(
+          stations.map(async (stationName) => {
+            try {
+              const positions = await fetchArrivalBasedPositions(stationName);
+              if (!positions.length) return;
+              const units = positions.map(t => buildUnit(t, false)).filter(Boolean);
+              if (!units.length) return;
+              for (const unit of units as any[]) {
+                if (!this.linesWithRealData.has(unit.lineName)) {
+                  this.linesWithRealData.add(unit.lineName);
+                  this.worker?.postMessage({ type: 'CLEAR_LINE_SIM', lineName: unit.lineName });
+                  this._updateSimStatus();
+                }
               }
-            }
-            this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
-          } catch {}
-        })
-      );
-    };
+              this.worker?.postMessage({ type: 'UPDATE_UNITS', data: units });
+            } catch {}
+          })
+        );
+      };
 
-    for (let b = 0; b < ARRIVAL_PROBE_STATIONS.length; b += PROBE_BATCH) {
-      const batch = ARRIVAL_PROBE_STATIONS.slice(b, b + PROBE_BATCH);
-      const batchIdx = Math.floor(b / PROBE_BATCH);
-      setTimeout(() => runProbeBatch(batch), probeDelay + batchIdx * PROBE_BATCH_GAP);
+      for (let b = 0; b < ARRIVAL_PROBE_STATIONS.length; b += PROBE_BATCH) {
+        const batch = ARRIVAL_PROBE_STATIONS.slice(b, b + PROBE_BATCH);
+        const batchIdx = Math.floor(b / PROBE_BATCH);
+        setTimeout(() => runProbeBatch(batch), batchIdx * PROBE_BATCH_GAP);
+      }
     }
 
     // 다음 폴링 예약

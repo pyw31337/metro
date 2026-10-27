@@ -4,6 +4,7 @@ import { memo, useMemo } from "react";
 import { Train, MapPin } from "lucide-react";
 import { useArrivalInfo } from "@/hooks/useArrivalInfo";
 import type { Station } from "@/types/metro";
+import { getArrivalBadge, getArrivalMetaText } from "@/utils/arrivalTrust";
 
 const LINE_COLORS: Record<string, string> = {
   "1호선": "#0052A4", "2호선": "#00A84D", "3호선": "#EF7C1C", "4호선": "#00A5DE",
@@ -84,14 +85,20 @@ export const NearestStationWidget = memo(function NearestStationWidget({ nearest
           {nextTrains.map((a, i) => {
             const color = LINE_COLORS[a.lineName ?? ""] ?? "#888";
             const time = secToDisplay(a.barvlDt ?? "0", a.arvlCd ?? "99");
+            const badge = getArrivalBadge(a);
+            const metaText = getArrivalMetaText(a);
             return (
-              <div key={i} className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-white/8 border border-zinc-100 dark:border-white/5 shadow-sm">
+              <div
+                key={i}
+                title={metaText}
+                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white dark:bg-white/8 border border-zinc-100 dark:border-white/5 shadow-sm"
+              >
                 <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
                 <span className="text-[11px] font-black tabular-nums text-zinc-800 dark:text-white">{time}</span>
                 <span className="text-[9px] text-zinc-400 font-bold truncate max-w-[56px]">{a.bstatnNm}행</span>
-                {!a.isScheduled && (
-                  <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse shrink-0" title="실시간" />
-                )}
+                <span className={`text-[8px] px-1 py-0.5 rounded-full font-black shrink-0 ${badge.className}`}>
+                  {badge.label}
+                </span>
               </div>
             );
           })}

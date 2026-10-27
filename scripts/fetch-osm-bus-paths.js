@@ -23,9 +23,12 @@ const path = require('path');
 // Paths
 // ─────────────────────────────────────────────────────────────────────────────
 const DATA_DIR   = path.resolve(__dirname, '..', 'public', 'data');
+const RUNTIME_DIR = path.resolve(__dirname, '..', 'tmp', 'data-scripts');
 const SHARD_FILE = path.join(DATA_DIR, 'paths', 'bus-paths-11.json');
 const ROUTES_FILE= path.join(DATA_DIR, 'master-bus-routes.json');
-const CACHE_FILE = path.join(DATA_DIR, '_osm-seoul-bus-cache.json'); // temp download cache
+const CACHE_FILE = path.join(RUNTIME_DIR, 'osm-seoul-bus-cache.json');
+
+fs.mkdirSync(RUNTIME_DIR, { recursive: true });
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Polyline encode / decode
