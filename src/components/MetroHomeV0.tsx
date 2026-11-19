@@ -7,11 +7,9 @@ import {
   ArrowRight,
   BusFront,
   ChevronDown,
-  Clock3,
   LocateFixed,
   MapPin,
   RefreshCw,
-  Sparkles,
   TrainFront,
   Toilet,
   Umbrella,
@@ -131,12 +129,6 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           <img src={`${basePath}/metro-live/transit-isometric.png`} alt="입체적인 지하철과 승강장 아이콘" />
         </article>
 
-        <section className="smart-context-card" aria-label="시간대 맞춤 이동 정보">
-          <div className="smart-context-icon"><Sparkles size={18} /></div>
-          <div className="smart-context-copy"><p>{smart.contextLabel}</p><h3>{smart.contextTitle}</h3><span>{smart.contextBody}</span></div>
-          <div className="smart-context-time"><Clock3 size={14} /> {new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</div>
-        </section>
-
         {smart.start && smart.destination ? (
           <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.start!, smart.destination!)}><span>최근 경로</span><b>{smart.start} → {smart.destination}</b><ArrowRight size={15} /></button>
         ) : smart.recentPlaces.length >= 2 ? (
@@ -150,14 +142,14 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           <datalist id="metro-stations">{stationOptions.map((station: any) => <option key={`${station.name}-${station.id || station.stationCd || ""}`} value={station.name} />)}</datalist>
         </div>
 
-        <div className="mode-tabs" role="tablist" aria-label="경로 기준">
+        <div className="mode-cards" role="tablist" aria-label="경로 기준">
           {[
-            ["fast", "빠른길", fastMinutes ? `약 ${fastMinutes}분` : "경로 선택"],
-            ["calm", "덜 붐비는 길", transferMinutes ? `약 ${transferMinutes}분` : "비교 준비"],
-            ["accessible", "무장애길", "시설 확인"],
-          ].map(([value, label, time]) => (
-            <button key={value} type="button" role="tab" aria-selected={mode === value} className={`mode-tab ${mode === value ? "is-active" : ""}`} onClick={() => setMode(value as typeof mode)}>
-              <span>{label}</span><strong>{time}</strong>
+            ["fast", "빠른길", fastMinutes ? `약 ${fastMinutes}분` : "경로 선택", "빠른 이동", "route-fast.png"],
+            ["calm", "덜 붐비는 길", transferMinutes ? `약 ${transferMinutes}분` : "비교 준비", "혼잡도 낮음", "route-calm.png"],
+            ["accessible", "무장애길", "시설 확인", "엘리베이터·램프", "route-accessible.png"],
+          ].map(([value, label, time, sublabel, image]) => (
+            <button key={value} type="button" role="tab" aria-selected={mode === value} className={`mode-card ${mode === value ? "is-active" : ""}`} onClick={() => setMode(value as typeof mode)}>
+              <img src={`${basePath}/metro-live/${image}`} alt="" aria-hidden="true" /><span className="mode-card-copy"><span>{label}</span><strong>{time}</strong><small>{sublabel}</small></span>
             </button>
           ))}
         </div>

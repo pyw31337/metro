@@ -315,6 +315,16 @@ h1, h2, h3, h4 {
 .mode-tab strong { color: #191f28; font-size: 15px; }
 .mode-tab.is-active { border-color: #3182f6; background: #eff6ff; color: #1d63c1; }
 .mode-tab.is-active strong { color: #1d63c1; }
+.mode-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 16px; }
+.mode-card { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden; padding: 0; border: 1px solid #e5e8eb; border-radius: 12px; background: #fff; color: #4e5968; text-align: left; cursor: pointer; transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.mode-card:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(25,31,40,.06); }
+.mode-card.is-active { border-color: #3182f6; box-shadow: 0 0 0 2px rgba(49,130,246,.12); }
+.mode-card img { display: block; width: 100%; height: 66px; object-fit: cover; object-position: center; mix-blend-mode: multiply; }
+.mode-card-copy { display: grid; gap: 2px; padding: 8px 9px 10px; }
+.mode-card-copy > span { color: #191f28; font-size: 12px; font-weight: 800; white-space: nowrap; }
+.mode-card.is-active .mode-card-copy > span { color: #1d63c1; }
+.mode-card-copy strong { color: #3182f6; font-size: 14px; letter-spacing: -.03em; }
+.mode-card-copy small { color: #8b95a1; font-size: 10px; white-space: nowrap; }
 .route-strip { margin-bottom: 16px; padding: 12px; border: 1px solid #e5e8eb; border-radius: 14px; background: #f9fafb; }
 .route-strip-head, .route-strip-foot { display: flex; align-items: center; justify-content: space-between; color: #4e5968; font-size: 11px; font-weight: 700; }
 .route-strip-head small { color: #8b95a1; font-weight: 600; }
