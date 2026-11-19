@@ -1,32 +1,63 @@
-# Agent & Codex Architecture & Design System Rules
+# Agent & Codex Architecture & Design System Rules (Let's Metro)
 
 > **[MANDATORY DESIGN SYSTEM COMPLIANCE - LDS v2.5.0]**  
 > 모든 프론트엔드 UI/시안/컴포넌트 작성 시 반드시 `docs/LETS_DESIGN_SYSTEM.md`를 100% 최우선 참조하여 작성하십시오. 구닥다리 템플릿이나 획일적인 좁은 박스형 시안을 작성하는 행위는 엄격히 금지됩니다.
 
-## 1. 렛츠 패밀리 핵심 디자인 원칙 (LDS v2.5.0)
+---
 
-1. **와이드 풀위드(Full-Width) & 히어로존 필수**:
-   - 상단 헤더와 내비게이션, 주요 대시보드는 좌우 가로폭을 시원하게 꽉 채우는 풀위드(Width: 100%, Max-Width: 1600px+) 레이아웃으로 설계합니다.
-   - 상단에는 서비스의 정체성을 웅장하게 드러내는 **와이드 히어로존 (Wide Hero Section)**을 반드시 배치하십시오.
-2. **타이포그래피 극명한 강약 대비 (900 Black vs 300 Light)**:
-   - 핵심 헤드라인과 수치는 초대형 font-weight `900` (Black / Heavy)으로 압도적인 스케일감을 부여합니다.
-   - 보조 설명과 단위는 font-weight `300` (Light)으로 섬세하게 대비시켜, 오밀조밀하게 균일한 크기로 채우지 마십시오.
-3. **여백(Whitespace) 기반 공간 구획**:
-   - 불필요한 구분선(border)이나 칙칙한 회색 배경 상자를 남발하지 마십시오.
-   - 섹션 간 넉넉한 여백(`56px ~ 80px`)을 주어 시원한 호흡감과 여백으로 내용이 자연스럽게 구분되도록 설계하십시오.
-4. **100% 정밀 인라인 SVG 아이콘**:
-   - 이모지(Emoji)를 일체 사용하지 말고, 모던한 인라인 벡터 SVG 스트로크 아이콘을 적용하십시오.
-5. **서피스 플러시(Flush Surface)**:
-   - 평상시 카드는 `box-shadow: none; border: 1px solid rgba(0,0,0,0.06);`로 서피스에 단정하게 안착시키고, 마우스 호버 시에만 리프트 반응을 부여하십시오.
+## 1. 서비스 정체성 및 공식 명칭 정의
+
+- **공식 서비스명**: **`Let's Metro (렛츠메트로)`**  
+  *(절대 '렛츠지하철'이나 'Subway'로 임의 변경하지 마십시오)*
+- **서비스 정체성**: 단순 전철 조회가 아닌, **지하철(Metro) + 시내·광역 버스(Bus) + 개찰구 안/밖 공공화장실(Civic WC) + 따릉이(Bike)**가 결합된 **수도권 통합 대중교통 & 시민 생활 인프라 관제 플랫폼**.
+- **핵심 킬러 데이터**:
+  1. **공공화장실 개찰구 안(운임구역/승강장) vs 개찰구 밖(비운임구역/대합실) 구분**: 시민들이 카드 태그 없이 이용 가능한지 여부를 배지로 명확히 안내.
+  2. **출구별 연계 버스 도착 핑**: 지하철역 출구 번호와 연계된 버스 정류소 도착 시간 연동.
+  3. **따릉이 실시간 잔여 대수**: 출구 반경 100m 내 공공자전거 대여소 현황.
 
 ---
 
-## 2. Agent Handoff & Automation Rules
+## 2. Antigravity(Gemini) & Codex 상호 협업 및 충돌 방지 규약 (Anti-Collision Protocol)
 
-Before changing automation, read `WORKFLOW_HANDOFF.md` and the canonical private handoff repository: https://github.com/pyw31337/macmini-workflow-handoff
+현재 `Let's Metro`는 **Antigravity(Gemini)**와 **Codex**가 실시간으로 동시에 작업 중입니다. 코드 꼬임 및 중복 작업을 방지하기 위해 다음 4대 규칙을 엄격히 준수하십시오.
 
-When changing `.github/workflows/`, schedules, deployment triggers, secret names, or local scheduler replacements:
-1. Preserve the existing trigger and rollback behavior unless the task explicitly changes it.
-2. Update `WORKFLOW_HANDOFF.md` in this repository.
-3. Update the canonical handoff inventory via its scheduled/manual sync workflow.
-4. Never commit secret values, `.env` files, tokens, cookies, or machine-specific paths.
+```
+┌────────────────────────────────────────────────────────┐
+│            LET'S METRO CO-WORKING PROTOCOL             │
+├────────────────────────────┬───────────────────────────┤
+│    Codex (코덱스) 전담     │ Antigravity (안티그래비티) 전담│
+├────────────────────────────┼───────────────────────────┤
+│ • src/components/ (UI 로직)│ • data/ (정규화 데이터셋)   │
+│ • src/hooks/ (클라이언트 훅)│ • docs/ & LDS v2.5.0 표준 │
+│ • src/utils/ (계산 알고리즘)│ • 렛츠 패밀리 온톨로지 연계│
+│ • MapLibre 벡터 캔버스 조작 │ • 빌드/배포 무결성 최종 검증│
+└────────────────────────────┴───────────────────────────┘
+```
+
+### 필수 작업 수칙:
+1. **작업 시작 전 무조건 최신 커밋 반영**:
+   - 터미널 작업 시 반드시 `git pull --rebase origin main`을 실행하여 상대 에이전트의 변경 사항을 먼저 병합하십시오.
+2. **`LOCAL_HANDOFF.md` 상태 보드 확인 및 갱신**:
+   - 작업을 시작할 때와 마칠 때 `LOCAL_HANDOFF.md`의 `현재 작업 중인 에이전트`, `수정 중인 파일 목록`, `다음 작업자를 위한 안내`를 갱신하십시오.
+3. **원자적(Atomic) 커밋 및 명확한 메시지**:
+   - 불필요하게 unrelated 파일들을 한꺼번에 커밋하지 말고, 작업 단위별로 분리 커밋하십시오.
+   - 커밋 메시지 프리픽스 준수: `feat(metro):`, `fix(metro):`, `style(metro):`, `refactor(metro):`
+4. **빌드 검증 필수**:
+   - 푸시 전 반드시 `npm run build`를 실행하여 정적 빌드 및 TypeScript 오류가 0건임을 확인하십시오.
+5. **렛츠 패밀리 에코시스템 링크 보존**:
+   - 상단 헤더의 `렛츠 마스터 허브(https://pyw31337.github.io/lets/)` 바로가기 링크를 항상 유지하십시오.
+
+---
+
+## 3. LDS v2.5.0 핵심 디자인 원칙
+
+1. **와이드 풀위드(Full-Width) & 히어로존**:
+   - 캔버스 너비 100%, Max-Width: 1600px+ 레이아웃. 상단에 웅장한 히어로존 배치.
+2. **타이포그래피 강약 대비 (900 Black vs 300 Light)**:
+   - 핵심 지표와 숫자는 `900 Black`, 보조 설명은 `300 Light`로 극명하게 대비.
+3. **여백(Whitespace) 기반 공간 구획**:
+   - 칙칙한 테두리와 배경 상자를 줄이고 `56px ~ 80px` 시원한 여백으로 구분.
+4. **100% 인라인 SVG 아이콘**:
+   - 이모지(Emoji) 대신 Lucide 또는 인라인 SVG 스트로크 아이콘 적용.
+5. **서피스 플러시(Flush Surface)**:
+   - 그림자 남발을 지양하고 호버 시에만 리프트 반응 제공.

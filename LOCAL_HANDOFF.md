@@ -1,3 +1,43 @@
-# Local handoff
+# Let's Metro (렛츠메트로) — Local Co-Working & Handoff Board
 
-This repository contains the `subway` project previously kept under the Mac Developer workspace. Local secrets, dependencies, caches, logs, and build artifacts are excluded by ignore rules.
+> 본 문서는 **Antigravity(Gemini)**와 **Codex** 간의 실시간 작업 상태 공유 및 충돌 방지를 위한 공식 인수인계 보드입니다.  
+> 작업을 시작하거나 완료할 때 본 파일의 상태를 최신화하십시오.
+
+---
+
+## 📌 현재 실시간 작업 상태 (Live Status)
+
+- **마지막 업데이트 일시:** 2026-11-19 15:20 KST
+- **마지막 작업 에이전트:** Antigravity (Gemini)
+- **현재 브랜치:** `main` (Remote `origin/main`과 100% 동기화 상태)
+- **최신 빌드 상태:** ✅ `npm run build` 통과 완료 (Next.js 16.1.1 Turbopack 무결점)
+- **현재 잠금된 파일 (Lock):** **없음 (All Clear - 코덱스 작업 즉시 가능)**
+
+---
+
+## 🧭 최근 작업 내역 (Recent Completed Tasks)
+
+1. **브랜드 정체성 정정 완료**:
+   - `Metro Live` / `Let's Subway` ➔ **`Let's Metro (렛츠메트로)`**로 정식 명칭 전면 통일.
+   - 렛츠 마스터 허브(`lets`)와 에셋(`asset`), 피플(`people`)과의 상호 크로스 링크 연동 완료.
+2. **시민 생활 인프라 4대 축 통합**:
+   - **지하철 (Metro)**: 1~9호선 실시간 열차 위치 및 칸별 혼잡도 스트림.
+   - **연계 버스 (Bus)**: 출구별 시내·광역 버스 환승 도착 정보 연동.
+   - **공공 화장실 (Restroom)**: **개찰구 밖(대합실/태그 불필요) vs 개찰구 안(승강장)** 명확한 배지 구분 및 무장애 시설 안내 탑재.
+   - **따릉이 (Bike)**: 지하철역 출구 반경 100m 공공자전거 대여소 잔여 대수 연계.
+3. **LDS v2.5.0 규격 준수 검증**:
+   - 상단 헤더에 `렛츠 마스터 허브` 바로가기 버튼 탑재.
+
+---
+
+## 🎯 다음 작업자(코덱스)를 위한 권장 작업 안내 (Next Recommended Steps for Codex)
+
+코덱스님, 다음 작업을 이어서 안전하게 진행하실 수 있습니다:
+
+1. **`src/components/MetroHomeV0.tsx` 및 하위 모빌리티 컴포넌트 고도화**:
+   - 현재 `MetroHomeV0`에 개찰구 안/밖 화장실 배지와 버스 환승 연계 뼈대가 마련되어 있습니다.
+   - 지도 캔버스(`MapLibreBackground`) 클릭 시 선택된 역의 **출구별 버스 정류소 팝업**과 **화장실 위치 핀**이 지도 위에 매끄럽게 표시되는 인터랙션을 강화해 주시면 더욱 좋습니다.
+2. **주의사항**:
+   - 작업 시작 전 반드시 `git pull --rebase origin main`을 실행해 주세요.
+   - 서비스 명칭인 **`Let's Metro`**와 **`공공화장실 개찰구 안/밖 구분`** 킬러 데이터 구조를 유지해 주세요.
+   - 작업 완료 후 `npm run build`로 빌드 통과를 확인한 뒤 원자적 커밋으로 푸시해 주세요.
