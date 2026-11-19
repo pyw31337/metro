@@ -34,6 +34,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const nearestStation = mapProps.nearestStation as { name?: string; lines?: string[] } | null;
   const nearestBusStop = mapProps.nearestBusStop as { name?: string; routes?: string[] } | null;
   const nearestWC = mapProps.nearestWC as { name?: string; accessible?: boolean; openTime?: string } | null;
+  const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
 
   useEffect(() => {
     const onScroll = () => setCompact(window.scrollY > 24);
@@ -74,6 +75,16 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           </div>
           <button type="button" className="text-button">전체 보기 <ArrowRight size={15} /></button>
         </div>
+
+        <article className="primary-mobility-card">
+          <div className="primary-mobility-copy">
+            <p className="section-kicker">BEST OPTION FOR NOW</p>
+            <h3>지금은 지하철이 가장 편해요</h3>
+            <p>현재 위치에서 강남역까지 <b>32분</b><br />혼잡도는 평소보다 8% 낮아요.</p>
+            <button type="button">경로 자세히 보기 <ArrowRight size={15} /></button>
+          </div>
+          <img src={`${basePath}/metro-live/transit-isometric.png`} alt="입체적인 지하철과 승강장 아이콘" />
+        </article>
 
         <div className="route-entry" aria-label="경로 설정">
           <div className="route-line" aria-hidden="true"><span /><span /></div>
@@ -120,6 +131,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           </article>
           <article className="info-widget transit-widget">
             <div className="widget-topline"><span className="widget-icon orange"><BusFront size={16} /></span><span>가까운 버스</span><span className="fresh">1분 전</span></div>
+            <img className="widget-object bus-object" src={`${basePath}/metro-live/bus-isometric.png`} alt="입체적인 버스정류장 아이콘" />
             <strong className="widget-value">146번 <small>정류장 180m</small></strong>
             <p>상행 <b>5분</b> · 12분</p>
           </article>

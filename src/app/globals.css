@@ -279,6 +279,14 @@ h1, h2, h3, h4 {
 .section-kicker { margin: 0 0 3px; color: #8b95a1; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
 .sheet-intro h2 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
 .text-button { display: inline-flex; align-items: center; gap: 3px; padding: 4px 0; border: 0; background: none; color: #3182f6; font-size: 13px; font-weight: 700; cursor: pointer; }
+.primary-mobility-card { position: relative; display: flex; min-height: 168px; margin-bottom: 16px; overflow: hidden; border: 1px solid #dfe6f2; border-radius: 16px; background: linear-gradient(105deg, #f1f6ff 0%, #fff 62%); }
+.primary-mobility-copy { position: relative; z-index: 1; width: 58%; padding: 16px; }
+.primary-mobility-copy .section-kicker { color: #3182f6; }
+.primary-mobility-copy h3 { margin: 3px 0 7px; font-size: 18px; line-height: 1.2; letter-spacing: -.04em; }
+.primary-mobility-copy p:not(.section-kicker) { margin: 0; color: #4e5968; font-size: 12px; line-height: 1.55; }
+.primary-mobility-copy p b { color: #1d63c1; font-size: 14px; }
+.primary-mobility-copy button { display: inline-flex; align-items: center; gap: 4px; margin-top: 13px; padding: 0; border: 0; background: none; color: #3182f6; font-size: 12px; font-weight: 800; cursor: pointer; }
+.primary-mobility-card img { position: absolute; right: -38px; bottom: -28px; width: 62%; max-width: 270px; mix-blend-mode: multiply; }
 .route-entry { position: relative; display: grid; gap: 1px; margin-bottom: 14px; padding: 5px 12px 5px 18px; border: 1px solid #e5e8eb; border-radius: 14px; background: #fff; }
 .route-line { position: absolute; left: 10px; top: 25px; bottom: 25px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
 .route-line::before { content: ""; position: absolute; top: 5px; bottom: 5px; width: 1px; background: #d8dde3; }
@@ -331,6 +339,8 @@ h1, h2, h3, h4 {
 .widget-value small { color: #8b95a1; font-size: 11px; font-weight: 600; letter-spacing: 0; }
 .info-widget p { margin: 5px 0 0; color: #8b95a1; font-size: 11px; }
 .info-widget p b { color: #3182f6; font-weight: 700; }
+.widget-object { display: block; width: 78px; height: 42px; margin: 4px -2px -2px auto; object-fit: cover; object-position: center; border-radius: 8px; mix-blend-mode: multiply; }
+.bus-object + .widget-value { margin-top: 2px; }
 .meter { height: 6px; margin-top: 12px; overflow: hidden; border-radius: 99px; background: #eef0f3; }
 .meter span { display: block; height: 100%; border-radius: inherit; background: #00c48c; }
 .utility-row { display: grid; gap: 1px; margin-top: 16px; border-top: 1px solid #eef0f3; border-bottom: 1px solid #eef0f3; }
