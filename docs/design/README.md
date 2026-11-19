@@ -1,12 +1,12 @@
 # MetroLive design directions
 
-세 시안은 색상 변형이 아니라 정보 구조와 사용 목적이 서로 다르다.
+이 문서의 최신 시안은 LDS v2.4.0 라이트모드와 모바일 우선 레이아웃을 기준으로 한다. 지도는 배경 hero zone이고, 콘텐츠는 아래로 스크롤되며, 이미지 속 텍스트는 실제 HTML/CSS 컴포넌트로 재구현한다.
 
 | 시안 | 강조점 | 기본 화면 구조 | 구현 우선순위 |
 |---|---|---|---|
-| A Ride Cockpit | 목적지까지 지금 가장 좋은 이동 결정 | 지도 배경 + 상단 검색 + 하단 경로 카드 | 1순위 홈 |
-| B Station Inside-Out | 역 안에서 실제로 움직이는 방법 | 역사 평면도 + 좌측 시설 rail + 하단 다음 행동 | 역 상세 |
-| C Urban Pulse | 서울 전체의 혼잡·지연·사고 판단 | 도시 지도 + 좌측 상황판 + 하단 경로 비교 | 탐색/운영 |
+| A Nearby Mobility | 내 주변 교통수단을 빠르게 확인하고 출발/도착/경유지를 설정 | 지도 hero + 주변 교통 카드 + 경로 옵션 | 1순위 홈 |
+| B Station Inside | 역 안에서 실제로 움직이는 방법 | 역사 평면도 + GPS 경로 + 시설/출구 sheet | 역 상세 |
+| C Live Conditions | 지연 이유와 현재·목적지 상황을 이해 | 지도 hero + 날씨/혼잡/사고 카드 + 회피경로 | 이동 상황 |
 
 ## 개발 고정 규칙
 
@@ -18,7 +18,13 @@
 - 모든 실시간 값에는 데이터 시각과 신뢰도를 함께 표시한다.
 - 이미지 속 텍스트를 그대로 배경 이미지로 사용하지 않고, 실제 HTML/CSS 텍스트와 컴포넌트로 재구현한다.
 
-## 시안 이미지
+## 최신 라이트모드 시안
+
+- `metrolive-light-a-nearby-mobility.png`
+- `metrolive-light-b-station-inside.png`
+- `metrolive-light-c-live-conditions.png`
+
+## 이전 탐색 시안
 
 - `metrolive-a-ride-cockpit.png`
 - `metrolive-b-station-inside-out.png`
