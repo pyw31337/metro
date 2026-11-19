@@ -5,6 +5,7 @@ import { API_ENDPOINTS } from '@/utils/api-client';
 import { normalizeLineName } from '@/utils/stationUtils';
 import { normStation } from '@/data/stationRegistry';
 import { callSeoulSubway, parseSeoulTime, lagMsFrom } from './seoulApi';
+import { getSeoulOpenDataKey } from './apiConfig';
 
 // ── 지하철 시간표 인덱스 (subway-schedule-index.json) ────────────────────────
 // 서울시 openapi.seoul.go.kr에서 수집한 799개 역-노선 첫차/막차/행선지 데이터
@@ -670,7 +671,7 @@ export const fetchTransferPlatform = async (stationName: string, fromLine: strin
     }
 
     // 일반 열린데이터 API (실시간 지하철 키와 다른 키). 키가 없으면 sample (최대 5건)
-    const apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
+    const apiKey = getSeoulOpenDataKey();
     const rows = apiKey === "sample" ? 5 : 50;
 
     const tryFetch = async (queryName: string) => {
@@ -736,7 +737,7 @@ export const fetchTrainPositions = async (lineName: string): Promise<TrainPositi
 };
 
 export const fetchSubwayAlerts = async (): Promise<SubwayAlert[]> => {
-    let apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || "sample";
+    let apiKey = getSeoulOpenDataKey();
     const url = API_ENDPOINTS.SUBWAY_ALERTS(apiKey);
     try {
         const json = await fetchWithFallbacks(url);

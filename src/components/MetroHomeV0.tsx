@@ -187,6 +187,9 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             <div><small>빠른 환승</small><b>{civicAmenity.fastTransfer?.[0] ? `${civicAmenity.fastTransfer[0].carNumber}번 칸` : "정보 준비 중"}</b><span>{civicAmenity.fastTransfer?.[0]?.targetLine || "환승 구간"}</span></div>
             <div><small>심야 연계</small><b>{civicAmenity.nightBus?.join(" · ") || "운행 정보 준비 중"}</b><span>올빼미 버스</span></div>
             <div><small>따릉이</small><b>{civicAmenity.bikeRacks ? `${civicAmenity.bikeRacks.availableBikes}대` : "확인 중"}</b><span>{civicAmenity.bikeRacks ? `${civicAmenity.bikeRacks.exitNumber}번 출구` : "가까운 대여소"}</span></div>
+            {civicAmenity.dryWalkBuildings && civicAmenity.dryWalkBuildings.length > 0 && (
+              <div><small>☔ 비 안맞는 길</small><b>{civicAmenity.dryWalkBuildings[0]}</b><span>지하 직결 통로</span></div>
+            )}
           </div>
         </article>}
 

@@ -1,5 +1,6 @@
 import { fetchWithFallbacks } from './arrivalApi';
 import { normStation } from '@/data/stationRegistry';
+import { getSeoulOpenDataKey } from './apiConfig';
 
 export interface CongestionData {
     areaName: string;
@@ -121,7 +122,7 @@ export const fetchStationCongestion = async (stationName: string): Promise<Conge
     
     if (!areaName) return null;
 
-    const apiKey = process.env.NEXT_PUBLIC_SEOUL_OPEN_DATA_KEY || 'sample';
+    const apiKey = getSeoulOpenDataKey();
     const url = `https://openapi.seoul.go.kr:443/${apiKey}/json/citydata/1/1/${encodeURIComponent(areaName)}`;
 
     try {
