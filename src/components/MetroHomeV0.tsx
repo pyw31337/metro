@@ -7,14 +7,17 @@ import {
   ArrowRight,
   BusFront,
   ChevronDown,
+  Clock3,
   LocateFixed,
   MapPin,
   RefreshCw,
+  Sparkles,
   TrainFront,
   Toilet,
   Umbrella,
   UsersRound,
 } from "lucide-react";
+import { useSmartCommute } from "@/hooks/useSmartCommute";
 
 const MapLibreBackground = dynamic(() => import("./MapLibreBackground"), { ssr: false });
 
@@ -31,6 +34,7 @@ type Props = {
 export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const [compact, setCompact] = useState(false);
   const [mode, setMode] = useState<"fast" | "calm" | "accessible">("fast");
+  const smart = useSmartCommute();
   const nearestStation = mapProps.nearestStation as { name?: string; lines?: string[] } | null;
   const nearestBusStop = mapProps.nearestBusStop as { name?: string; routes?: string[] } | null;
   const nearestWC = mapProps.nearestWC as { name?: string; accessible?: boolean; openTime?: string } | null;
@@ -86,6 +90,18 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           <img src={`${basePath}/metro-live/transit-isometric.png`} alt="입체적인 지하철과 승강장 아이콘" />
         </article>
 
+        <section className="smart-context-card" aria-label="시간대 맞춤 이동 정보">
+          <div className="smart-context-icon"><Sparkles size={18} /></div>
+          <div className="smart-context-copy"><p>{smart.contextLabel}</p><h3>{smart.contextTitle}</h3><span>{smart.contextBody}</span></div>
+          <div className="smart-context-time"><Clock3 size={14} /> {new Date().toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</div>
+        </section>
+
+        {smart.start && smart.destination ? (
+          <button type="button" className="smart-route-resume" onClick={() => { (mapProps.onSetStart as ((v: string) => void) | undefined)?.(smart.start!); (mapProps.onSetEnd as ((v: string) => void) | undefined)?.(smart.destination!); }}><span>최근 경로</span><b>{smart.start} → {smart.destination}</b><ArrowRight size={15} /></button>
+        ) : smart.recentPlaces.length >= 2 ? (
+          <button type="button" className="smart-route-resume" onClick={() => { (mapProps.onSetStart as ((v: string) => void) | undefined)?.(smart.recentPlaces[0]); (mapProps.onSetEnd as ((v: string) => void) | undefined)?.(smart.recentPlaces[1]); }}><span>최근 검색으로 빠르게 시작</span><b>{smart.recentPlaces[0]} → {smart.recentPlaces[1]}</b><ArrowRight size={15} /></button>
+        ) : null}
+
         <div className="route-entry" aria-label="경로 설정">
           <div className="route-line" aria-hidden="true"><span /><span /></div>
           <button type="button" className="route-field"><span className="field-label">출발</span><strong>현재 위치</strong><ChevronDown size={16} /></button>
@@ -104,16 +120,12 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           ))}
         </div>
 
-        <div className="route-strip" aria-label="추천 노선 미리보기">
+        <div className="route-diagram" aria-label="추천 노선 미리보기">
           <div className="route-strip-head"><span>추천 노선</span><small>환승 1회 · 32분</small></div>
-          <div className="route-strip-track">
-            <span className="route-stop is-start"><i /><span>현재 위치</span></span>
-            <span className="route-segment blue"><b>2</b></span>
-            <span className="route-stop"><i /><span>강남역</span></span>
-            <span className="route-segment green"><b>신분당</b></span>
-            <span className="route-stop is-end"><i /><span>판교역</span></span>
-          </div>
-          <div className="route-strip-foot"><span><TrainFront size={13} /> 2호선</span><span>도보 6분</span><span>다음 열차 3분</span></div>
+          <div className="route-diagram-row"><span className="line-badge line-blue">2</span><div className="route-rail rail-blue"><i /><i /></div><div className="route-stations"><b>현재 위치</b><span>강남역</span></div></div>
+          <div className="route-transfer"><span>환승</span><b>도보 4분</b></div>
+          <div className="route-diagram-row"><span className="line-badge line-green">신분당</span><div className="route-rail rail-green"><i /><i /></div><div className="route-stations"><b>강남역</b><span>판교역</span></div></div>
+          <div className="route-strip-foot"><span><TrainFront size={13} /> 다음 열차 3분</span><span>혼잡도 보통</span><span>무장애 이동 가능</span></div>
         </div>
 
         <div className="nearby-heading"><h3>현재 위치 주변</h3><span>내 위치 기준 · 반경 1km</span></div>

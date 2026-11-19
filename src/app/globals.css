@@ -287,6 +287,16 @@ h1, h2, h3, h4 {
 .primary-mobility-copy p b { color: #1d63c1; font-size: 14px; }
 .primary-mobility-copy button { display: inline-flex; align-items: center; gap: 4px; margin-top: 13px; padding: 0; border: 0; background: none; color: #3182f6; font-size: 12px; font-weight: 800; cursor: pointer; }
 .primary-mobility-card img { position: absolute; right: -38px; bottom: -28px; width: 62%; max-width: 270px; mix-blend-mode: multiply; }
+.smart-context-card { position: relative; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; padding: 12px; border: 1px solid #e8e5ff; border-radius: 12px; background: #faf9ff; }
+.smart-context-icon { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 10px; color: #6366f1; background: #eeecff; }
+.smart-context-copy { display: grid; min-width: 0; gap: 2px; }
+.smart-context-copy p { margin: 0; color: #6366f1; font-size: 10px; font-weight: 800; letter-spacing: .05em; }
+.smart-context-copy h3 { margin: 0; color: #191f28; font-size: 14px; letter-spacing: -.03em; }
+.smart-context-copy span { color: #6b7280; font-size: 11px; line-height: 1.45; }
+.smart-context-time { display: inline-flex; flex: 0 0 auto; align-items: center; gap: 3px; margin-left: auto; color: #8b95a1; font-size: 10px; font-weight: 600; }
+.smart-route-resume { display: flex; align-items: center; gap: 8px; width: 100%; margin-bottom: 12px; padding: 10px 12px; border: 1px solid #dbe8ff; border-radius: 10px; background: #f4f8ff; color: #3182f6; text-align: left; cursor: pointer; }
+.smart-route-resume span { color: #6b7280; font-size: 10px; font-weight: 600; }
+.smart-route-resume b { flex: 1; overflow: hidden; color: #1d63c1; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
 .route-entry { position: relative; display: grid; gap: 1px; margin-bottom: 14px; padding: 5px 12px 5px 18px; border: 1px solid #e5e8eb; border-radius: 14px; background: #fff; }
 .route-line { position: absolute; left: 10px; top: 25px; bottom: 25px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
 .route-line::before { content: ""; position: absolute; top: 5px; bottom: 5px; width: 1px; background: #d8dde3; }
@@ -316,6 +326,19 @@ h1, h2, h3, h4 {
 .route-segment.green, .route-segment.green b { background: #00a878; }
 .route-strip-foot { justify-content: flex-start; gap: 12px; color: #8b95a1; font-size: 10px; font-weight: 600; }
 .route-strip-foot span { display: inline-flex; align-items: center; gap: 3px; }
+.route-diagram { margin-bottom: 16px; padding: 12px; border: 1px solid #e5e8eb; border-radius: 14px; background: #fff; }
+.route-diagram-row { display: grid; grid-template-columns: 46px 1fr 1fr; align-items: center; gap: 9px; min-height: 44px; }
+.line-badge { display: inline-flex; align-items: center; justify-content: center; min-height: 22px; padding: 0 6px; border-radius: 6px; color: #fff; font-size: 10px; font-weight: 800; white-space: nowrap; }
+.line-blue { background: #3182f6; } .line-green { background: #00a878; }
+.route-rail { position: relative; display: flex; align-items: center; justify-content: space-between; height: 8px; border-radius: 99px; }
+.route-rail::after { content: ""; position: absolute; right: 0; left: 0; height: 4px; border-radius: 99px; background: inherit; }
+.route-rail i { position: relative; z-index: 1; display: block; width: 12px; height: 12px; border: 3px solid #fff; border-radius: 50%; background: inherit; box-shadow: 0 0 0 1px currentColor; }
+.rail-blue { color: #3182f6; background: #3182f6; } .rail-green { color: #00a878; background: #00a878; }
+.route-stations { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 10px; line-height: 1.2; }
+.route-stations b { overflow: hidden; color: #191f28; text-overflow: ellipsis; white-space: nowrap; } .route-stations span { color: #8b95a1; }
+.route-transfer { display: flex; align-items: center; gap: 6px; margin: 1px 0 1px 55px; color: #8b95a1; font-size: 10px; }
+.route-transfer::before { content: ""; display: block; width: 1px; height: 16px; margin-right: 2px; background: #cfd5dc; }
+.route-transfer span { color: #6366f1; font-weight: 800; } .route-transfer b { font-weight: 600; }
 .nearby-heading { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 8px; }
 .nearby-heading h3 { margin: 0; font-size: 16px; letter-spacing: -.03em; }
 .nearby-heading span { color: #8b95a1; font-size: 10px; font-weight: 600; }
