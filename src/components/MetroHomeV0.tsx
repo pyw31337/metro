@@ -90,6 +90,18 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           ))}
         </div>
 
+        <div className="route-strip" aria-label="추천 노선 미리보기">
+          <div className="route-strip-head"><span>추천 노선</span><small>환승 1회 · 32분</small></div>
+          <div className="route-strip-track">
+            <span className="route-stop is-start"><i />현재 위치</span>
+            <span className="route-segment blue"><b>2</b></span>
+            <span className="route-stop"><i />강남역</span>
+            <span className="route-segment green"><b>신분당</b></span>
+            <span className="route-stop is-end"><i />판교역</span>
+          </div>
+          <div className="route-strip-foot"><span><TrainFront size={13} /> 2호선</span><span>도보 6분</span><span>다음 열차 3분</span></div>
+        </div>
+
         <div className="widget-grid">
           <article className="info-widget transit-widget">
             <div className="widget-topline"><span className="widget-icon blue"><TrainFront size={16} /></span><span>가까운 지하철</span><span className="fresh">2분 전</span></div>

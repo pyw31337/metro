@@ -142,12 +142,24 @@ const SubwayLayers = ({
           paint={{ "line-width": 25, "line-opacity": 0 }}
         />
 
+        {/* 노선 외곽선 — Positron 위에서도 노선이 끊기지 않고 읽히도록 */}
+        <Layer
+          id="subway-line-casing"
+          type="line"
+          layout={{ "line-join": "round", "line-cap": "round", "visibility": vis }}
+          paint={{
+            "line-color": isDarkMode ? "#17202b" : "#ffffff",
+            "line-width": ["interpolate", ["linear"], ["zoom"], 9, 3.5, 11, 4.5, 13, 6.5, 15, 9],
+            "line-opacity": ["interpolate", ["linear"], ["zoom"], 9, .72, 12, .9, 15, 1]
+          }}
+        />
+
         {/* 노선 선 */}
         <Layer
           id="subway-line-layer"
           type="line"
           layout={{ "line-join": "round", "line-cap": "round", "visibility": vis }}
-          paint={{ "line-color": lineColorExpr, "line-width": lineWidth }}
+          paint={{ "line-color": lineColorExpr, "line-width": lineWidth, "line-opacity": .98 }}
         />
       </Source>
 
@@ -195,6 +207,22 @@ const SubwayLayers = ({
             "circle-stroke-width": 1.5,
             "circle-stroke-color": stationStrokeColor,
             "circle-stroke-opacity": 1,
+          }}
+        />
+
+        {/* 환승역은 흰 링과 노선색 링을 겹쳐서 메이저 지도 서비스의 환승 표기처럼 구분 */}
+        <Layer
+          id="subway-transfer-ring"
+          type="circle"
+          minzoom={9}
+          filter={isTransfer}
+          layout={{ "visibility": vis }}
+          paint={{
+            "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 4.5, 12, 6.5, 15, 9],
+            "circle-color": "rgba(255,255,255,0)",
+            "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 9, 1.3, 13, 2, 15, 2.4],
+            "circle-stroke-color": stationLineColor,
+            "circle-opacity": .98
           }}
         />
 

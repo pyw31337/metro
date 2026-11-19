@@ -5,7 +5,9 @@ import Map, { MapRef, ScaleControl } from "react-map-gl/maplibre";
 import "maplibre-gl/dist/maplibre-gl.css";
 
 const CARTO_DARK = "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
-const CARTO_VOYAGER = "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json";
+// 메이저 지도 서비스처럼 배경은 조용하게, 교통 레이어가 주인공이 되도록
+// 채도와 도로 라벨이 낮은 Positron을 라이트 기본 스타일로 사용한다.
+const CARTO_POSITRON = "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 
 export interface LongPressEvent {
   lngLat: [number, number];
@@ -118,7 +120,7 @@ const MapBase = ({
     <div className="absolute inset-0 w-full h-full z-0 bg-zinc-100 dark:bg-black">
       <Map
         initialViewState={initialViewState}
-        mapStyle={isDarkMode ? CARTO_DARK : CARTO_VOYAGER}
+        mapStyle={isDarkMode ? CARTO_DARK : CARTO_POSITRON}
         style={{ width: "100%", height: "100%" }}
         cursor={cursor}
         interactiveLayerIds={interactiveLayerIds}
