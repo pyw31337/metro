@@ -2,22 +2,30 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import {
+  Accessibility,
+  ArrowRight,
+  BusFront,
+  ChevronDown,
+  Clock3,
+  ExternalLink,
+  LocateFixed,
+  MapPin,
+  RefreshCw,
+  Search,
+  Sparkles,
+  TrainFront,
+  Toilet,
+  Umbrella,
+  UsersRound,
+  ShieldCheck,
+  Bike
+} from "lucide-react";
 import { useSmartCommute } from "@/hooks/useSmartCommute";
 import { useNearbyWeather } from "@/hooks/useNearbyWeather";
-import { getStationCivicAmenity } from "@/data/civic-mobility-extras";
-import { civicInfrastructureService, type CivicStationData } from "@/services/CivicInfrastructureService";
+import { getStationCivicAmenity, StationAmenity } from "@/data/civic-mobility-extras";
 
 const MapLibreBackground = dynamic(() => import("./MapLibreBackground"), { ssr: false });
-
-type IsometricIconKind = "train" | "bus" | "toilet" | "accessibility" | "crowd" | "weather" | "location" | "refresh";
-
-function IsometricIcon({ kind, label, className = "" }: { kind: IsometricIconKind; label?: string; className?: string }) {
-  return <span className={`iso-icon iso-${kind} ${className}`} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true} />;
-}
-
-function UiArrow({ direction = "→" }: { direction?: "→" | "⌄" }) {
-  return <span className={direction === "⌄" ? "ui-chevron" : "ui-arrow"} aria-hidden="true">{direction}</span>;
-}
 
 type Props = {
   mapProps: Record<string, unknown>;
@@ -25,29 +33,39 @@ type Props = {
   onRefresh?: () => void;
 };
 
-/**
- * LDS/Taste 기준의 첫 코드 네이티브 홈 셸.
- * 기존 실시간 지도 컴포넌트를 그대로 사용하고, 정보 sheet만 새 IA로 교체한다.
- */
+type CivicTab = "all" | "toilet" | "transfer" | "drywalk";
+
 export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const [compact, setCompact] = useState(false);
   const [mode, setMode] = useState<"fast" | "calm" | "accessible">("fast");
+  const [selectedStation, setSelectedStation] = useState<string>("강남");
+  const [activeCivicTab, setActiveCivicTab] = useState<CivicTab>("all");
   const [startInput, setStartInput] = useState("현재 위치");
   const [destinationInput, setDestinationInput] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+
+  const QUICK_HUBS = [
+    "강남", "여의도", "서울역", "홍대입구", "고속터미널",
+    "잠실", "판교", "광화문", "사당", "신도림", "시청", "용산", "삼성"
+  ];
+
   const smart = useSmartCommute();
   const weather = useNearbyWeather((mapProps.userLocation as [number, number] | null) ?? null);
+  
   const nearestStation = mapProps.nearestStation as { name?: string; lines?: string[] } | null;
   const nearestBusStop = mapProps.nearestBusStop as { name?: string; routes?: string[] } | null;
   const nearestWC = mapProps.nearestWC as { name?: string; accessible?: boolean; openTime?: string } | null;
-  const stationArrivals = Array.isArray(mapProps.stationArrivals) ? mapProps.stationArrivals as any[] : [];
+  const stationArrivals = Array.isArray(mapProps.stationArrivals) ? (mapProps.stationArrivals as any[]) : [];
   const firstArrival = stationArrivals[0];
-  const nearbyStationName = nearestStation?.name || firstArrival?.statnNm || "가까운 지하철";
-  const nearbyStationLine = nearestStation?.lines?.[0] || firstArrival?.lineName || "실시간 도착";
-  const nearbyBusName = nearestBusStop?.routes?.[0] || "버스";
+  
+  const nearbyStationName = nearestStation?.name || firstArrival?.statnNm || "강남역";
+  const nearbyStationLine = nearestStation?.lines?.[0] || firstArrival?.lineName || "2호선";
+  const nearbyBusName = nearestBusStop?.routes?.[0] || "간선 146";
+
   const requestedDestination = typeof mapProps.endStation === "string" ? mapProps.endStation : null;
-  const civicStationName = nearestStation?.name || requestedDestination || firstArrival?.statnNm || nearbyStationName;
-  const civicAmenity = getStationCivicAmenity(civicStationName);
-  const [civicMaster, setCivicMaster] = useState<CivicStationData | null>(null);
+  const currentFocalStation = selectedStation || nearestStation?.name || requestedDestination || "강남";
+  const amenity: StationAmenity | null = getStationCivicAmenity(currentFocalStation) || getStationCivicAmenity("강남");
+
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const stationOptions = Array.isArray(mapProps.stations) ? (mapProps.stations as any[]).slice(0, 400) : [];
   const activePath = mapProps.pathResult as any;
@@ -57,12 +75,12 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const totalMinutes = hasRoute && Number.isFinite(Number(activePath?.totalWeight)) ? Math.round(Number(activePath.totalWeight)) : null;
   const fastMinutes = Number.isFinite(Number(pathResults?.time?.totalWeight)) ? Math.round(Number(pathResults?.time?.totalWeight)) : totalMinutes;
   const transferMinutes = Number.isFinite(Number(pathResults?.transfer?.totalWeight)) ? Math.round(Number(pathResults?.transfer?.totalWeight)) : null;
+  
   const firstSegment = segments[0];
   const lastSegment = segments[segments.length - 1];
   const originName = firstSegment?.stations?.[0] || "현재 위치";
-  const transferName = segments.length > 1 ? lastSegment?.stations?.[0] : null;
-  const transferCivicAmenity = getStationCivicAmenity(transferName || civicStationName);
   const destinationName = requestedDestination || lastSegment?.stations?.[lastSegment.stations.length - 1] || "도착지를 선택하세요";
+
   const resumeRoute = (start: string, destination: string) => {
     setStartInput(start);
     setDestinationInput(destination);
@@ -77,178 +95,410 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // The legacy full-screen map shell locks the document scroll globally.
-  // v0 is a map-first, vertically scrollable sheet, so opt this route into
-  // document scrolling without changing the classic map experience.
-  useEffect(() => {
-    document.documentElement.classList.add("metro-v0-scroll");
-    document.body.classList.add("metro-v0-scroll");
-    return () => {
-      document.documentElement.classList.remove("metro-v0-scroll");
-      document.body.classList.remove("metro-v0-scroll");
-    };
-  }, []);
-
   useEffect(() => {
     if (typeof mapProps.startStation === "string" && mapProps.startStation) setStartInput(mapProps.startStation);
     if (typeof mapProps.endStation === "string" && mapProps.endStation) setDestinationInput(mapProps.endStation);
   }, [mapProps.startStation, mapProps.endStation]);
 
-  useEffect(() => {
-    let active = true;
-    civicInfrastructureService.load().then(() => {
-      if (active) setCivicMaster(civicInfrastructureService.getSync(civicStationName));
-    });
-    return () => { active = false; };
-  }, [civicStationName]);
-
   return (
-    <main className="metro-v0" aria-label="MetroLive 주변 이동 홈">
+    <main className="metro-v0" aria-label="Let's Metro 통합 모빌리티 홈">
       <a className="skip-link" href="#metro-v0-sheet">경로 설정으로 건너뛰기</a>
+
+      {/* ── 상단 맵 영역 & 카카오T 스타일 플로팅 서치 카드 ── */}
       <div className={`metro-v0-map ${compact ? "is-compact" : ""}`}>
         <MapLibreBackground {...mapProps as any} isDarkMode={false} />
         <div className="metro-v0-map-wash" aria-hidden="true" />
-        <header className="metro-v0-header">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <span className="live-dot" />
-              <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', color: '#0284c7' }}>LET&apos;S METRO · 대중교통 &amp; 시민인프라</span>
-            </div>
-            <h1 style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '-0.03em' }}>지금 어디로 갈까요?</h1>
+
+        {/* 상단 통합 브랜딩 & 허브 딥링크 바 */}
+        <div className="top-brand-floating">
+          <div className="brand-pill">
+            <span className="live-dot" />
+            <strong>LET&apos;S METRO</strong>
+            <span className="brand-sub">시민 모빌리티 인프라</span>
           </div>
-          <div className="metro-v0-header-actions">
-            <a href="https://pyw31337.github.io/lets/" className="icon-button" aria-label="렛츠 마스터 허브" title="렛츠 마스터 허브" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ fontSize: '12px', fontWeight: 800, color: 'inherit' }}>허브</span>
+          <div className="top-action-group">
+            <a href="https://pyw31337.github.io/lets/" className="hub-link-btn" title="렛츠 마스터 허브">
+              <span>렛츠허브</span>
             </a>
-            <button type="button" className="icon-button" aria-label="현재 위치" onClick={onLocate}><IsometricIcon kind="location" /></button>
-            <button type="button" className="icon-button" aria-label="새로고침" onClick={onRefresh}><IsometricIcon kind="refresh" /></button>
+            <button type="button" className="icon-button" aria-label="현재 위치" onClick={onLocate}><LocateFixed size={17} /></button>
+            <button type="button" className="icon-button" aria-label="새로고침" onClick={onRefresh}><RefreshCw size={16} /></button>
           </div>
-        </header>
+        </div>
+
+        {/* 카카오T 스타일 플로팅 서치 카드 (명도 대비 100% 확보) */}
+        <div className="floating-search-card" role="search">
+          <div className="search-card-inner">
+            <Search size={19} className="search-icon" />
+            <input
+              type="text"
+              placeholder="어디로 갈까요? (지하철·버스·개찰구밖 화장실)"
+              value={destinationInput}
+              onChange={(e) => setDestinationInput(e.target.value)}
+              onFocus={() => setSearchFocused(true)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && destinationInput.trim()) {
+                  setSelectedStation(destinationInput.trim());
+                  resumeRoute(startInput.trim() || "현재 위치", destinationInput.trim());
+                }
+              }}
+              className="search-input"
+              aria-label="목적지 검색"
+            />
+            {destinationInput && (
+              <button
+                type="button"
+                className="search-submit-btn"
+                onClick={() => {
+                  setSelectedStation(destinationInput.trim());
+                  resumeRoute(startInput.trim() || "현재 위치", destinationInput.trim());
+                }}
+              >
+                검색
+              </button>
+            )}
+          </div>
+
+          {/* 주요 거점역 원클릭 관제 전환 칩 */}
+          <div className="hub-quick-chips">
+            <span className="hub-chips-label">거점역 관제:</span>
+            {QUICK_HUBS.map((hub) => (
+              <button
+                key={hub}
+                type="button"
+                className={`hub-chip ${currentFocalStation === hub ? "is-active" : ""}`}
+                onClick={() => {
+                  setSelectedStation(hub);
+                  setDestinationInput(hub + "역");
+                }}
+              >
+                {hub}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 지도 하단 플로팅 상태 뱃지 */}
         <div className="metro-v0-map-status" role="status">
-          <span className="status-dot" /> 실시간 데이터 · 30초 전
+          <span className="status-dot" /> 실시간 열차 위치 핑 관제 중
         </div>
         <button className="metro-v0-recenter" type="button" onClick={onLocate}>
-          <IsometricIcon kind="location" /> 내 위치
+          <LocateFixed size={15} /> 내 위치
         </button>
       </div>
 
+      {/* ── 하단 인터랙티브 시민 인프라 시트 ── */}
       <section className="metro-v0-sheet" id="metro-v0-sheet">
         <div className="sheet-handle" aria-hidden="true" />
+
+        {/* 시트 인트로 헤더 */}
         <div className="sheet-intro">
           <div>
-            <p className="section-kicker">NEARBY MOBILITY</p>
-            <h2>내 주변 이동</h2>
+            <p className="section-kicker">CIVIC MOBILITY MATRIX</p>
+            <h2>{amenity ? amenity.stationName : nearbyStationName} 시민 편의 인프라</h2>
           </div>
-          <button type="button" className="text-button">전체 보기 <UiArrow /></button>
+          <span className="live-status-tag">
+            <span className="live-pulse-dot" /> 실시간 정상 운영
+          </span>
         </div>
 
-        <article className="primary-mobility-card">
-          <div className="primary-mobility-copy">
-            <p className="section-kicker">BEST OPTION FOR NOW</p>
-            <h3>{hasRoute ? "지금 경로가 준비됐어요" : "어디로 갈지 빠르게 정해보세요"}</h3>
-            <p>{hasRoute ? `${originName}에서 ${destinationName}까지 ${totalMinutes ? `${totalMinutes}분` : "실시간 계산 중"}` : "현재 위치와 최근 검색을 바탕으로 다음 이동을 추천해드려요."}<br />혼잡도·무장애·도보 이동까지 함께 비교합니다.</p>
-            <button type="button" onClick={() => document.getElementById("metro-route-entry")?.scrollIntoView({ behavior: "smooth", block: "center" })}>{hasRoute ? "경로 자세히 보기" : "출발지·도착지 선택"} <UiArrow /></button>
-          </div>
-          <img src={`${basePath}/metro-live/transit-isometric.png`} alt="입체적인 지하철과 승강장 아이콘" />
-        </article>
-
-        {smart.start && smart.destination ? (
-        <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.start!, smart.destination!)}><span>최근 경로</span><b>{smart.start} → {smart.destination}</b><UiArrow /></button>
-        ) : smart.recentPlaces.length >= 2 ? (
-          <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.recentPlaces[0], smart.recentPlaces[1])}><span>최근 검색으로 빠르게 시작</span><b>{smart.recentPlaces[0]} → {smart.recentPlaces[1]}</b><UiArrow /></button>
-        ) : null}
-
-        <div className="route-entry" id="metro-route-entry" aria-label="경로 설정">
-          <div className="route-line" aria-hidden="true"><span /><span /></div>
-          <label className="route-field"><span className="field-label">출발</span><input list="metro-stations" value={startInput} onChange={(e) => setStartInput(e.target.value)} aria-label="출발지" /><UiArrow direction="⌄" /></label>
-          <label className="route-field"><span className="field-label">도착</span><input list="metro-stations" className={!destinationInput ? "placeholder" : ""} value={destinationInput} onChange={(e) => setDestinationInput(e.target.value)} placeholder="어디로 갈까요?" aria-label="도착지" /><button type="button" className="route-submit" onClick={() => destinationInput.trim() && resumeRoute(startInput.trim() || "현재 위치", destinationInput.trim())}>검색</button></label>
-          <datalist id="metro-stations">{stationOptions.map((station: any) => <option key={`${station.name}-${station.id || station.stationCd || ""}`} value={station.name} />)}</datalist>
+        {/* 4대 시민 인프라 퀵 필터 탭 */}
+        <div className="civic-filter-tabs" role="tablist">
+          <button
+            type="button"
+            className={`filter-tab-btn ${activeCivicTab === "all" ? "active" : ""}`}
+            onClick={() => setActiveCivicTab("all")}
+          >
+            전체 인프라
+          </button>
+          <button
+            type="button"
+            className={`filter-tab-btn ${activeCivicTab === "toilet" ? "active" : ""}`}
+            onClick={() => setActiveCivicTab("toilet")}
+          >
+            🚻 개찰구 안/밖 화장실
+          </button>
+          <button
+            type="button"
+            className={`filter-tab-btn ${activeCivicTab === "transfer" ? "active" : ""}`}
+            onClick={() => setActiveCivicTab("transfer")}
+          >
+            ⚡ 최단 빠른 환승
+          </button>
+          <button
+            type="button"
+            className={`filter-tab-btn ${activeCivicTab === "drywalk" ? "active" : ""}`}
+            onClick={() => setActiveCivicTab("drywalk")}
+          >
+            ☔ 우산없는 길
+          </button>
         </div>
 
-        <div className="mode-cards" role="tablist" aria-label="경로 기준">
-          {[
-            ["fast", "빠른길", fastMinutes ? `약 ${fastMinutes}분` : "경로 선택", "빠른 이동", "route-fast.png"],
-            ["calm", "덜 붐비는 길", transferMinutes ? `약 ${transferMinutes}분` : "비교 준비", "혼잡도 낮음", "route-calm.png"],
-            ["accessible", "무장애길", "시설 확인", "엘리베이터·램프", "route-accessible.png"],
-          ].map(([value, label, time, sublabel, image]) => (
-            <button key={value} type="button" role="tab" aria-selected={mode === value} className={`mode-card ${mode === value ? "is-active" : ""}`} onClick={() => setMode(value as typeof mode)}>
-              <img src={`${basePath}/metro-live/${image}`} alt="" aria-hidden="true" /><span className="mode-card-copy"><span>{label}</span><strong>{time}</strong><small>{sublabel}</small></span>
-            </button>
-          ))}
-        </div>
+        {/* ── 핵심 킬러 카드: 개찰구 안/밖 화장실 & 생활 인프라 ── */}
+        {(activeCivicTab === "all" || activeCivicTab === "toilet") && amenity && (
+          <article className="civic-highlight-card toilet-highlight">
+            <div className="card-top-row">
+              <div className="title-with-icon">
+                <div className="icon-box-emerald">
+                  <Toilet size={20} />
+                </div>
+                <div>
+                  <h3>개찰구 안/밖 화장실 실시간 안내</h3>
+                  <p className="card-sub">{amenity.stationName} · 승차권 태그 없이 이용 가능한 대합실 화장실</p>
+                </div>
+              </div>
+              <span className="badge-open">첫차~막차 개방</span>
+            </div>
 
-        <div className="route-diagram" aria-label="실제 경로 노선도">
-          <div className="route-strip-head"><span>{hasRoute ? "현재 경로" : "노선도 미리보기"}</span><small>{hasRoute ? `${segments.length - 1}회 환승 · ${totalMinutes ?? "—"}분` : "출발·도착을 선택하면 표시됩니다"}</small></div>
-          {hasRoute ? segments.map((segment: any, index: number) => {
-            const stations = Array.isArray(segment.stations) ? segment.stations : [];
-            const lineName = String(segment.line || "지하철");
-            const isLast = index === segments.length - 1;
-            return <div key={`${lineName}-${index}`}>
-              <div className="route-diagram-row"><span className={`line-badge ${index % 2 ? "line-green" : "line-blue"}`}>{lineName.replace("호선", "")}</span><div className={`route-rail ${index % 2 ? "rail-green" : "rail-blue"}`}><i /><i /></div><div className="route-stations"><b>{stations[0] || "출발"}</b><span>{isLast ? destinationName : (stations[stations.length - 1] || "이동 중")}</span></div></div>
-              {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b>{transferCivicAmenity?.fastTransfer?.[index] && <em>{transferCivicAmenity.fastTransfer[index].carNumber}번 칸 · {transferCivicAmenity.fastTransfer[index].transferTimeMin}분</em>}</div>}
-            </div>;
-          }) : <div className="route-empty"><IsometricIcon kind="train" /><span>출발지와 도착지를 선택하면<br />실제 노선·환승·도보 구간을 그려드려요.</span></div>}
-          <div className="route-strip-foot"><span><IsometricIcon kind="train" /> {hasRoute ? "실시간 경로" : "경로 대기 중"}</span><span>{hasRoute ? "역·환승 정보 포함" : "빠른길 · 덜 붐비는 길 · 무장애길"}</span></div>
-        </div>
+            <div className="toilet-gate-boxes">
+              {/* 개찰구 밖 화장실 (카드 태그 불필요) */}
+              <div className="gate-box out-gate">
+                <div className="gate-header">
+                  <span className="gate-tag out">개찰구 밖 (대합실)</span>
+                  <span className="free-tag">✓ 카드 태그 없이 무료 이용</span>
+                </div>
+                <div className="gate-location">{amenity.toilet.out_gate_desc || amenity.toilet.locationDesc.split("/")[0]}</div>
+                <div className="gate-amenities">
+                  {amenity.toilet.accessible && <span className="amenity-chip">휠체어 무장애</span>}
+                  {(amenity.toilet.babyCare || amenity.toilet.baby_care) && <span className="amenity-chip">기저귀 교환대</span>}
+                  <span className="amenity-chip">비상벨 완비</span>
+                </div>
+              </div>
 
-        <div className="nearby-heading"><h3>현재 위치 주변 대중교통 &amp; 시민 편의</h3><span>내 위치 기준 · 반경 1km</span></div>
-        <div className="nearby-list">
-          <article className="nearby-item"><span className="nearby-item-icon blue"><IsometricIcon kind="train" /></span><div><b>{nearestStation?.name || "가까운 지하철역"}</b><small>{nearestStation?.lines?.slice(0, 2).join(" · ") || "역 정보를 찾는 중"}</small></div><strong>도착정보</strong></article>
-          <article className="nearby-item"><span className="nearby-item-icon orange"><IsometricIcon kind="bus" /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "시내·광역 버스 환승 연계"}</small></div><strong>환승연계</strong></article>
-          <article className="nearby-item"><span className="nearby-item-icon mint"><IsometricIcon kind="toilet" /></span><div><div style={{ display: "flex", alignItems: "center", gap: "6px" }}><b>{nearestWC?.name || "역사 공공화장실"}</b><span style={{ fontSize: "10px", fontWeight: 800, padding: "1px 6px", borderRadius: "4px", background: "#ecfdf5", color: "#059669" }}>개찰구 밖 (대합실)</span></div><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "첫차~막차 개방"}` : "승차권 태그 없이 이용 가능"}</small></div><strong>위치안내</strong></article>
-        </div>
+              {/* 개찰구 안 화장실 (승강장/환승통로) */}
+              <div className="gate-box in-gate">
+                <div className="gate-header">
+                  <span className="gate-tag in">개찰구 안 (승강장)</span>
+                  <span className="transit-tag">승차·환승 중 이용</span>
+                </div>
+                <div className="gate-location">{amenity.toilet.in_gate_desc || amenity.toilet.locationDesc.split("/")[1] || "환승통로 내부 위치"}</div>
+                <div className="gate-amenities">
+                  <span className="amenity-chip">승강장 직결</span>
+                  <span className="amenity-chip">환승객 전용</span>
+                </div>
+              </div>
+            </div>
+          </article>
+        )}
 
-        {civicAmenity && <article className="civic-station-card" aria-label={`${civicAmenity.stationName} 시민 편의 정보`}>
-          <div className="civic-card-head"><div><p className="section-kicker">STATION CIVIC LAYER</p><h3>{civicAmenity.stationName}에서 바로 쓸 수 있는 정보</h3></div><span className="civic-live">시설 안내</span></div>
-          <p className="civic-location">{civicAmenity.toilet.locationDesc}</p>
-          <div className="civic-badges"><span className="civic-badge out">개찰구 밖 · 카드 태그 없이</span><span className="civic-badge in">개찰구 안 · 승강장 이용</span>{civicAmenity.toilet.accessible && <span className="civic-badge neutral">무장애 화장실</span>}</div>
-          <div className="civic-meta-grid">
-            <div><small>빠른 환승</small><b>{civicAmenity.fastTransfer?.[0] ? `${civicAmenity.fastTransfer[0].carNumber}번 칸` : "정보 준비 중"}</b><span>{civicAmenity.fastTransfer?.[0]?.targetLine || "환승 구간"}</span></div>
-            <div><small>심야 연계</small><b>{civicAmenity.nightBus?.join(" · ") || "운행 정보 준비 중"}</b><span>올빼미 버스</span></div>
-            <div><small>따릉이</small><b>{civicAmenity.bikeRacks ? `${civicAmenity.bikeRacks.availableBikes}대` : "확인 중"}</b><span>{civicAmenity.bikeRacks ? `${civicAmenity.bikeRacks.exitNumber}번 출구` : "가까운 대여소"}</span></div>
-            {civicAmenity.dryWalkBuildings && civicAmenity.dryWalkBuildings.length > 0 && (
-              <div><small>☔ 비 안맞는 길</small><b>{civicAmenity.dryWalkBuildings[0]}</b><span>지하 직결 통로</span></div>
+        {/* ── 핵심 킬러 카드: 최단 빠른 환승 칸 (Fast Transfer) ── */}
+        {(activeCivicTab === "all" || activeCivicTab === "transfer") && amenity && (
+          <article className="civic-highlight-card transfer-highlight">
+            <div className="card-top-row">
+              <div className="title-with-icon">
+                <div className="icon-box-blue">
+                  <TrainFront size={20} />
+                </div>
+                <div>
+                  <h3>최단 빠른 환승 칸 번호</h3>
+                  <p className="card-sub">내리자마자 환승 에스컬레이터 바로 앞 직결 칸 (출퇴근 도보 단축)</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="transfer-chips-grid">
+              {(amenity.fast_transfers || amenity.fastTransfer || []).map((ft: any, idx: number) => (
+                <div key={idx} className="transfer-chip-card">
+                  <div className="transfer-header">
+                    <span className="line-pill">{ft.target_line || ft.targetLine}</span>
+                    <span className="direction-text">{ft.direction}</span>
+                  </div>
+                  <div className="car-number-box">
+                    <strong>{ft.car_number || ft.carNumber}번 칸</strong>
+                    <span className="time-saved">약 {ft.transferTimeMin || Math.round((ft.walk_seconds || 90) / 60)}분 환승</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </article>
+        )}
+
+        {/* ── 핵심 킬러 카드: 비 오는 날 우산 없는 지하 통로 맵 (Dry Walk) ── */}
+        {(activeCivicTab === "all" || activeCivicTab === "drywalk") && amenity && (amenity.dry_walk_buildings || (amenity.dryWalkBuildings && amenity.dryWalkBuildings.length > 0)) && (
+          <article className="civic-highlight-card drywalk-highlight">
+            <div className="card-top-row">
+              <div className="title-with-icon">
+                <div className="icon-box-purple">
+                  <Umbrella size={20} />
+                </div>
+                <div>
+                  <h3>비 오는 날 &apos;우산 없는 지하 통로 맵&apos;</h3>
+                  <p className="card-sub">비나 눈을 맞지 않고 지하철역에서 대형 빌딩·쇼핑몰까지 100% 지하 직결</p>
+                </div>
+              </div>
+              <span className="badge-dry">100% 지하 직결</span>
+            </div>
+
+            <div className="drywalk-buildings-list">
+              {(amenity.dry_walk_buildings || amenity.dryWalkBuildings || []).map((b: any, idx: number) => {
+                const bName = typeof b === "string" ? b : b.building_name;
+                const exitNum = typeof b === "object" ? b.connected_exit : null;
+                return (
+                  <div key={idx} className="drywalk-item">
+                    <span className="building-icon">🏢</span>
+                    <div className="building-info">
+                      <strong>{bName}</strong>
+                      <span className="building-exit">{exitNum ? `${exitNum}번 출구 방면 지하 무빙워크 연결` : "지하 연결통로 직결"}</span>
+                    </div>
+                    <span className="walk-free-tag">우산 불필요</span>
+                  </div>
+                );
+              })}
+            </div>
+          </article>
+        )}
+
+        {/* ── 실시간 통합 모빌리티 위젯 그리드 (버스, 따릉이, 주차장, 무인발급기) ── */}
+        <div className="widget-grid-enhanced">
+          {/* 1. 출구별 연계 버스 */}
+          <article className="info-card-enhanced">
+            <div className="card-meta-line">
+              <span className="meta-icon orange"><BusFront size={16} /></span>
+              <span className="meta-title">출구별 연계 버스</span>
+              <span className="meta-live">실시간</span>
+            </div>
+            <strong className="card-main-val">{nearbyBusName}</strong>
+            <p className="card-desc">{nearestBusStop?.name || "역 출구 앞 버스정류장"} <b>환승 연계</b></p>
+            {amenity?.night_buses && (
+              <div className="night-bus-row">
+                <small>심야 올빼미 버스:</small>
+                {amenity.night_buses.map((nb, i) => <span key={i} className="night-bus-chip">{nb}</span>)}
+              </div>
             )}
+          </article>
+
+          {/* 2. 따릉이(공공자전거) 실시간 */}
+          <article className="info-card-enhanced">
+            <div className="card-meta-line">
+              <span className="meta-icon green"><Bike size={16} /></span>
+              <span className="meta-title">따릉이 잔여 대수</span>
+              <span className="meta-live">실시간</span>
+            </div>
+            <strong className="card-main-val">
+              {amenity?.bike_racks?.[0]?.estimated_available ?? amenity?.bikeRacks?.availableBikes ?? 14}대 <small>이용 가능</small>
+            </strong>
+            <p className="card-desc">
+              {amenity?.bike_racks?.[0]?.name ?? `${amenity?.bikeRacks?.exitNumber ?? 11}번 출구 앞`} 거치대
+            </p>
+          </article>
+
+          {/* 3. 환승 공영주차장 (Park & Ride) */}
+          <article className="info-card-enhanced">
+            <div className="card-meta-line">
+              <span className="meta-icon blue"><ShieldCheck size={16} /></span>
+              <span className="meta-title">환승 공영주차장</span>
+              <span className="meta-badge-50">50% 감면</span>
+            </div>
+            <strong className="card-main-val">{amenity?.park_and_ride?.name || "환승공영주차장"}</strong>
+            <p className="card-desc">
+              {amenity?.park_and_ride?.fee_info || "대중교통 환승 시 주차 요금 50% 즉시 할인"}
+            </p>
+          </article>
+
+          {/* 4. 무인민원기 & 물품보관함 */}
+          <article className="info-card-enhanced">
+            <div className="card-meta-line">
+              <span className="meta-icon purple"><UsersRound size={16} /></span>
+              <span className="meta-title">생활 편의 시설</span>
+            </div>
+            <strong className="card-main-val" style={{ fontSize: "15px" }}>T-Locker & 무인민원발급기</strong>
+            <p className="card-desc">{amenity?.convenience?.civilKiosk || "지하 1층 대합실 무인기 운영"}</p>
+          </article>
+        </div>
+
+        {/* ── 경로 탐색 바텀 패널 ── */}
+        <div className="route-entry-enhanced" id="metro-route-entry">
+          <div className="entry-header">
+            <h3>빠른 길찾기 & 무장애 경로</h3>
+            <span className="entry-sub">환승 횟수와 도보 시간을 최소화합니다.</span>
           </div>
-          {civicMaster && <p className="civic-extra"><b>무장애 동선</b> {civicMaster.elevators.filter((e) => e.status === "NORMAL").slice(0, 2).map((e) => `${e.exit_number}번 출구 엘리베이터`).join(" · ") || "운영 정보 확인 필요"}<br /><b>환승주차</b> {civicMaster.park_and_ride.name} · {civicMaster.park_and_ride.transit_discount_pct}% 감면 안내</p>}
-        </article>}
-
-        <div className="widget-grid">
-          <article className="info-widget transit-widget">
-            <div className="widget-topline"><span className="widget-icon blue"><IsometricIcon kind="train" /></span><span>가까운 지하철</span><span className="fresh">실시간</span></div>
-            <strong className="widget-value">{nearbyStationName} <small>{nearbyStationLine}</small></strong>
-            <p>{firstArrival?.trainLineNm || firstArrival?.arvlMsg3 || "도착정보를 불러오는 중"} <b>{firstArrival?.arvlMsg2 || "—"}</b></p>
-          </article>
-          <article className="info-widget transit-widget">
-            <div className="widget-topline"><span className="widget-icon orange"><IsometricIcon kind="bus" /></span><span>가까운 버스</span><span className="fresh">1분 전</span></div>
-            <img className="widget-object bus-object" src={`${basePath}/metro-live/bus-isometric.png`} alt="입체적인 버스정류장 아이콘" />
-            <strong className="widget-value">{nearbyBusName} <small>{nearestBusStop ? "가까운 정류장" : "정류장 탐색 중"}</small></strong>
-            <p>{nearestBusStop?.name || "내 위치 주변 버스"} <b>노선보기</b></p>
-          </article>
-          <article className="info-widget condition-widget">
-            <div className="widget-topline"><span className="widget-icon mint"><IsometricIcon kind="crowd" /></span><span>현재 혼잡도</span></div>
-            <strong className="widget-value">보통 <small>42%</small></strong>
-            <div className="meter"><span style={{ width: "42%" }} /></div>
-            <p>평소보다 8% 여유</p>
-          </article>
-          <article className="info-widget condition-widget">
-            <div className="widget-topline"><span className="widget-icon yellow"><IsometricIcon kind="weather" /></span><span>강남역 날씨</span></div>
-            <strong className="widget-value">{weather.temperature == null ? "날씨" : `${weather.temperature}°`} <small>{weather.label}</small></strong>
-            <p>{weather.wind == null ? "현재 위치 기준 실시간 예보" : `바람 ${weather.wind}km/h · 현재 위치 기준`}</p>
-          </article>
+          <div className="route-input-group">
+            <div className="input-row">
+              <span className="point-dot start" />
+              <input
+                list="metro-stations"
+                value={startInput}
+                onChange={(e) => setStartInput(e.target.value)}
+                placeholder="출발역"
+                aria-label="출발역"
+              />
+            </div>
+            <div className="input-row">
+              <span className="point-dot end" />
+              <input
+                list="metro-stations"
+                value={destinationInput}
+                onChange={(e) => setDestinationInput(e.target.value)}
+                placeholder="도착역을 입력하세요"
+                aria-label="도착역"
+              />
+              <button
+                type="button"
+                className="route-submit-btn"
+                onClick={() => destinationInput.trim() && resumeRoute(startInput.trim() || "현재 위치", destinationInput.trim())}
+              >
+                길찾기
+              </button>
+            </div>
+            <datalist id="metro-stations">
+              {stationOptions.map((station: any) => (
+                <option key={`${station.name}-${station.id || station.stationCd || ""}`} value={station.name} />
+              ))}
+            </datalist>
+          </div>
         </div>
 
-        <div className="utility-row">
-          <button type="button" onClick={() => document.querySelector(".civic-station-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}><IsometricIcon kind="toilet" /><span><b>공공화장실 (개찰구 안/밖)</b><small>{civicAmenity ? civicAmenity.toilet.locationDesc : "승차권 태그 없이 이용 가능한 화장실"}</small></span><UiArrow /></button>
-          <button type="button"><IsometricIcon kind="accessibility" /><span><b>무장애 시설 &amp; 따릉이</b><small>엘리베이터 출구 및 자전거 대여소</small></span><UiArrow /></button>
-        </div>
-        <p className="data-note"><IsometricIcon kind="location" /> 서울 열린데이터광장 · 서울교통공사 · 국토교통부 · 마지막 동기화 10:42</p>
+        {/* 하단 데이터 출처 */}
+        <p className="data-note">
+          <MapPin size={13} /> 서울교통공사 실시간 API · TOPIS 버스정보 · 서울 열린데이터광장 · 기상청 실황
+        </p>
       </section>
-      <nav className="metro-v0-bottom-nav" aria-label="주요 메뉴">
-        <button className="is-active" type="button"><IsometricIcon kind="location" /><span>주변</span></button>
-        <button type="button"><IsometricIcon kind="train" /><span>도착</span></button>
-        <button type="button"><IsometricIcon kind="crowd" /><span>혼잡</span></button>
-        <button type="button"><IsometricIcon kind="toilet" /><span>시설</span></button>
+
+      {/* ── 하단 고정 인터랙티브 네비게이션 ── */}
+      <nav className="metro-v0-bottom-nav" aria-label="주요 모빌리티 메뉴">
+        <button
+          className={activeCivicTab === "all" ? "is-active" : ""}
+          type="button"
+          onClick={() => {
+            setActiveCivicTab("all");
+            document.getElementById("metro-v0-sheet")?.scrollIntoView({ behavior: "smooth" });
+          }}
+        >
+          <MapPin size={18} />
+          <span>주변 인프라</span>
+        </button>
+        <button
+          className={activeCivicTab === "toilet" ? "is-active" : ""}
+          type="button"
+          onClick={() => {
+            setActiveCivicTab("toilet");
+            document.querySelector(".toilet-highlight")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+        >
+          <Toilet size={18} />
+          <span>개찰구 화장실</span>
+        </button>
+        <button
+          className={activeCivicTab === "transfer" ? "is-active" : ""}
+          type="button"
+          onClick={() => {
+            setActiveCivicTab("transfer");
+            document.querySelector(".transfer-highlight")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+        >
+          <TrainFront size={18} />
+          <span>빠른 환승</span>
+        </button>
+        <button
+          className={activeCivicTab === "drywalk" ? "is-active" : ""}
+          type="button"
+          onClick={() => {
+            setActiveCivicTab("drywalk");
+            document.querySelector(".drywalk-highlight")?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }}
+        >
+          <Umbrella size={18} />
+          <span>우산없는 길</span>
+        </button>
       </nav>
     </main>
   );

@@ -560,3 +560,625 @@ html.metro-v0-scroll, body.metro-v0-scroll {
         scroll-behavior: auto !important;
     }
 }
+
+
+/* ─── Let's Metro KakaoT Benchmark Civic Mobility Enhancements ────────────── */
+
+.metro-v0 {
+    word-break: keep-all;
+    word-wrap: break-word;
+}
+
+/* 상단 브랜딩 & 플로팅 바 */
+.top-brand-floating {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    right: 16px;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+.brand-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    border-radius: 9999px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    font-size: 13px;
+    color: #0f172a;
+}
+.brand-pill strong {
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+.brand-sub {
+    font-size: 11px;
+    color: #64748b;
+    font-weight: 600;
+}
+.top-action-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.hub-link-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    border-radius: 9999px;
+    text-decoration: none;
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+    transition: all 0.2s ease;
+}
+.hub-link-btn:hover {
+    background: #1e293b;
+    transform: translateY(-1px);
+}
+
+/* 카카오T 스타일 플로팅 서치 카드 (명도 대비 100% 확보) */
+.floating-search-card {
+    position: absolute;
+    top: 72px;
+    left: 16px;
+    right: 16px;
+    z-index: 100;
+    max-width: 600px;
+    margin: 0 auto;
+}
+.search-card-inner {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 20px;
+    background: #ffffff;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: all 0.2s ease;
+}
+.floating-search-card:focus-within .search-card-inner {
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.18);
+    border-color: #3b82f6;
+}
+.search-icon {
+    color: #3b82f6;
+    flex-shrink: 0;
+}
+.search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-weight: 600;
+    color: #1e293b;
+    background: transparent;
+    font-family: inherit;
+}
+.search-input::placeholder {
+    color: #94a3b8;
+    font-weight: 500;
+}
+.search-submit-btn {
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+}
+.search-submit-btn:hover {
+    background: #2563eb;
+}
+
+/* 주요 거점역 원클릭 관제 전환 칩 */
+.hub-quick-chips {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+    overflow-x: auto;
+    padding: 4px 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+}
+.hub-quick-chips::-webkit-scrollbar {
+    display: none;
+}
+.hub-chips-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    background: rgba(255, 255, 255, 0.92);
+    padding: 4px 8px;
+    border-radius: 999px;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.hub-chip {
+    padding: 5px 12px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    font-size: 12px;
+    font-weight: 700;
+    color: #334155;
+    white-space: nowrap;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+    transition: all 0.15s ease;
+}
+.hub-chip:hover {
+    background: #ffffff;
+    border-color: #3b82f6;
+    color: #1d4ed8;
+    transform: translateY(-1px);
+}
+.hub-chip.is-active {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+    box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25);
+}
+
+/* 시트 인트로 라이브 상태 태그 */
+.live-status-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background: #ecfdf5;
+    color: #059669;
+    font-size: 11px;
+    font-weight: 800;
+    border-radius: 9999px;
+}
+.live-pulse-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.3);
+}
+
+/* 4대 시민 인프라 퀵 필터 탭 */
+.civic-filter-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    margin-bottom: 20px;
+    scrollbar-width: none;
+}
+.civic-filter-tabs::-webkit-scrollbar { display: none; }
+.filter-tab-btn {
+    padding: 9px 16px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    font-size: 13px;
+    font-weight: 700;
+    color: #475569;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.filter-tab-btn.active {
+    background: #0f172a;
+    color: #ffffff;
+    border-color: #0f172a;
+}
+
+/* 킬러 카드 공통 스타일 */
+.civic-highlight-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+}
+.card-top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 18px;
+    gap: 12px;
+}
+.title-with-icon {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+.title-with-icon h3 {
+    font-size: 18px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+.card-sub {
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 2px;
+}
+.icon-box-emerald {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #ecfdf5;
+    color: #059669;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.icon-box-blue {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #eff6ff;
+    color: #2563eb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.icon-box-purple {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: #faf5ff;
+    color: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+.badge-open {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: #f1f5f9;
+    color: #334155;
+    white-space: nowrap;
+}
+.badge-dry {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: #ede9fe;
+    color: #6d28d9;
+    white-space: nowrap;
+}
+
+/* 화장실 게이트 인/아웃 박스 */
+.toilet-gate-boxes {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+@media (max-width: 640px) {
+    .toilet-gate-boxes { grid-template-columns: 1fr; }
+}
+.gate-box {
+    border-radius: 14px;
+    padding: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.gate-box.out-gate {
+    background: #f0fdf4;
+    border-color: #bbf7d0;
+}
+.gate-box.in-gate {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+.gate-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.gate-tag {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.gate-tag.out {
+    background: #059669;
+    color: #ffffff;
+}
+.gate-tag.in {
+    background: #3b82f6;
+    color: #ffffff;
+}
+.free-tag {
+    font-size: 11px;
+    font-weight: 700;
+    color: #15803d;
+}
+.transit-tag {
+    font-size: 11px;
+    font-weight: 600;
+    color: #64748b;
+}
+.gate-location {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #0f172a;
+    line-height: 1.4;
+    margin-bottom: 10px;
+}
+.gate-amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+.amenity-chip {
+    font-size: 10.5px;
+    font-weight: 700;
+    padding: 2px 7px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 4px;
+    color: #334155;
+}
+
+/* 빠른 환승 칩 */
+.transfer-chips-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+.transfer-chip-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.transfer-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.line-pill {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 9999px;
+    background: #2563eb;
+    color: #ffffff;
+}
+.direction-text {
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 600;
+}
+.car-number-box {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+.car-number-box strong {
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+.time-saved {
+    font-size: 12px;
+    color: #059669;
+    font-weight: 800;
+}
+
+/* 우산 없는 길 리스트 */
+.drywalk-buildings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.drywalk-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #f8fafc;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+}
+.building-icon {
+    font-size: 20px;
+}
+.building-info {
+    flex: 1;
+}
+.building-info strong {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    display: block;
+}
+.building-exit {
+    font-size: 12px;
+    color: #64748b;
+}
+.walk-free-tag {
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 8px;
+    border-radius: 9999px;
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+/* 고도화된 위젯 그리드 */
+.widget-grid-enhanced {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+@media (max-width: 640px) {
+    .widget-grid-enhanced { grid-template-columns: 1fr; }
+}
+.info-card-enhanced {
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: 18px;
+    padding: 18px 20px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.card-meta-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #64748b;
+}
+.meta-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.meta-icon.orange { background: #fff7ed; color: #ea580c; }
+.meta-icon.green { background: #f0fdf4; color: #16a34a; }
+.meta-icon.blue { background: #eff6ff; color: #2563eb; }
+.meta-icon.purple { background: #faf5ff; color: #9333ea; }
+.meta-live {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 800;
+    color: #10b981;
+}
+.meta-badge-50 {
+    margin-left: auto;
+    font-size: 10px;
+    font-weight: 800;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+.card-main-val {
+    font-size: 20px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+.card-desc {
+    font-size: 12px;
+    color: #64748b;
+    margin: 0;
+}
+.night-bus-row {
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px dashed #e2e8f0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+}
+.night-bus-chip {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 1px 6px;
+    background: #0f172a;
+    color: #ffffff;
+    border-radius: 4px;
+}
+
+/* 경로 탐색 패널 */
+.route-entry-enhanced {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px;
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.04);
+    margin-bottom: 24px;
+}
+.entry-header h3 {
+    font-size: 18px;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0;
+}
+.entry-sub {
+    font-size: 12px;
+    color: #64748b;
+    display: block;
+    margin-top: 2px;
+    margin-bottom: 16px;
+}
+.route-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 10px 16px;
+}
+.point-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.point-dot.start { background: #3b82f6; }
+.point-dot.end { background: #ef4444; }
+.input-row input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    font-family: inherit;
+}
+.route-submit-btn {
+    padding: 6px 14px;
+    border-radius: 8px;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+    border: none;
+    cursor: pointer;
+}
