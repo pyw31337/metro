@@ -89,10 +89,16 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         <div className="metro-v0-map-wash" aria-hidden="true" />
         <header className="metro-v0-header">
           <div>
-            <p className="metro-v0-eyebrow"><span className="live-dot" /> LIVE · 수도권</p>
-            <h1>지금 어디로 갈까요?</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span className="live-dot" />
+              <span style={{ fontSize: '11px', fontWeight: 800, letterSpacing: '0.05em', color: '#0284c7' }}>LET&apos;S METRO · 대중교통 &amp; 시민인프라</span>
+            </div>
+            <h1 style={{ fontSize: '24px', fontWeight: 900, letterSpacing: '-0.03em' }}>지금 어디로 갈까요?</h1>
           </div>
           <div className="metro-v0-header-actions">
+            <a href="https://pyw31337.github.io/lets/" className="icon-button" aria-label="렛츠 마스터 허브" title="렛츠 마스터 허브" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <span style={{ fontSize: '12px', fontWeight: 800, color: 'inherit' }}>허브</span>
+            </a>
             <button type="button" className="icon-button" aria-label="현재 위치" onClick={onLocate}><LocateFixed size={18} /></button>
             <button type="button" className="icon-button" aria-label="새로고침" onClick={onRefresh}><RefreshCw size={17} /></button>
           </div>
@@ -170,11 +176,11 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           <div className="route-strip-foot"><span><TrainFront size={13} /> {hasRoute ? "실시간 경로" : "경로 대기 중"}</span><span>{hasRoute ? "역·환승 정보 포함" : "빠른길 · 덜 붐비는 길 · 무장애길"}</span></div>
         </div>
 
-        <div className="nearby-heading"><h3>현재 위치 주변</h3><span>내 위치 기준 · 반경 1km</span></div>
+        <div className="nearby-heading"><h3>현재 위치 주변 대중교통 &amp; 시민 편의</h3><span>내 위치 기준 · 반경 1km</span></div>
         <div className="nearby-list">
           <article className="nearby-item"><span className="nearby-item-icon blue"><TrainFront size={17} /></span><div><b>{nearestStation?.name || "가까운 지하철역"}</b><small>{nearestStation?.lines?.slice(0, 2).join(" · ") || "역 정보를 찾는 중"}</small></div><strong>도착정보</strong></article>
-          <article className="nearby-item"><span className="nearby-item-icon orange"><BusFront size={17} /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "정류장 정보를 찾는 중"}</small></div><strong>노선보기</strong></article>
-          <article className="nearby-item"><span className="nearby-item-icon mint"><Toilet size={17} /></span><div><b>{nearestWC?.name || "공공화장실"}</b><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "운영시간 확인"}` : "시설 정보를 찾는 중"}</small></div><strong>길찾기</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon orange"><BusFront size={17} /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "시내·광역 버스 환승 연계"}</small></div><strong>환승연계</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon mint"><Toilet size={17} /></span><div><div style={{ display: "flex", alignItems: "center", gap: "6px" }}><b>{nearestWC?.name || "역사 공공화장실"}</b><span style={{ fontSize: "10px", fontWeight: 800, padding: "1px 6px", borderRadius: "4px", background: "#ecfdf5", color: "#059669" }}>개찰구 밖 (대합실)</span></div><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "첫차~막차 개방"}` : "승차권 태그 없이 이용 가능"}</small></div><strong>위치안내</strong></article>
         </div>
 
         <div className="widget-grid">
@@ -203,8 +209,8 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         </div>
 
         <div className="utility-row">
-          <button type="button"><Toilet size={17} /><span><b>공공화장실</b><small>가장 가까운 곳 240m</small></span><ArrowRight size={15} /></button>
-          <button type="button"><Accessibility size={17} /><span><b>무장애 출구</b><small>엘리베이터 출구 안내</small></span><ArrowRight size={15} /></button>
+          <button type="button" onClick={() => alert("개찰구 안/밖 화장실: 대합실 3·4번 출구 방면(태그 불필요) 및 승강장 환승통로 내부 화장실이 모두 운영 중입니다.")}><Toilet size={17} /><span><b>공공화장실 (개찰구 안/밖)</b><small>승차권 태그 없이 이용 가능한 화장실</small></span><ArrowRight size={15} /></button>
+          <button type="button"><Accessibility size={17} /><span><b>무장애 시설 &amp; 따릉이</b><small>엘리베이터 출구 및 자전거 대여소</small></span><ArrowRight size={15} /></button>
         </div>
         <p className="data-note"><MapPin size={13} /> 서울 열린데이터광장 · 서울교통공사 · 국토교통부 · 마지막 동기화 10:42</p>
       </section>

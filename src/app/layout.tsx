@@ -4,18 +4,18 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 // next.config.ts 의 basePath 와 동일 ('/metro' 또는 Firebase 빌드 시 '')
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH ?? '';
-const DESCRIPTION = '수도권 지하철 열차 위치를 실시간으로 지도에 보여주고, 경로·버스·화장실까지 한 화면에서 찾습니다.';
+const DESCRIPTION = '렛츠메트로(Let\'s Metro) — 수도권 전철 실시간 위치부터 연계 버스 환승, 개찰구 안/밖 공공화장실, 따릉이까지 한 화면에서 실시간 관제합니다.';
 
 export const metadata: Metadata = {
-    title: 'Metro Live · 수도권 실시간 지하철 지도',
+    title: 'Let\'s Metro (렛츠메트로) · 수도권 대중교통 & 시민 인프라 관제',
     description: DESCRIPTION,
-    applicationName: 'Metro Live',
+    applicationName: 'Let\'s Metro',
     metadataBase: BASE ? new URL('https://pyw31337.github.io') : undefined,
     manifest: `${BASE}/manifest.json`,
     appleWebApp: {
         capable: true,
         statusBarStyle: 'black-translucent',
-        title: 'Metro Live',
+        title: 'Let\'s Metro',
     },
     formatDetection: { telephone: false },
     icons: {
@@ -25,14 +25,14 @@ export const metadata: Metadata = {
     openGraph: {
         type: 'website',
         locale: 'ko_KR',
-        siteName: 'Metro Live',
-        title: 'Metro Live · 수도권 실시간 지하철 지도',
+        siteName: 'Let\'s Metro',
+        title: 'Let\'s Metro (렛츠메트로) · 수도권 대중교통 & 시민 인프라 관제',
         description: DESCRIPTION,
         images: [{ url: `${BASE}/icon-512.png`, width: 512, height: 512 }],
     },
     twitter: {
         card: 'summary',
-        title: 'Metro Live',
+        title: 'Let\'s Metro',
         description: DESCRIPTION,
     },
 };
