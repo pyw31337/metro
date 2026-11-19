@@ -62,6 +62,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const lastSegment = segments[segments.length - 1];
   const originName = firstSegment?.stations?.[0] || "현재 위치";
   const transferName = segments.length > 1 ? lastSegment?.stations?.[0] : null;
+  const transferCivicAmenity = getStationCivicAmenity(transferName || civicStationName);
   const destinationName = requestedDestination || lastSegment?.stations?.[lastSegment.stations.length - 1] || "도착지를 선택하세요";
   const resumeRoute = (start: string, destination: string) => {
     setStartInput(start);
@@ -165,7 +166,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             const isLast = index === segments.length - 1;
             return <div key={`${lineName}-${index}`}>
               <div className="route-diagram-row"><span className={`line-badge ${index % 2 ? "line-green" : "line-blue"}`}>{lineName.replace("호선", "")}</span><div className={`route-rail ${index % 2 ? "rail-green" : "rail-blue"}`}><i /><i /></div><div className="route-stations"><b>{stations[0] || "출발"}</b><span>{isLast ? destinationName : (stations[stations.length - 1] || "이동 중")}</span></div></div>
-              {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b>{civicAmenity?.fastTransfer?.[index] && <em>{civicAmenity.fastTransfer[index].carNumber}번 칸 · {civicAmenity.fastTransfer[index].transferTimeMin}분</em>}</div>}
+              {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b>{transferCivicAmenity?.fastTransfer?.[index] && <em>{transferCivicAmenity.fastTransfer[index].carNumber}번 칸 · {transferCivicAmenity.fastTransfer[index].transferTimeMin}분</em>}</div>}
             </div>;
           }) : <div className="route-empty"><TrainFront size={18} /><span>출발지와 도착지를 선택하면<br />실제 노선·환승·도보 구간을 그려드려요.</span></div>}
           <div className="route-strip-foot"><span><TrainFront size={13} /> {hasRoute ? "실시간 경로" : "경로 대기 중"}</span><span>{hasRoute ? "역·환승 정보 포함" : "빠른길 · 덜 붐비는 길 · 무장애길"}</span></div>
