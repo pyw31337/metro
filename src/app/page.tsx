@@ -38,6 +38,7 @@ type MainView = 'arrival' | 'map';
 const VIEW_KEY = 'metro-main-view';
 import DirectionCompass  from "@/components/ui/DirectionCompass";
 import MetroHomeV0 from "@/components/MetroHomeV0";
+import { recordCommutePattern } from "@/hooks/useSmartCommute";
 
 // Module-level cache so the 3MB routes JSON is only fetched once per session
 let busRoutesCache: any[] | null = null;
@@ -61,7 +62,9 @@ export default function Home() {
   const [designV0, setDesignV0] = useState(false);
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('view');
-    setDesignV0(new URLSearchParams(window.location.search).get('design') === 'v0');
+    // 새 LDS 홈을 기본 화면으로 사용한다. 기존 화면은 ?design=classic으로
+    // 비교·롤백할 수 있도록 남겨둔다.
+    setDesignV0(new URLSearchParams(window.location.search).get('design') !== 'classic');
     let saved: string | null = null;
     try { saved = localStorage.getItem(VIEW_KEY); } catch { /* ignore */ }
     const v = fromUrl || saved;
@@ -398,6 +401,7 @@ export default function Home() {
     if (useUIStore.getState().activeTab === 'bus') {
       const res = findBusPath(start, end, useSubwayStore.getState().busStops, useMapStore.getState().userLocation);
       rst.setBusPathResult(res);
+      if (res) recordCommutePattern(start, end);
       if (!res && showError) rst.setValidationError('no_route');
       rst.setIsCalculating(false);
       return;
@@ -414,6 +418,7 @@ export default function Home() {
       rst2.setIsCalculating(false);
       if (res?.time && res?.transfer) {
         hapticSuccess();
+        recordCommutePattern(start, end);
         rst2.setPathResults({ time: res.time, transfer: res.transfer });
       } else {
         if (showError) { hapticError(); rst2.setValidationError('no_route'); }
@@ -649,6 +654,7 @@ export default function Home() {
         onBoundsChange: handleBoundsChange,
         onMapReady: handleMapReady,
         pathResult: activePath,
+        pathResults: route.pathResults,
         userLocation: mapSt.userLocation,
         nearestStation: mapSt.nearestStation,
         nearestBusStop: mapSt.nearestBusStop,
@@ -663,6 +669,7 @@ export default function Home() {
         onSetStart: route.setStartStation,
         onSetEnd: route.setEndStation,
         onSetWaypoint: route.addWaypoint,
+        onSearch: handleSearch,
         onSelectBusRoute: handleSelectBusRoute,
         onClearRoute: handleClearBusRoute,
       }}
