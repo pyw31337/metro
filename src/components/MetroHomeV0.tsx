@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { useSmartCommute } from "@/hooks/useSmartCommute";
 import { useNearbyWeather } from "@/hooks/useNearbyWeather";
+import { getStationCivicAmenity } from "@/data/civic-mobility-extras";
 
 const MapLibreBackground = dynamic(() => import("./MapLibreBackground"), { ssr: false });
 
@@ -45,6 +46,9 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const nearbyStationName = nearestStation?.name || firstArrival?.statnNm || "가까운 지하철";
   const nearbyStationLine = nearestStation?.lines?.[0] || firstArrival?.lineName || "실시간 도착";
   const nearbyBusName = nearestBusStop?.routes?.[0] || "버스";
+  const requestedDestination = typeof mapProps.endStation === "string" ? mapProps.endStation : null;
+  const civicStationName = nearestStation?.name || requestedDestination || firstArrival?.statnNm || nearbyStationName;
+  const civicAmenity = getStationCivicAmenity(civicStationName);
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const stationOptions = Array.isArray(mapProps.stations) ? (mapProps.stations as any[]).slice(0, 400) : [];
   const activePath = mapProps.pathResult as any;
@@ -58,7 +62,6 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const lastSegment = segments[segments.length - 1];
   const originName = firstSegment?.stations?.[0] || "현재 위치";
   const transferName = segments.length > 1 ? lastSegment?.stations?.[0] : null;
-  const requestedDestination = typeof mapProps.endStation === "string" ? mapProps.endStation : null;
   const destinationName = requestedDestination || lastSegment?.stations?.[lastSegment.stations.length - 1] || "도착지를 선택하세요";
   const resumeRoute = (start: string, destination: string) => {
     setStartInput(start);
@@ -162,7 +165,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             const isLast = index === segments.length - 1;
             return <div key={`${lineName}-${index}`}>
               <div className="route-diagram-row"><span className={`line-badge ${index % 2 ? "line-green" : "line-blue"}`}>{lineName.replace("호선", "")}</span><div className={`route-rail ${index % 2 ? "rail-green" : "rail-blue"}`}><i /><i /></div><div className="route-stations"><b>{stations[0] || "출발"}</b><span>{isLast ? destinationName : (stations[stations.length - 1] || "이동 중")}</span></div></div>
-              {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b></div>}
+              {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b>{civicAmenity?.fastTransfer?.[index] && <em>{civicAmenity.fastTransfer[index].carNumber}번 칸 · {civicAmenity.fastTransfer[index].transferTimeMin}분</em>}</div>}
             </div>;
           }) : <div className="route-empty"><TrainFront size={18} /><span>출발지와 도착지를 선택하면<br />실제 노선·환승·도보 구간을 그려드려요.</span></div>}
           <div className="route-strip-foot"><span><TrainFront size={13} /> {hasRoute ? "실시간 경로" : "경로 대기 중"}</span><span>{hasRoute ? "역·환승 정보 포함" : "빠른길 · 덜 붐비는 길 · 무장애길"}</span></div>
@@ -174,6 +177,17 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           <article className="nearby-item"><span className="nearby-item-icon orange"><BusFront size={17} /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "시내·광역 버스 환승 연계"}</small></div><strong>환승연계</strong></article>
           <article className="nearby-item"><span className="nearby-item-icon mint"><Toilet size={17} /></span><div><div style={{ display: "flex", alignItems: "center", gap: "6px" }}><b>{nearestWC?.name || "역사 공공화장실"}</b><span style={{ fontSize: "10px", fontWeight: 800, padding: "1px 6px", borderRadius: "4px", background: "#ecfdf5", color: "#059669" }}>개찰구 밖 (대합실)</span></div><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "첫차~막차 개방"}` : "승차권 태그 없이 이용 가능"}</small></div><strong>위치안내</strong></article>
         </div>
+
+        {civicAmenity && <article className="civic-station-card" aria-label={`${civicAmenity.stationName} 시민 편의 정보`}>
+          <div className="civic-card-head"><div><p className="section-kicker">STATION CIVIC LAYER</p><h3>{civicAmenity.stationName}에서 바로 쓸 수 있는 정보</h3></div><span className="civic-live">실시간 운영</span></div>
+          <p className="civic-location">{civicAmenity.toilet.locationDesc}</p>
+          <div className="civic-badges"><span className="civic-badge out">개찰구 밖 · 카드 태그 없이</span><span className="civic-badge in">개찰구 안 · 승강장 이용</span>{civicAmenity.toilet.accessible && <span className="civic-badge neutral">무장애 화장실</span>}</div>
+          <div className="civic-meta-grid">
+            <div><small>빠른 환승</small><b>{civicAmenity.fastTransfer?.[0] ? `${civicAmenity.fastTransfer[0].carNumber}번 칸` : "정보 준비 중"}</b><span>{civicAmenity.fastTransfer?.[0]?.targetLine || "환승 구간"}</span></div>
+            <div><small>심야 연계</small><b>{civicAmenity.nightBus?.join(" · ") || "운행 정보 준비 중"}</b><span>올빼미 버스</span></div>
+            <div><small>따릉이</small><b>{civicAmenity.bikeRacks ? `${civicAmenity.bikeRacks.availableBikes}대` : "확인 중"}</b><span>{civicAmenity.bikeRacks ? `${civicAmenity.bikeRacks.exitNumber}번 출구` : "가까운 대여소"}</span></div>
+          </div>
+        </article>}
 
         <div className="widget-grid">
           <article className="info-widget transit-widget">
@@ -201,7 +215,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         </div>
 
         <div className="utility-row">
-          <button type="button" onClick={() => alert("개찰구 안/밖 화장실: 대합실 3·4번 출구 방면(태그 불필요) 및 승강장 환승통로 내부 화장실이 모두 운영 중입니다.")}><Toilet size={17} /><span><b>공공화장실 (개찰구 안/밖)</b><small>승차권 태그 없이 이용 가능한 화장실</small></span><ArrowRight size={15} /></button>
+          <button type="button" onClick={() => document.querySelector(".civic-station-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}><Toilet size={17} /><span><b>공공화장실 (개찰구 안/밖)</b><small>{civicAmenity ? civicAmenity.toilet.locationDesc : "승차권 태그 없이 이용 가능한 화장실"}</small></span><ArrowRight size={15} /></button>
           <button type="button"><Accessibility size={17} /><span><b>무장애 시설 &amp; 따릉이</b><small>엘리베이터 출구 및 자전거 대여소</small></span><ArrowRight size={15} /></button>
         </div>
         <p className="data-note"><MapPin size={13} /> 서울 열린데이터광장 · 서울교통공사 · 국토교통부 · 마지막 동기화 10:42</p>
