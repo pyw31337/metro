@@ -18,6 +18,16 @@
 - 모든 실시간 값에는 데이터 시각과 신뢰도를 함께 표시한다.
 - 이미지 속 텍스트를 그대로 배경 이미지로 사용하지 않고, 실제 HTML/CSS 텍스트와 컴포넌트로 재구현한다.
 
+## 스크롤 동작 계약
+
+- 모바일: `hero-map`은 상단에 `position: sticky`로 남고, 콘텐츠 sheet가 그 위를 덮으며 올라온다.
+- 초기 hero 높이: `min(46svh, 420px)`; 스크롤 진행 후 지도는 `min(25svh, 220px)`까지 축소한다.
+- 지도 위 보라색 LDS hero layer는 투명도만 줄이고, 콘텐츠가 올라올 때 보라색 헤더가 완전히 사라지지 않는다.
+- 콘텐츠는 별도 내부 스크롤을 만들지 않고 문서 전체가 세로 스크롤한다. 이중 스크롤을 금지한다.
+- PC: 지도 hero를 좌측 56~62%에 고정하고, 우측 추천/정보 sheet가 세로로 스크롤한다.
+- 태블릿: 지도 52%, 하단 sheet 48%의 split layout으로 전환한다.
+- 320px 폭까지 8pt spacing, `--radius-md/lg`, Pretendard Variable, LDS semantic color token만 사용한다.
+
 ## 최신 라이트모드 시안
 
 - `metrolive-light-a-nearby-mobility.png`
