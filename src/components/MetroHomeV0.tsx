@@ -18,6 +18,7 @@ import {
 import { useSmartCommute } from "@/hooks/useSmartCommute";
 import { useNearbyWeather } from "@/hooks/useNearbyWeather";
 import { getStationCivicAmenity } from "@/data/civic-mobility-extras";
+import { civicInfrastructureService, type CivicStationData } from "@/services/CivicInfrastructureService";
 
 const MapLibreBackground = dynamic(() => import("./MapLibreBackground"), { ssr: false });
 
@@ -49,6 +50,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const requestedDestination = typeof mapProps.endStation === "string" ? mapProps.endStation : null;
   const civicStationName = nearestStation?.name || requestedDestination || firstArrival?.statnNm || nearbyStationName;
   const civicAmenity = getStationCivicAmenity(civicStationName);
+  const [civicMaster, setCivicMaster] = useState<CivicStationData | null>(null);
   const basePath = process.env.NEXT_PUBLIC_BASE_PATH ?? "";
   const stationOptions = Array.isArray(mapProps.stations) ? (mapProps.stations as any[]).slice(0, 400) : [];
   const activePath = mapProps.pathResult as any;
@@ -82,6 +84,14 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
     if (typeof mapProps.startStation === "string" && mapProps.startStation) setStartInput(mapProps.startStation);
     if (typeof mapProps.endStation === "string" && mapProps.endStation) setDestinationInput(mapProps.endStation);
   }, [mapProps.startStation, mapProps.endStation]);
+
+  useEffect(() => {
+    let active = true;
+    civicInfrastructureService.load().then(() => {
+      if (active) setCivicMaster(civicInfrastructureService.getSync(civicStationName));
+    });
+    return () => { active = false; };
+  }, [civicStationName]);
 
   return (
     <main className="metro-v0" aria-label="MetroLive 주변 이동 홈">
@@ -180,7 +190,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         </div>
 
         {civicAmenity && <article className="civic-station-card" aria-label={`${civicAmenity.stationName} 시민 편의 정보`}>
-          <div className="civic-card-head"><div><p className="section-kicker">STATION CIVIC LAYER</p><h3>{civicAmenity.stationName}에서 바로 쓸 수 있는 정보</h3></div><span className="civic-live">실시간 운영</span></div>
+          <div className="civic-card-head"><div><p className="section-kicker">STATION CIVIC LAYER</p><h3>{civicAmenity.stationName}에서 바로 쓸 수 있는 정보</h3></div><span className="civic-live">시설 안내</span></div>
           <p className="civic-location">{civicAmenity.toilet.locationDesc}</p>
           <div className="civic-badges"><span className="civic-badge out">개찰구 밖 · 카드 태그 없이</span><span className="civic-badge in">개찰구 안 · 승강장 이용</span>{civicAmenity.toilet.accessible && <span className="civic-badge neutral">무장애 화장실</span>}</div>
           <div className="civic-meta-grid">
@@ -191,6 +201,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
               <div><small>☔ 비 안맞는 길</small><b>{civicAmenity.dryWalkBuildings[0]}</b><span>지하 직결 통로</span></div>
             )}
           </div>
+          {civicMaster && <p className="civic-extra"><b>무장애 동선</b> {civicMaster.elevators.filter((e) => e.status === "NORMAL").slice(0, 2).map((e) => `${e.exit_number}번 출구 엘리베이터`).join(" · ") || "운영 정보 확인 필요"}<br /><b>환승주차</b> {civicMaster.park_and_ride.name} · {civicMaster.park_and_ride.transit_discount_pct}% 감면 안내</p>}
         </article>}
 
         <div className="widget-grid">
