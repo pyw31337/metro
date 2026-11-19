@@ -60,7 +60,8 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const lastSegment = segments[segments.length - 1];
   const originName = firstSegment?.stations?.[0] || "현재 위치";
   const transferName = segments.length > 1 ? lastSegment?.stations?.[0] : null;
-  const destinationName = lastSegment?.stations?.[lastSegment.stations.length - 1] || "도착지를 선택하세요";
+  const requestedDestination = typeof mapProps.endStation === "string" ? mapProps.endStation : null;
+  const destinationName = requestedDestination || lastSegment?.stations?.[lastSegment.stations.length - 1] || "도착지를 선택하세요";
   const resumeRoute = (start: string, destination: string) => {
     setStartInput(start);
     setDestinationInput(destination);
@@ -162,7 +163,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             const lineName = String(segment.line || "지하철");
             const isLast = index === segments.length - 1;
             return <div key={`${lineName}-${index}`}>
-              <div className="route-diagram-row"><span className={`line-badge ${index % 2 ? "line-green" : "line-blue"}`}>{lineName.replace("호선", "")}</span><div className={`route-rail ${index % 2 ? "rail-green" : "rail-blue"}`}><i /><i /></div><div className="route-stations"><b>{stations[0] || "출발"}</b><span>{stations[stations.length - 1] || "이동 중"}</span></div></div>
+              <div className="route-diagram-row"><span className={`line-badge ${index % 2 ? "line-green" : "line-blue"}`}>{lineName.replace("호선", "")}</span><div className={`route-rail ${index % 2 ? "rail-green" : "rail-blue"}`}><i /><i /></div><div className="route-stations"><b>{stations[0] || "출발"}</b><span>{isLast ? destinationName : (stations[stations.length - 1] || "이동 중")}</span></div></div>
               {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b></div>}
             </div>;
           }) : <div className="route-empty"><TrainFront size={18} /><span>출발지와 도착지를 선택하면<br />실제 노선·환승·도보 구간을 그려드려요.</span></div>}

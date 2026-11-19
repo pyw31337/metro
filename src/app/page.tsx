@@ -59,7 +59,7 @@ export default function Home() {
 
   // 메인 화면: 도착 안내(기본) ↔ 지도
   const [view, setView] = useState<MainView>('arrival');
-  const [designV0, setDesignV0] = useState(false);
+  const [designV0, setDesignV0] = useState(true);
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('view');
     // 새 LDS 홈을 기본 화면으로 사용한다. 기존 화면은 ?design=classic으로
