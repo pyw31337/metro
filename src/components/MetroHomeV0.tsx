@@ -2,25 +2,22 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  Accessibility,
-  ArrowRight,
-  BusFront,
-  ChevronDown,
-  LocateFixed,
-  MapPin,
-  RefreshCw,
-  TrainFront,
-  Toilet,
-  Umbrella,
-  UsersRound,
-} from "lucide-react";
 import { useSmartCommute } from "@/hooks/useSmartCommute";
 import { useNearbyWeather } from "@/hooks/useNearbyWeather";
 import { getStationCivicAmenity } from "@/data/civic-mobility-extras";
 import { civicInfrastructureService, type CivicStationData } from "@/services/CivicInfrastructureService";
 
 const MapLibreBackground = dynamic(() => import("./MapLibreBackground"), { ssr: false });
+
+type IsometricIconKind = "train" | "bus" | "toilet" | "accessibility" | "crowd" | "weather" | "location" | "refresh";
+
+function IsometricIcon({ kind, label, className = "" }: { kind: IsometricIconKind; label?: string; className?: string }) {
+  return <span className={`iso-icon iso-${kind} ${className}`} role={label ? "img" : undefined} aria-label={label} aria-hidden={label ? undefined : true} />;
+}
+
+function UiArrow({ direction = "→" }: { direction?: "→" | "⌄" }) {
+  return <span className={direction === "⌄" ? "ui-chevron" : "ui-arrow"} aria-hidden="true">{direction}</span>;
+}
 
 type Props = {
   mapProps: Record<string, unknown>;
@@ -123,15 +120,15 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             <a href="https://pyw31337.github.io/lets/" className="icon-button" aria-label="렛츠 마스터 허브" title="렛츠 마스터 허브" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: '12px', fontWeight: 800, color: 'inherit' }}>허브</span>
             </a>
-            <button type="button" className="icon-button" aria-label="현재 위치" onClick={onLocate}><LocateFixed size={18} /></button>
-            <button type="button" className="icon-button" aria-label="새로고침" onClick={onRefresh}><RefreshCw size={17} /></button>
+            <button type="button" className="icon-button" aria-label="현재 위치" onClick={onLocate}><IsometricIcon kind="location" /></button>
+            <button type="button" className="icon-button" aria-label="새로고침" onClick={onRefresh}><IsometricIcon kind="refresh" /></button>
           </div>
         </header>
         <div className="metro-v0-map-status" role="status">
           <span className="status-dot" /> 실시간 데이터 · 30초 전
         </div>
         <button className="metro-v0-recenter" type="button" onClick={onLocate}>
-          <LocateFixed size={16} /> 내 위치
+          <IsometricIcon kind="location" /> 내 위치
         </button>
       </div>
 
@@ -142,7 +139,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             <p className="section-kicker">NEARBY MOBILITY</p>
             <h2>내 주변 이동</h2>
           </div>
-          <button type="button" className="text-button">전체 보기 <ArrowRight size={15} /></button>
+          <button type="button" className="text-button">전체 보기 <UiArrow /></button>
         </div>
 
         <article className="primary-mobility-card">
@@ -150,20 +147,20 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             <p className="section-kicker">BEST OPTION FOR NOW</p>
             <h3>{hasRoute ? "지금 경로가 준비됐어요" : "어디로 갈지 빠르게 정해보세요"}</h3>
             <p>{hasRoute ? `${originName}에서 ${destinationName}까지 ${totalMinutes ? `${totalMinutes}분` : "실시간 계산 중"}` : "현재 위치와 최근 검색을 바탕으로 다음 이동을 추천해드려요."}<br />혼잡도·무장애·도보 이동까지 함께 비교합니다.</p>
-            <button type="button" onClick={() => document.getElementById("metro-route-entry")?.scrollIntoView({ behavior: "smooth", block: "center" })}>{hasRoute ? "경로 자세히 보기" : "출발지·도착지 선택"} <ArrowRight size={15} /></button>
+            <button type="button" onClick={() => document.getElementById("metro-route-entry")?.scrollIntoView({ behavior: "smooth", block: "center" })}>{hasRoute ? "경로 자세히 보기" : "출발지·도착지 선택"} <UiArrow /></button>
           </div>
           <img src={`${basePath}/metro-live/transit-isometric.png`} alt="입체적인 지하철과 승강장 아이콘" />
         </article>
 
         {smart.start && smart.destination ? (
-          <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.start!, smart.destination!)}><span>최근 경로</span><b>{smart.start} → {smart.destination}</b><ArrowRight size={15} /></button>
+        <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.start!, smart.destination!)}><span>최근 경로</span><b>{smart.start} → {smart.destination}</b><UiArrow /></button>
         ) : smart.recentPlaces.length >= 2 ? (
-          <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.recentPlaces[0], smart.recentPlaces[1])}><span>최근 검색으로 빠르게 시작</span><b>{smart.recentPlaces[0]} → {smart.recentPlaces[1]}</b><ArrowRight size={15} /></button>
+          <button type="button" className="smart-route-resume" onClick={() => resumeRoute(smart.recentPlaces[0], smart.recentPlaces[1])}><span>최근 검색으로 빠르게 시작</span><b>{smart.recentPlaces[0]} → {smart.recentPlaces[1]}</b><UiArrow /></button>
         ) : null}
 
         <div className="route-entry" id="metro-route-entry" aria-label="경로 설정">
           <div className="route-line" aria-hidden="true"><span /><span /></div>
-          <label className="route-field"><span className="field-label">출발</span><input list="metro-stations" value={startInput} onChange={(e) => setStartInput(e.target.value)} aria-label="출발지" /><ChevronDown size={16} /></label>
+          <label className="route-field"><span className="field-label">출발</span><input list="metro-stations" value={startInput} onChange={(e) => setStartInput(e.target.value)} aria-label="출발지" /><UiArrow direction="⌄" /></label>
           <label className="route-field"><span className="field-label">도착</span><input list="metro-stations" className={!destinationInput ? "placeholder" : ""} value={destinationInput} onChange={(e) => setDestinationInput(e.target.value)} placeholder="어디로 갈까요?" aria-label="도착지" /><button type="button" className="route-submit" onClick={() => destinationInput.trim() && resumeRoute(startInput.trim() || "현재 위치", destinationInput.trim())}>검색</button></label>
           <datalist id="metro-stations">{stationOptions.map((station: any) => <option key={`${station.name}-${station.id || station.stationCd || ""}`} value={station.name} />)}</datalist>
         </div>
@@ -190,15 +187,15 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
               <div className="route-diagram-row"><span className={`line-badge ${index % 2 ? "line-green" : "line-blue"}`}>{lineName.replace("호선", "")}</span><div className={`route-rail ${index % 2 ? "rail-green" : "rail-blue"}`}><i /><i /></div><div className="route-stations"><b>{stations[0] || "출발"}</b><span>{isLast ? destinationName : (stations[stations.length - 1] || "이동 중")}</span></div></div>
               {!isLast && <div className="route-transfer"><span>환승</span><b>다음 구간 연결</b>{transferCivicAmenity?.fastTransfer?.[index] && <em>{transferCivicAmenity.fastTransfer[index].carNumber}번 칸 · {transferCivicAmenity.fastTransfer[index].transferTimeMin}분</em>}</div>}
             </div>;
-          }) : <div className="route-empty"><TrainFront size={18} /><span>출발지와 도착지를 선택하면<br />실제 노선·환승·도보 구간을 그려드려요.</span></div>}
-          <div className="route-strip-foot"><span><TrainFront size={13} /> {hasRoute ? "실시간 경로" : "경로 대기 중"}</span><span>{hasRoute ? "역·환승 정보 포함" : "빠른길 · 덜 붐비는 길 · 무장애길"}</span></div>
+          }) : <div className="route-empty"><IsometricIcon kind="train" /><span>출발지와 도착지를 선택하면<br />실제 노선·환승·도보 구간을 그려드려요.</span></div>}
+          <div className="route-strip-foot"><span><IsometricIcon kind="train" /> {hasRoute ? "실시간 경로" : "경로 대기 중"}</span><span>{hasRoute ? "역·환승 정보 포함" : "빠른길 · 덜 붐비는 길 · 무장애길"}</span></div>
         </div>
 
         <div className="nearby-heading"><h3>현재 위치 주변 대중교통 &amp; 시민 편의</h3><span>내 위치 기준 · 반경 1km</span></div>
         <div className="nearby-list">
-          <article className="nearby-item"><span className="nearby-item-icon blue"><TrainFront size={17} /></span><div><b>{nearestStation?.name || "가까운 지하철역"}</b><small>{nearestStation?.lines?.slice(0, 2).join(" · ") || "역 정보를 찾는 중"}</small></div><strong>도착정보</strong></article>
-          <article className="nearby-item"><span className="nearby-item-icon orange"><BusFront size={17} /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "시내·광역 버스 환승 연계"}</small></div><strong>환승연계</strong></article>
-          <article className="nearby-item"><span className="nearby-item-icon mint"><Toilet size={17} /></span><div><div style={{ display: "flex", alignItems: "center", gap: "6px" }}><b>{nearestWC?.name || "역사 공공화장실"}</b><span style={{ fontSize: "10px", fontWeight: 800, padding: "1px 6px", borderRadius: "4px", background: "#ecfdf5", color: "#059669" }}>개찰구 밖 (대합실)</span></div><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "첫차~막차 개방"}` : "승차권 태그 없이 이용 가능"}</small></div><strong>위치안내</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon blue"><IsometricIcon kind="train" /></span><div><b>{nearestStation?.name || "가까운 지하철역"}</b><small>{nearestStation?.lines?.slice(0, 2).join(" · ") || "역 정보를 찾는 중"}</small></div><strong>도착정보</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon orange"><IsometricIcon kind="bus" /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "시내·광역 버스 환승 연계"}</small></div><strong>환승연계</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon mint"><IsometricIcon kind="toilet" /></span><div><div style={{ display: "flex", alignItems: "center", gap: "6px" }}><b>{nearestWC?.name || "역사 공공화장실"}</b><span style={{ fontSize: "10px", fontWeight: 800, padding: "1px 6px", borderRadius: "4px", background: "#ecfdf5", color: "#059669" }}>개찰구 밖 (대합실)</span></div><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "첫차~막차 개방"}` : "승차권 태그 없이 이용 가능"}</small></div><strong>위치안내</strong></article>
         </div>
 
         {civicAmenity && <article className="civic-station-card" aria-label={`${civicAmenity.stationName} 시민 편의 정보`}>
@@ -218,40 +215,40 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
 
         <div className="widget-grid">
           <article className="info-widget transit-widget">
-            <div className="widget-topline"><span className="widget-icon blue"><TrainFront size={16} /></span><span>가까운 지하철</span><span className="fresh">실시간</span></div>
+            <div className="widget-topline"><span className="widget-icon blue"><IsometricIcon kind="train" /></span><span>가까운 지하철</span><span className="fresh">실시간</span></div>
             <strong className="widget-value">{nearbyStationName} <small>{nearbyStationLine}</small></strong>
             <p>{firstArrival?.trainLineNm || firstArrival?.arvlMsg3 || "도착정보를 불러오는 중"} <b>{firstArrival?.arvlMsg2 || "—"}</b></p>
           </article>
           <article className="info-widget transit-widget">
-            <div className="widget-topline"><span className="widget-icon orange"><BusFront size={16} /></span><span>가까운 버스</span><span className="fresh">1분 전</span></div>
+            <div className="widget-topline"><span className="widget-icon orange"><IsometricIcon kind="bus" /></span><span>가까운 버스</span><span className="fresh">1분 전</span></div>
             <img className="widget-object bus-object" src={`${basePath}/metro-live/bus-isometric.png`} alt="입체적인 버스정류장 아이콘" />
             <strong className="widget-value">{nearbyBusName} <small>{nearestBusStop ? "가까운 정류장" : "정류장 탐색 중"}</small></strong>
             <p>{nearestBusStop?.name || "내 위치 주변 버스"} <b>노선보기</b></p>
           </article>
           <article className="info-widget condition-widget">
-            <div className="widget-topline"><span className="widget-icon mint"><UsersRound size={16} /></span><span>현재 혼잡도</span></div>
+            <div className="widget-topline"><span className="widget-icon mint"><IsometricIcon kind="crowd" /></span><span>현재 혼잡도</span></div>
             <strong className="widget-value">보통 <small>42%</small></strong>
             <div className="meter"><span style={{ width: "42%" }} /></div>
             <p>평소보다 8% 여유</p>
           </article>
           <article className="info-widget condition-widget">
-            <div className="widget-topline"><span className="widget-icon yellow"><Umbrella size={16} /></span><span>강남역 날씨</span></div>
+            <div className="widget-topline"><span className="widget-icon yellow"><IsometricIcon kind="weather" /></span><span>강남역 날씨</span></div>
             <strong className="widget-value">{weather.temperature == null ? "날씨" : `${weather.temperature}°`} <small>{weather.label}</small></strong>
             <p>{weather.wind == null ? "현재 위치 기준 실시간 예보" : `바람 ${weather.wind}km/h · 현재 위치 기준`}</p>
           </article>
         </div>
 
         <div className="utility-row">
-          <button type="button" onClick={() => document.querySelector(".civic-station-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}><Toilet size={17} /><span><b>공공화장실 (개찰구 안/밖)</b><small>{civicAmenity ? civicAmenity.toilet.locationDesc : "승차권 태그 없이 이용 가능한 화장실"}</small></span><ArrowRight size={15} /></button>
-          <button type="button"><Accessibility size={17} /><span><b>무장애 시설 &amp; 따릉이</b><small>엘리베이터 출구 및 자전거 대여소</small></span><ArrowRight size={15} /></button>
+          <button type="button" onClick={() => document.querySelector(".civic-station-card")?.scrollIntoView({ behavior: "smooth", block: "center" })}><IsometricIcon kind="toilet" /><span><b>공공화장실 (개찰구 안/밖)</b><small>{civicAmenity ? civicAmenity.toilet.locationDesc : "승차권 태그 없이 이용 가능한 화장실"}</small></span><UiArrow /></button>
+          <button type="button"><IsometricIcon kind="accessibility" /><span><b>무장애 시설 &amp; 따릉이</b><small>엘리베이터 출구 및 자전거 대여소</small></span><UiArrow /></button>
         </div>
-        <p className="data-note"><MapPin size={13} /> 서울 열린데이터광장 · 서울교통공사 · 국토교통부 · 마지막 동기화 10:42</p>
+        <p className="data-note"><IsometricIcon kind="location" /> 서울 열린데이터광장 · 서울교통공사 · 국토교통부 · 마지막 동기화 10:42</p>
       </section>
       <nav className="metro-v0-bottom-nav" aria-label="주요 메뉴">
-        <button className="is-active" type="button"><MapPin size={18} /><span>주변</span></button>
-        <button type="button"><TrainFront size={18} /><span>도착</span></button>
-        <button type="button"><UsersRound size={18} /><span>혼잡</span></button>
-        <button type="button"><Toilet size={18} /><span>시설</span></button>
+        <button className="is-active" type="button"><IsometricIcon kind="location" /><span>주변</span></button>
+        <button type="button"><IsometricIcon kind="train" /><span>도착</span></button>
+        <button type="button"><IsometricIcon kind="crowd" /><span>혼잡</span></button>
+        <button type="button"><IsometricIcon kind="toilet" /><span>시설</span></button>
       </nav>
     </main>
   );

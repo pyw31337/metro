@@ -409,6 +409,15 @@ h1, h2, h3, h4 {
 .metro-v0-bottom-nav { position: fixed; z-index: 4; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid #e5e8eb; background: rgba(255,255,255,.94); backdrop-filter: blur(14px); }
 .metro-v0-bottom-nav button { display: grid; justify-items: center; gap: 3px; border: 0; background: none; color: #8b95a1; font-size: 10px; font-weight: 600; cursor: pointer; }
 .metro-v0-bottom-nav button.is-active { color: #3182f6; }
+.iso-icon { display: inline-block; flex: 0 0 auto; width: 34px; height: 34px; background-image: url('/metro/metro-live/mobility-isometric-icons.png'); background-repeat: no-repeat; background-size: 400% 200%; background-position: 0 0; background-color: transparent; filter: drop-shadow(0 2px 2px rgba(25,31,40,.12)); }
+.iso-train { background-position: 0 0; } .iso-bus { background-position: 33.333% 0; } .iso-toilet { background-position: 66.666% 0; } .iso-accessibility { background-position: 100% 0; }
+.iso-crowd { background-position: 0 100%; } .iso-weather { background-position: 33.333% 100%; } .iso-location { background-position: 66.666% 100%; } .iso-refresh { background-position: 100% 100%; }
+.icon-button .iso-icon { width: 26px; height: 26px; } .metro-v0-recenter .iso-icon { width: 22px; height: 22px; margin: -2px 0; }
+.nearby-item-icon .iso-icon, .widget-icon .iso-icon { width: 30px; height: 30px; margin: -5px; } .route-strip-foot .iso-icon { width: 20px; height: 20px; margin: -3px; }
+.utility-row button > .iso-icon { width: 30px; height: 30px; margin: -3px 0; } .data-note .iso-icon { width: 18px; height: 18px; margin: -3px; }
+.metro-v0-bottom-nav .iso-icon { width: 26px; height: 26px; margin: -3px; }
+.ui-arrow, .ui-chevron { display: inline-flex; align-items: center; justify-content: center; color: currentColor; font-size: 17px; line-height: 1; }
+.ui-chevron { color: #8b95a1; font-size: 18px; }
 @media (min-width: 768px) {
   .metro-v0 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(380px, .8fr); height: 100dvh; overflow: hidden; }
   .metro-v0-map { position: relative; height: 100dvh; min-height: 0; }
