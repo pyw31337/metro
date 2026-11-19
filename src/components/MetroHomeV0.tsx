@@ -18,6 +18,7 @@ import {
   UsersRound,
 } from "lucide-react";
 import { useSmartCommute } from "@/hooks/useSmartCommute";
+import { useNearbyWeather } from "@/hooks/useNearbyWeather";
 
 const MapLibreBackground = dynamic(() => import("./MapLibreBackground"), { ssr: false });
 
@@ -37,6 +38,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const [startInput, setStartInput] = useState("현재 위치");
   const [destinationInput, setDestinationInput] = useState("");
   const smart = useSmartCommute();
+  const weather = useNearbyWeather((mapProps.userLocation as [number, number] | null) ?? null);
   const nearestStation = mapProps.nearestStation as { name?: string; lines?: string[] } | null;
   const nearestBusStop = mapProps.nearestBusStop as { name?: string; routes?: string[] } | null;
   const nearestWC = mapProps.nearestWC as { name?: string; accessible?: boolean; openTime?: string } | null;
@@ -194,8 +196,8 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
           </article>
           <article className="info-widget condition-widget">
             <div className="widget-topline"><span className="widget-icon yellow"><Umbrella size={16} /></span><span>강남역 날씨</span></div>
-            <strong className="widget-value">날씨 <small>현재 위치 기준</small></strong>
-            <p>상단 날씨 버튼에서 실시간 예보 확인</p>
+            <strong className="widget-value">{weather.temperature == null ? "날씨" : `${weather.temperature}°`} <small>{weather.label}</small></strong>
+            <p>{weather.wind == null ? "현재 위치 기준 실시간 예보" : `바람 ${weather.wind}km/h · 현재 위치 기준`}</p>
           </article>
         </div>
 
