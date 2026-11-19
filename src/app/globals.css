@@ -95,6 +95,14 @@ html, body {
     font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
 }
 
+/* The v0 home is intentionally a vertically scrollable sheet. */
+html.metro-v0-scroll, body.metro-v0-scroll {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+}
+
 body {
     color: var(--foreground);
     background: var(--background);
@@ -412,6 +420,14 @@ h1, h2, h3, h4 {
   .metro-v0-recenter { right: 24px; bottom: 24px; }
 }
 @media (min-width: 1200px) { .metro-v0-sheet { padding-left: 56px; padding-right: 56px; } }
+
+/* Must come after the legacy full-screen map rules and Tailwind preflight. */
+html.metro-v0-scroll, body.metro-v0-scroll {
+    height: auto !important;
+    min-height: 100% !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+}
 
 /* 열차 팝업: 화살표(tip) 숨김 — z-index는 역사 마커 버블(2000) 아래 */
 .transit-train-popup {

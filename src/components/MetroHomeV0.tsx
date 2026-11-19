@@ -80,6 +80,18 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // The legacy full-screen map shell locks the document scroll globally.
+  // v0 is a map-first, vertically scrollable sheet, so opt this route into
+  // document scrolling without changing the classic map experience.
+  useEffect(() => {
+    document.documentElement.classList.add("metro-v0-scroll");
+    document.body.classList.add("metro-v0-scroll");
+    return () => {
+      document.documentElement.classList.remove("metro-v0-scroll");
+      document.body.classList.remove("metro-v0-scroll");
+    };
+  }, []);
+
   useEffect(() => {
     if (typeof mapProps.startStation === "string" && mapProps.startStation) setStartInput(mapProps.startStation);
     if (typeof mapProps.endStation === "string" && mapProps.endStation) setDestinationInput(mapProps.endStation);
