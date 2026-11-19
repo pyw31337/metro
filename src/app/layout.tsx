@@ -73,7 +73,14 @@ export default function RootLayout({
     var dark = prefs.state?.isDarkMode ?? window.matchMedia('(prefers-color-scheme: dark)').matches;
     if (dark) document.documentElement.classList.add('dark');
   } catch(e) {}
-  if ('serviceWorker' in navigator) {
+  // localhost 개발 미리보기에서는 production Service Worker가 이전 JS를
+  // 캐시해 Offline 화면과 구버전 UI를 반복해서 보여주지 않도록 한다.
+  if ('serviceWorker' in navigator && location.hostname === 'localhost') {
+    navigator.serviceWorker.getRegistrations().then(function(registrations) {
+      registrations.forEach(function(registration) { registration.unregister(); });
+    });
+  }
+  if ('serviceWorker' in navigator && location.hostname !== 'localhost') {
     window.addEventListener('load', function() {
       navigator.serviceWorker.register('${BASE}/sw.js', { scope: '${BASE}/' }).then(function(reg) {
         reg.addEventListener('updatefound', function() {

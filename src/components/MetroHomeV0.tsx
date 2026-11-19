@@ -31,6 +31,9 @@ type Props = {
 export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const [compact, setCompact] = useState(false);
   const [mode, setMode] = useState<"fast" | "calm" | "accessible">("fast");
+  const nearestStation = mapProps.nearestStation as { name?: string; lines?: string[] } | null;
+  const nearestBusStop = mapProps.nearestBusStop as { name?: string; routes?: string[] } | null;
+  const nearestWC = mapProps.nearestWC as { name?: string; accessible?: boolean; openTime?: string } | null;
 
   useEffect(() => {
     const onScroll = () => setCompact(window.scrollY > 24);
@@ -93,13 +96,20 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         <div className="route-strip" aria-label="추천 노선 미리보기">
           <div className="route-strip-head"><span>추천 노선</span><small>환승 1회 · 32분</small></div>
           <div className="route-strip-track">
-            <span className="route-stop is-start"><i />현재 위치</span>
+            <span className="route-stop is-start"><i /><span>현재 위치</span></span>
             <span className="route-segment blue"><b>2</b></span>
-            <span className="route-stop"><i />강남역</span>
+            <span className="route-stop"><i /><span>강남역</span></span>
             <span className="route-segment green"><b>신분당</b></span>
-            <span className="route-stop is-end"><i />판교역</span>
+            <span className="route-stop is-end"><i /><span>판교역</span></span>
           </div>
           <div className="route-strip-foot"><span><TrainFront size={13} /> 2호선</span><span>도보 6분</span><span>다음 열차 3분</span></div>
+        </div>
+
+        <div className="nearby-heading"><h3>현재 위치 주변</h3><span>내 위치 기준 · 반경 1km</span></div>
+        <div className="nearby-list">
+          <article className="nearby-item"><span className="nearby-item-icon blue"><TrainFront size={17} /></span><div><b>{nearestStation?.name || "가까운 지하철역"}</b><small>{nearestStation?.lines?.slice(0, 2).join(" · ") || "역 정보를 찾는 중"}</small></div><strong>도착정보</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon orange"><BusFront size={17} /></span><div><b>{nearestBusStop?.name || "가까운 버스정류장"}</b><small>{nearestBusStop?.routes?.slice(0, 3).join(" · ") || "정류장 정보를 찾는 중"}</small></div><strong>노선보기</strong></article>
+          <article className="nearby-item"><span className="nearby-item-icon mint"><Toilet size={17} /></span><div><b>{nearestWC?.name || "공공화장실"}</b><small>{nearestWC ? `${nearestWC.accessible ? "무장애 · " : ""}${nearestWC.openTime || "운영시간 확인"}` : "시설 정보를 찾는 중"}</small></div><strong>길찾기</strong></article>
         </div>
 
         <div className="widget-grid">

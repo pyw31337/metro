@@ -245,7 +245,7 @@ export default function Home() {
           mapSt.setIsLocating(false);
           clearInterval(timerInterval);
 
-          mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 15, duration: 1500 });
+          mapRef.current?.flyTo({ center: [longitude, latitude], zoom: 12.8, duration: 1500 });
           mapSt.setHasInitialLocation(true);
 
           const stns = stationsRef.current;
@@ -494,7 +494,7 @@ export default function Home() {
     const loc = mapSt.userLocation;
     if (loc && mapRef.current) {
       // 위치가 이미 있으면 해당 위치로 이동
-      mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 15, duration: 1500 });
+      mapRef.current.flyTo({ center: [loc[1], loc[0]], zoom: 12.8, duration: 1500 });
     }
     // 위치가 없으면 watchPosition이 이미 백그라운드에서 조회 중 — 별도 호출 불필요
     // (중복 getCurrentPosition 호출 시 브라우저가 권한 팝업을 다시 보여줄 수 있음)

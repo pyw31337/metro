@@ -31,7 +31,9 @@ export function useUserLocation(map: any | null) {
                 if (!hasFlownToRef.current && map) {
                     hasFlownToRef.current = true;
                     try {
-                        const doFly = () => map.flyTo({ center: [newLoc.lng, newLoc.lat], zoom: 14, duration: 1500 });
+                        // 사용자의 위치는 생활권 단위로 보여준다. 역 하나만 보이는
+                        // 과도한 줌인은 주변 교통수단을 비교하기 어렵게 만든다.
+                        const doFly = () => map.flyTo({ center: [newLoc.lng, newLoc.lat], zoom: 12.8, duration: 1500 });
                         if (map.isStyleLoaded()) doFly();
                         else map.once('style.load', doFly);
                     } catch {}

@@ -31,8 +31,9 @@ interface MapBaseProps {
   };
 }
 
-// 서울역 기준 zoom 15 ≈ 1km 뷰 (초기 위치 — GPS 수신 시 flyTo로 덮어씀)
-const SEOUL_STATION = { longitude: 126.9706, latitude: 37.5549, zoom: 15 };
+// 서울역 기준 생활권 뷰. 최초 GPS 수신 뒤에도 동네 한 블록이 아닌
+// 주변 역·버스·시설을 함께 판단할 수 있도록 12.5를 기본으로 유지한다.
+const SEOUL_STATION = { longitude: 126.9706, latitude: 37.5549, zoom: 12.5 };
 
 const MapBase = ({
   isDarkMode,
