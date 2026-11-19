@@ -258,6 +258,76 @@ h1, h2, h3, h4 {
     z-index: 3000 !important;
 }
 
+/* ─── MetroLive Home v0 · LDS compact product shell ─────────────────────── */
+.metro-v0 { min-height: 100dvh; background: #f7f8fa; color: #191f28; font-family: "Pretendard Variable", Pretendard, sans-serif; }
+.metro-v0-map { position: sticky; top: 0; z-index: 1; height: min(46svh, 420px); min-height: 300px; overflow: hidden; transition: height 260ms cubic-bezier(.16,1,.3,1); }
+.metro-v0-map.is-compact { height: min(27svh, 240px); }
+.metro-v0-map > :first-child { position: absolute; inset: 0; }
+.metro-v0-map-wash { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(180deg, rgba(49,130,246,.18), transparent 34%, rgba(25,31,40,.08)); }
+.metro-v0-header { position: absolute; inset: max(18px, env(safe-area-inset-top)) 16px auto; display: flex; align-items: flex-start; justify-content: space-between; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.metro-v0-eyebrow { margin: 0 0 5px; font-size: 12px; font-weight: 700; letter-spacing: .04em; }
+.metro-v0-header h1 { margin: 0; font-size: clamp(20px, 5vw, 28px); line-height: 1.15; letter-spacing: -.04em; }
+.live-dot, .status-dot { display: inline-block; width: 7px; height: 7px; margin-right: 5px; border-radius: 50%; background: #00c48c; box-shadow: 0 0 0 4px rgba(0,196,140,.18); }
+.metro-v0-header-actions { display: flex; gap: 8px; }
+.icon-button, .metro-v0-recenter { border: 1px solid rgba(255,255,255,.65); background: rgba(255,255,255,.86); color: #191f28; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; width: 40px; height: 40px; backdrop-filter: blur(10px); cursor: pointer; }
+.metro-v0-map-status { position: absolute; left: 16px; bottom: 16px; padding: 7px 10px; border: 1px solid rgba(255,255,255,.6); border-radius: 999px; background: rgba(255,255,255,.85); font-size: 12px; font-weight: 600; color: #4e5968; backdrop-filter: blur(10px); }
+.metro-v0-map-status .status-dot { width: 6px; height: 6px; margin-right: 4px; box-shadow: none; }
+.metro-v0-recenter { position: absolute; right: 16px; bottom: 16px; width: auto; height: 34px; padding: 0 12px; gap: 6px; font-size: 12px; font-weight: 700; }
+.metro-v0-sheet { position: relative; z-index: 2; min-height: 620px; margin-top: -20px; padding: 12px 16px calc(94px + env(safe-area-inset-bottom)); border-radius: 20px 20px 0 0; background: #fff; box-shadow: 0 -2px 12px rgba(25,31,40,.06); }
+.sheet-handle { width: 36px; height: 4px; margin: 0 auto 18px; border-radius: 99px; background: #d8dde3; }
+.sheet-intro { display: flex; align-items: end; justify-content: space-between; margin-bottom: 14px; }
+.section-kicker { margin: 0 0 3px; color: #8b95a1; font-size: 11px; font-weight: 700; letter-spacing: .08em; }
+.sheet-intro h2 { margin: 0; font-size: 22px; letter-spacing: -.04em; }
+.text-button { display: inline-flex; align-items: center; gap: 3px; padding: 4px 0; border: 0; background: none; color: #3182f6; font-size: 13px; font-weight: 700; cursor: pointer; }
+.route-entry { position: relative; display: grid; gap: 1px; margin-bottom: 14px; padding: 5px 12px 5px 18px; border: 1px solid #e5e8eb; border-radius: 14px; background: #fff; }
+.route-line { position: absolute; left: 10px; top: 25px; bottom: 25px; display: flex; flex-direction: column; align-items: center; justify-content: space-between; }
+.route-line::before { content: ""; position: absolute; top: 5px; bottom: 5px; width: 1px; background: #d8dde3; }
+.route-line span { position: relative; width: 7px; height: 7px; border: 2px solid #3182f6; border-radius: 50%; background: #fff; }
+.route-line span:last-child { border-color: #ff9f00; }
+.route-field { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 42px; border: 0; background: none; text-align: left; cursor: pointer; }
+.route-field + .route-field { border-top: 1px solid #f0f2f4; }
+.field-label { width: 30px; color: #8b95a1; font-size: 12px; font-weight: 600; }
+.route-field strong { flex: 1; font-size: 15px; }
+.route-field .placeholder { color: #8b95a1; font-weight: 500; }
+.mode-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-bottom: 16px; }
+.mode-tab { display: grid; gap: 3px; min-height: 58px; padding: 10px 8px; border: 1px solid #e5e8eb; border-radius: 8px; background: #fff; color: #4e5968; text-align: left; cursor: pointer; }
+.mode-tab span { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.mode-tab strong { color: #191f28; font-size: 15px; }
+.mode-tab.is-active { border-color: #3182f6; background: #eff6ff; color: #1d63c1; }
+.mode-tab.is-active strong { color: #1d63c1; }
+.widget-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.info-widget { min-width: 0; min-height: 124px; padding: 12px; border: 1px solid #e5e8eb; border-radius: 8px; background: #fff; transition: transform 180ms ease, box-shadow 180ms ease; }
+.info-widget:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(25,31,40,.05); }
+.widget-topline { display: flex; align-items: center; gap: 6px; color: #4e5968; font-size: 12px; font-weight: 600; }
+.widget-topline .fresh { margin-left: auto; color: #8b95a1; font-size: 10px; font-weight: 500; }
+.widget-icon { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border-radius: 8px; }
+.widget-icon.blue { color: #3182f6; background: #eff6ff; } .widget-icon.orange { color: #e58b00; background: #fff6df; } .widget-icon.mint { color: #009b75; background: #e8fbf5; } .widget-icon.yellow { color: #a87800; background: #fff8d8; }
+.widget-value { display: block; margin-top: 12px; font-size: 20px; letter-spacing: -.04em; }
+.widget-value small { color: #8b95a1; font-size: 11px; font-weight: 600; letter-spacing: 0; }
+.info-widget p { margin: 5px 0 0; color: #8b95a1; font-size: 11px; }
+.info-widget p b { color: #3182f6; font-weight: 700; }
+.meter { height: 6px; margin-top: 12px; overflow: hidden; border-radius: 99px; background: #eef0f3; }
+.meter span { display: block; height: 100%; border-radius: inherit; background: #00c48c; }
+.utility-row { display: grid; gap: 1px; margin-top: 16px; border-top: 1px solid #eef0f3; border-bottom: 1px solid #eef0f3; }
+.utility-row button { display: flex; align-items: center; gap: 10px; min-height: 58px; padding: 8px 0; border: 0; background: #fff; color: #4e5968; text-align: left; cursor: pointer; }
+.utility-row button > svg:first-child { color: #3182f6; } .utility-row button > svg:last-child { margin-left: auto; color: #8b95a1; }
+.utility-row span { display: grid; gap: 2px; flex: 1; } .utility-row b { color: #191f28; font-size: 13px; } .utility-row small { font-size: 11px; }
+.data-note { display: flex; align-items: center; gap: 4px; margin: 14px 0 0; color: #8b95a1; font-size: 10px; }
+.metro-v0-bottom-nav { position: fixed; z-index: 4; right: 0; bottom: 0; left: 0; display: grid; grid-template-columns: repeat(4, 1fr); padding: 8px 12px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid #e5e8eb; background: rgba(255,255,255,.94); backdrop-filter: blur(14px); }
+.metro-v0-bottom-nav button { display: grid; justify-items: center; gap: 3px; border: 0; background: none; color: #8b95a1; font-size: 10px; font-weight: 600; cursor: pointer; }
+.metro-v0-bottom-nav button.is-active { color: #3182f6; }
+@media (min-width: 768px) {
+  .metro-v0 { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(380px, .8fr); height: 100dvh; overflow: hidden; }
+  .metro-v0-map { position: relative; height: 100dvh; min-height: 0; }
+  .metro-v0-map.is-compact { height: 100dvh; }
+  .metro-v0-sheet { height: 100dvh; min-height: 0; margin: 0; overflow-y: auto; border-radius: 0; padding: 28px clamp(20px, 4vw, 48px) 48px; box-shadow: -2px 0 12px rgba(25,31,40,.05); }
+  .sheet-handle { display: none; }
+  .metro-v0-bottom-nav { left: auto; width: min(32vw, 440px); }
+  .metro-v0-map-status { bottom: 24px; left: 24px; }
+  .metro-v0-recenter { right: 24px; bottom: 24px; }
+}
+@media (min-width: 1200px) { .metro-v0-sheet { padding-left: 56px; padding-right: 56px; } }
+
 /* 열차 팝업: 화살표(tip) 숨김 — z-index는 역사 마커 버블(2000) 아래 */
 .transit-train-popup {
     z-index: 1500 !important;

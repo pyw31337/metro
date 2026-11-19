@@ -37,6 +37,7 @@ import { getStationByName } from "@/data/subway-lines";
 type MainView = 'arrival' | 'map';
 const VIEW_KEY = 'metro-main-view';
 import DirectionCompass  from "@/components/ui/DirectionCompass";
+import MetroHomeV0 from "@/components/MetroHomeV0";
 
 // Module-level cache so the 3MB routes JSON is only fetched once per session
 let busRoutesCache: any[] | null = null;
@@ -57,8 +58,10 @@ export default function Home() {
 
   // 메인 화면: 도착 안내(기본) ↔ 지도
   const [view, setView] = useState<MainView>('arrival');
+  const [designV0, setDesignV0] = useState(false);
   useEffect(() => {
     const fromUrl = new URLSearchParams(window.location.search).get('view');
+    setDesignV0(new URLSearchParams(window.location.search).get('design') === 'v0');
     let saved: string | null = null;
     try { saved = localStorage.getItem(VIEW_KEY); } catch { /* ignore */ }
     const v = fromUrl || saved;
@@ -621,6 +624,53 @@ export default function Home() {
   // ─────────────────────────────────────────────────────────────────────────
   // 렌더
   // ─────────────────────────────────────────────────────────────────────────
+  if (designV0) {
+    return <MetroHomeV0
+      mapProps={{
+        startStation: route.startStation,
+        endStation: route.endStation,
+        isDarkMode: false,
+        wcItems: subway.wcItems,
+        wcFilters: ui.wcFilters,
+        busStops: subway.busStops,
+        activeTab: ui.activeTab,
+        selectedBusStopId: subway.selectedBusStop?.id ?? null,
+        selectedBusRoute: subway.selectedBusRoute,
+        routePathData: subway.routePathData,
+        onWCClick: subway.setSelectedWC,
+        onBusStopClick: handleBusStopClick,
+        onStationClick: handleStationClick,
+        selectedStationName: subway.selectedStationName,
+        stationArrivals: arrivalInfo.arrivals,
+        arrivalLoading: arrivalInfo.loading,
+        isLiveArrival: arrivalInfo.isLive,
+        onRefreshArrival: arrivalInfo.refresh,
+        onCenterChange: handleCenterChange,
+        onBoundsChange: handleBoundsChange,
+        onMapReady: handleMapReady,
+        pathResult: activePath,
+        userLocation: mapSt.userLocation,
+        nearestStation: mapSt.nearestStation,
+        nearestBusStop: mapSt.nearestBusStop,
+        nearestWC: mapSt.nearestWC,
+        timeDisplayMode: ui.timeDisplayMode,
+        onToggleTimeDisplay: ui.toggleTimeDisplayMode,
+        showAllRouteBubbles: route.showAllRouteBubbles,
+        onToggleShowAll: handleToggleShowAll,
+        stations,
+        activeLine: mapSt.activeLine,
+        onActiveLineChange: handleActiveLineChange,
+        onSetStart: route.setStartStation,
+        onSetEnd: route.setEndStation,
+        onSetWaypoint: route.addWaypoint,
+        onSelectBusRoute: handleSelectBusRoute,
+        onClearRoute: handleClearBusRoute,
+      }}
+      onLocate={handleLocate}
+      onRefresh={arrivalInfo.refresh}
+    />;
+  }
+
   return (
     <main className="relative w-full h-[100dvh] overflow-hidden bg-[var(--background)] font-sans">
       <a href={view === 'arrival' ? '#arrival-search' : '#app-panel'} className="skip-link">{view === 'arrival' ? '역 검색으로 건너뛰기' : '경로 검색으로 건너뛰기'}</a>
