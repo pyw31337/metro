@@ -212,7 +212,7 @@ export default function Home() {
   const arrivalInfo = useArrivalInfo(focusedStationName);
   const congestionInfo = useCongestion(focusedStationName);
   const stationFacilities = useStationFacilities(focusedStationName);
-  const nearbyWeather = useNearbyWeather(mapSt.userLocation);
+  const nearbyWeather = useNearbyWeather(mapSt.userLocation || [37.4979, 127.0276]);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 초기 데이터 로드
