@@ -1334,6 +1334,9 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .facility-row { grid-template-columns: 20px 1fr auto; border-bottom: 1px solid #f0f4f7; color: var(--metro-blue-800); }
 .facility-row:last-child { border-bottom: 0; }
 .facility-row strong { color: var(--metro-blue-950); font-size: 12px; font-weight: 650; }
+.weather-row { display: flex; align-items: baseline; gap: 10px; margin-top: 12px; }
+.weather-row strong { color: var(--metro-blue-950); font-size: 22px; letter-spacing: -.04em; }
+.weather-row span, .weather-row small { color: var(--metro-muted); font-size: 12px; }
 .route-inline { display: grid; grid-template-columns: 1fr 16px 1fr auto; align-items: center; gap: 7px; margin-top: 12px; }
 .route-inline input { min-width: 0; height: 38px; padding: 0 10px; border: 1px solid var(--metro-line); border-radius: 8px; outline: 0; color: var(--metro-blue-950); font: inherit; font-size: 12px; }
 .route-inline input:focus { border-color: var(--metro-blue-600); }

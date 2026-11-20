@@ -10,6 +10,7 @@ import { useDataWorker }      from "@/hooks/useDataWorker";
 import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
 import { useCongestion }      from "@/hooks/useCongestion";
 import { useStationFacilities } from "@/hooks/useStationFacilities";
+import { useNearbyWeather }  from "@/hooks/useNearbyWeather";
 import { useSimStatus, useSeoulApiIssue } from "@/hooks/useSimStatus";
 import type { SimStatus } from "@/services/TransitRealtimeService";
 import type { SeoulApiIssue } from "@/services/seoulApi";
@@ -210,6 +211,7 @@ export default function Home() {
   const arrivalInfo = useArrivalInfo(subway.selectedStationName);
   const congestionInfo = useCongestion(subway.selectedStationName);
   const stationFacilities = useStationFacilities(subway.selectedStationName);
+  const nearbyWeather = useNearbyWeather(mapSt.userLocation);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 초기 데이터 로드
@@ -654,6 +656,7 @@ export default function Home() {
         congestion: congestionInfo.data,
         stationFacilities,
         apiIssue,
+        weather: nearbyWeather,
         onZoomIn: () => mapRef.current?.zoomIn(),
         onZoomOut: () => mapRef.current?.zoomOut(),
         arrivalLoading: arrivalInfo.loading,
