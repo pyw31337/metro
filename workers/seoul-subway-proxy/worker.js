@@ -21,8 +21,9 @@
  *   CACHE_TTL_SECONDS : 캐시 시간 (초)
  *   RATE_LIMIT_PER_MIN: IP 당 분당 요청 수 (isolate 단위의 느슨한 제한)
  */
-const ALLOWED_SERVICES = new Set(['realtimePosition', 'realtimeStationArrival']);
+const ALLOWED_SERVICES = new Set(['realtimePosition', 'realtimeStationArrival', 'citydata']);
 const UPSTREAM = 'http://swopenapi.seoul.go.kr/api/subway';
+const CITYDATA_UPSTREAM = 'https://openapi.seoul.go.kr:443';
 const UPSTREAM_TIMEOUT_MS = 8000;
 
 // isolate 메모리 캐시 (Cache API 보조) 와 간단한 IP 레이트 리밋
@@ -98,7 +99,9 @@ export default {
     for (let i = 0; i < keys.length; i++) {
       const until = exhausted.get(i);
       if (until && until > now && i < keys.length - 1) continue;
-      const upstream = `${UPSTREAM}/${encodeURIComponent(keys[i])}/json/${service}/${start}/${end}/${name}`;
+      const upstream = service === 'citydata'
+        ? `${CITYDATA_UPSTREAM}/${encodeURIComponent(keys[i])}/json/citydata/${start}/${end}/${encodeURIComponent(name)}`
+        : `${UPSTREAM}/${encodeURIComponent(keys[i])}/json/${service}/${start}/${end}/${encodeURIComponent(name)}`;
       try {
         const r = await fetch(upstream, { headers: { Accept: 'application/json' }, signal: AbortSignal.timeout(UPSTREAM_TIMEOUT_MS) });
         body = await r.text();

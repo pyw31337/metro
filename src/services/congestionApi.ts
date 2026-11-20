@@ -2,6 +2,8 @@ import { fetchWithFallbacks } from './arrivalApi';
 import { normStation } from '@/data/stationRegistry';
 import { getSeoulOpenDataKey } from './apiConfig';
 
+const SUBWAY_PROXY_URL = (process.env.NEXT_PUBLIC_SUBWAY_PROXY_URL || '').trim().replace(/\/+$/, '');
+
 export interface CongestionData {
     areaName: string;
     congestionLevel: '여유' | '보통' | '부족' | '혼잡';
@@ -123,7 +125,11 @@ export const fetchStationCongestion = async (stationName: string): Promise<Conge
     if (!areaName) return null;
 
     const apiKey = getSeoulOpenDataKey();
-    const url = `https://openapi.seoul.go.kr:443/${apiKey}/json/citydata/1/1/${encodeURIComponent(areaName)}`;
+    // GitHub Pages에서는 서울시 Open API가 CORS로 차단되므로
+    // 지하철 Worker의 제한된 citydata 경로를 우선 사용한다.
+    const url = SUBWAY_PROXY_URL
+        ? `${SUBWAY_PROXY_URL}/KEY/json/citydata/1/1/${encodeURIComponent(areaName)}`
+        : `https://openapi.seoul.go.kr:443/${apiKey}/json/citydata/1/1/${encodeURIComponent(areaName)}`;
 
     try {
         const json = await fetchWithFallbacks(url);
