@@ -152,6 +152,7 @@ export default function Home() {
 
   // useSubwayStore
   const selectedStationName = useSubwayStore(s => s.selectedStationName);
+  const focusedStationName = selectedStationName || "강남";
   const selectedBusStop     = useSubwayStore(s => s.selectedBusStop);
   const selectedWC          = useSubwayStore(s => s.selectedWC);
   const selectedBusRoute    = useSubwayStore(s => s.selectedBusRoute);
@@ -208,9 +209,9 @@ export default function Home() {
   const lastTrainWarning = useLastTrainWarning(activePath?.path ?? []);
 
   // ── 도착 정보 훅 ──
-  const arrivalInfo = useArrivalInfo(subway.selectedStationName);
-  const congestionInfo = useCongestion(subway.selectedStationName);
-  const stationFacilities = useStationFacilities(subway.selectedStationName);
+  const arrivalInfo = useArrivalInfo(focusedStationName);
+  const congestionInfo = useCongestion(focusedStationName);
+  const stationFacilities = useStationFacilities(focusedStationName);
   const nearbyWeather = useNearbyWeather(mapSt.userLocation);
 
   // ─────────────────────────────────────────────────────────────────────────
