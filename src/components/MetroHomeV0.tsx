@@ -19,7 +19,8 @@ import {
   Umbrella,
   UsersRound,
   ShieldCheck,
-  Bike
+  Bike,
+  Building2
 } from "lucide-react";
 import { useSmartCommute } from "@/hooks/useSmartCommute";
 import { useNearbyWeather } from "@/hooks/useNearbyWeather";
@@ -208,28 +209,28 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             className={`filter-tab-btn ${activeCivicTab === "all" ? "active" : ""}`}
             onClick={() => setActiveCivicTab("all")}
           >
-            전체 인프라
+            <MapPin size={15} aria-hidden="true" /> 전체 인프라
           </button>
           <button
             type="button"
             className={`filter-tab-btn ${activeCivicTab === "toilet" ? "active" : ""}`}
             onClick={() => setActiveCivicTab("toilet")}
           >
-            🚻 개찰구 안/밖 화장실
+            <Toilet size={15} aria-hidden="true" /> 개찰구 안/밖 화장실
           </button>
           <button
             type="button"
             className={`filter-tab-btn ${activeCivicTab === "transfer" ? "active" : ""}`}
             onClick={() => setActiveCivicTab("transfer")}
           >
-            ⚡ 최단 빠른 환승
+            <TrainFront size={15} aria-hidden="true" /> 최단 빠른 환승
           </button>
           <button
             type="button"
             className={`filter-tab-btn ${activeCivicTab === "drywalk" ? "active" : ""}`}
             onClick={() => setActiveCivicTab("drywalk")}
           >
-            ☔ 우산없는 길
+            <Umbrella size={15} aria-hidden="true" /> 우산없는 길
           </button>
         </div>
 
@@ -334,7 +335,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
                 const exitNum = typeof b === "object" ? b.connected_exit : null;
                 return (
                   <div key={idx} className="drywalk-item">
-                    <span className="building-icon">🏢</span>
+                    <span className="building-icon" aria-hidden="true"><Building2 size={20} /></span>
                     <div className="building-info">
                       <strong>{bName}</strong>
                       <span className="building-exit">{exitNum ? `${exitNum}번 출구 방면 지하 무빙워크 연결` : "지하 연결통로 직결"}</span>

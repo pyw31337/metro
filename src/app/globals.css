@@ -1182,3 +1182,76 @@ html.metro-v0-scroll, body.metro-v0-scroll {
     border: none;
     cursor: pointer;
 }
+
+/* ─── LDS Metro v2.6 · light blue brand / restrained surfaces ───────────── */
+.metro-v0 {
+    --metro-blue-950: #12325d;
+    --metro-blue-800: #1e4f91;
+    --metro-blue-700: #2567b4;
+    --metro-blue-600: #347fd0;
+    --metro-blue-200: #cfe2f8;
+    --metro-blue-100: #e7f1fc;
+    --metro-blue-50: #f4f8fd;
+    --metro-line: #e4edf7;
+    --metro-muted: #6f8095;
+    --metro-success: #16845b;
+    --metro-warning: #b96a12;
+    --metro-danger: #c23b4a;
+    color: var(--metro-blue-950);
+    background: #fff;
+}
+.metro-v0-map-wash { background: linear-gradient(180deg, rgba(37,103,180,.14), transparent 38%, rgba(18,50,93,.06)); }
+.metro-v0-sheet { background: #fff; box-shadow: none; border-top: 1px solid var(--metro-line); }
+.top-brand-floating { top: 18px; }
+.brand-pill { background: rgba(255,255,255,.94); border: 1px solid rgba(37,103,180,.16); box-shadow: 0 8px 24px rgba(18,50,93,.10); color: var(--metro-blue-950); }
+.brand-pill .live-dot { background: var(--metro-blue-600); }
+.brand-sub { color: var(--metro-muted); }
+.hub-link-btn { background: var(--metro-blue-700); box-shadow: 0 6px 18px rgba(37,103,180,.18); }
+.hub-link-btn:hover { background: var(--metro-blue-800); }
+.search-card-inner { border: 1px solid rgba(37,103,180,.14); box-shadow: 0 10px 28px rgba(18,50,93,.14); }
+.floating-search-card:focus-within .search-card-inner { border-color: var(--metro-blue-600); box-shadow: 0 12px 32px rgba(37,103,180,.18); }
+.search-icon { color: var(--metro-blue-700); }
+.search-submit-btn, .route-submit-btn { background: var(--metro-blue-700); }
+.search-submit-btn:hover, .route-submit-btn:hover { background: var(--metro-blue-800); }
+.hub-chips-label { color: var(--metro-blue-800); background: var(--metro-blue-50); box-shadow: none; }
+.hub-chip { color: var(--metro-blue-800); border-color: var(--metro-blue-200); box-shadow: none; background: rgba(255,255,255,.94); }
+.hub-chip:hover { border-color: var(--metro-blue-600); color: var(--metro-blue-700); }
+.hub-chip.is-active { background: var(--metro-blue-700); color: #fff; border-color: var(--metro-blue-700); box-shadow: none; }
+.filter-tab-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: transparent; color: var(--metro-muted); padding: 9px 4px 10px; }
+.filter-tab-btn.active { background: transparent; border-color: var(--metro-blue-700); color: var(--metro-blue-700); }
+.civic-filter-tabs { gap: 22px; border-bottom: 1px solid var(--metro-line); }
+.civic-highlight-card, .route-entry-enhanced { border: 0; border-top: 1px solid var(--metro-line); border-radius: 0; box-shadow: none; background: #fff; padding: 24px 0; }
+.info-card-enhanced { border: 0; border-top: 1px solid var(--metro-line); border-radius: 0; box-shadow: none; background: #fff; padding: 18px 0; }
+.widget-grid-enhanced { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 36px; }
+.icon-box-blue { background: var(--metro-blue-100); color: var(--metro-blue-700); border-radius: 10px; }
+.icon-box-emerald { background: #eaf7f1; color: var(--metro-success); border-radius: 10px; }
+.icon-box-purple { background: var(--metro-blue-100); color: var(--metro-blue-700); border-radius: 10px; }
+.title-with-icon h3, .entry-header h3, .card-main-val, .gate-location, .car-number-box strong { color: var(--metro-blue-950); }
+.card-sub, .card-desc, .direction-text, .building-exit, .entry-sub { color: var(--metro-muted); }
+.badge-open { background: #eaf7f1; color: var(--metro-success); }
+.badge-dry { background: var(--metro-blue-100); color: var(--metro-blue-800); }
+.gate-box, .transfer-chip-card, .drywalk-item { border: 0; border-top: 1px solid var(--metro-line); border-radius: 0; }
+.gate-box.out-gate { background: #f7fcf9; border-color: var(--metro-line); }
+.gate-box.in-gate, .transfer-chip-card, .drywalk-item { background: var(--metro-blue-50); border-color: var(--metro-line); }
+.gate-tag.in, .line-pill { background: var(--metro-blue-700); }
+.gate-tag.out { background: var(--metro-success); }
+.meta-icon.orange { background: #fff5e8; color: var(--metro-warning); }
+.meta-icon.green { background: #eaf7f1; color: var(--metro-success); }
+.meta-icon.blue, .meta-icon.purple { background: var(--metro-blue-100); color: var(--metro-blue-700); }
+.meta-live { color: var(--metro-success); }
+.night-bus-chip { background: var(--metro-blue-800); }
+.input-row { background: var(--metro-blue-50); border-color: var(--metro-line); border-radius: 10px; }
+.point-dot.start { background: var(--metro-blue-600); }
+.point-dot.end { background: var(--metro-danger); }
+.metro-v0-bottom-nav { border-top-color: var(--metro-line); box-shadow: none; }
+.metro-v0-bottom-nav button.is-active { color: var(--metro-blue-700); }
+.live-status-tag { background: #eaf7f1; color: var(--metro-success); }
+
+@media (max-width: 767px) {
+    /* Mobile is contextual: do not reserve the viewport for a persistent service title. */
+    .metro-v0 .brand-pill { display: none; }
+    .top-brand-floating { justify-content: flex-end; }
+    .metro-v0 .hub-link-btn { display: none; }
+    .floating-search-card { top: 18px; }
+    .widget-grid-enhanced { grid-template-columns: 1fr; }
+}
