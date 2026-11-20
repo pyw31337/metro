@@ -1261,3 +1261,17 @@ html.metro-v0-scroll, body.metro-v0-scroll {
     .floating-search-card { top: 18px; }
     .widget-grid-enhanced { grid-template-columns: 1fr; }
 }
+
+/* Compact copy and utility graph: explanation lives behind the info affordance. */
+.metro-v0 .card-sub, .metro-v0 .entry-sub, .metro-v0 .data-note { display: none; }
+.metro-v0 h3 .info-tooltip { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; margin-left: 4px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: var(--metro-muted); vertical-align: -3px; cursor: help; }
+.metro-v0 h3 .info-tooltip:hover { color: var(--metro-blue-700); background: var(--metro-blue-100); }
+.trend-section { padding: 24px 0 30px; border-top: 1px solid var(--metro-line); }
+.trend-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.trend-heading h3 { margin: 0; color: var(--metro-blue-950); font-size: 16px; font-weight: 750; }
+.trend-filters { display: inline-flex; gap: 14px; }
+.trend-filters button { border: 0; border-bottom: 2px solid transparent; padding: 4px 2px; background: transparent; color: var(--metro-muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+.trend-filters button.is-active { border-color: var(--metro-blue-700); color: var(--metro-blue-700); }
+.trend-chart { display: flex; align-items: end; gap: 10px; height: 92px; margin-top: 18px; padding: 8px 2px 0; border-bottom: 1px solid var(--metro-line); }
+.trend-chart span { flex: 1; min-width: 10px; max-width: 42px; border-radius: 3px 3px 0 0; background: var(--metro-blue-200); transition: height 220ms var(--ease-out), background-color 180ms ease; }
+.trend-chart span:nth-child(4) { background: var(--metro-blue-700); }

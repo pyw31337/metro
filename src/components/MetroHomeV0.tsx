@@ -20,7 +20,8 @@ import {
   UsersRound,
   ShieldCheck,
   Bike,
-  Building2
+  Building2,
+  Info
 } from "lucide-react";
 import { useSmartCommute } from "@/hooks/useSmartCommute";
 import { useNearbyWeather } from "@/hooks/useNearbyWeather";
@@ -44,6 +45,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const [startInput, setStartInput] = useState("현재 위치");
   const [destinationInput, setDestinationInput] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+  const [trendRange, setTrendRange] = useState<"day" | "month" | "year">("day");
 
   const QUICK_HUBS = [
     "강남", "여의도", "서울역", "홍대입구", "고속터미널",
@@ -81,6 +83,11 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const lastSegment = segments[segments.length - 1];
   const originName = firstSegment?.stations?.[0] || "현재 위치";
   const destinationName = requestedDestination || lastSegment?.stations?.[lastSegment.stations.length - 1] || "도착지를 선택하세요";
+  const trendValues = trendRange === "day"
+    ? [42, 56, 68, 61, 74, 52, 38]
+    : trendRange === "month"
+      ? [58, 64, 51, 72, 66, 75, 63]
+      : [46, 55, 62, 58, 69, 73, 78];
 
   const resumeRoute = (start: string, destination: string) => {
     setStartInput(start);
@@ -194,7 +201,6 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         {/* 시트 인트로 헤더 */}
         <div className="sheet-intro">
           <div>
-            <p className="section-kicker">CIVIC MOBILITY MATRIX</p>
             <h2>{amenity ? amenity.stationName : nearbyStationName} 시민 편의 인프라</h2>
           </div>
           <span className="live-status-tag">
@@ -243,7 +249,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
                   <Toilet size={20} />
                 </div>
                 <div>
-                  <h3>개찰구 안/밖 화장실 실시간 안내</h3>
+                  <h3>개찰구 안/밖 화장실 <button className="info-tooltip" type="button" title="개찰구 안과 밖에서 이용 가능한 화장실 위치" aria-label="화장실 안내"><Info size={14} /></button></h3>
                   <p className="card-sub">{amenity.stationName} · 승차권 태그 없이 이용 가능한 대합실 화장실</p>
                 </div>
               </div>
@@ -290,7 +296,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
                   <TrainFront size={20} />
                 </div>
                 <div>
-                  <h3>최단 빠른 환승 칸 번호</h3>
+                  <h3>최단 빠른 환승 칸 번호 <button className="info-tooltip" type="button" title="환승 통로와 가장 가까운 승차 위치" aria-label="빠른 환승 안내"><Info size={14} /></button></h3>
                   <p className="card-sub">내리자마자 환승 에스컬레이터 바로 앞 직결 칸 (출퇴근 도보 단축)</p>
                 </div>
               </div>
@@ -322,7 +328,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
                   <Umbrella size={20} />
                 </div>
                 <div>
-                  <h3>비 오는 날 &apos;우산 없는 지하 통로 맵&apos;</h3>
+                  <h3>우산 없는 지하 통로 <button className="info-tooltip" type="button" title="역과 건물을 잇는 지하 연결통로" aria-label="지하 통로 안내"><Info size={14} /></button></h3>
                   <p className="card-sub">비나 눈을 맞지 않고 지하철역에서 대형 빌딩·쇼핑몰까지 100% 지하 직결</p>
                 </div>
               </div>
@@ -405,6 +411,20 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
             <p className="card-desc">{amenity?.convenience?.civilKiosk || "지하 1층 대합실 무인기 운영"}</p>
           </article>
         </div>
+
+        <section className="trend-section" aria-labelledby="trend-title">
+          <div className="trend-heading">
+            <h3 id="trend-title">혼잡도 추이</h3>
+            <div className="trend-filters" role="group" aria-label="혼잡도 기간">
+              {([['day', '일'], ['month', '월'], ['year', '년']] as const).map(([value, label]) => (
+                <button key={value} type="button" className={trendRange === value ? "is-active" : ""} onClick={() => setTrendRange(value)}>{label}</button>
+              ))}
+            </div>
+          </div>
+          <div className="trend-chart" aria-label={`${trendRange} 기준 혼잡도 그래프`}>
+            {trendValues.map((value, index) => <span key={`${trendRange}-${index}`} style={{ height: `${value}%` }} />)}
+          </div>
+        </section>
 
         {/* ── 경로 탐색 바텀 패널 ── */}
         <div className="route-entry-enhanced" id="metro-route-entry">
