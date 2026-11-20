@@ -1338,6 +1338,8 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .route-inline input { min-width: 0; height: 38px; padding: 0 10px; border: 1px solid var(--metro-line); border-radius: 8px; outline: 0; color: var(--metro-blue-950); font: inherit; font-size: 12px; }
 .route-inline input:focus { border-color: var(--metro-blue-600); }
 .route-inline button { height: 38px; padding: 0 13px; border: 0; border-radius: 8px; background: var(--metro-blue-700); color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
+.route-summary { display: flex; align-items: baseline; gap: 8px; margin-top: 12px; color: var(--metro-blue-700); font-size: 12px; }
+.route-summary span { color: var(--metro-muted); font-size: 11px; }
 @media (max-width: 820px) {
     .metro-command-center { display: flex !important; height: auto; min-height: 100dvh; overflow: visible; }
     .metro-command-header { height: 58px; grid-template-columns: 1fr auto; padding: 0 16px; }

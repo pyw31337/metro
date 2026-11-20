@@ -9,6 +9,7 @@ import { BusStop, Station, WCItem, PathResult } from "@/types/metro";
 import { useDataWorker }      from "@/hooks/useDataWorker";
 import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
 import { useCongestion }      from "@/hooks/useCongestion";
+import { useStationFacilities } from "@/hooks/useStationFacilities";
 import { useSimStatus, useSeoulApiIssue } from "@/hooks/useSimStatus";
 import type { SimStatus } from "@/services/TransitRealtimeService";
 import type { SeoulApiIssue } from "@/services/seoulApi";
@@ -208,6 +209,7 @@ export default function Home() {
   // ── 도착 정보 훅 ──
   const arrivalInfo = useArrivalInfo(subway.selectedStationName);
   const congestionInfo = useCongestion(subway.selectedStationName);
+  const stationFacilities = useStationFacilities(subway.selectedStationName);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 초기 데이터 로드
@@ -650,6 +652,10 @@ export default function Home() {
         selectedStationName: subway.selectedStationName,
         stationArrivals: arrivalInfo.arrivals,
         congestion: congestionInfo.data,
+        stationFacilities,
+        apiIssue,
+        onZoomIn: () => mapRef.current?.zoomIn(),
+        onZoomOut: () => mapRef.current?.zoomOut(),
         arrivalLoading: arrivalInfo.loading,
         isLiveArrival: arrivalInfo.isLive,
         onRefreshArrival: arrivalInfo.refresh,
