@@ -637,6 +637,19 @@ export default function Home() {
   // 렌더
   // ─────────────────────────────────────────────────────────────────────────
   if (designV0) {
+    const dataStatus = {
+      subway: {
+        state: arrivalInfo.isLive ? 'live' : arrivalInfo.arrivals.length ? 'fallback' : 'error',
+        updatedAt: arrivalInfo.lastUpdated,
+      },
+      congestion: {
+        state: congestionInfo.data ? 'live' : congestionInfo.loading ? 'loading' : 'unavailable',
+        updatedAt: congestionInfo.data?.timestamp || null,
+      },
+      bus: { state: subway.busStops.length ? 'static' : 'unavailable', updatedAt: null },
+      facilities: { state: stationFacilities ? 'static' : 'unavailable', updatedAt: null },
+      weather: { state: nearbyWeather.temperature != null ? 'live' : nearbyWeather.loading ? 'loading' : 'unavailable', updatedAt: null },
+    };
     return <MetroHomeV0
       mapProps={{
         startStation: route.startStation,
@@ -661,6 +674,7 @@ export default function Home() {
         stationFacilities,
         apiIssue,
         weather: nearbyWeather,
+        dataStatus,
         selectedStrategy: route.selectedStrategy,
         onStrategyChange: route.setSelectedStrategy,
         onZoomIn: () => mapRef.current?.zoomIn(),
