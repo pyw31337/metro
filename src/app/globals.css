@@ -1329,6 +1329,8 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .arrival-dot.warning { background: var(--metro-warning); }
 .delay-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; color: var(--metro-blue-950); font-size: 13px; }
 .delay-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--metro-danger); }
+.delay-row.is-normal { color: var(--metro-success); }
+.delay-row.is-normal .delay-dot { background: var(--metro-success); }
 .facility-row { grid-template-columns: 20px 1fr auto; border-bottom: 1px solid #f0f4f7; color: var(--metro-blue-800); }
 .facility-row:last-child { border-bottom: 0; }
 .facility-row strong { color: var(--metro-blue-950); font-size: 12px; font-weight: 650; }

@@ -16,6 +16,12 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const stationOptions = Array.isArray(mapProps.stations) ? (mapProps.stations as any[]).slice(0, 400) : [];
   const nearestStation = mapProps.nearestStation as { name?: string; lines?: string[] } | null;
   const stationArrivals = Array.isArray(mapProps.stationArrivals) ? (mapProps.stationArrivals as any[]) : [];
+  const congestion = mapProps.congestion as { congestionLevel?: string; ppltnMax?: number; ppltnMin?: number; msg?: string } | null;
+  const crowdingPercent = congestion?.ppltnMax && congestion?.ppltnMin
+    ? Math.max(8, Math.min(96, Math.round((congestion.ppltnMax / (congestion.ppltnMax + congestion.ppltnMin)) * 100)))
+    : 62;
+  const crowdingLabel = congestion?.congestionLevel || "보통";
+  const delayMessage = typeof mapProps.delayReason === "string" ? mapProps.delayReason : "현재 지연 없음";
   const nearbyStationName = nearestStation?.name || stationArrivals[0]?.statnNm || "강남역";
   const nearbyStationLine = nearestStation?.lines?.[0] || stationArrivals[0]?.lineName || "2호선";
   const currentFocalStation = selectedStation || nearbyStationName;
@@ -52,9 +58,9 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
         </section>
         <aside className="metro-command-inspector" id="metro-v0-inspector" aria-label={`${currentFocalStation} 실시간 정보`}>
           <div className="inspector-heading"><div><span className="line-marker" /><span className="inspector-line">{nearbyStationLine}</span><h1>{amenity?.stationName || nearbyStationName}</h1></div><span className="inspector-status"><i /> 정상 운영</span></div>
-          <section className="inspector-section inspector-crowding"><div className="section-label">혼잡도 <button type="button" className="info-tooltip" title="최근 실시간 데이터 기준" aria-label="혼잡도 정보"><Info size={14} /></button></div><div className="crowding-value">62% <span><i /> 보통</span></div><div className="crowding-rule"><span style={{ width: "62%" }} /></div></section>
+          <section className="inspector-section inspector-crowding"><div className="section-label">혼잡도 <button type="button" className="info-tooltip" title="최근 실시간 데이터 기준" aria-label="혼잡도 정보"><Info size={14} /></button></div><div className="crowding-value">{crowdingPercent}% <span><i /> {crowdingLabel}</span></div><div className="crowding-rule"><span style={{ width: `${crowdingPercent}%` }} /></div></section>
           <section className="inspector-section"><div className="section-label">열차 도착</div><div className="arrival-list">{(stationArrivals.length ? stationArrivals.slice(0, 3) : [{ trainLineNm: nearbyStationLine, arvlMsg2: "약 2분 후" }, { trainLineNm: nearbyStationLine, arvlMsg2: "약 6분 후" }]).map((arrival: any, idx: number) => <div className="arrival-row" key={`${arrival.trainLineNm || nearbyStationLine}-${idx}`}><span className={`arrival-dot ${idx === 2 ? "warning" : ""}`} /><strong>{arrival.trainLineNm || nearbyStationLine}</strong><span>{arrival.arvlMsg2 || arrival.arvlMsg3 || "도착 정보 확인 중"}</span></div>)}</div></section>
-          <section className="inspector-section"><div className="section-label">지연 원인</div><div className="delay-row"><span className="delay-dot" /> 신호 점검으로 일부 구간 3분 지연</div></section>
+          <section className="inspector-section"><div className="section-label">운행 상태</div><div className={`delay-row ${delayMessage === "현재 지연 없음" ? "is-normal" : ""}`}><span className="delay-dot" /> {delayMessage}</div></section>
           <section className="inspector-section inspector-facilities"><div className="section-label">편의시설</div><div className="facility-row"><Accessibility size={17} /><span>엘리베이터</span><strong>4대</strong></div><div className="facility-row"><Toilet size={17} /><span>화장실</span><strong>개찰구 안·밖</strong></div><div className="facility-row"><MapPin size={17} /><span>가까운 출구</span><strong>7번 출구</strong></div></section>
           <section className="inspector-section inspector-route"><div className="section-label">경로 검색</div><div className="route-inline"><input list="metro-stations" value={startInput} onChange={(e) => setStartInput(e.target.value)} placeholder="출발" aria-label="출발" /><ArrowRight size={16} /><input list="metro-stations" value={destinationInput} onChange={(e) => setDestinationInput(e.target.value)} placeholder="도착" aria-label="도착" /><button type="button" onClick={() => destinationInput.trim() && resumeRoute(startInput.trim() || "현재 위치", destinationInput.trim())}>검색</button></div><datalist id="metro-stations">{stationOptions.map((station: any) => <option key={`${station.name}-${station.id || station.stationCd || ""}`} value={station.name} />)}</datalist></section>
         </aside>
