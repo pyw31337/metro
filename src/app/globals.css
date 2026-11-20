@@ -1277,7 +1277,7 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .trend-chart span:nth-child(4) { background: var(--metro-blue-700); }
 
 /* ─── Metro command-center layout (map first, inspector second) ─────────── */
-.metro-command-center { height: 100dvh; overflow: hidden; background: #fff; color: var(--metro-blue-950); }
+.metro-command-center { display: flex !important; flex-direction: column; grid-template-columns: none !important; width: 100%; height: 100dvh; overflow: hidden; background: #fff; color: var(--metro-blue-950); }
 .metro-command-header { height: 68px; display: grid; grid-template-columns: 280px minmax(280px, 680px) 120px; align-items: center; justify-content: space-between; gap: 28px; padding: 0 28px; border-bottom: 1px solid var(--metro-line); background: #fff; }
 .metro-wordmark { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; color: var(--metro-blue-950); }
 .metro-wordmark strong { font-size: 18px; letter-spacing: -.04em; }
@@ -1290,7 +1290,7 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .metro-header-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .header-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 0; background: transparent; color: var(--metro-blue-800); cursor: pointer; }
 .header-icon-button:hover { color: var(--metro-blue-600); }
-.metro-command-layout { display: grid; grid-template-columns: minmax(0, 1fr) 390px; height: calc(100dvh - 68px); }
+.metro-command-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 390px); width: 100%; min-height: 0; flex: 1 1 auto; height: auto; }
 .metro-command-map { position: relative; min-width: 0; overflow: hidden; background: #eef4f9; }
 .metro-command-map > :first-child { position: absolute; inset: 0; }
 .metro-command-map .metro-v0-map-wash { z-index: 1; background: linear-gradient(180deg, rgba(255,255,255,.16), transparent 30%, rgba(18,50,93,.03)); }
@@ -1339,10 +1339,10 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .route-inline input:focus { border-color: var(--metro-blue-600); }
 .route-inline button { height: 38px; padding: 0 13px; border: 0; border-radius: 8px; background: var(--metro-blue-700); color: #fff; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; }
 @media (max-width: 820px) {
-    .metro-command-center { height: auto; min-height: 100dvh; overflow: visible; }
+    .metro-command-center { display: flex !important; height: auto; min-height: 100dvh; overflow: visible; }
     .metro-command-header { height: 58px; grid-template-columns: 1fr auto; padding: 0 16px; }
     .metro-wordmark > span:last-child, .metro-header-search { display: none; }
-    .metro-command-layout { display: block; height: auto; }
+    .metro-command-layout { display: block; width: 100%; height: auto; flex: none; }
     .metro-command-map { height: 54svh; min-height: 360px; }
     .metro-command-inspector { min-height: 46svh; padding: 26px 20px calc(32px + env(safe-area-inset-bottom)); border-top: 1px solid var(--metro-line); border-left: 0; }
     .map-legend { display: none; }
