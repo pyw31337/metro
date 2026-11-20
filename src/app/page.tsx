@@ -660,6 +660,8 @@ export default function Home() {
         stationFacilities,
         apiIssue,
         weather: nearbyWeather,
+        selectedStrategy: route.selectedStrategy,
+        onStrategyChange: route.setSelectedStrategy,
         onZoomIn: () => mapRef.current?.zoomIn(),
         onZoomOut: () => mapRef.current?.zoomOut(),
         onRefreshArrival: arrivalInfo.refresh,
