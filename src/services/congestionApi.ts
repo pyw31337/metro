@@ -141,17 +141,19 @@ export const fetchStationCongestion = async (stationName: string): Promise<Conge
 
         // Determine trend
         let trend: '상승' | '하락' | '유지' = '유지';
-        const msg = subObj.AREA_PPLTN_MSGE || '';
+        const msg = subObj.AREA_CONGEST_MSG || subObj.AREA_PPLTN_MSGE || '';
         if (msg.includes('증가') || msg.includes('상승')) trend = '상승';
         else if (msg.includes('감소') || msg.includes('하락')) trend = '하락';
 
         return {
             areaName: data.AREA_NM,
-            congestionLevel: subObj.AREA_PPLTN_LVL,
+            // 서울 실시간 도시데이터 최신 명세는 AREA_CONGEST_LVL을 사용한다.
+            // 구형 응답의 AREA_PPLTN_LVL도 호환한다.
+            congestionLevel: subObj.AREA_CONGEST_LVL || subObj.AREA_PPLTN_LVL,
             ppltnMax: parseInt(subObj.AREA_PPLTN_MAX),
             ppltnMin: parseInt(subObj.AREA_PPLTN_MIN),
             trend,
-            msg: subObj.AREA_PPLTN_MSGE,
+            msg,
             timestamp: data.PPLTN_TIME
         };
     } catch (err) {
