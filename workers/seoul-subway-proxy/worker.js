@@ -23,7 +23,9 @@
  */
 const ALLOWED_SERVICES = new Set(['realtimePosition', 'realtimeStationArrival', 'citydata']);
 const UPSTREAM = 'http://swopenapi.seoul.go.kr/api/subway';
-const CITYDATA_UPSTREAM = 'https://openapi.seoul.go.kr:443';
+// 서울 실시간 도시데이터는 공식 명세상 8088 HTTP 엔드포인트를 사용한다.
+// (443 HTTPS 주소는 연결 지연/타임아웃이 발생한다.)
+const CITYDATA_UPSTREAM = 'http://openapi.seoul.go.kr:8088';
 const UPSTREAM_TIMEOUT_MS = 8000;
 
 // isolate 메모리 캐시 (Cache API 보조) 와 간단한 IP 레이트 리밋
