@@ -1285,6 +1285,13 @@ html.metro-v0-scroll, body.metro-v0-scroll {
 .data-status-item.live i { background:#168b68; }
 .data-status-item.fallback i, .data-status-item.loading i { background:#d68b21; }
 .data-status-item.error i, .data-status-item.unavailable i { background:#c4cbd3; }
+.bus-arrival-list { display:grid; gap:0; }
+.bus-arrival-row { display:grid; grid-template-columns:56px 1fr auto; align-items:baseline; gap:10px; min-height:34px; border-bottom:1px solid rgba(18,59,107,.08); font-size:13px; }
+.bus-arrival-row:last-child { border-bottom:0; }
+.bus-arrival-row strong { color:#1d5da8; }
+.bus-arrival-row span { color:#173e70; font-weight:650; }
+.bus-arrival-row small { color:#8190a1; font-size:11px; }
+.empty-inline { color:#8a98a8; font-size:12px; padding:4px 0; }
 .metro-command-header { height: 68px; display: grid; grid-template-columns: 280px minmax(280px, 680px) 120px; align-items: center; justify-content: space-between; gap: 28px; padding: 0 28px; border-bottom: 1px solid var(--metro-line); background: #fff; }
 .metro-wordmark { display: inline-flex; align-items: center; gap: 9px; white-space: nowrap; color: var(--metro-blue-950); }
 .metro-wordmark strong { font-size: 18px; letter-spacing: -.04em; }

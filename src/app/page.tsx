@@ -11,6 +11,7 @@ import { useArrivalInfo }     from "@/hooks/useArrivalInfo";
 import { useCongestion }      from "@/hooks/useCongestion";
 import { useStationFacilities } from "@/hooks/useStationFacilities";
 import { useNearbyWeather }  from "@/hooks/useNearbyWeather";
+import { useBusArrivals } from "@/hooks/useBusArrivals";
 import { useSimStatus, useSeoulApiIssue } from "@/hooks/useSimStatus";
 import type { SimStatus } from "@/services/TransitRealtimeService";
 import type { SeoulApiIssue } from "@/services/seoulApi";
@@ -213,6 +214,8 @@ export default function Home() {
   const congestionInfo = useCongestion(focusedStationName);
   const stationFacilities = useStationFacilities(focusedStationName);
   const nearbyWeather = useNearbyWeather(mapSt.userLocation || [37.4979, 127.0276]);
+  const busStopForLive = subway.selectedBusStop || mapSt.nearestBusStop;
+  const busArrivals = useBusArrivals(busStopForLive?.id ?? null, busStopForLive?.cityCode ?? null);
 
   // ─────────────────────────────────────────────────────────────────────────
   // 초기 데이터 로드
@@ -646,7 +649,7 @@ export default function Home() {
         state: congestionInfo.data ? 'live' : congestionInfo.loading ? 'loading' : 'unavailable',
         updatedAt: congestionInfo.data?.timestamp || null,
       },
-      bus: { state: subway.busStops.length ? 'static' : 'unavailable', updatedAt: null },
+      bus: { state: busArrivals.arrivals.length ? 'live' : subway.busStops.length ? 'fallback' : 'unavailable', updatedAt: null },
       facilities: { state: stationFacilities ? 'static' : 'unavailable', updatedAt: null },
       weather: { state: nearbyWeather.temperature != null ? 'live' : nearbyWeather.loading ? 'loading' : 'unavailable', updatedAt: null },
     };
@@ -674,6 +677,9 @@ export default function Home() {
         stationFacilities,
         apiIssue,
         weather: nearbyWeather,
+        busArrivals: busArrivals.arrivals,
+        busArrivalLoading: busArrivals.loading,
+        busStopName: busStopForLive?.name || null,
         dataStatus,
         selectedStrategy: route.selectedStrategy,
         onStrategyChange: route.setSelectedStrategy,
