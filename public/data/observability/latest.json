@@ -1,0 +1,31 @@
+{
+  "schema": "lets_observability_v1",
+  "run_id": "metro-20261123T073544Z",
+  "observed_at": "2026-11-23T07:35:44.292896+00:00",
+  "service_id": "metro",
+  "source": "persisted_metro_catalog",
+  "stages": {
+    "collect": {
+      "status": "success",
+      "ok": 354369,
+      "artifact": true
+    },
+    "analyze": {
+      "status": "not_started",
+      "ok": null
+    },
+    "quality": {
+      "status": "success",
+      "quality_issue_count": 0
+    },
+    "publish": {
+      "status": "success",
+      "artifact": true
+    }
+  },
+  "counts": {
+    "records": 354369,
+    "files": 35
+  },
+  "note": "Persisted metro public catalog snapshot; no daily increment inferred."
+}
