@@ -60,6 +60,7 @@ export default function Home() {
   const simStatus = useSimStatus();
   const apiIssue = useSeoulApiIssue();
   const mapRef = useRef<any>(null);
+  const boundsRequestRef = useRef(0);
 
   // 메인 화면: 도착 안내(기본) ↔ 지도
   const [view, setView] = useState<MainView>('arrival');
@@ -590,15 +591,24 @@ export default function Home() {
   }, []);
 
   const handleBoundsChange = useCallback(async (bounds: { minLat: number; minLng: number; maxLat: number; maxLng: number }) => {
-    setViewportBounds(bounds);
-    // Always fetch tiles for the current viewport — display only what's on screen
+    const requestId = ++boundsRequestRef.current;
+    setViewportBounds(prev => prev &&
+      Math.abs(prev.minLat - bounds.minLat) < 0.0005 &&
+      Math.abs(prev.maxLat - bounds.maxLat) < 0.0005 &&
+      Math.abs(prev.minLng - bounds.minLng) < 0.0005 &&
+      Math.abs(prev.maxLng - bounds.maxLng) < 0.0005 ? prev : bounds);
+    // Fetch viewport tiles, but discard stale responses when the user pans quickly.
     const [busStops, wcItems] = await Promise.all([
       fetchBusTiles(bounds),
       fetchWCTiles(bounds),
     ]);
+    if (requestId !== boundsRequestRef.current) return;
     const st = useSubwayStore.getState();
-    st.setBusStops(busStops);
-    st.setWcItems(wcItems);
+    // Avoid a render when the tile result is unchanged.
+    const prevBus = useSubwayStore.getState().busStops;
+    const prevWC = useSubwayStore.getState().wcItems;
+    if (prevBus.length !== busStops.length || prevBus[0]?.id !== busStops[0]?.id || prevBus.at(-1)?.id !== busStops.at(-1)?.id) st.setBusStops(busStops);
+    if (prevWC.length !== wcItems.length || prevWC[0]?.id !== wcItems[0]?.id || prevWC.at(-1)?.id !== wcItems.at(-1)?.id) st.setWcItems(wcItems);
   }, []);
 
   // Stable callbacks — use getState() for Zustand actions so no subscription needed

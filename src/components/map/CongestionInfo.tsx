@@ -47,7 +47,7 @@ const CongestionInfo = ({ data }: CongestionInfoProps) => {
           </span>
         </div>
         <span className="text-[9px] font-medium text-zinc-400/60 tabular-nums">
-          {data.timestamp.split(' ')[1]} 기준
+          {String(data.timestamp || '').split(' ')[1] || '시각 미상'} 기준
         </span>
       </div>
 

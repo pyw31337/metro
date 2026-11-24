@@ -61,7 +61,7 @@ export default function WeatherPopup({ onClose }: WeatherPopupProps) {
                 const addr = geoJson.address;
                 const gu = addr.city_district || addr.borough || addr.suburb || "";
                 const dong = addr.neighbourhood || addr.suburb || addr.town || "";
-                const formattedAddress = `${gu} ${dong}`.trim() || geoJson.display_name.split(',')[0];
+                const formattedAddress = `${gu} ${dong}`.trim() || String(geoJson.display_name || '').split(',')[0];
 
                 // 2. Weather Forecast (14 days)
                 const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${snapLat}&longitude=${snapLng}&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=14`);

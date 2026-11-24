@@ -550,7 +550,7 @@ export const getScheduledArrivalsFromDB = async (stationName: string): Promise<S
         const filtered = allMeta.filter(t => t.dayType === dayType && t.departureTime > currentTimeStr);
         
         return filtered.map(item => {
-            const [h, m, s] = item.departureTime.split(':').map(Number);
+            const [h, m, s] = String(item.departureTime || '00:00:00').split(':').map(Number);
             const schedDate = new Date();
             schedDate.setHours(h, m, s);
             const diffSeconds = Math.max(0, Math.floor((schedDate.getTime() - now.getTime()) / 1000));

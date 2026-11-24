@@ -193,7 +193,7 @@ export const getEstimatedArrivalsFromStatic = (stationName: string, activeLine?:
 
     const mapped: StationArrival[] = filteredByDay
         .map(e => {
-            const [h, m, s] = e.arrivalTime.split(':').map(Number);
+            const [h, m, s] = String(e.arrivalTime || '00:00:00').split(':').map(Number);
             const entryTimeInSeconds = h * 3600 + m * 60 + (s || 0);
             const waitTime = entryTimeInSeconds - currentTimeInSeconds;
             return {

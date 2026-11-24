@@ -846,7 +846,7 @@ const MapPopups = ({
                         </div>
                         
                         <div className="grid grid-cols-10 gap-0.5 h-6 items-end">
-                            {congestionData.congestionTrain.split('|').map((val: string, idx: number) => {
+                            {String(congestionData.congestionTrain || '').split('|').filter(Boolean).map((val: string, idx: number) => {
                                 const v = parseInt(val);
                                 const color = v < 35 ? 'bg-emerald-500' : v < 70 ? 'bg-amber-500' : v < 100 ? 'bg-orange-600' : 'bg-rose-600';
                                 return (
