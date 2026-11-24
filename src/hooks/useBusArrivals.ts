@@ -8,10 +8,14 @@ const cache = new Map<string, { data: BusArrivalItem[]; ts: number }>();
 export function useBusArrivals(stopId: string | null, cityCode: string | null) {
   const [arrivals, setArrivals] = useState<BusArrivalItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!stopId || !cityCode) {
       setArrivals([]);
+      setLastUpdated(null);
+      setError(null);
       return;
     }
 
@@ -23,9 +27,10 @@ export function useBusArrivals(stopId: string | null, cityCode: string | null) {
       try {
         const data = await MetropolitanBusService.fetchArrivals(stopId, cityCode);
         cache.set(cacheKey, { data, ts: Date.now() });
-        if (!cancelled) setArrivals(data.sort((a, b) => a.arrivalTime - b.arrivalTime));
+        if (!cancelled) { setArrivals(data.sort((a, b) => a.arrivalTime - b.arrivalTime)); setLastUpdated(Date.now()); setError(null); }
       } catch {
         // 실패해도 캐시 데이터 유지
+        if (!cancelled) setError('버스 도착 API 연결 실패');
       } finally {
         if (!cancelled && !background) setLoading(false);
       }
@@ -45,5 +50,5 @@ export function useBusArrivals(stopId: string | null, cityCode: string | null) {
     return () => { cancelled = true; clearInterval(iv); };
   }, [stopId, cityCode]);
 
-  return { arrivals, loading };
+  return { arrivals, loading, lastUpdated, error };
 }

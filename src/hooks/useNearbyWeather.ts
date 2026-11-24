@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-type WeatherState = { temperature: number | null; label: string; wind: number | null; loading: boolean };
+type WeatherState = { temperature: number | null; label: string; wind: number | null; loading: boolean; updatedAt: number | null };
 
 function labelFor(code: number | undefined): string {
   if (code == null) return "관측 대기";
@@ -16,9 +16,9 @@ function labelFor(code: number | undefined): string {
 }
 
 export function useNearbyWeather(location: [number, number] | null): WeatherState {
-  const [state, setState] = useState<WeatherState>({ temperature: null, label: "위치 권한 대기", wind: null, loading: false });
+  const [state, setState] = useState<WeatherState>({ temperature: null, label: "위치 권한 대기", wind: null, loading: false, updatedAt: null });
   useEffect(() => {
-    if (!location) { setState({ temperature: null, label: "위치 권한 대기", wind: null, loading: false }); return; }
+    if (!location) { setState({ temperature: null, label: "위치 권한 대기", wind: null, loading: false, updatedAt: null }); return; }
     const controller = new AbortController();
     setState(prev => ({ ...prev, loading: true }));
     const [latitude, longitude] = location;
@@ -29,6 +29,7 @@ export function useNearbyWeather(location: [number, number] | null): WeatherStat
         label: labelFor(json.current?.weather_code),
         wind: typeof json.current?.wind_speed_10m === "number" ? Math.round(json.current.wind_speed_10m) : null,
         loading: false,
+        updatedAt: Date.now(),
       }))
       .catch(error => { if (error?.name !== "AbortError") setState(prev => ({ ...prev, label: "날씨를 불러오지 못함", loading: false })); });
     return () => controller.abort();

@@ -33,7 +33,7 @@ export default function MetroHomeV0({ mapProps, onLocate, onRefresh }: Props) {
   const amenity: StationAmenity | null = getStationCivicAmenity(currentFocalStation) || getStationCivicAmenity("강남");
   const facilities = mapProps.stationFacilities as { elevator?: any[]; restroom?: any[]; escalator?: any[] } | null;
   const apiIssue = mapProps.apiIssue as string | null;
-  const weather = mapProps.weather as { temperature?: number | null; label?: string; wind?: number | null; loading?: boolean } | null;
+  const weather = mapProps.weather as { temperature?: number | null; label?: string; wind?: number | null; loading?: boolean; updatedAt?: number | null } | null;
   const dataStatus = mapProps.dataStatus as Record<string, { state?: string; updatedAt?: number | string | null }> | null;
   const busArrivals = Array.isArray(mapProps.busArrivals) ? mapProps.busArrivals as any[] : [];
   const busArrivalLoading = Boolean(mapProps.busArrivalLoading);

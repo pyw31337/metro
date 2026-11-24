@@ -659,9 +659,9 @@ export default function Home() {
         state: congestionInfo.data ? 'live' : congestionInfo.loading ? 'loading' : 'unavailable',
         updatedAt: congestionInfo.data?.timestamp || null,
       },
-      bus: { state: busArrivals.arrivals.length ? 'live' : subway.busStops.length ? 'fallback' : 'unavailable', updatedAt: null },
+      bus: { state: busArrivals.arrivals.length ? 'live' : subway.busStops.length ? 'fallback' : 'unavailable', updatedAt: busArrivals.lastUpdated },
       facilities: { state: stationFacilities ? 'static' : 'unavailable', updatedAt: null },
-      weather: { state: nearbyWeather.temperature != null ? 'live' : nearbyWeather.loading ? 'loading' : 'unavailable', updatedAt: null },
+      weather: { state: nearbyWeather.temperature != null ? 'live' : nearbyWeather.loading ? 'loading' : 'unavailable', updatedAt: nearbyWeather.updatedAt },
     };
     return <MetroHomeV0
       mapProps={{
