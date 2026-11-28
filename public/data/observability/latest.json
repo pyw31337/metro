@@ -1,7 +1,7 @@
 {
   "schema": "lets_observability_v1",
-  "run_id": "metro-20261127T015005Z",
-  "observed_at": "2026-11-27T01:50:05.285183+00:00",
+  "run_id": "metro-20261128T013233Z",
+  "observed_at": "2026-11-28T01:32:33.975036+00:00",
   "service_id": "metro",
   "source": "persisted_metro_catalog",
   "stages": {
